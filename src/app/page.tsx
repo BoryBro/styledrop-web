@@ -4,8 +4,22 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 
 const STYLES = [
-  { id: "4k-upscale", name: "4K 업스케일링", desc: "초고해상도 디테일 복원 및 화질 개선" },
-  { id: "flash-selfie", name: "플래시셀카", desc: "힙한 파티 무드의 아날로그 플래시 샷" }
+  {
+    id: "4k-upscale",
+    name: "4K 업스케일링",
+    desc: "초고해상도 디테일 복원 및 화질 개선",
+    thumbnail: "/thumbnails/4k.jpg",
+    goodExample: "/examples/4k-good.jpg",
+    badExample: "/examples/4k-bad.jpg",
+  },
+  {
+    id: "flash-selfie",
+    name: "플래시셀카",
+    desc: "힙한 파티 무드의 아날로그 플래시 샷",
+    thumbnail: "/thumbnails/flash.jpg",
+    goodExample: "/examples/flash-good.jpg",
+    badExample: "/examples/flash-bad.jpg",
+  },
 ];
 
 export default function Home() {
@@ -131,17 +145,27 @@ export default function Home() {
             <button
               key={style.id}
               onClick={() => setSelectedStyle(style.id === selectedStyle ? null : style.id)}
-              className={`rounded-2xl p-5 flex flex-col justify-end text-left transition-all duration-300 border-2 aspect-[4/5] ${
+              className={`rounded-2xl flex flex-col text-left transition-all duration-300 border-2 overflow-hidden ${
                 selectedStyle === style.id
                   ? "border-point bg-card/80 shadow-[0_4px_20px_rgb(201,87,26,0.2)]"
                   : "border-transparent bg-card hover:bg-white/5"
               }`}
             >
-              <div className="mt-auto flex flex-col justify-end h-full">
-                <h3 className={`text-xl md:text-2xl font-bold mb-3 transition-colors ${selectedStyle === style.id ? "text-point" : "text-white"}`}>
+              {/* Thumbnail */}
+              <div className="w-full aspect-[4/3] bg-white/5 overflow-hidden flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={style.thumbnail}
+                  alt={style.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </div>
+              <div className="p-4 flex flex-col justify-end">
+                <h3 className={`text-base md:text-lg font-bold mb-1.5 transition-colors ${selectedStyle === style.id ? "text-point" : "text-white"}`}>
                   {style.name}
                 </h3>
-                <p className="text-xs md:text-sm text-foreground/60 leading-relaxed font-medium break-keep">
+                <p className="text-xs text-foreground/60 leading-relaxed font-medium break-keep">
                   {style.desc}
                 </p>
               </div>
@@ -151,6 +175,49 @@ export default function Home() {
       </section>
 
       <section className="mb-auto">
+        {/* Style Guide Section */}
+        {selectedStyle && !resultImage && (() => {
+          const style = STYLES.find(s => s.id === selectedStyle);
+          if (!style) return null;
+          return (
+            <div className="mb-6 rounded-2xl bg-[#1A1A1A] border border-white/5 p-4">
+              <p className="text-xs font-bold tracking-widest text-white/40 mb-3 uppercase">사진 가이드</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-green-400 font-bold text-sm">O</span>
+                    <span className="text-xs text-white/50 font-medium">이런 사진 추천</span>
+                  </div>
+                  <div className="w-full aspect-square rounded-xl bg-white/5 overflow-hidden flex items-center justify-center border border-green-400/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={style.goodExample}
+                      alt="Good example"
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-red-400 font-bold text-sm">X</span>
+                    <span className="text-xs text-white/50 font-medium">이런 사진 지양</span>
+                  </div>
+                  <div className="w-full aspect-square rounded-xl bg-white/5 overflow-hidden flex items-center justify-center border border-red-400/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={style.badExample}
+                      alt="Bad example"
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         <h2 className="text-lg font-bold mb-4 px-1 text-white">
           {resultImage ? "변환 결과 비교" : "사진 업로드"}
         </h2>
