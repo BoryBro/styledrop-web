@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 
 const STYLES = [
   { id: "4k-upscale", name: "4K 업스케일링", desc: "초고해상도 디테일 복원 및 화질 개선" },
@@ -256,6 +257,14 @@ export default function Home() {
            </button>
         )}
       </div>
+      <footer className="mt-16 text-center flex flex-col items-center justify-center gap-2 pb-6">
+        <div className="flex gap-4 text-xs font-medium text-white/40">
+          <Link href="/terms" className="hover:text-white transition-colors underline-offset-4 hover:underline">이용약관</Link>
+          <span>|</span>
+          <Link href="/privacy" className="hover:text-white transition-colors underline-offset-4 hover:underline">개인정보처리방침</Link>
+        </div>
+        <p className="text-[10px] text-white/20">&copy; {new Date().getFullYear()} StyleDrop. All rights reserved.</p>
+      </footer>
     </main>
   );
 }
