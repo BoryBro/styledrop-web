@@ -254,12 +254,13 @@ export default function Home() {
                   {/* Spinning ring: star icon is truly centered */}
                   <div className="relative w-16 h-16">
                     <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-                    <div className="absolute inset-0 rounded-full border-4 border-t-[#C9571A] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-                    {/* Centered star icon — does NOT rotate */}
+                    <div
+                      className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#C9571A]"
+                      style={{ animation: "spin 1s linear infinite" }}
+                    />
+                    {/* Centered ✦ — does NOT rotate */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09z" />
-                      </svg>
+                      <span className="text-white text-xl leading-none select-none">✦</span>
                     </div>
                   </div>
                   {/* Text */}
