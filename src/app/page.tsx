@@ -2,6 +2,13 @@
 
 import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
+
+interface KakaoSDK {
+  init: (key: string) => void;
+  isInitialized: () => boolean;
+  Share: { sendDefault: (options: Record<string, unknown>) => void };
+}
 
 const STYLES = [
   {
@@ -156,6 +163,86 @@ export default function Home() {
     }
   };
 
+  const handleSaveToAlbum = async () => {
+    if (!resultImage) return;
+
+    try {
+      const res = await fetch(resultImage);
+      const blob = await res.blob();
+      const file = new File([blob], `styledrop-${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'StyleDrop 이미지',
+        });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `styledrop-${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('저장 실패:', error);
+      showToast('저장에 실패했습니다.');
+    }
+  };
+
+  const handleKakaoShare = async () => {
+    if (!resultImage) return;
+
+    try {
+      // base64 → Blob
+      const base64 = resultImage.split(',')[1];
+      const byteChars = atob(base64);
+      const byteArr = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+      const blob = new Blob([byteArr], { type: 'image/jpeg' });
+
+      // Supabase Storage 업로드 → 공개 URL 획득
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      const filename = `shared/${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('shared-images')
+        .upload(filename, blob, { contentType: 'image/jpeg' });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('shared-images').getPublicUrl(filename);
+
+      // Kakao SDK로 공유
+      const kakao = (window as Window & { Kakao?: KakaoSDK }).Kakao;
+      if (!kakao) {
+        showToast('카카오 SDK를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+      if (!kakao.isInitialized()) {
+        kakao.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY!);
+      }
+      kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: 'StyleDrop으로 변환한 사진',
+          description: '사진 한 장, 감성은 AI가',
+          imageUrl: urlData.publicUrl,
+          link: {
+            mobileWebUrl: window.location.origin,
+            webUrl: window.location.origin,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('카카오 공유 실패:', error);
+      showToast('카카오톡 공유에 실패했습니다.');
+    }
+  };
+
   const handleDownload = () => {
     if (!resultImage) return;
     const a = document.createElement("a");
@@ -262,6 +349,23 @@ export default function Home() {
                 <span className="absolute top-4 left-4 z-10 text-xs font-bold tracking-widest text-white bg-point/80 backdrop-blur-sm py-1.5 px-3 rounded-full">AFTER</span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={resultImage} alt="Generated Result" className="w-full h-auto object-contain max-h-[60vh] md:max-h-[70vh]" />
+              </div>
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={handleSaveToAlbum}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>📥</span>
+                  <span>앨범에 저장</span>
+                </button>
+
+                <button
+                  onClick={handleKakaoShare}
+                  className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>💬</span>
+                  <span>카카오톡 공유</span>
+                </button>
               </div>
               <button
                 onClick={handleDownload}
