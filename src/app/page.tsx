@@ -154,26 +154,26 @@ export default function Home() {
         </h2>
         
         {resultImage ? (
-           <div className="grid grid-cols-2 gap-4">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-4">
              {/* BEFORE Image */}
-             <div className="flex flex-col gap-2">
-               <span className="text-xs font-bold tracking-widest text-foreground/50 bg-[#1A1A1A] py-1 px-3 rounded-full self-start">BEFORE</span>
-               <div className="w-full aspect-square rounded-2xl border border-white/10 bg-[#1A1A1A] overflow-hidden">
+             <div className="flex flex-col gap-3">
+               <div className="relative w-full rounded-2xl border border-white/10 bg-[#1A1A1A] overflow-hidden flex items-center justify-center">
+                 <span className="absolute top-4 left-4 z-10 text-xs font-bold tracking-widest text-white bg-black/60 backdrop-blur-sm py-1.5 px-3 rounded-full">BEFORE</span>
                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                 <img src={previewUrl!} alt="Original Image" className="w-full h-full object-cover" />
+                 <img src={previewUrl!} alt="Original Image" className="w-full h-auto object-contain max-h-[60vh] md:max-h-[70vh]" />
                </div>
              </div>
              
              {/* AFTER Image */}
-             <div className="flex flex-col gap-2">
-               <span className="text-xs font-bold tracking-widest text-point bg-point/10 py-1 px-3 rounded-full self-start">AFTER</span>
-               <div className="w-full aspect-square rounded-2xl border-2 border-point/50 bg-[#1A1A1A] overflow-hidden">
+             <div className="flex flex-col gap-3">
+               <div className="relative w-full rounded-2xl border-2 border-point/50 bg-[#1A1A1A] overflow-hidden flex items-center justify-center shadow-[0_4px_20px_rgb(201,87,26,0.15)]">
+                 <span className="absolute top-4 left-4 z-10 text-xs font-bold tracking-widest text-white bg-point/80 backdrop-blur-sm py-1.5 px-3 rounded-full">AFTER</span>
                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                 <img src={resultImage} alt="Generated Result" className="w-full h-full object-cover" />
+                 <img src={resultImage} alt="Generated Result" className="w-full h-auto object-contain max-h-[60vh] md:max-h-[70vh]" />
                </div>
                <button 
                  onClick={handleDownload}
-                 className="mt-2 w-full bg-point hover:bg-[#B34A12] text-white py-3 rounded-xl text-sm font-bold transition-all duration-300 shadow-md shadow-point/20"
+                 className="w-full bg-point hover:bg-[#B34A12] text-white py-3.5 md:py-4 rounded-xl text-md font-bold transition-all duration-300 shadow-md shadow-point/20 hover:-translate-y-0.5"
                >
                  다운로드
                </button>
