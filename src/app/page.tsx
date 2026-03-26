@@ -8,7 +8,8 @@ const STYLES = [
     id: "4k-upscale",
     name: "4K 업스케일링",
     desc: "초고해상도 디테일 복원 및 화질 개선",
-    thumbnail: "/thumbnails/4k.jpg",
+    beforeImg: "/thumbnails/4k-before.jpg",
+    afterImg: "/thumbnails/4k-after.jpg",
     goodExample: "/examples/4k-good.jpg",
     badExample: "/examples/4k-bad.jpg",
   },
@@ -16,7 +17,8 @@ const STYLES = [
     id: "flash-selfie",
     name: "플래시셀카",
     desc: "힙한 파티 무드의 아날로그 플래시 샷",
-    thumbnail: "/thumbnails/flash.jpg",
+    beforeImg: "/thumbnails/flash-before.jpg",
+    afterImg: "/thumbnails/flash-after.jpg",
     goodExample: "/examples/flash-good.jpg",
     badExample: "/examples/flash-bad.jpg",
   },
@@ -31,8 +33,25 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [isAgreed, setIsAgreed] = useState(false);
-  
+  // Per-card slider positions (keyed by style id)
+  const [cardSliders, setCardSliders] = useState<Record<string, number>>({});
+  const cardSliderRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getCardSlider = (id: string) => cardSliders[id] ?? 50;
+
+  const handleCardPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    e.stopPropagation();
+  };
+
+  const handleCardPointerMove = (id: string, e: React.PointerEvent<HTMLDivElement>) => {
+    const el = cardSliderRefs.current[id];
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    setCardSliders(prev => ({ ...prev, [id]: (x / rect.width) * 100 }));
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -141,79 +160,91 @@ export default function Home() {
       <section className="mb-12">
         <h2 className="text-lg font-bold mb-4 px-1 text-white">스타일 선택</h2>
         <div className="grid grid-cols-2 gap-4">
-          {STYLES.map((style) => (
-            <button
-              key={style.id}
-              onClick={() => setSelectedStyle(style.id === selectedStyle ? null : style.id)}
-              className={`rounded-2xl flex flex-col text-left transition-all duration-300 border-2 overflow-hidden ${
-                selectedStyle === style.id
-                  ? "border-point bg-card/80 shadow-[0_4px_20px_rgb(201,87,26,0.2)]"
-                  : "border-transparent bg-card hover:bg-white/5"
-              }`}
-            >
-              {/* Thumbnail */}
-              <div className="w-full aspect-[4/3] bg-white/5 overflow-hidden flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={style.thumbnail}
-                  alt={style.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-              </div>
-              <div className="p-4 flex flex-col justify-end">
-                <h3 className={`text-base md:text-lg font-bold mb-1.5 transition-colors ${selectedStyle === style.id ? "text-point" : "text-white"}`}>
-                  {style.name}
-                </h3>
-                <p className="text-xs text-foreground/60 leading-relaxed font-medium break-keep">
-                  {style.desc}
-                </p>
-              </div>
-            </button>
-          ))}
+          {STYLES.map((style) => {
+            const pos = getCardSlider(style.id);
+            return (
+              <button
+                key={style.id}
+                onClick={() => setSelectedStyle(style.id === selectedStyle ? null : style.id)}
+                className={`rounded-2xl flex flex-col text-left transition-all duration-300 border-2 overflow-hidden ${
+                  selectedStyle === style.id
+                    ? "border-point bg-card/80 shadow-[0_4px_20px_rgb(201,87,26,0.2)]"
+                    : "border-transparent bg-card hover:bg-white/5"
+                }`}
+              >
+                {/* Inline before/after slider thumbnail */}
+                <div
+                  ref={(el) => { cardSliderRefs.current[style.id] = el; }}
+                  className="relative w-full aspect-[4/3] bg-white/5 overflow-hidden cursor-col-resize select-none"
+                  onPointerDown={handleCardPointerDown}
+                  onPointerMove={(e) => handleCardPointerMove(style.id, e)}
+                >
+                  {/* AFTER (base layer) */}
+                  <div className="absolute inset-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={style.afterImg} alt="after" className="w-full h-full object-cover" draggable={false}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    <span className="absolute bottom-2 right-2 text-[9px] font-bold text-white/60 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded-full">AFTER</span>
+                  </div>
+                  {/* BEFORE (clipped top layer) */}
+                  <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={style.beforeImg} alt="before"
+                      className="absolute inset-0 h-full object-cover" draggable={false}
+                      style={{ width: `${(100 / Math.max(pos, 0.1)) * 100}%`, maxWidth: 'none' }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    <span className="absolute bottom-2 left-2 text-[9px] font-bold text-white/60 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded-full">BEFORE</span>
+                  </div>
+                  {/* Handle */}
+                  <div className="absolute top-0 bottom-0 w-0.5 bg-point z-10 pointer-events-none"
+                    style={{ left: `${pos}%`, transform: 'translateX(-50%)' }}>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-point shadow-[0_0_10px_rgba(201,87,26,0.7)] flex items-center justify-center">
+                      <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                        <path d="M5 4L1 8L5 12" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M11 4L15 8L11 12" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 flex flex-col justify-end">
+                  <h3 className={`text-base md:text-lg font-bold mb-1.5 transition-colors ${selectedStyle === style.id ? "text-point" : "text-white"}`}>
+                    {style.name}
+                  </h3>
+                  <p className="text-xs text-foreground/60 leading-relaxed font-medium break-keep">
+                    {style.desc}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </section>
 
       <section className="mb-auto">
-        {/* Style Guide Section */}
+        {/* Compact Tip Guide */}
         {selectedStyle && !resultImage && (() => {
           const style = STYLES.find(s => s.id === selectedStyle);
           if (!style) return null;
           return (
-            <div className="mb-6 rounded-2xl bg-[#1A1A1A] border border-white/5 p-4">
-              <p className="text-xs font-bold tracking-widest text-white/40 mb-3 uppercase">사진 가이드</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-green-400 font-bold text-sm">O</span>
-                    <span className="text-xs text-white/50 font-medium">이런 사진 추천</span>
-                  </div>
-                  <div className="w-full aspect-square rounded-xl bg-white/5 overflow-hidden flex items-center justify-center border border-green-400/20">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={style.goodExample}
-                      alt="Good example"
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    />
-                  </div>
+            <div className="mb-4 flex items-center gap-3 bg-[#1A1A1A] border border-white/5 rounded-xl px-3 py-2.5">
+              <p className="text-[10px] font-bold tracking-widest text-white/30 uppercase shrink-0">추천 사진</p>
+              <div className="flex items-center gap-2 overflow-hidden">
+                {/* Good */}
+                <div className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-green-400/30">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={style.goodExample} alt="good" className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  <span className="absolute bottom-0.5 right-0.5 text-[8px] font-extrabold text-green-400 leading-none">O</span>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-red-400 font-bold text-sm">X</span>
-                    <span className="text-xs text-white/50 font-medium">이런 사진 지양</span>
-                  </div>
-                  <div className="w-full aspect-square rounded-xl bg-white/5 overflow-hidden flex items-center justify-center border border-red-400/20">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={style.badExample}
-                      alt="Bad example"
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    />
-                  </div>
+                {/* Bad */}
+                <div className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-red-400/30">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={style.badExample} alt="bad" className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  <span className="absolute bottom-0.5 right-0.5 text-[8px] font-extrabold text-red-400 leading-none">X</span>
                 </div>
               </div>
+              <p className="text-[10px] text-white/40 leading-relaxed break-keep">선명한 인물 사진일수록 좋아요 다양한 개체·품경 결과 수준이 달라질 수 있어요</p>
             </div>
           );
         })()}
@@ -288,7 +319,7 @@ export default function Home() {
         )}
       </section>
 
-      <div className="mt-8 mb-4 min-h-[60px] flex justify-center items-center">
+      <div className="mt-3 mb-4 min-h-[60px] flex justify-center items-center">
         {isLoading && (
           <div className="flex flex-col items-center gap-3">
              <div className="w-8 h-8 border-4 border-point/30 border-t-point rounded-full animate-spin"></div>
