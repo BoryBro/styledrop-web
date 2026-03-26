@@ -7,7 +7,7 @@ const STYLES = [
   {
     id: "flash-selfie",
     name: "플래시셀카(무료)",
-    desc: "아날로그 플래시 샷을 적용한 너낙",
+    desc: "아날로그 플래시 샷을 적용한 필터",
     beforeImg: "/thumbnails/flash-before.jpg",
     afterImg: "/thumbnails/flash-after.jpg",
     goodExample: "/examples/flash-good.jpg",
@@ -151,7 +151,7 @@ export default function Home() {
       <section className="mb-8">
         <div className="flex items-baseline gap-3 mb-4">
           <h2 className="text-lg font-bold text-white">스타일 선택</h2>
-          <span className="text-xs text-white/40 font-medium">원하는 느낙의 스타일 카드를 선택해주세요.</span>
+          <span className="text-xs text-white/40 font-medium">원하는 느낌의 스타일 카드를 선택해주세요.</span>
         </div>
         {/* Horizontal snap carousel — padding matches parent px-4/sm:px-6 */}
         <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">
@@ -180,11 +180,10 @@ export default function Home() {
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
                   {/* Badge */}
-                  <span className={`absolute top-2.5 left-2.5 text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm shadow-md ${
-                    isAfter
-                      ? 'bg-point text-white'
-                      : 'bg-black/70 text-white'
-                  }`}>
+                  <span className={`absolute top-2.5 left-2.5 text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm shadow-md ${isAfter
+                    ? 'bg-point text-white'
+                    : 'bg-black/70 text-white'
+                    }`}>
                     {isAfter ? 'AFTER' : 'BEFORE'}
                   </span>
                   {/* Tap hint */}
@@ -239,34 +238,44 @@ export default function Home() {
             </div>
           </div>
         ) : (
-           <div
+          <div
             onClick={isLoading ? undefined : handleUploadClick}
             className={`w-full aspect-[4/3] sm:aspect-video rounded-2xl border-2 border-dashed bg-card flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden group ${isLoading ? 'border-point/30 cursor-not-allowed' : 'border-white/20 hover:border-point/50'}`}
           >
             {/* Glassmorphism loading overlay */}
             {isLoading && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center">
-                {/* Pulsing orange glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#C9571A]/25 via-black/50 to-[#C9571A]/15 animate-pulse" />
-                <div className="absolute inset-0 backdrop-blur-md" />
-                {/* Glass card */}
-                <div className="relative z-10 flex flex-col items-center gap-4 bg-white/5 border border-white/10 rounded-3xl px-8 py-7 shadow-2xl">
-                  {/* Spinning ring with star icon */}
-                  <div className="relative w-14 h-14 flex items-center justify-center">
+              <div className="absolute inset-0 z-20 flex items-center justify-center">
+                {/* Radial orange glow layer (behind blur) */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(201,87,26,0.35)_0%,rgba(0,0,0,0.6)_70%)] animate-pulse" />
+                {/* Frosted glass blur layer */}
+                <div className="absolute inset-0 backdrop-blur-xl" />
+                {/* Glass panel card – perfectly centered */}
+                <div className="relative z-10 flex flex-col items-center gap-5 bg-white/8 border border-white/15 rounded-3xl px-10 py-8 shadow-[0_8px_32px_rgba(201,87,26,0.25)]">
+                  {/* Spinning ring: star icon is truly centered */}
+                  <div className="relative w-16 h-16">
                     <div className="absolute inset-0 rounded-full border-4 border-white/10" />
                     <div className="absolute inset-0 rounded-full border-4 border-t-[#C9571A] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-                    <svg className="w-6 h-6 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09z" />
-                    </svg>
+                    {/* Centered star icon */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09z" />
+                      </svg>
+                    </div>
                   </div>
                   {/* Text */}
                   <div className="text-center">
                     <p className="text-white font-bold text-base tracking-wide">AI 변환 중</p>
                     <p className="text-white/50 text-xs mt-1 font-medium">Gemini가 사진의 감성을 입히고 있어요...</p>
                   </div>
-                  {/* Pulsing progress bar */}
-                  <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full w-[65%] bg-gradient-to-r from-[#C9571A] to-[#F07848] rounded-full animate-pulse" />
+                  {/* Shimmer progress bar */}
+                  <div className="w-52 h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full relative overflow-hidden"
+                      style={{ width: '70%', background: 'linear-gradient(90deg, #C9571A, #F07848)' }}
+                    >
+                      {/* Moving shimmer highlight */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite] -translate-x-full" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -308,12 +317,7 @@ export default function Home() {
 
       {/* Bottom actions - natural flex-col, no sticky */}
       <div className="flex flex-col gap-4 mt-6 pb-8">
-        {isLoading && (
-          <div className="flex flex-col items-center gap-3 py-4">
-            <div className="w-8 h-8 border-4 border-point/30 border-t-point rounded-full animate-spin"></div>
-            <p className="text-point font-medium animate-pulse">AI가 사진의 감성을 변환하고 있습니다...</p>
-          </div>
-        )}
+
         {resultImage ? (
           <button
             onClick={() => {
