@@ -1,58 +1,91 @@
-import { createClient } from "@supabase/supabase-js";
+"use client";
 
-async function getStats() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_KEY!
-  );
+import { useState } from "react";
 
-  const { data, error } = await supabase
-    .from("style_usage")
-    .select("style_id, style_name");
+type StyleStat = { style_id: string; style_name: string; count: number };
+type Stats = { total: number; byStyle: StyleStat[] };
 
-  if (error || !data) return { total: 0, byStyle: [] };
+export default function AdminPage() {
+  const [password, setPassword] = useState("");
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const total = data.length;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-  const counts: Record<string, { style_name: string; count: number }> = {};
-  for (const row of data) {
-    if (!counts[row.style_id]) {
-      counts[row.style_id] = { style_name: row.style_name, count: 0 };
+    try {
+      const res = await fetch("/api/admin/stats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "오류가 발생했습니다.");
+      } else {
+        setStats(data);
+      }
+    } catch {
+      setError("요청 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
     }
-    counts[row.style_id].count++;
+  };
+
+  if (!stats) {
+    return (
+      <main className="w-full max-w-sm mx-auto px-4 py-20 flex flex-col gap-6">
+        <h1 className="text-2xl font-extrabold text-white">Admin</h1>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="비밀번호 입력"
+            className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#C9571A] transition-colors"
+            autoFocus
+          />
+          {error && <p className="text-[#C9571A] text-sm font-medium">{error}</p>}
+          <button
+            type="submit"
+            disabled={isLoading || !password}
+            className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-[#2A2A2A] disabled:text-white/30 text-white font-bold py-3 rounded-xl transition-colors"
+          >
+            {isLoading ? "확인 중..." : "확인"}
+          </button>
+        </form>
+      </main>
+    );
   }
-
-  const byStyle = Object.entries(counts).map(([style_id, v]) => ({
-    style_id,
-    style_name: v.style_name,
-    count: v.count,
-  }));
-
-  return { total, byStyle };
-}
-
-export default async function AdminPage() {
-  const { total, byStyle } = await getStats();
 
   return (
     <main className="w-full max-w-lg mx-auto px-4 py-12 flex flex-col gap-8">
-      <h1 className="text-2xl font-extrabold text-white">Admin</h1>
-
-      {/* 전체 생성 수 */}
-      <div className="bg-[#1A1A1A] rounded-2xl p-6 border border-white/10">
-        <p className="text-white/40 text-sm font-medium mb-1">전체 생성 수</p>
-        <p className="text-4xl font-extrabold text-white">{total}</p>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold text-white">Admin</h1>
+        <button
+          onClick={() => { setStats(null); setPassword(""); }}
+          className="text-xs text-white/40 hover:text-white transition-colors"
+        >
+          로그아웃
+        </button>
       </div>
 
-      {/* 스타일별 사용 횟수 */}
+      <div className="bg-[#1A1A1A] rounded-2xl p-6 border border-white/10">
+        <p className="text-white/40 text-sm font-medium mb-1">전체 생성 수</p>
+        <p className="text-4xl font-extrabold text-white">{stats.total}</p>
+      </div>
+
       <div className="flex flex-col gap-3">
         <p className="text-white/40 text-sm font-medium px-1">스타일별 사용 횟수</p>
-        {byStyle.length === 0 ? (
+        {stats.byStyle.length === 0 ? (
           <div className="bg-[#1A1A1A] rounded-2xl p-6 border border-white/10 text-white/30 text-sm">
             데이터 없음
           </div>
         ) : (
-          byStyle.map((s) => (
+          stats.byStyle.map((s) => (
             <div
               key={s.style_id}
               className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/10 flex items-center justify-between"

@@ -2,6 +2,31 @@ import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// In-memory rate limiter: IP → { count, resetAt }
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 10;
+const WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
+function getIp(request: NextRequest): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
 const STYLE_NAMES: Record<string, string> = {
   "flash-selfie": "플래시 필터(무료)",
   "4k-upscale": "4K 업스케일링(무료)",
@@ -13,6 +38,14 @@ const STYLE_PROMPTS: Record<string, string> = {
 };
 
 export async function POST(request: NextRequest) {
+  const ip = getIp(request);
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json(
+      { error: "잠시 후 다시 시도해주세요. (1시간에 최대 10회 요청 가능)" },
+      { status: 429 }
+    );
+  }
+
   try {
     const { style, imageBase64, mimeType } = await request.json();
 

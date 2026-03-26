@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 
 const STYLES = [
@@ -24,6 +24,25 @@ const STYLES = [
   },
 ];
 
+type Toast = { id: number; message: string; type: "error" | "info" };
+
+function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
+  return (
+    <div className="fixed top-4 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none px-4">
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          onClick={() => onDismiss(t.id)}
+          className="pointer-events-auto max-w-sm w-full bg-[#1A1A1A] border border-white/10 text-white text-sm font-medium px-4 py-3 rounded-2xl shadow-xl flex items-start gap-3 cursor-pointer"
+        >
+          <span className="mt-0.5 shrink-0 text-[#C9571A]">✕</span>
+          <span className="leading-snug">{t.message}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -35,7 +54,19 @@ export default function Home() {
   const [isAgreed, setIsAgreed] = useState(false);
   // Per-card toggle: true = show After, false = show Before
   const [showAfter, setShowAfter] = useState<Record<string, boolean>>({});
+  const [toasts, setToasts] = useState<Toast[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const toastIdRef = useRef(0);
+
+  const showToast = useCallback((message: string) => {
+    const id = ++toastIdRef.current;
+    setToasts((prev) => [...prev, { id, message, type: "error" }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+  }, []);
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const toggleCardImg = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -89,11 +120,11 @@ export default function Home() {
 
   const handleSubmit = async () => {
     if (!selectedStyle) {
-      alert("스타일을 선택해주세요.");
+      showToast("스타일을 선택해주세요.");
       return;
     }
     if (!imageBase64) {
-      alert("사진을 업로드해주세요.");
+      showToast("사진을 업로드해주세요.");
       return;
     }
 
@@ -115,11 +146,11 @@ export default function Home() {
       if (data.image) {
         setResultImage(`data:image/jpeg;base64,${data.image}`);
       } else {
-        alert("이미지 변환에 실패했습니다: " + (data.error || "서버 오류"));
+        showToast(data.error || "이미지 변환에 실패했습니다.");
       }
     } catch (error) {
       console.error(error);
-      alert("요청 중 오류가 발생했습니다.");
+      showToast("요청 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +167,8 @@ export default function Home() {
   };
 
   return (
+    <>
+    <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     <main className="w-full max-w-2xl mx-auto px-4 sm:px-6 flex flex-col pb-12">
       {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-md border-b border-white/5">
@@ -374,5 +407,6 @@ export default function Home() {
         <p className="text-[10px] text-white/20">&copy; {new Date().getFullYear()} StyleDrop. All rights reserved.</p>
       </footer>
     </main>
+    </>
   );
 }
