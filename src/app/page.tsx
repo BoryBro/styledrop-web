@@ -150,8 +150,8 @@ export default function Home() {
 
       <section className="mb-8">
         <h2 className="text-lg font-bold mb-4 px-1 text-white">스타일 선택</h2>
-        {/* Horizontal snap carousel — negative margin to bleed, positive padding to align first card */}
-        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2 -mx-4 sm:-mx-6 px-4 sm:px-6">
+        {/* Horizontal snap carousel — padding matches parent px-4/sm:px-6 */}
+        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">
           {STYLES.map((style) => {
             const isAfter = showAfter[style.id] ?? false;
             return (
@@ -177,16 +177,16 @@ export default function Home() {
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
                   {/* Badge */}
-                  <span className={`absolute top-2 left-2 text-[10px] font-extrabold px-2 py-0.5 rounded-full backdrop-blur-sm ${
+                  <span className={`absolute top-2.5 left-2.5 text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm shadow-md ${
                     isAfter
                       ? 'bg-point text-white'
-                      : 'bg-black/60 text-white/80'
+                      : 'bg-black/70 text-white'
                   }`}>
                     {isAfter ? 'AFTER' : 'BEFORE'}
                   </span>
                   {/* Tap hint */}
-                  <span className="absolute bottom-2 right-2 text-[9px] text-white/40 bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded-full">
-                    탭하면 {isAfter ? 'BEFORE' : 'AFTER'}
+                  <span className="absolute bottom-2.5 right-2.5 text-[11px] font-bold text-white bg-point/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-md">
+                    탭하면 {isAfter ? 'BEFORE' : 'AFTER'} →
                   </span>
                 </div>
                 <div className="p-4 flex flex-col justify-end">
