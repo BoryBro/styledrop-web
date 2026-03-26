@@ -255,9 +255,9 @@ export default function Home() {
                   <div className="relative w-16 h-16">
                     <div className="absolute inset-0 rounded-full border-4 border-white/10" />
                     <div className="absolute inset-0 rounded-full border-4 border-t-[#C9571A] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-                    {/* Centered star icon */}
+                    {/* Centered star icon — does NOT rotate */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09z" />
                       </svg>
                     </div>
@@ -266,16 +266,6 @@ export default function Home() {
                   <div className="text-center">
                     <p className="text-white font-bold text-base tracking-wide">AI 변환 중</p>
                     <p className="text-white/50 text-xs mt-1 font-medium">Gemini가 사진의 감성을 입히고 있어요...</p>
-                  </div>
-                  {/* Shimmer progress bar */}
-                  <div className="w-52 h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full relative overflow-hidden"
-                      style={{ width: '70%', background: 'linear-gradient(90deg, #C9571A, #F07848)' }}
-                    >
-                      {/* Moving shimmer highlight */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite] -translate-x-full" />
-                    </div>
                   </div>
                 </div>
               </div>
