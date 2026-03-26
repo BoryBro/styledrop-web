@@ -5,6 +5,15 @@ import Link from "next/link";
 
 const STYLES = [
   {
+    id: "flash-selfie",
+    name: "플래시셀카(무료)",
+    desc: "아날로그 플래시 샷을 적용한 너낙",
+    beforeImg: "/thumbnails/flash-before.jpg",
+    afterImg: "/thumbnails/flash-after.jpg",
+    goodExample: "/examples/flash-good.jpg",
+    badExample: "/examples/flash-bad.jpg",
+  },
+  {
     id: "4k-upscale",
     name: "4K 업스케일링(무료)",
     desc: "초고해상도 디테일 복원 및 화질 개선",
@@ -12,15 +21,6 @@ const STYLES = [
     afterImg: "/thumbnails/4k-after.jpg",
     goodExample: "/examples/4k-good.jpg",
     badExample: "/examples/4k-bad.jpg",
-  },
-  {
-    id: "flash-selfie",
-    name: "플래시셀카(무료)",
-    desc: "아날로그 플래시 샷을 적용한 너낌",
-    beforeImg: "/thumbnails/flash-before.jpg",
-    afterImg: "/thumbnails/flash-after.jpg",
-    goodExample: "/examples/flash-good.jpg",
-    badExample: "/examples/flash-bad.jpg",
   },
 ];
 
@@ -149,7 +149,10 @@ export default function Home() {
       <div className="h-14" />
 
       <section className="mb-8">
-        <h2 className="text-lg font-bold mb-4 px-1 text-white">스타일 선택</h2>
+        <div className="flex items-baseline gap-3 mb-4">
+          <h2 className="text-lg font-bold text-white">스타일 선택</h2>
+          <span className="text-xs text-white/40 font-medium">원하는 느낙의 스타일 카드를 선택해주세요.</span>
+        </div>
         {/* Horizontal snap carousel — padding matches parent px-4/sm:px-6 */}
         <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">
           {STYLES.map((style) => {
@@ -203,38 +206,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mb-auto">
-        {/* Compact Tip Guide */}
-        {selectedStyle && !resultImage && (() => {
-          const style = STYLES.find(s => s.id === selectedStyle);
-          if (!style) return null;
-          return (
-            <div className="mb-5 flex items-center gap-3 bg-[#1A1A1A] border border-white/8 rounded-2xl px-4 py-3">
-              <div className="flex items-center gap-3 shrink-0">
-                {/* Good */}
-                <div className="flex flex-col items-center gap-1">
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-green-400/40 shadow-md">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={style.goodExample} alt="good" className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  </div>
-                  <span className="text-xs font-bold text-green-400">추천해요 O</span>
-                </div>
-                {/* Bad */}
-                <div className="flex flex-col items-center gap-1">
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-red-400/40 shadow-md">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={style.badExample} alt="bad" className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  </div>
-                  <span className="text-xs font-bold text-red-400">추천 안해요 X</span>
-                </div>
-              </div>
-              <p className="text-xs text-white/50 leading-relaxed break-keep">가이드라인을 따르시오! 안그러면 별로 결과는 만족스럽지 못할거야! &gt;&lt; </p>
-            </div>
-          );
-        })()}
 
+      <section className="mb-auto">
         <h2 className="text-lg font-bold mb-4 px-1 text-white">
           {resultImage ? "변환 결과 비교" : "사진 업로드"}
         </h2>
@@ -266,10 +239,38 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div
-            onClick={handleUploadClick}
-            className={`w-full aspect-[4/3] sm:aspect-video rounded-2xl border-2 border-dashed bg-card flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden group ${isLoading ? 'border-white/10 opacity-50 cursor-not-allowed' : 'border-white/20 hover:border-point/50'}`}
+           <div
+            onClick={isLoading ? undefined : handleUploadClick}
+            className={`w-full aspect-[4/3] sm:aspect-video rounded-2xl border-2 border-dashed bg-card flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden group ${isLoading ? 'border-point/30 cursor-not-allowed' : 'border-white/20 hover:border-point/50'}`}
           >
+            {/* Glassmorphism loading overlay */}
+            {isLoading && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center">
+                {/* Pulsing orange glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#C9571A]/25 via-black/50 to-[#C9571A]/15 animate-pulse" />
+                <div className="absolute inset-0 backdrop-blur-md" />
+                {/* Glass card */}
+                <div className="relative z-10 flex flex-col items-center gap-4 bg-white/5 border border-white/10 rounded-3xl px-8 py-7 shadow-2xl">
+                  {/* Spinning ring with star icon */}
+                  <div className="relative w-14 h-14 flex items-center justify-center">
+                    <div className="absolute inset-0 rounded-full border-4 border-white/10" />
+                    <div className="absolute inset-0 rounded-full border-4 border-t-[#C9571A] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                    <svg className="w-6 h-6 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09z" />
+                    </svg>
+                  </div>
+                  {/* Text */}
+                  <div className="text-center">
+                    <p className="text-white font-bold text-base tracking-wide">AI 변환 중</p>
+                    <p className="text-white/50 text-xs mt-1 font-medium">Gemini가 사진의 감성을 입히고 있어요...</p>
+                  </div>
+                  {/* Pulsing progress bar */}
+                  <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full w-[65%] bg-gradient-to-r from-[#C9571A] to-[#F07848] rounded-full animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            )}
             {previewUrl ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
