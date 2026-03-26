@@ -3,10 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: Request) {
   try {
-    const { imageBase64 } = await req.json();
+    const { beforeBase64, afterBase64 } = await req.json();
 
-    if (!imageBase64) {
-      return NextResponse.json({ error: 'No image provided' }, { status: 400 });
+    if (!beforeBase64 || !afterBase64) {
+      return NextResponse.json({ error: 'Both original and result images are required' }, { status: 400 });
     }
 
     const supabase = createClient(
@@ -14,28 +14,32 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_KEY!
     );
 
-    // base64 to Buffer
-    const buffer = Buffer.from(imageBase64, 'base64');
-    const filename = `shared/${Date.now()}.jpg`;
+    const shareId = Date.now().toString();
+    const beforeBuffer = Buffer.from(beforeBase64, 'base64');
+    const afterBuffer = Buffer.from(afterBase64, 'base64');
 
-    const { error: uploadError } = await supabase.storage
+    const beforeFilename = `shared/${shareId}-before.jpg`;
+    const afterFilename = `shared/${shareId}-after.jpg`;
+
+    // Upload Before Image
+    const { error: beforeError } = await supabase.storage
       .from('shared-images')
-      .upload(filename, buffer, { 
-        contentType: 'image/jpeg',
-        cacheControl: '3600',
-        upsert: false
-      });
+      .upload(beforeFilename, beforeBuffer, { contentType: 'image/jpeg', cacheControl: '3600', upsert: false });
 
-    if (uploadError) {
-      console.error('Supabase upload error:', uploadError);
-      return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
-    }
+    if (beforeError) throw beforeError;
 
-    const { data: urlData } = supabase.storage
+    // Upload After Image
+    const { error: afterError } = await supabase.storage
       .from('shared-images')
-      .getPublicUrl(filename);
+      .upload(afterFilename, afterBuffer, { contentType: 'image/jpeg', cacheControl: '3600', upsert: false });
 
-    return NextResponse.json({ url: urlData.publicUrl });
+    if (afterError) throw afterError;
+
+    const { data: afterUrlData } = supabase.storage
+      .from('shared-images')
+      .getPublicUrl(afterFilename);
+
+    return NextResponse.json({ id: shareId, url: afterUrlData.publicUrl });
   } catch (error) {
     console.error('Share API Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

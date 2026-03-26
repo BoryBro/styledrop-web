@@ -196,20 +196,25 @@ export default function Home() {
     if (!resultImage) return;
 
     try {
+      if (!imageBase64) return;
       const base64 = resultImage.split(',')[1];
       
       const response = await fetch('/api/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64 })
+        body: JSON.stringify({ 
+          beforeBase64: imageBase64,
+          afterBase64: base64 
+        })
       });
 
       if (!response.ok) {
         throw new Error('공유 이미지 업로드에 실패했습니다.');
       }
 
-      const { url } = await response.json();
+      const { id, url } = await response.json();
       const imageUrl = url;
+      const shareLink = `${window.location.origin}/share?id=${id}`;
 
       // Kakao SDK로 공유
       const kakao = (window as Window & { Kakao?: KakaoSDK }).Kakao;
@@ -224,11 +229,11 @@ export default function Home() {
         objectType: 'feed',
         content: {
           title: 'StyleDrop으로 변환한 사진',
-          description: '사진 한 장, 감성은 AI가',
+          description: 'AI가 새롭게 바꿔준 제 사진 어때요?',
           imageUrl: imageUrl,
           link: {
-            mobileWebUrl: window.location.origin,
-            webUrl: window.location.origin,
+            mobileWebUrl: shareLink,
+            webUrl: shareLink,
           },
         },
       });
