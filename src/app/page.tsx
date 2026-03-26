@@ -6,7 +6,7 @@ import Link from "next/link";
 const STYLES = [
   {
     id: "4k-upscale",
-    name: "4K 업스케일링",
+    name: "4K 업스케일링(무료)",
     desc: "초고해상도 디테일 복원 및 화질 개선",
     beforeImg: "/thumbnails/4k-before.jpg",
     afterImg: "/thumbnails/4k-after.jpg",
@@ -15,8 +15,8 @@ const STYLES = [
   },
   {
     id: "flash-selfie",
-    name: "플래시셀카",
-    desc: "힙한 파티 무드의 아날로그 플래시 샷",
+    name: "플래시셀카(무료)",
+    desc: "아날로그 플래시 샷을 적용한 너낌",
     beforeImg: "/thumbnails/flash-before.jpg",
     afterImg: "/thumbnails/flash-after.jpg",
     goodExample: "/examples/flash-good.jpg",
@@ -29,28 +29,17 @@ export default function Home() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState<string>("image/jpeg");
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [isAgreed, setIsAgreed] = useState(false);
-  // Per-card slider positions (keyed by style id)
-  const [cardSliders, setCardSliders] = useState<Record<string, number>>({});
-  const cardSliderRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  // Per-card toggle: true = show After, false = show Before
+  const [showAfter, setShowAfter] = useState<Record<string, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const getCardSlider = (id: string) => cardSliders[id] ?? 50;
-
-  const handleCardPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
+  const toggleCardImg = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-  };
-
-  const handleCardPointerMove = (id: string, e: React.PointerEvent<HTMLDivElement>) => {
-    const el = cardSliderRefs.current[id];
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-    setCardSliders(prev => ({ ...prev, [id]: (x / rect.width) * 100 }));
+    setShowAfter(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +49,7 @@ export default function Home() {
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
       setResultImage(null);
-      
+
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
@@ -107,10 +96,10 @@ export default function Home() {
       alert("사진을 업로드해주세요.");
       return;
     }
-    
+
     setIsLoading(true);
     setResultImage(null);
-    
+
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
@@ -121,7 +110,7 @@ export default function Home() {
           mimeType
         })
       });
-      
+
       const data = await response.json();
       if (data.image) {
         setResultImage(`data:image/jpeg;base64,${data.image}`);
@@ -161,54 +150,44 @@ export default function Home() {
 
       <section className="mb-8">
         <h2 className="text-lg font-bold mb-4 px-1 text-white">스타일 선택</h2>
-        {/* Horizontal snap carousel */}
+        {/* Horizontal snap carousel — negative margin to bleed, positive padding to align first card */}
         <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2 -mx-4 sm:-mx-6 px-4 sm:px-6">
           {STYLES.map((style) => {
-            const pos = getCardSlider(style.id);
+            const isAfter = showAfter[style.id] ?? false;
             return (
               <button
                 key={style.id}
                 onClick={() => setSelectedStyle(style.id === selectedStyle ? null : style.id)}
-                className={`snap-start flex-shrink-0 w-[85vw] max-w-sm rounded-2xl flex flex-col text-left transition-all duration-300 border-2 overflow-hidden ${
-                  selectedStyle === style.id
-                    ? "border-point bg-card/80 shadow-[0_4px_20px_rgb(201,87,26,0.2)]"
-                    : "border-transparent bg-card"
-                }`}
+                className={`snap-start flex-shrink-0 w-[85vw] max-w-sm rounded-2xl flex flex-col text-left transition-all duration-300 border-2 overflow-hidden ${selectedStyle === style.id
+                  ? "border-point bg-card/80 shadow-[0_4px_20px_rgb(201,87,26,0.2)]"
+                  : "border-transparent bg-card"
+                  }`}
               >
-                {/* Inline before/after slider thumbnail */}
+                {/* Click-toggle thumbnail */}
                 <div
-                  ref={(el) => { cardSliderRefs.current[style.id] = el; }}
-                  className="relative w-full aspect-[4/3] bg-white/5 overflow-hidden cursor-col-resize select-none"
-                  style={{ touchAction: 'none' }}
-                  onPointerDown={handleCardPointerDown}
-                  onPointerMove={(e) => handleCardPointerMove(style.id, e)}
+                  className="relative w-full aspect-[4/3] bg-white/5 overflow-hidden cursor-pointer"
+                  onClick={(e) => toggleCardImg(style.id, e)}
                 >
-                  {/* AFTER (base layer) */}
-                  <div className="absolute inset-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={style.afterImg} alt="after" className="w-full h-full object-cover" draggable={false}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    <span className="absolute bottom-2 right-2 text-[9px] font-bold text-white/60 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded-full">AFTER</span>
-                  </div>
-                  {/* BEFORE (clipped top layer) */}
-                  <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={style.beforeImg} alt="before"
-                      className="absolute inset-0 h-full object-cover" draggable={false}
-                      style={{ width: `${(100 / Math.max(pos, 0.1)) * 100}%`, maxWidth: 'none' }}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    <span className="absolute bottom-2 left-2 text-[9px] font-bold text-white/60 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded-full">BEFORE</span>
-                  </div>
-                  {/* Handle */}
-                  <div className="absolute top-0 bottom-0 w-0.5 bg-point z-10 pointer-events-none"
-                    style={{ left: `${pos}%`, transform: 'translateX(-50%)' }}>
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-point shadow-[0_0_10px_rgba(201,87,26,0.7)] flex items-center justify-center">
-                      <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                        <path d="M5 4L1 8L5 12" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M11 4L15 8L11 12" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={isAfter ? style.afterImg : style.beforeImg}
+                    alt={isAfter ? 'after' : 'before'}
+                    className="w-full h-full object-cover transition-opacity duration-300"
+                    draggable={false}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                  {/* Badge */}
+                  <span className={`absolute top-2 left-2 text-[10px] font-extrabold px-2 py-0.5 rounded-full backdrop-blur-sm ${
+                    isAfter
+                      ? 'bg-point text-white'
+                      : 'bg-black/60 text-white/80'
+                  }`}>
+                    {isAfter ? 'AFTER' : 'BEFORE'}
+                  </span>
+                  {/* Tap hint */}
+                  <span className="absolute bottom-2 right-2 text-[9px] text-white/40 bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded-full">
+                    탭하면 {isAfter ? 'BEFORE' : 'AFTER'}
+                  </span>
                 </div>
                 <div className="p-4 flex flex-col justify-end">
                   <h3 className={`text-base md:text-lg font-bold mb-1.5 transition-colors ${selectedStyle === style.id ? "text-point" : "text-white"}`}>
@@ -251,7 +230,7 @@ export default function Home() {
                   <span className="text-xs font-bold text-red-400">추천 안해요 X</span>
                 </div>
               </div>
-              <p className="text-xs text-white/50 leading-relaxed break-keep">인물이 퍼렇하게 찍힌 사진일수록 좋아요. 다양한 개체나 품경은 예상과 다르게 나올 수 있어요.</p>
+              <p className="text-xs text-white/50 leading-relaxed break-keep">가이드라인을 따르시오! 안그러면 별로 결과는 만족스럽지 못할거야! &gt;&lt; </p>
             </div>
           );
         })()}
@@ -259,35 +238,35 @@ export default function Home() {
         <h2 className="text-lg font-bold mb-4 px-1 text-white">
           {resultImage ? "변환 결과 비교" : "사진 업로드"}
         </h2>
-        
+
         {resultImage ? (
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-4">
-             {/* BEFORE Image */}
-             <div className="flex flex-col gap-3">
-               <div className="relative w-full rounded-2xl border border-white/10 bg-[#1A1A1A] overflow-hidden flex items-center justify-center">
-                 <span className="absolute top-4 left-4 z-10 text-xs font-bold tracking-widest text-white bg-black/60 backdrop-blur-sm py-1.5 px-3 rounded-full">BEFORE</span>
-                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                 <img src={previewUrl!} alt="Original Image" className="w-full h-auto object-contain max-h-[60vh] md:max-h-[70vh]" />
-               </div>
-             </div>
-             
-             {/* AFTER Image */}
-             <div className="flex flex-col gap-3">
-               <div className="relative w-full rounded-2xl border-2 border-point/50 bg-[#1A1A1A] overflow-hidden flex items-center justify-center shadow-[0_4px_20px_rgb(201,87,26,0.15)]">
-                 <span className="absolute top-4 left-4 z-10 text-xs font-bold tracking-widest text-white bg-point/80 backdrop-blur-sm py-1.5 px-3 rounded-full">AFTER</span>
-                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                 <img src={resultImage} alt="Generated Result" className="w-full h-auto object-contain max-h-[60vh] md:max-h-[70vh]" />
-               </div>
-               <button 
-                 onClick={handleDownload}
-                 className="w-full bg-point hover:bg-[#B34A12] text-white py-3.5 md:py-4 rounded-xl text-md font-bold transition-all duration-300 shadow-md shadow-point/20 hover:-translate-y-0.5"
-               >
-                 다운로드
-               </button>
-             </div>
-           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-4">
+            {/* BEFORE Image */}
+            <div className="flex flex-col gap-3">
+              <div className="relative w-full rounded-2xl border border-white/10 bg-[#1A1A1A] overflow-hidden flex items-center justify-center">
+                <span className="absolute top-4 left-4 z-10 text-xs font-bold tracking-widest text-white bg-black/60 backdrop-blur-sm py-1.5 px-3 rounded-full">BEFORE</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={previewUrl!} alt="Original Image" className="w-full h-auto object-contain max-h-[60vh] md:max-h-[70vh]" />
+              </div>
+            </div>
+
+            {/* AFTER Image */}
+            <div className="flex flex-col gap-3">
+              <div className="relative w-full rounded-2xl border-2 border-point/50 bg-[#1A1A1A] overflow-hidden flex items-center justify-center shadow-[0_4px_20px_rgb(201,87,26,0.15)]">
+                <span className="absolute top-4 left-4 z-10 text-xs font-bold tracking-widest text-white bg-point/80 backdrop-blur-sm py-1.5 px-3 rounded-full">AFTER</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={resultImage} alt="Generated Result" className="w-full h-auto object-contain max-h-[60vh] md:max-h-[70vh]" />
+              </div>
+              <button
+                onClick={handleDownload}
+                className="w-full bg-point hover:bg-[#B34A12] text-white py-3.5 md:py-4 rounded-xl text-md font-bold transition-all duration-300 shadow-md shadow-point/20 hover:-translate-y-0.5"
+              >
+                다운로드
+              </button>
+            </div>
+          </div>
         ) : (
-          <div 
+          <div
             onClick={handleUploadClick}
             className={`w-full aspect-[4/3] sm:aspect-video rounded-2xl border-2 border-dashed bg-card flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden group ${isLoading ? 'border-white/10 opacity-50 cursor-not-allowed' : 'border-white/20 hover:border-point/50'}`}
           >
@@ -304,22 +283,22 @@ export default function Home() {
             ) : (
               <div className="text-center p-6 flex flex-col items-center">
                 <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-4 text-white/40 group-hover:text-point transition-colors group-hover:bg-point/10">
-                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                     <polyline points="17 8 12 3 7 8" />
-                     <line x1="12" y1="3" x2="12" y2="15" />
-                   </svg>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
                 </div>
-                <p className="text-white/80 font-medium text-lg">사진을 업로드하세요</p>
+                <p className="text-white/80 font-medium text-lg">사진 업로드 하거나 찍거나 고고</p>
                 <p className="text-sm text-white/40 mt-2">클릭하여 파일 선택 (JPG, PNG)</p>
               </div>
             )}
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={isLoading ? undefined : handleFileChange} 
-              accept="image/*" 
-              className="hidden" 
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={isLoading ? undefined : handleFileChange}
+              accept="image/*"
+              className="hidden"
               disabled={isLoading}
             />
           </div>
@@ -335,58 +314,57 @@ export default function Home() {
           </div>
         )}
         {resultImage ? (
-           <button 
-             onClick={() => {
-               setResultImage(null);
-               setPreviewUrl(null);
-               setImageBase64(null);
-               setSelectedStyle(null);
-               if (fileInputRef.current) fileInputRef.current.value = "";
-             }}
-             className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white py-4 rounded-2xl text-lg font-bold transition-all duration-300"
-           >
-             새로운 사진 만들기
-           </button>
+          <button
+            onClick={() => {
+              setResultImage(null);
+              setPreviewUrl(null);
+              setImageBase64(null);
+              setSelectedStyle(null);
+              if (fileInputRef.current) fileInputRef.current.value = "";
+            }}
+            className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white py-4 rounded-2xl text-lg font-bold transition-all duration-300"
+          >
+            새로운 사진 만들기
+          </button>
         ) : (
-           <div className="flex flex-col gap-4">
-             <div className="flex flex-col gap-2 px-1">
-               <p className="text-[11px] md:text-xs text-white/40 font-medium">
-                 업로드된 사진은 서버에 저장되지 않으며, AI 처리 후 즉시 삭제됩니다.
-               </p>
-               <label className="flex items-center gap-3 cursor-pointer group w-fit">
-                 <div className="relative flex items-center justify-center">
-                   <input
-                     type="checkbox"
-                     checked={isAgreed}
-                     onChange={(e) => setIsAgreed(e.target.checked)}
-                     className="peer appearance-none w-5 h-5 rounded border-2 border-white/20 checked:border-point checked:bg-point transition-colors cursor-pointer"
-                   />
-                   <svg
-                     className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
-                     viewBox="0 0 14 10"
-                     fill="none"
-                     xmlns="http://www.w3.org/2000/svg"
-                   >
-                     <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                   </svg>
-                 </div>
-                 <span className="text-sm md:text-base text-white/80 font-medium select-none group-hover:text-white transition-colors">
-                   <Link href="/terms" className="text-point hover:underline underline-offset-4" target="_blank">이용약관</Link> 및 <Link href="/privacy" className="text-point hover:underline underline-offset-4" target="_blank">개인정보처리방침</Link>에 동의합니다.
-                 </span>
-               </label>
-             </div>
-             <button 
-               onClick={handleSubmit}
-               disabled={isLoading || !isAgreed}
-               className={`w-full py-4 md:py-5 rounded-2xl text-lg md:text-xl font-bold transition-all duration-300 ${
-                 isLoading || !isAgreed
-                   ? "bg-[#2A2A2A] text-white/30 cursor-not-allowed" 
-                   : "bg-point hover:bg-[#B34A12] text-white shadow-lg shadow-point/20 hover:shadow-point/40 hover:-translate-y-1 active:translate-y-0"
-               }`}
-             >
-               {isLoading ? "처리 중..." : "만들기"}
-             </button>
-           </div>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2 px-1">
+              <p className="text-[11px] md:text-xs text-white/40 font-medium">
+                업로드된 사진은 서버에 저장되지 않으며, AI 처리 후 즉시 삭제됩니다.
+              </p>
+              <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                <div className="relative flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    checked={isAgreed}
+                    onChange={(e) => setIsAgreed(e.target.checked)}
+                    className="peer appearance-none w-5 h-5 rounded border-2 border-white/20 checked:border-point checked:bg-point transition-colors cursor-pointer"
+                  />
+                  <svg
+                    className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
+                    viewBox="0 0 14 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <span className="text-sm md:text-base text-white/80 font-medium select-none group-hover:text-white transition-colors">
+                  <Link href="/terms" className="text-point hover:underline underline-offset-4" target="_blank">이용약관</Link> 및 <Link href="/privacy" className="text-point hover:underline underline-offset-4" target="_blank">개인정보처리방침</Link>에 동의합니다.
+                </span>
+              </label>
+            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || !isAgreed}
+              className={`w-full py-4 md:py-5 rounded-2xl text-lg md:text-xl font-bold transition-all duration-300 ${isLoading || !isAgreed
+                ? "bg-[#2A2A2A] text-white/30 cursor-not-allowed"
+                : "bg-point hover:bg-[#B34A12] text-white shadow-lg shadow-point/20 hover:shadow-point/40 hover:-translate-y-1 active:translate-y-0"
+                }`}
+            >
+              {isLoading ? "처리 중..." : "만들기"}
+            </button>
+          </div>
         )}
       </div>
 
