@@ -43,12 +43,13 @@ export async function POST(request: NextRequest) {
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_KEY!
           );
-          await supabase.from("style_usage").insert({
+          const { error } = await supabase.from("style_usage").insert({
             style_id: style,
             style_name: STYLE_NAMES[style] ?? style,
           });
-        } catch {
-          // 로깅 실패 무시
+          if (error) console.error("[Supabase] insert error:", error);
+        } catch (err) {
+          console.error("[Supabase] unexpected error:", err);
         }
 
         return NextResponse.json({
