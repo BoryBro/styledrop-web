@@ -147,35 +147,39 @@ export default function Home() {
   };
 
   return (
-    <main className="flex-1 w-full max-w-2xl mx-auto px-6 py-12 md:py-16 flex flex-col min-h-screen">
-      <header className="mb-10 text-center">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-3 text-white">
-          StyleDrop
-        </h1>
-        <p className="text-foreground/70 font-medium">
-          사진 한 장, 감성은 AI가
-        </p>
+    <main className="w-full max-w-2xl mx-auto px-4 sm:px-6 flex flex-col pb-12">
+      {/* Fixed Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-md border-b border-white/5">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+          <h1 className="text-xl font-extrabold tracking-tight text-white">StyleDrop</h1>
+          <span className="text-white/40 text-xs font-medium">사진 한 장, 감성은 AI가</span>
+        </div>
       </header>
 
-      <section className="mb-12">
+      {/* Spacer for fixed header */}
+      <div className="h-14" />
+
+      <section className="mb-8">
         <h2 className="text-lg font-bold mb-4 px-1 text-white">스타일 선택</h2>
-        <div className="grid grid-cols-2 gap-4">
+        {/* Horizontal snap carousel */}
+        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2 -mx-4 sm:-mx-6 px-4 sm:px-6">
           {STYLES.map((style) => {
             const pos = getCardSlider(style.id);
             return (
               <button
                 key={style.id}
                 onClick={() => setSelectedStyle(style.id === selectedStyle ? null : style.id)}
-                className={`rounded-2xl flex flex-col text-left transition-all duration-300 border-2 overflow-hidden ${
+                className={`snap-start flex-shrink-0 w-[85vw] max-w-sm rounded-2xl flex flex-col text-left transition-all duration-300 border-2 overflow-hidden ${
                   selectedStyle === style.id
                     ? "border-point bg-card/80 shadow-[0_4px_20px_rgb(201,87,26,0.2)]"
-                    : "border-transparent bg-card hover:bg-white/5"
+                    : "border-transparent bg-card"
                 }`}
               >
                 {/* Inline before/after slider thumbnail */}
                 <div
                   ref={(el) => { cardSliderRefs.current[style.id] = el; }}
                   className="relative w-full aspect-[4/3] bg-white/5 overflow-hidden cursor-col-resize select-none"
+                  style={{ touchAction: 'none' }}
                   onPointerDown={handleCardPointerDown}
                   onPointerMove={(e) => handleCardPointerMove(style.id, e)}
                 >
@@ -226,25 +230,28 @@ export default function Home() {
           const style = STYLES.find(s => s.id === selectedStyle);
           if (!style) return null;
           return (
-            <div className="mb-4 flex items-center gap-3 bg-[#1A1A1A] border border-white/5 rounded-xl px-3 py-2.5">
-              <p className="text-[10px] font-bold tracking-widest text-white/30 uppercase shrink-0">추천 사진</p>
-              <div className="flex items-center gap-2 overflow-hidden">
+            <div className="mb-5 flex items-center gap-3 bg-[#1A1A1A] border border-white/8 rounded-2xl px-4 py-3">
+              <div className="flex items-center gap-3 shrink-0">
                 {/* Good */}
-                <div className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-green-400/30">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={style.goodExample} alt="good" className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  <span className="absolute bottom-0.5 right-0.5 text-[8px] font-extrabold text-green-400 leading-none">O</span>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-green-400/40 shadow-md">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={style.goodExample} alt="good" className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  </div>
+                  <span className="text-xs font-bold text-green-400">추천해요 O</span>
                 </div>
                 {/* Bad */}
-                <div className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-red-400/30">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={style.badExample} alt="bad" className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  <span className="absolute bottom-0.5 right-0.5 text-[8px] font-extrabold text-red-400 leading-none">X</span>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-red-400/40 shadow-md">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={style.badExample} alt="bad" className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  </div>
+                  <span className="text-xs font-bold text-red-400">추천 안해요 X</span>
                 </div>
               </div>
-              <p className="text-[10px] text-white/40 leading-relaxed break-keep">선명한 인물 사진일수록 좋아요 다양한 개체·품경 결과 수준이 달라질 수 있어요</p>
+              <p className="text-xs text-white/50 leading-relaxed break-keep">인물이 퍼렇하게 찍힌 사진일수록 좋아요. 다양한 개체나 품경은 예상과 다르게 나올 수 있어요.</p>
             </div>
           );
         })()}
@@ -319,16 +326,14 @@ export default function Home() {
         )}
       </section>
 
-      <div className="mt-3 mb-4 min-h-[60px] flex justify-center items-center">
+      {/* Bottom actions - natural flex-col, no sticky */}
+      <div className="flex flex-col gap-4 mt-6 pb-8">
         {isLoading && (
-          <div className="flex flex-col items-center gap-3">
-             <div className="w-8 h-8 border-4 border-point/30 border-t-point rounded-full animate-spin"></div>
-             <p className="text-point font-medium animate-pulse">AI가 사진의 감성을 변환하고 있습니다...</p>
+          <div className="flex flex-col items-center gap-3 py-4">
+            <div className="w-8 h-8 border-4 border-point/30 border-t-point rounded-full animate-spin"></div>
+            <p className="text-point font-medium animate-pulse">AI가 사진의 감성을 변환하고 있습니다...</p>
           </div>
         )}
-      </div>
-
-      <div className="sticky bottom-8 mt-auto grid grid-cols-1 gap-3">
         {resultImage ? (
            <button 
              onClick={() => {
@@ -384,7 +389,8 @@ export default function Home() {
            </div>
         )}
       </div>
-      <footer className="mt-16 text-center flex flex-col items-center justify-center gap-2 pb-6">
+
+      <footer className="mt-4 text-center flex flex-col items-center justify-center gap-2 pb-6">
         <div className="flex gap-4 text-xs font-medium text-white/40">
           <Link href="/terms" className="hover:text-white transition-colors underline-offset-4 hover:underline">이용약관</Link>
           <span>|</span>
