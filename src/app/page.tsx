@@ -140,7 +140,8 @@ export default function Home() {
       {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-md border-b border-white/5">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
-          <h1 className="text-xl font-extrabold tracking-tight text-white">StyleDrop</h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="StyleDrop" style={{ height: "40px", width: "auto" }} />
           <span className="text-white/40 text-xs font-medium">사진 한 장, 감성은 AI가</span>
         </div>
       </header>
