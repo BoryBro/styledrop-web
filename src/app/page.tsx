@@ -196,25 +196,20 @@ export default function Home() {
     if (!resultImage) return;
 
     try {
-      // base64 → Blob
       const base64 = resultImage.split(',')[1];
-      const byteChars = atob(base64);
-      const byteArr = new Uint8Array(byteChars.length);
-      for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
-      const blob = new Blob([byteArr], { type: 'image/jpeg' });
+      
+      const response = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 })
+      });
 
-      // Supabase Storage 업로드 → 공개 URL 획득
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-      const filename = `shared/${Date.now()}.jpg`;
-      const { error: uploadError } = await supabase.storage
-        .from('shared-images')
-        .upload(filename, blob, { contentType: 'image/jpeg' });
-      if (uploadError) throw uploadError;
+      if (!response.ok) {
+        throw new Error('공유 이미지 업로드에 실패했습니다.');
+      }
 
-      const { data: urlData } = supabase.storage.from('shared-images').getPublicUrl(filename);
+      const { url } = await response.json();
+      const imageUrl = url;
 
       // Kakao SDK로 공유
       const kakao = (window as Window & { Kakao?: KakaoSDK }).Kakao;
@@ -230,7 +225,7 @@ export default function Home() {
         content: {
           title: 'StyleDrop으로 변환한 사진',
           description: '사진 한 장, 감성은 AI가',
-          imageUrl: urlData.publicUrl,
+          imageUrl: imageUrl,
           link: {
             mobileWebUrl: window.location.origin,
             webUrl: window.location.origin,
