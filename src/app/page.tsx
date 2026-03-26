@@ -16,6 +16,7 @@ export default function Home() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
+  const [isAgreed, setIsAgreed] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -244,17 +245,45 @@ export default function Home() {
              새로운 사진 만들기
            </button>
         ) : (
-           <button 
-             onClick={handleSubmit}
-             disabled={isLoading}
-             className={`w-full py-4 md:py-5 rounded-2xl text-lg md:text-xl font-bold transition-all duration-300 ${
-               isLoading 
-                 ? "bg-point/50 cursor-not-allowed text-white/50" 
-                 : "bg-point hover:bg-[#B34A12] text-white shadow-lg shadow-point/20 hover:shadow-point/40 hover:-translate-y-1 active:translate-y-0"
-             }`}
-           >
-             {isLoading ? "처리 중..." : "만들기"}
-           </button>
+           <div className="flex flex-col gap-4">
+             <div className="flex flex-col gap-2 px-1">
+               <p className="text-[11px] md:text-xs text-white/40 font-medium">
+                 업로드된 사진은 서버에 저장되지 않으며, AI 처리 후 즉시 삭제됩니다.
+               </p>
+               <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                 <div className="relative flex items-center justify-center">
+                   <input
+                     type="checkbox"
+                     checked={isAgreed}
+                     onChange={(e) => setIsAgreed(e.target.checked)}
+                     className="peer appearance-none w-5 h-5 rounded border-2 border-white/20 checked:border-point checked:bg-point transition-colors cursor-pointer"
+                   />
+                   <svg
+                     className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
+                     viewBox="0 0 14 10"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg"
+                   >
+                     <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                   </svg>
+                 </div>
+                 <span className="text-sm md:text-base text-white/80 font-medium select-none group-hover:text-white transition-colors">
+                   <Link href="/terms" className="text-point hover:underline underline-offset-4" target="_blank">이용약관</Link> 및 <Link href="/privacy" className="text-point hover:underline underline-offset-4" target="_blank">개인정보처리방침</Link>에 동의합니다.
+                 </span>
+               </label>
+             </div>
+             <button 
+               onClick={handleSubmit}
+               disabled={isLoading || !isAgreed}
+               className={`w-full py-4 md:py-5 rounded-2xl text-lg md:text-xl font-bold transition-all duration-300 ${
+                 isLoading || !isAgreed
+                   ? "bg-[#2A2A2A] text-white/30 cursor-not-allowed" 
+                   : "bg-point hover:bg-[#B34A12] text-white shadow-lg shadow-point/20 hover:shadow-point/40 hover:-translate-y-1 active:translate-y-0"
+               }`}
+             >
+               {isLoading ? "처리 중..." : "만들기"}
+             </button>
+           </div>
         )}
       </div>
       <footer className="mt-16 text-center flex flex-col items-center justify-center gap-2 pb-6">
