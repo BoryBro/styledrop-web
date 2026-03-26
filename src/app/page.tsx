@@ -150,13 +150,34 @@ export default function Home() {
 
       <section className="mb-auto">
         <h2 className="text-lg font-bold mb-4 px-1 text-white">
-          {resultImage ? "변환 완료!" : "사진 업로드"}
+          {resultImage ? "변환 결과 비교" : "사진 업로드"}
         </h2>
         
         {resultImage ? (
-           <div className="w-full rounded-2xl border-2 border-point/50 bg-card flex flex-col items-center justify-center overflow-hidden">
-             {/* eslint-disable-next-line @next/next/no-img-element */}
-             <img src={resultImage} alt="Generated Result" className="w-full h-auto object-contain" />
+           <div className="grid grid-cols-2 gap-4">
+             {/* BEFORE Image */}
+             <div className="flex flex-col gap-2">
+               <span className="text-xs font-bold tracking-widest text-foreground/50 bg-[#1A1A1A] py-1 px-3 rounded-full self-start">BEFORE</span>
+               <div className="w-full aspect-square rounded-2xl border border-white/10 bg-[#1A1A1A] overflow-hidden">
+                 {/* eslint-disable-next-line @next/next/no-img-element */}
+                 <img src={previewUrl!} alt="Original Image" className="w-full h-full object-cover" />
+               </div>
+             </div>
+             
+             {/* AFTER Image */}
+             <div className="flex flex-col gap-2">
+               <span className="text-xs font-bold tracking-widest text-point bg-point/10 py-1 px-3 rounded-full self-start">AFTER</span>
+               <div className="w-full aspect-square rounded-2xl border-2 border-point/50 bg-[#1A1A1A] overflow-hidden">
+                 {/* eslint-disable-next-line @next/next/no-img-element */}
+                 <img src={resultImage} alt="Generated Result" className="w-full h-full object-cover" />
+               </div>
+               <button 
+                 onClick={handleDownload}
+                 className="mt-2 w-full bg-point hover:bg-[#B34A12] text-white py-3 rounded-xl text-sm font-bold transition-all duration-300 shadow-md shadow-point/20"
+               >
+                 다운로드
+               </button>
+             </div>
            </div>
         ) : (
           <div 
@@ -209,26 +230,18 @@ export default function Home() {
 
       <div className="sticky bottom-8 mt-auto grid grid-cols-1 gap-3">
         {resultImage ? (
-           <>
-             <button 
-               onClick={handleDownload}
-               className="w-full bg-point hover:bg-[#B34A12] text-white py-4 md:py-5 rounded-2xl text-lg md:text-xl font-bold transition-all duration-300 shadow-lg shadow-point/20 hover:shadow-point/40 hover:-translate-y-1 active:translate-y-0"
-             >
-               결과 이미지 다운로드
-             </button>
-             <button 
-               onClick={() => {
-                 setResultImage(null);
-                 setPreviewUrl(null);
-                 setImageBase64(null);
-                 setSelectedStyle(null);
-                 if (fileInputRef.current) fileInputRef.current.value = "";
-               }}
-               className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white py-4 rounded-2xl text-lg font-bold transition-all duration-300"
-             >
-               다른 사진 만들기
-             </button>
-           </>
+           <button 
+             onClick={() => {
+               setResultImage(null);
+               setPreviewUrl(null);
+               setImageBase64(null);
+               setSelectedStyle(null);
+               if (fileInputRef.current) fileInputRef.current.value = "";
+             }}
+             className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white py-4 rounded-2xl text-lg font-bold transition-all duration-300"
+           >
+             새로운 사진 만들기
+           </button>
         ) : (
            <button 
              onClick={handleSubmit}

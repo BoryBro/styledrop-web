@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const STYLE_PROMPTS: Record<string, string> = {
   "4k-upscale": "Upscale this image to ultra-high 4K resolution. Enhance all details, textures, and clarity significantly. Make the lighting dynamic and remove all noise and blur, resulting in a perfectly sharp, professional photorealistic image.",
-  "flash-selfie": "Apply a strong, stylized flash photography effect to this image. Lighting: direct, harsh frontal flash with sharp, dark shadows behind the subject. Overexpose the highlights slightly. Vibe: casual nightlife party snapshot, paparazzi photo style, raw digital camera feel. Add slight digital camera grain. The stylistic flash effect MUST be conspicuously applied."
+  "flash-selfie": "Transform ONLY the lighting of this photo to look like an iPhone flash selfie.\nThe flash should create bright, slightly overexposed frontal lighting with subtle shadows behind the subject.\nCRITICAL: The subject's face, expression, pose, angle, composition, and every pixel of the subject MUST remain 100% identical to the original.\nOnly the light source and lighting atmosphere changes. Nothing else."
 };
 
 export async function POST(request: NextRequest) {
