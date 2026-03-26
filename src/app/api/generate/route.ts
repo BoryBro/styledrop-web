@@ -1,5 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+const STYLE_NAMES: Record<string, string> = {
+  "flash-selfie": "플래시 필터(무료)",
+  "4k-upscale": "4K 업스케일링(무료)",
+};
 
 const STYLE_PROMPTS: Record<string, string> = {
   "4k-upscale": "Upscale this image to ultra-high 4K resolution. Enhance all details, textures, and clarity significantly. Make the lighting dynamic and remove all noise and blur, resulting in a perfectly sharp, professional photorealistic image.",
@@ -31,6 +37,20 @@ export async function POST(request: NextRequest) {
     const parts = response.candidates?.[0]?.content?.parts || [];
     for (const part of parts) {
       if (part.inlineData) {
+        // Supabase 로깅 — 실패해도 이미지 응답에 영향 없음
+        try {
+          const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_KEY!
+          );
+          await supabase.from("style_usage").insert({
+            style_id: style,
+            style_name: STYLE_NAMES[style] ?? style,
+          });
+        } catch {
+          // 로깅 실패 무시
+        }
+
         return NextResponse.json({
           image: part.inlineData.data,
           mimeType: part.inlineData.mimeType,
