@@ -24,7 +24,7 @@ const STYLES = [
   },
 ];
 
-export default function Home() {
+export default function HomeClient({ bottomSlot }: { bottomSlot?: React.ReactNode }) {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
@@ -291,7 +291,7 @@ export default function Home() {
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
                 </div>
-                <p className="text-white/80 font-medium text-lg">사진 업로드 및 촬영</p>
+                <p className="text-white/80 font-medium text-lg">사진 업로드 하거나 찍거나 고고</p>
                 <p className="text-sm text-white/40 mt-2">클릭하여 파일 선택 (JPG, PNG)</p>
               </div>
             )}
@@ -364,6 +364,9 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Admin stats slot */}
+      {bottomSlot}
 
       <footer className="mt-4 text-center flex flex-col items-center justify-center gap-2 pb-6">
         <div className="flex gap-4 text-xs font-medium text-white/40">
