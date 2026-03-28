@@ -141,9 +141,8 @@ export default function HomeClient({ bottomSlot }: { bottomSlot?: React.ReactNod
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-md border-b border-white/5">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="StyleDrop" style={{ height: "28px", width: "auto" }} />
+          <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-xl tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
           <span className="text-white/40 text-xs font-medium">사진 한 장, 감성은 AI가</span>
-          <span className="text-yellow-200/50 text-[10px] font-medium">03월 28일 22:29 업데이트</span>
         </div>
       </header>
 
@@ -376,6 +375,7 @@ export default function HomeClient({ bottomSlot }: { bottomSlot?: React.ReactNod
           <Link href="/privacy" className="hover:text-white transition-colors underline-offset-4 hover:underline">개인정보처리방침</Link>
         </div>
         <p className="text-[10px] text-white/20">&copy; {new Date().getFullYear()} StyleDrop. All rights reserved.</p>
+        <p className="text-[10px] text-yellow-200/40">03월 28일 22:29 업데이트</p>
       </footer>
     </main>
   );
