@@ -30,6 +30,14 @@ export default function Result() {
   }, []);
 
   useEffect(() => {
+    // 새로고침 감지: 정상 진입 플래그 없으면 /studio로 리다이렉트
+    const fromStudio = sessionStorage.getItem("sd_fromStudio");
+    if (!fromStudio) {
+      router.replace("/studio");
+      return;
+    }
+    sessionStorage.removeItem("sd_fromStudio"); // 플래그 소비 (1회용)
+
     const styleId = sessionStorage.getItem("sd_styleId");
     const base64 = sessionStorage.getItem("sd_imageBase64");
     const preview = sessionStorage.getItem("sd_previewDataUrl");

@@ -173,6 +173,7 @@ export default function Studio() {
       sessionStorage.removeItem("sd_resultDataUrl");
       sessionStorage.removeItem("sd_shareUrl");
       sessionStorage.removeItem("sd_shareLink");
+      sessionStorage.setItem("sd_fromStudio", "1"); // 정상 진입 플래그
 
       router.push("/result");
     };
