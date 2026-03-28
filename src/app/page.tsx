@@ -508,7 +508,7 @@ export default function Home() {
           <Link href="/privacy" className="hover:text-white transition-colors underline-offset-4 hover:underline">개인정보처리방침</Link>
         </div>
         <p className="text-[10px] text-white/20">&copy; {new Date().getFullYear()} StyleDrop. All rights reserved.</p>
-        <p className="text-[10px] text-yellow-200/40">03월 28일 22:29 업데이트</p>
+        <p className="text-[10px] text-yellow-200/40">v0.2</p>
       </footer>
     </main>
     </>
