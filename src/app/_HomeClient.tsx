@@ -143,6 +143,7 @@ export default function HomeClient({ bottomSlot }: { bottomSlot?: React.ReactNod
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="StyleDrop" style={{ height: "28px", width: "auto" }} />
           <span className="text-white/40 text-xs font-medium">사진 한 장, 감성은 AI가</span>
+          <span className="text-yellow-200/50 text-[10px] font-medium">03월 28일 22:29 업데이트</span>
         </div>
       </header>
 
