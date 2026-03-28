@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+function formatCount(n: number): string {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+  return String(n);
+}
 
 const STYLES = [
   {
@@ -101,10 +106,18 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
 export default function Studio() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [usageCounts, setUsageCounts] = useState<Record<string, number> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectedStyleRef = useRef<string | null>(null);
   const toastIdRef = useRef(0);
   const router = useRouter();
+
+  useEffect(() => {
+    fetch("/api/usage")
+      .then((r) => r.json())
+      .then((data) => setUsageCounts(data.counts ?? {}))
+      .catch(() => setUsageCounts({}));
+  }, []);
 
   const showToast = useCallback((message: string) => {
     const id = ++toastIdRef.current;
@@ -216,9 +229,11 @@ export default function Studio() {
                 <div className="absolute bottom-0 left-0 p-5">
                   <p className="text-[24px] font-bold text-white leading-tight">{style.name}</p>
                   <p className="text-[14px] text-[#ccc] mt-0.5 break-keep">{style.desc}</p>
-                  <span className="inline-block mt-2 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
-                    사용 {style.usage}
-                  </span>
+                  {style.active && (
+                    <span className="inline-block mt-2 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
+                      사용 {usageCounts === null ? "..." : formatCount(usageCounts[style.id] ?? 0)}
+                    </span>
+                  )}
                 </div>
 
                 {/* Tag pill */}
