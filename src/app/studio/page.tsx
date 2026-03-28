@@ -115,8 +115,14 @@ export default function Studio() {
   useEffect(() => {
     fetch("/api/usage")
       .then((r) => r.json())
-      .then((data) => setUsageCounts(data.counts ?? {}))
-      .catch(() => setUsageCounts({}));
+      .then((data) => {
+        if (data.error) console.error("[usage] API error:", data.error);
+        setUsageCounts(data.counts ?? {});
+      })
+      .catch((e) => {
+        console.error("[usage] fetch error:", e);
+        setUsageCounts({});
+      });
   }, []);
 
   const showToast = useCallback((message: string) => {

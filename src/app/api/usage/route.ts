@@ -11,7 +11,11 @@ export async function GET() {
     .from("style_usage")
     .select("style_id");
 
-  if (error || !data) {
+  if (error) {
+    console.error("[usage] Supabase error:", error.message);
+    return NextResponse.json({ counts: {}, error: error.message });
+  }
+  if (!data) {
     return NextResponse.json({ counts: {} });
   }
 

@@ -64,7 +64,7 @@ export default function Home() {
             </svg>
           </div>
           <span className="text-[12px] text-[#555] leading-relaxed">
-            업로드된 사진은 서버에 저장되지 않으며, AI 처리 후 즉시 삭제됩니다.
+            <Link href="/terms" className="text-[#777] underline underline-offset-2">이용약관</Link> 및 <Link href="/privacy" className="text-[#777] underline underline-offset-2">개인정보처리방침</Link>에 동의하며, 업로드된 사진은 AI 처리 후 즉시 삭제됩니다.
           </span>
         </label>
 
