@@ -35,6 +35,18 @@ const STYLES = [
     active: true,
   },
   {
+    id: "grab-selfie",
+    name: "그랩 셀카",
+    desc: "베트남 오토바이 위에서 찍은 여행 셀카 무드",
+    usage: "0",
+    bgImage: null,
+    beforeImg: null,
+    afterImg: null,
+    bgColor: "#0e2a1a",
+    tag: "무료",
+    active: true,
+  },
+  {
     id: "film-vintage",
     name: "필름 감성",
     desc: "Kodak 필름 특유의 따뜻한 grain 감성",
