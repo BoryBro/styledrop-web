@@ -121,16 +121,6 @@ export default function Result() {
     }
   };
 
-  const handleDownload = () => {
-    if (!resultImage) return;
-    const a = document.createElement("a");
-    a.href = resultImage;
-    a.download = `styledrop_${selectedStyle}_${Date.now()}.jpg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
   const handleKakaoShare = async () => {
     if (!resultImage || !imageBase64) return;
     setShowFallback(false);
@@ -181,6 +171,29 @@ export default function Result() {
       setShowFallback(true);
     }
   };
+
+  // 결과 준비되면 백그라운드에서 share URL 미리 업로드
+  useEffect(() => {
+    if (status !== "done" || !resultImage || !imageBase64) return;
+    const cached = shareUrl || sessionStorage.getItem("sd_shareUrl");
+    if (cached) return;
+    const base64 = resultImage.split(",")[1];
+    fetch("/api/share", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ beforeBase64: imageBase64, afterBase64: base64 }),
+    })
+      .then((r) => r.json())
+      .then(({ id, url }) => {
+        if (!id || !url) return;
+        const link = `${window.location.origin}/share?id=${id}`;
+        setShareUrl(url);
+        setShareLink(link);
+        sessionStorage.setItem("sd_shareUrl", url);
+        sessionStorage.setItem("sd_shareLink", link);
+      })
+      .catch(() => {/* 백그라운드 실패 — 공유 시점에 재시도 */});
+  }, [status, resultImage, imageBase64, shareUrl]);
 
   // 문제 4: 링크 복사 폴백
   const handleCopyLink = async () => {
@@ -285,11 +298,8 @@ export default function Result() {
               </button>
             )}
 
-            <button onClick={handleDownload} className="w-full py-3 text-sm text-[#555] hover:text-white transition-colors">
-              다운로드
-            </button>
-            <button onClick={() => router.push("/studio")} className="w-full py-3 text-sm text-[#555] hover:text-white transition-colors">
-              다시 하기 →
+            <button onClick={() => router.push("/studio")} className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
+              <span>🔄</span><span>다시 하기</span>
             </button>
           </div>
         )}
