@@ -144,8 +144,8 @@ export default function Result() {
         imgUrl = url;
         setShareUrl(imgUrl);
         setShareLink(link);
-        sessionStorage.setItem("sd_shareUrl", imgUrl);
-        sessionStorage.setItem("sd_shareLink", link);
+        sessionStorage.setItem("sd_shareUrl", imgUrl!);
+        sessionStorage.setItem("sd_shareLink", link!);
       }
 
       // 문제 2: SDK 준비 확인
