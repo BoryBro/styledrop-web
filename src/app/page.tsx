@@ -13,21 +13,67 @@ interface KakaoSDK {
 const STYLES = [
   {
     id: "flash-selfie",
-    name: "플래시 필터(무료)",
-    desc: "아날로그 플래시 샷을 적용한 필터",
+    name: "플래시 필터",
+    desc: "아이폰 플래시 특유의 선명하고 밝은 감성",
+    usage: "12.3K",
+    bgImage: "/thumbnails/flash-after.jpg",
     beforeImg: "/thumbnails/flash-before.jpg",
     afterImg: "/thumbnails/flash-after.jpg",
-    goodExample: "/examples/flash-good.jpg",
-    badExample: "/examples/flash-bad.jpg",
+    bgColor: "#1a1010",
+    tag: "무료",
+    active: true,
   },
   {
     id: "4k-upscale",
-    name: "4K 업스케일링(무료)",
-    desc: "초고해상도 디테일 복원 및 화질 개선",
+    name: "4K 업스케일링",
+    desc: "저화질 사진도 고해상도로 선명하게 복원",
+    usage: "8.7K",
+    bgImage: "/thumbnails/4k-after.jpg",
     beforeImg: "/thumbnails/4k-before.jpg",
     afterImg: "/thumbnails/4k-after.jpg",
-    goodExample: "/examples/4k-good.jpg",
-    badExample: "/examples/4k-bad.jpg",
+    bgColor: "#0e1a1a",
+    tag: "무료",
+    active: true,
+  },
+  {
+    id: "film-vintage",
+    name: "필름 감성",
+    desc: "Kodak 필름 특유의 따뜻한 grain 감성",
+    usage: "34.1K",
+    bgImage: null,
+    bgColor: "#2a1a0e",
+    tag: "준비중",
+    active: false,
+  },
+  {
+    id: "ghibli",
+    name: "지브리 변환",
+    desc: "스튜디오 지브리 애니메이션 화풍으로 변환",
+    usage: "51.2K",
+    bgImage: null,
+    bgColor: "#0e1f2a",
+    tag: "준비중",
+    active: false,
+  },
+  {
+    id: "id-photo",
+    name: "AI 증명사진",
+    desc: "깔끔한 배경의 고품질 증명사진 자동 생성",
+    usage: "28.9K",
+    bgImage: null,
+    bgColor: "#1a1a2a",
+    tag: "준비중",
+    active: false,
+  },
+  {
+    id: "night-city",
+    name: "야경 감성",
+    desc: "보케 빛망울과 함께하는 도시 야경 분위기",
+    usage: "19.4K",
+    bgImage: null,
+    bgColor: "#0a0a1a",
+    tag: "준비중",
+    active: false,
   },
 ];
 
@@ -59,8 +105,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [isAgreed, setIsAgreed] = useState(false);
-  // Per-card toggle: true = show After, false = show Before
-  const [showAfter, setShowAfter] = useState<Record<string, boolean>>({});
   const [toasts, setToasts] = useState<Toast[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toastIdRef = useRef(0);
@@ -74,11 +118,6 @@ export default function Home() {
   const dismissToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
-
-  const toggleCardImg = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowAfter(prev => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -268,60 +307,75 @@ export default function Home() {
       {/* Spacer for fixed header */}
       <div className="h-14" />
 
-      <section className="mb-8">
-        <div className="flex items-baseline gap-3 mb-4">
+      <section className="mb-10">
+        <div className="flex items-baseline gap-3 mb-5">
           <h2 className="text-lg font-bold text-white">스타일 선택</h2>
-          <span className="text-xs text-white/40 font-medium">원하는 느낌의 스타일 카드를 선택해주세요.</span>
+          <span className="text-xs text-white/40 font-medium">원하는 스타일을 선택하고 사진을 업로드하세요</span>
         </div>
-        {/* Horizontal snap carousel — padding matches parent px-4/sm:px-6 */}
-        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2">
-          {STYLES.map((style) => {
-            const isAfter = showAfter[style.id] ?? false;
-            return (
-              <button
-                key={style.id}
-                onClick={() => setSelectedStyle(style.id === selectedStyle ? null : style.id)}
-                className={`snap-start flex-shrink-0 w-[85vw] max-w-sm rounded-2xl flex flex-col text-left transition-all duration-300 border-2 overflow-hidden ${selectedStyle === style.id
-                  ? "border-point bg-card/80 shadow-[0_4px_20px_rgb(201,87,26,0.2)]"
-                  : "border-transparent bg-card"
-                  }`}
-              >
-                {/* Click-toggle thumbnail */}
-                <div
-                  className="relative w-full aspect-[4/3] bg-white/5 overflow-hidden cursor-pointer"
-                  onClick={(e) => toggleCardImg(style.id, e)}
-                >
+        <div className="flex flex-col gap-3">
+          {STYLES.map((style) => (
+            <button
+              key={style.id}
+              onClick={() => {
+                if (!style.active) return;
+                setSelectedStyle(style.id);
+                fileInputRef.current?.click();
+              }}
+              className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden text-left transition-all duration-300 border-2 ${
+                selectedStyle === style.id
+                  ? "border-point shadow-[0_4px_24px_rgb(201,87,26,0.3)]"
+                  : "border-transparent"
+              } ${!style.active ? "cursor-default" : "cursor-pointer"}`}
+              style={{ backgroundColor: style.bgColor }}
+            >
+              {/* Split before/after for cards with images */}
+              {"beforeImg" in style && style.beforeImg && style.afterImg ? (
+                <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={isAfter ? style.afterImg : style.beforeImg}
-                    alt={isAfter ? 'after' : 'before'}
-                    className="w-full h-full object-cover transition-opacity duration-300"
-                    draggable={false}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
-                  {/* Badge */}
-                  <span className={`absolute top-2.5 left-2.5 text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm shadow-md ${isAfter
-                    ? 'bg-point text-white'
-                    : 'bg-black/70 text-white'
-                    }`}>
-                    {isAfter ? 'AFTER' : 'BEFORE'}
-                  </span>
-                  {/* Tap hint */}
-                  <span className="absolute bottom-2.5 right-2.5 text-[11px] font-bold text-white bg-point/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-md">
-                    탭하면 {isAfter ? 'BEFORE' : 'AFTER'} →
-                  </span>
+                  <img src={style.beforeImg} alt="before" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={style.afterImg} alt="after" className="absolute inset-0 w-full h-full object-cover" style={{ animation: "split-clip 4s ease-in-out infinite" }} draggable={false} />
+                  {/* Divider line + handle */}
+                  <div className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_10px_rgba(255,255,255,0.6)]" style={{ animation: "split-line 4s ease-in-out infinite" }}>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white shadow-lg flex items-center justify-center">
+                      <svg width="14" height="10" viewBox="0 0 20 10" fill="none">
+                        <path d="M1 5H19M1 5L5 2M1 5L5 8M19 5L15 2M19 5L15 8" stroke="#555" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </div>
+                </>
+              ) : style.bgImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={style.bgImage} alt={style.name} className="absolute inset-0 w-full h-full object-cover" draggable={false} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              ) : null}
+              {/* Coming soon dim overlay */}
+              {!style.active && (
+                <div className="absolute inset-0 bg-black/50" />
+              )}
+              {/* Bottom gradient */}
+              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+              {/* Bottom left: name + desc + usage */}
+              <div className="absolute bottom-0 left-0 p-5">
+                <p className="text-[24px] font-bold text-white leading-tight">{style.name}</p>
+                <p className="text-[14px] text-[#ccc] mt-0.5 break-keep">{style.desc}</p>
+                <span className="inline-block mt-2 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">사용 {style.usage}</span>
+              </div>
+              {/* Tag pill — top left */}
+              <div className="absolute top-4 left-4">
+                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                  style.tag === "무료" ? "bg-point text-white" : "bg-[#444] text-[#888]"
+                }`}>{style.tag}</span>
+              </div>
+              {/* Selected check — top right */}
+              {selectedStyle === style.id && (
+                <div className="absolute top-4 right-4 w-7 h-7 rounded-full bg-point flex items-center justify-center shadow-md">
+                  <svg width="13" height="10" viewBox="0 0 14 10" fill="none">
+                    <path d="M1 5L4.5 8.5L13 1" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
-                <div className="p-4 flex flex-col justify-end">
-                  <h3 className={`text-base md:text-lg font-bold mb-1.5 transition-colors ${selectedStyle === style.id ? "text-point" : "text-white"}`}>
-                    {style.name}
-                  </h3>
-                  <p className="text-xs text-foreground/60 leading-relaxed font-medium break-keep">
-                    {style.desc}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
+              )}
+            </button>
+          ))}
         </div>
       </section>
 
@@ -377,7 +431,7 @@ export default function Home() {
         ) : (
           <div
             onClick={isLoading ? undefined : handleUploadClick}
-            className={`w-full aspect-[4/3] sm:aspect-video rounded-2xl border-2 border-dashed bg-card flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden group ${isLoading ? 'border-point/30 cursor-not-allowed' : 'border-white/20 hover:border-point/50'}`}
+            className={`w-full aspect-[4/3] sm:aspect-video rounded-2xl border-2 border-dashed bg-card flex flex-col items-center justify-center cursor-pointer transition-colors relative overflow-hidden group ${isLoading ? 'border-point/30 cursor-not-allowed' : 'border-[#333] hover:border-point/50'}`}
           >
             {/* Glassmorphism loading overlay */}
             {isLoading && (
@@ -420,15 +474,15 @@ export default function Home() {
               </>
             ) : (
               <div className="text-center p-6 flex flex-col items-center">
-                <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center mb-4 text-white/40 group-hover:text-point transition-colors group-hover:bg-point/10">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3 text-white/40 group-hover:text-point transition-colors group-hover:bg-point/10">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                     <polyline points="17 8 12 3 7 8" />
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
                 </div>
-                <p className="text-white/80 font-medium text-lg">사진 업로드 및 촬영</p>
-                <p className="text-sm text-white/40 mt-2">클릭하여 파일 선택 (JPG, PNG)</p>
+                <p className="text-white/80 font-medium text-base">사진을 여기에 드래그하거나 클릭해서 선택</p>
+                <p className="text-[0.75rem] text-[#555] mt-2">JPG, PNG · 최대 10MB</p>
               </div>
             )}
             <input
