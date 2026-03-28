@@ -151,6 +151,9 @@ export default function Studio() {
       sessionStorage.setItem("sd_styleId", styleId);
       sessionStorage.setItem("sd_imageBase64", base64);
       sessionStorage.setItem("sd_previewDataUrl", dataUrl);
+      sessionStorage.removeItem("sd_resultDataUrl");
+      sessionStorage.removeItem("sd_shareUrl");
+      sessionStorage.removeItem("sd_shareLink");
 
       router.push("/result");
     };

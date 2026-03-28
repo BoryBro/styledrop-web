@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -18,7 +18,16 @@ export default function Result() {
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [showFallback, setShowFallback] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const router = useRouter();
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }, []);
 
   useEffect(() => {
     const styleId = sessionStorage.getItem("sd_styleId");
@@ -34,6 +43,19 @@ export default function Result() {
     setImageBase64(base64);
     setPreviewDataUrl(preview);
 
+    // 문제 1: 카카오앱 복귀 시 캐시된 결과 복원 (API 재호출 방지)
+    const cachedResult = sessionStorage.getItem("sd_resultDataUrl");
+    const cachedShareUrl = sessionStorage.getItem("sd_shareUrl");
+    const cachedShareLink = sessionStorage.getItem("sd_shareLink");
+
+    if (cachedResult) {
+      setResultImage(cachedResult);
+      if (cachedShareUrl) setShareUrl(cachedShareUrl);
+      if (cachedShareLink) setShareLink(cachedShareLink);
+      setStatus("done");
+      return;
+    }
+
     fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -42,7 +64,9 @@ export default function Result() {
       .then((res) => res.json())
       .then((data) => {
         if (data.image) {
-          setResultImage(`data:image/jpeg;base64,${data.image}`);
+          const dataUrl = `data:image/jpeg;base64,${data.image}`;
+          setResultImage(dataUrl);
+          sessionStorage.setItem("sd_resultDataUrl", dataUrl);
           setStatus("done");
         } else {
           setStatus("error");
@@ -50,6 +74,21 @@ export default function Result() {
       })
       .catch(() => setStatus("error"));
   }, [router]);
+
+  // 문제 1: visibilitychange — 카카오앱에서 복귀 시 결과 유지
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        const cached = sessionStorage.getItem("sd_resultDataUrl");
+        if (cached && status !== "done") {
+          setResultImage(cached);
+          setStatus("done");
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [status]);
 
   const handleSaveToAlbum = async () => {
     if (!resultImage) return;
@@ -86,35 +125,77 @@ export default function Result() {
 
   const handleKakaoShare = async () => {
     if (!resultImage || !imageBase64) return;
+    setShowFallback(false);
     try {
-      const base64 = resultImage.split(",")[1];
-      const response = await fetch("/api/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ beforeBase64: imageBase64, afterBase64: base64 }),
-      });
-      if (!response.ok) throw new Error("공유 이미지 업로드 실패");
-      const { id, url } = await response.json();
-      const shareLink = `${window.location.origin}/share?id=${id}`;
+      // 문제 3: 이미 업로드된 URL 재사용 (중복 업로드 방지)
+      let imgUrl = shareUrl || sessionStorage.getItem("sd_shareUrl");
+      let link = shareLink || sessionStorage.getItem("sd_shareLink");
+
+      if (!imgUrl || !link) {
+        const base64 = resultImage.split(",")[1];
+        const response = await fetch("/api/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ beforeBase64: imageBase64, afterBase64: base64 }),
+        });
+        if (!response.ok) throw new Error("업로드 실패");
+        const { id, url } = await response.json();
+        link = `${window.location.origin}/share?id=${id}`;
+        imgUrl = url;
+        setShareUrl(imgUrl);
+        setShareLink(link);
+        sessionStorage.setItem("sd_shareUrl", imgUrl);
+        sessionStorage.setItem("sd_shareLink", link);
+      }
+
+      // 문제 2: SDK 준비 확인
       const kakao = (window as Window & { Kakao?: KakaoSDK }).Kakao;
-      if (!kakao) return;
+      if (!kakao) {
+        showToast("카카오 SDK 로딩 중이에요. 잠시 후 다시 시도해주세요.");
+        setShowFallback(true);
+        return;
+      }
       if (!kakao.isInitialized()) kakao.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY!);
+
+      // 문제 3: payload 최소화 (10KB 이하 유지)
       kakao.Share.sendDefault({
         objectType: "feed",
         content: {
-          title: "StyleDrop으로 변환한 사진",
-          description: "AI가 새롭게 바꿔준 제 사진 어때요?",
-          imageUrl: url,
-          link: { mobileWebUrl: shareLink, webUrl: shareLink },
+          title: "AI가 바꿔준 내 사진",
+          description: "StyleDrop으로 변환했어요",
+          imageUrl: imgUrl,
+          link: { mobileWebUrl: link, webUrl: link },
         },
       });
     } catch (e) {
       console.error("카카오 공유 실패:", e);
+      // 문제 4: 폴백 처리
+      setShowFallback(true);
+    }
+  };
+
+  // 문제 4: 링크 복사 폴백
+  const handleCopyLink = async () => {
+    const link = shareLink || sessionStorage.getItem("sd_shareLink") || window.location.href;
+    try {
+      await navigator.clipboard.writeText(link);
+      showToast("링크가 복사됐어요!");
+    } catch {
+      showToast("복사에 실패했어요.");
     }
   };
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-4 left-0 right-0 z-[100] flex justify-center px-4 pointer-events-none">
+          <div className="bg-[#1A1A1A] border border-white/10 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-xl">
+            {toast}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center px-4 sticky top-0 z-40">
         <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
@@ -146,10 +227,7 @@ export default function Result() {
           <div className="flex-1 flex items-center justify-center">
             <div className="flex flex-col items-center gap-6 text-center">
               <p className="text-white/60 text-base">변환에 실패했어요. 다시 시도해주세요.</p>
-              <button
-                onClick={() => router.push("/studio")}
-                className="text-[#666] text-sm hover:text-white transition-colors"
-              >
+              <button onClick={() => router.push("/studio")} className="text-[#666] text-sm hover:text-white transition-colors">
                 다시 하기
               </button>
             </div>
@@ -179,7 +257,7 @@ export default function Result() {
                 onClick={handleSaveToAlbum}
                 className="flex-1 bg-[#C9571A] hover:bg-[#B34A12] text-white py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
               >
-                <span>📥</span><span>결과 이미지 저장</span>
+                <span>📥</span><span>이미지 저장</span>
               </button>
               <button
                 onClick={handleKakaoShare}
@@ -189,17 +267,20 @@ export default function Result() {
               </button>
             </div>
 
-            <button
-              onClick={handleDownload}
-              className="w-full py-3 text-sm text-[#555] hover:text-white transition-colors"
-            >
+            {/* 문제 4: 폴백 버튼 */}
+            {showFallback && (
+              <button
+                onClick={handleCopyLink}
+                className="w-full py-3 text-sm text-[#888] border border-white/10 rounded-xl hover:text-white hover:border-white/20 transition-colors"
+              >
+                🔗 링크 복사하기
+              </button>
+            )}
+
+            <button onClick={handleDownload} className="w-full py-3 text-sm text-[#555] hover:text-white transition-colors">
               다운로드
             </button>
-
-            <button
-              onClick={() => router.push("/studio")}
-              className="w-full py-3 text-sm text-[#555] hover:text-white transition-colors"
-            >
+            <button onClick={() => router.push("/studio")} className="w-full py-3 text-sm text-[#555] hover:text-white transition-colors">
               다시 하기 →
             </button>
           </div>
