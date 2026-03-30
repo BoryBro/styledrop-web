@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   if (!checkRateLimit(rateLimitKey, limit)) {
     const error = session
       ? "오늘 사용량을 모두 소진했습니다. 내일 다시 이용해주세요!"
-      : "무료 체험 3회를 모두 사용했습니다. 로그인하면 더 많이 사용할 수 있어요!";
+      : "무료 체험이 끝났습니다. 카카오 로그인하면 하루 10회까지 무료로 이용할 수 있어요!";
     return NextResponse.json({ error }, { status: 429 });
   }
 

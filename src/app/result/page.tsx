@@ -260,8 +260,10 @@ export default function Result() {
         <div className="flex items-center gap-2.5">
           <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
           {remaining !== null && (
-            <span className={`text-[12px] px-2.5 py-1 rounded-full bg-[#1A1A1A] ${remaining === 0 ? "text-[#ff4444]" : "text-[#999]"}`}>
-              {remaining}회 남음
+            <span className={`text-[12px] px-2.5 py-1 rounded-full bg-[#1A1A1A] ${
+              remaining === 0 && !user ? "text-[#FEE500]" : remaining === 0 ? "text-[#ff4444]" : "text-[#999]"
+            }`}>
+              {remaining === 0 && !user ? "로그인 필요" : `${remaining}회 남음`}
             </span>
           )}
         </div>
@@ -306,21 +308,35 @@ export default function Result() {
         {/* Error */}
         {status === "error" && (
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4 text-center max-w-xs">
-              <p className="text-white/70 text-base">
-                {errorMessage ?? "변환에 실패했어요. 다시 시도해주세요."}
-              </p>
-              {isRateLimited && !user && (
-                <button
-                  onClick={login}
-                  className="bg-[#FEE500] text-[#3C1E1E] font-bold px-5 py-3 rounded-xl w-full text-[15px]"
-                >
-                  카카오로 로그인하기
-                </button>
+            <div className="flex flex-col items-center text-center max-w-xs w-full gap-3">
+              {isRateLimited && !user ? (
+                <>
+                  <span className="text-[40px]">🔒</span>
+                  <p className="text-white font-bold text-[18px] mt-1">무료 체험이 끝났어요</p>
+                  <p className="text-[#999] text-[14px] leading-relaxed">
+                    {errorMessage ?? "카카오 로그인하면 하루 10회까지\n무료로 이용할 수 있어요!"}
+                  </p>
+                  <button
+                    onClick={() => { window.location.href = "/api/auth/kakao"; }}
+                    className="bg-[#FEE500] text-[#3C1E1E] font-bold text-[15px] w-full py-4 rounded-xl flex items-center justify-center gap-2 mt-1"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
+                    </svg>
+                    카카오로 로그인하고 계속하기
+                  </button>
+                  <p className="text-[12px] text-[#666]">로그인하면 하루 10회 무료 + 변환 기록 저장</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-white/70 text-base">
+                    {errorMessage ?? "변환에 실패했어요. 다시 시도해주세요."}
+                  </p>
+                  <button onClick={() => router.push("/studio")} className="text-[#666] text-sm hover:text-white transition-colors">
+                    다시 하기
+                  </button>
+                </>
               )}
-              <button onClick={() => router.push("/studio")} className="text-[#666] text-sm hover:text-white transition-colors">
-                다시 하기
-              </button>
             </div>
           </div>
         )}

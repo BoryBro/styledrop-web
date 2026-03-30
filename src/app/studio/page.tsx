@@ -126,6 +126,7 @@ export default function Studio() {
   const router = useRouter();
   const { user, loading, login } = useAuth();
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
@@ -153,6 +154,10 @@ export default function Studio() {
   const handleCardClick = (style: typeof STYLES[0]) => {
     if (!style.active) {
       showToast("곧 출시됩니다 ✨");
+      return;
+    }
+    if (remaining === 0 && !user) {
+      setShowLoginModal(true);
       return;
     }
     setSelectedStyle(style.id);
@@ -209,8 +214,10 @@ export default function Studio() {
           <div className="flex items-center gap-2.5">
             <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
             {remaining !== null && (
-              <span className={`text-[12px] px-2.5 py-1 rounded-full bg-[#1A1A1A] ${remaining === 0 ? "text-[#ff4444]" : "text-[#999]"}`}>
-                {remaining}회 남음
+              <span className={`text-[12px] px-2.5 py-1 rounded-full bg-[#1A1A1A] ${
+                remaining === 0 && !user ? "text-[#FEE500]" : remaining === 0 ? "text-[#ff4444]" : "text-[#999]"
+              }`}>
+                {remaining === 0 && !user ? "로그인 필요" : `${remaining}회 남음`}
               </span>
             )}
           </div>
@@ -331,6 +338,29 @@ export default function Studio() {
           </p>
         </footer>
       </div>
+
+      {/* 로그인 유도 모달 */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => setShowLoginModal(false)}>
+          <div className="bg-[#1A1A1A] rounded-2xl p-6 max-w-sm mx-4 border border-[#333] text-center w-full" onClick={e => e.stopPropagation()}>
+            <p className="text-[40px]">🔒</p>
+            <p className="text-[18px] font-bold text-white mt-3">무료 체험이 끝났어요</p>
+            <p className="text-[14px] text-[#999] mt-2 whitespace-pre-line leading-relaxed">{`카카오 로그인하면 하루 10회까지\n무료로 이용할 수 있어요!`}</p>
+            <button
+              onClick={() => { window.location.href = "/api/auth/kakao"; }}
+              className="bg-[#FEE500] text-[#3C1E1E] font-bold text-[15px] w-full py-4 rounded-xl mt-4 flex items-center justify-center gap-2"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
+              </svg>
+              카카오로 로그인하기
+            </button>
+            <button onClick={() => setShowLoginModal(false)} className="text-[13px] text-[#555] mt-3 hover:text-[#888] transition-colors">
+              다음에 할게요
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
