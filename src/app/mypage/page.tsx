@@ -29,6 +29,13 @@ function relativeTime(iso: string): string {
   return `${days}일 전`;
 }
 
+function expiryBadge(iso: string): { label: string; className: string } {
+  const hoursLeft = (new Date(iso).getTime() + 3 * 24 * 3600000 - Date.now()) / 3600000;
+  if (hoursLeft < 24) return { label: "오늘 삭제", className: "bg-red-500/20 text-red-400" };
+  if (hoursLeft < 48) return { label: "내일 삭제", className: "bg-yellow-500/20 text-yellow-400" };
+  return { label: "2일 후 삭제", className: "bg-white/5 text-white/30" };
+}
+
 export default function MyPage() {
   const { user, loading, logout } = useAuth();
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -136,7 +143,12 @@ export default function MyPage() {
                         <p className="text-white font-semibold text-[15px]">
                           {STYLE_LABELS[item.style_id] ?? item.style_id}
                         </p>
-                        <p className="text-[#555] text-[13px] mt-1">{relativeTime(item.created_at)}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-[#555] text-[13px]">{relativeTime(item.created_at)}</p>
+                          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${expiryBadge(item.created_at).className}`}>
+                            {expiryBadge(item.created_at).label}
+                          </span>
+                        </div>
                       </div>
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-white/20">
                         <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
