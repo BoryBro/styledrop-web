@@ -36,6 +36,20 @@ const STYLES = [
     active: true,
   },
   {
+    id: "voxel-character",
+    name: "복셀 캐릭터",
+    desc: "사진 속 나를 블록으로 만든 3D 캐릭터로 변환",
+    usage: "0",
+    bgImage: null,
+    beforeImg: null,
+    afterImg: null,
+    bgColor: "#0a1a2a",
+    tag: "무료",
+    active: true,
+    hidden: false,
+  },
+  // 4K 업스케일링 — 데이터 보존, 화면 미표시
+  {
     id: "4k-upscale",
     name: "4K 업스케일링",
     desc: "저화질 사진도 고해상도로 선명하게 복원",
@@ -46,6 +60,7 @@ const STYLES = [
     bgColor: "#0e1a1a",
     tag: "무료",
     active: true,
+    hidden: true,
   },
   {
     id: "film-vintage",
@@ -243,7 +258,7 @@ export default function Studio() {
           <p className="text-[14px] text-[#666] mb-6">원하는 스타일을 선택하면 사진 앨범이 열립니다</p>
 
           <div className="flex flex-col gap-3">
-            {STYLES.map((style) => (
+            {STYLES.filter(s => !s.hidden).map((style) => (
               <button
                 key={style.id}
                 onClick={() => handleCardClick(style)}

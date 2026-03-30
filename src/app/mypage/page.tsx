@@ -8,10 +8,11 @@ import { useAuth } from "@/hooks/useAuth";
 const STYLE_LABELS: Record<string, string> = {
   "flash-selfie": "플래시 필터",
   "grab-selfie": "그랩 셀카",
+  "voxel-character": "복셀 캐릭터",
   "4k-upscale": "4K 업스케일링",
 };
 
-const STYLE_ORDER = ["flash-selfie", "grab-selfie", "4k-upscale"];
+const STYLE_ORDER = ["flash-selfie", "grab-selfie", "voxel-character", "4k-upscale"];
 
 type HistoryItem = {
   id: string;
