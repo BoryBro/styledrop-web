@@ -1,15 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkRateLimit, GUEST_LIMIT, USER_LIMIT } from "@/lib/rate-limit";
-
-function getIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
+import {
+  GUEST_LIMIT, USER_LIMIT, WINDOW_MS,
+  GUEST_COOKIE, USER_COOKIE,
+  parseLimitCookie, encodeLimitCookie,
+} from "@/lib/rate-limit";
 
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
   try {
@@ -38,16 +34,35 @@ const STYLE_PROMPTS: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   const session = parseSession(request);
-  const ip = getIp(request);
-  const rateLimitKey = session ? "user:" + session.id : ip;
+  const cookieName = session ? USER_COOKIE : GUEST_COOKIE;
   const limit = session ? USER_LIMIT : GUEST_LIMIT;
+  const now = Date.now();
 
-  if (!checkRateLimit(rateLimitKey, limit)) {
+  const raw = request.cookies.get(cookieName)?.value;
+  const data = parseLimitCookie(raw);
+  let count = 0;
+  let resetAt = now + WINDOW_MS;
+  if (data && now < data.resetAt) {
+    count = data.count;
+    resetAt = data.resetAt;
+  }
+
+  if (count >= limit) {
     const error = session
       ? "오늘 사용량을 모두 소진했습니다. 내일 다시 이용해주세요!"
       : "무료 체험이 끝났습니다. 카카오 로그인하면 하루 10회까지 무료로 이용할 수 있어요!";
     return NextResponse.json({ error }, { status: 429 });
   }
+
+  const newCount = count + 1;
+  const cookieValue = encodeLimitCookie({ count: newCount, resetAt });
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: Math.ceil((resetAt - now) / 1000),
+  };
 
   try {
     const { style, imageBase64, mimeType } = await request.json();
@@ -97,11 +112,13 @@ export async function POST(request: NextRequest) {
           console.error("[Supabase] unexpected error:", err);
         }
 
-        return NextResponse.json({
+        const res = NextResponse.json({
           image: part.inlineData.data,
           mimeType: part.inlineData.mimeType,
           shouldSaveHistory: !!session,
         });
+        res.cookies.set(cookieName, cookieValue, cookieOptions);
+        return res;
       }
     }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRemainingCount, GUEST_LIMIT, USER_LIMIT } from "@/lib/rate-limit";
+import { GUEST_LIMIT, USER_LIMIT, GUEST_COOKIE, USER_COOKIE, getRemaining } from "@/lib/rate-limit";
 
 function parseSession(req: NextRequest): { id: string } | null {
   try {
@@ -9,18 +9,11 @@ function parseSession(req: NextRequest): { id: string } | null {
   } catch { return null; }
 }
 
-function getIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
-
 export async function GET(request: NextRequest) {
   const session = parseSession(request);
-  const key = session ? "user:" + session.id : getIp(request);
+  const cookieName = session ? USER_COOKIE : GUEST_COOKIE;
   const limit = session ? USER_LIMIT : GUEST_LIMIT;
-  const remaining = getRemainingCount(key, limit);
+  const raw = request.cookies.get(cookieName)?.value;
+  const remaining = getRemaining(raw, limit);
   return NextResponse.json({ remaining, limit, loggedIn: !!session });
 }
