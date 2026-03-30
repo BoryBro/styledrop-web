@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 type StyleStat = { style_id: string; style_name: string; count: number };
 type Stats = {
@@ -33,6 +33,9 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [fetchedAt, setFetchedAt] = useState<Date | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +49,14 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) setError(data.error || "오류가 발생했습니다.");
-      else setStats(data);
+      else {
+        setStats(data);
+        const now = new Date();
+        setFetchedAt(now);
+        setElapsed(0);
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = setInterval(() => setElapsed(s => s + 1), 1000);
+      }
     } catch {
       setError("요청 중 오류가 발생했습니다.");
     } finally {
@@ -84,9 +94,16 @@ export default function AdminPage() {
     <main className="w-full max-w-lg mx-auto px-4 py-10 flex flex-col gap-8 bg-[#0A0A0A] min-h-screen">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold text-white">Admin</h1>
-        <button onClick={() => { setStats(null); setPassword(""); }} className="text-xs text-white/40 hover:text-white transition-colors">
-          로그아웃
-        </button>
+        <div className="flex items-center gap-3">
+          {fetchedAt && (
+            <span className="text-[10px] text-[#333] font-mono tabular-nums">
+              {fetchedAt.toTimeString().slice(0, 8)} +{elapsed}s
+            </span>
+          )}
+          <button onClick={() => { setStats(null); setPassword(""); if (timerRef.current) clearInterval(timerRef.current); }} className="text-xs text-white/40 hover:text-white transition-colors">
+            로그아웃
+          </button>
+        </div>
       </div>
 
       {/* 핵심 수치 */}
