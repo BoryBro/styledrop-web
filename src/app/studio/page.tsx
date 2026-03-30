@@ -222,9 +222,9 @@ export default function Studio() {
                 {style.beforeImg && style.afterImg ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={style.beforeImg} alt="before" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+                    <img src={style.beforeImg} alt="before" className="absolute inset-0 w-full h-full object-contain" draggable={false} />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={style.afterImg} alt="after" className="absolute inset-0 w-full h-full object-cover" style={{ animation: "split-clip 4s ease-in-out infinite" }} draggable={false} />
+                    <img src={style.afterImg} alt="after" className="absolute inset-0 w-full h-full object-contain" style={{ animation: "split-clip 4s ease-in-out infinite" }} draggable={false} />
                     <div className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_10px_rgba(255,255,255,0.6)]" style={{ animation: "split-line 4s ease-in-out infinite" }}>
                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white shadow-lg flex items-center justify-center">
                         <svg width="14" height="10" viewBox="0 0 20 10" fill="none">
@@ -235,7 +235,7 @@ export default function Studio() {
                   </>
                 ) : style.bgImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={style.bgImage} alt={style.name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+                  <img src={style.bgImage} alt={style.name} className="absolute inset-0 w-full h-full object-contain" draggable={false} />
                 ) : null}
 
                 {/* Coming soon dim */}
