@@ -37,24 +37,31 @@ export async function GET(request: NextRequest) {
 
     if (!kakaoId) throw new Error("유저 정보 없음");
 
-    // 3. Supabase upsert
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_KEY!
-    );
-    const { data: user, error: upsertError } = await supabase
-      .from("users")
-      .upsert({ kakao_id: kakaoId, nickname, profile_image: profileImage, email, last_login_at: new Date().toISOString() }, { onConflict: "kakao_id" })
-      .select("id, nickname, profile_image")
-      .single();
+    // 3. Supabase upsert (실패해도 로그인 진행)
+    let userId = String(kakaoId);
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_KEY!
+      );
+      const { data: user, error: upsertError } = await supabase
+        .from("users")
+        .upsert({ kakao_id: kakaoId, nickname, profile_image: profileImage, email, last_login_at: new Date().toISOString() }, { onConflict: "kakao_id" })
+        .select("id, nickname, profile_image")
+        .single();
 
-    if (upsertError || !user) throw new Error("유저 저장 실패");
+      if (!upsertError && user) {
+        userId = user.id;
+        await supabase.from("user_events").insert({ user_id: user.id, event_type: "login" });
+      } else {
+        console.error("[kakao callback] upsert error:", upsertError);
+      }
+    } catch (dbErr) {
+      console.error("[kakao callback] db error:", dbErr);
+    }
 
-    // 4. 로그인 이벤트 기록
-    await supabase.from("user_events").insert({ user_id: user.id, event_type: "login" });
-
-    // 5. 세션 쿠키 설정 후 /studio로 리다이렉트
-    const session = Buffer.from(JSON.stringify({ id: user.id, nickname: user.nickname, profileImage: user.profile_image })).toString("base64");
+    // 4. 세션 쿠키 설정 후 /studio로 리다이렉트
+    const session = Buffer.from(JSON.stringify({ id: userId, nickname, profileImage })).toString("base64");
     const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/studio`);
     response.cookies.set("sd_session", session, {
       httpOnly: true,

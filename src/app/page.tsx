@@ -77,7 +77,7 @@ export default function Home() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 w-full">
+          <div className="flex flex-col items-center gap-4 w-full">
             {/* 카카오 로그인 버튼 */}
             <button
               onClick={handleKakaoLogin}
@@ -92,7 +92,7 @@ export default function Home() {
             {/* 로그인 없이 시작 */}
             <button
               onClick={handleStart}
-              className="text-[13px] text-[#555] hover:text-white/50 transition-colors"
+              className="w-full h-[52px] bg-[#2A2A2A] hover:bg-[#333] text-white/60 hover:text-white font-bold text-[15px] rounded-full transition-colors"
             >
               로그인 없이 시작하기
             </button>
