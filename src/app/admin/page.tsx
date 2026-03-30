@@ -18,12 +18,33 @@ type Stats = {
   transformEvents: number;
 };
 
-function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+function Row({ label, value, note, highlight }: { label: string; value: string | number; note?: string; highlight?: boolean }) {
   return (
-    <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/10 flex flex-col gap-1">
-      <p className="text-white/40 text-xs font-medium">{label}</p>
-      <p className="text-3xl font-extrabold text-white">{value}</p>
-      {sub && <p className="text-[#555] text-xs">{sub}</p>}
+    <div className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+      <span className="text-[#888] text-sm">{label}</span>
+      <div className="flex items-center gap-2">
+        {note && <span className="text-[#555] text-xs">{note}</span>}
+        <span className={`text-base font-bold tabular-nums ${highlight ? "text-[#C9571A]" : "text-white"}`}>{value}</span>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">{title}</p>
+      <div className="bg-[#111] rounded-2xl px-4 border border-white/5">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Bar({ ratio, color = "#C9571A" }: { ratio: number; color?: string }) {
+  return (
+    <div className="w-full bg-white/5 rounded-full h-1 mt-1">
+      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${ratio}%`, backgroundColor: color }} />
     </div>
   );
 }
@@ -90,95 +111,97 @@ export default function AdminPage() {
     );
   }
 
+  const shareTotal = stats.shareKakao + stats.shareLinkCopy;
+  const shareRatio = stats.total > 0 ? Math.round((shareTotal / stats.total) * 100) : 0;
+
   return (
-    <main className="w-full max-w-lg mx-auto px-4 py-10 flex flex-col gap-8 bg-[#0A0A0A] min-h-screen">
+    <main className="w-full max-w-sm mx-auto px-4 py-10 flex flex-col gap-6 bg-[#0A0A0A] min-h-screen">
+
+      {/* 헤더 */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-white">Admin</h1>
+        <h1 className="text-xl font-extrabold text-white">Admin</h1>
         <div className="flex items-center gap-3">
           {fetchedAt && (
             <span className="text-[10px] text-[#333] font-mono tabular-nums">
               {fetchedAt.toTimeString().slice(0, 8)} +{elapsed}s
             </span>
           )}
-          <button onClick={() => { setStats(null); setPassword(""); if (timerRef.current) clearInterval(timerRef.current); }} className="text-xs text-white/40 hover:text-white transition-colors">
+          <button
+            onClick={() => { setStats(null); setPassword(""); if (timerRef.current) clearInterval(timerRef.current); }}
+            className="text-xs text-[#444] hover:text-white transition-colors"
+          >
             로그아웃
           </button>
         </div>
       </div>
 
-      {/* 핵심 수치 */}
-      <div>
-        <p className="text-white/40 text-xs font-medium mb-3 px-1">전체 사용 현황</p>
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard label="전체 변환 수" value={stats.total} />
-          <StatCard label="오늘 변환 수" value={stats.todayTotal} />
-          <StatCard label="가입 유저 수" value={stats.totalUsers} />
-          <StatCard label="재방문 수" value={stats.revisit} />
-        </div>
-      </div>
+      {/* 사용 현황 */}
+      <Section title="사용 현황">
+        <Row label="누적 변환" value={`${stats.total}회`} highlight />
+        <Row label="오늘 변환" value={`${stats.todayTotal}회`} />
+        <Row label="가입 유저" value={`${stats.totalUsers}명`} />
+        <Row label="재방문" value={`${stats.revisit}회`} />
+      </Section>
 
-      {/* 회원 / 비회원 비율 */}
-      <div>
-        <p className="text-white/40 text-xs font-medium mb-3 px-1">회원 vs 비회원</p>
-        <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/10 flex flex-col gap-4">
-          <div className="flex justify-between text-sm">
-            <span className="text-white/60">로그인 유저</span>
-            <span className="text-white font-bold">{stats.userCount}회 ({stats.userRatio}%)</span>
+      {/* 회원 vs 비회원 */}
+      <Section title="로그인 vs 게스트 (변환 횟수 기준)">
+        <div className="py-3 border-b border-white/5">
+          <div className="flex items-center justify-between">
+            <span className="text-[#888] text-sm">로그인 유저</span>
+            <span className="text-white font-bold">{stats.userCount}회 <span className="text-[#C9571A]">{stats.userRatio}%</span></span>
           </div>
-          <div className="w-full bg-white/5 rounded-full h-2">
-            <div className="bg-[#C9571A] h-2 rounded-full transition-all" style={{ width: `${stats.userRatio}%` }} />
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-white/60">비로그인 (게스트)</span>
-            <span className="text-white font-bold">{stats.guestCount}회 ({stats.guestRatio}%)</span>
-          </div>
-          <div className="w-full bg-white/5 rounded-full h-2">
-            <div className="bg-white/30 h-2 rounded-full transition-all" style={{ width: `${stats.guestRatio}%` }} />
-          </div>
+          <Bar ratio={stats.userRatio} />
         </div>
-      </div>
+        <div className="py-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[#888] text-sm">비로그인 게스트</span>
+            <span className="text-white font-bold">{stats.guestCount}회 <span className="text-[#555]">{stats.guestRatio}%</span></span>
+          </div>
+          <Bar ratio={stats.guestRatio} color="#555" />
+        </div>
+      </Section>
 
-      {/* 공유 / 바이럴 */}
-      <div>
-        <p className="text-white/40 text-xs font-medium mb-3 px-1">공유 & 바이럴</p>
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard
-            label="카카오 공유"
-            value={stats.shareKakao}
-            sub={stats.total > 0 ? `변환 대비 ${Math.round((stats.shareKakao / stats.total) * 100)}%` : undefined}
-          />
-          <StatCard
-            label="링크 복사"
-            value={stats.shareLinkCopy}
-            sub={stats.total > 0 ? `변환 대비 ${Math.round((stats.shareLinkCopy / stats.total) * 100)}%` : undefined}
-          />
+      {/* 공유 & 바이럴 */}
+      <Section title="공유 & 바이럴">
+        <Row
+          label="카카오톡 공유"
+          value={`${stats.shareKakao}회`}
+          note={stats.total > 0 ? `변환의 ${Math.round((stats.shareKakao / stats.total) * 100)}%` : undefined}
+        />
+        <Row
+          label="링크 복사"
+          value={`${stats.shareLinkCopy}회`}
+          note={stats.total > 0 ? `변환의 ${Math.round((stats.shareLinkCopy / stats.total) * 100)}%` : undefined}
+        />
+        <div className="py-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[#888] text-sm">공유 전환율</span>
+            <span className="text-white font-bold">{shareTotal}회 <span className="text-[#C9571A]">{shareRatio}%</span></span>
+          </div>
+          <Bar ratio={shareRatio} />
         </div>
-      </div>
+      </Section>
 
       {/* 스타일별 */}
-      <div>
-        <p className="text-white/40 text-xs font-medium mb-3 px-1">스타일별 사용 횟수</p>
+      <Section title="스타일별 사용">
         {stats.byStyle.length === 0 ? (
-          <div className="bg-[#1A1A1A] rounded-2xl p-6 border border-white/10 text-white/30 text-sm">데이터 없음</div>
+          <p className="text-[#444] text-sm py-4">데이터 없음</p>
         ) : (
-          <div className="flex flex-col gap-3">
-            {stats.byStyle.map((s) => (
-              <div key={s.style_id} className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/10 flex flex-col gap-2">
+          stats.byStyle.map((s) => {
+            const ratio = stats.total > 0 ? Math.round((s.count / stats.total) * 100) : 0;
+            return (
+              <div key={s.style_id} className="py-3 border-b border-white/5 last:border-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-white font-semibold text-sm">{s.style_name}</span>
-                  <span className="text-[#C9571A] font-extrabold text-xl">{s.count}</span>
+                  <span className="text-[#888] text-sm">{s.style_name}</span>
+                  <span className="text-white font-bold">{s.count}회 <span className="text-[#555] font-normal text-xs">{ratio}%</span></span>
                 </div>
-                <div className="w-full bg-white/5 rounded-full h-1.5">
-                  <div
-                    className="bg-[#C9571A]/60 h-1.5 rounded-full"
-                    style={{ width: `${stats.total > 0 ? Math.round((s.count / stats.total) * 100) : 0}%` }}
-                  />
-                </div>
+                <Bar ratio={ratio} />
               </div>
-            ))}
-          </div>
+            );
+          })
         )}
-      </div>
+      </Section>
+
     </main>
   );
 }
