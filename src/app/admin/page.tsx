@@ -192,7 +192,7 @@ export default function AdminPage() {
             return (
               <div key={s.style_id} className="py-3 border-b border-white/5 last:border-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-[#888] text-sm">{s.style_name}</span>
+                  <span className="text-white/90 text-[15px] font-bold">{s.style_name}</span>
                   <span className="text-white font-bold">{s.count}회 <span className="text-[#555] font-normal text-xs">{ratio}%</span></span>
                 </div>
                 <Bar ratio={ratio} />
