@@ -331,9 +331,9 @@ export default function Result() {
               <div className="w-full bg-[#C9571A]/10 border border-[#C9571A]/30 rounded-2xl px-4 py-3.5 flex items-start gap-2.5">
                 <span className="text-base leading-none mt-0.5 flex-shrink-0">🚨</span>
                 <div className="flex flex-col gap-1">
-                  <p className="text-[#C9571A] font-bold text-[13px]">이 화면을 유지해주세요!</p>
+                  <p className="text-[#C9571A] font-bold text-[13px]">화면을 고정해 주세요!</p>
                   <p className="text-[#C9571A]/60 text-[11px] leading-relaxed">
-                    변환이 완료될 때까지 앱을 닫거나<br />다른 페이지로 이동하면 결과가 사라져요.
+                    최상의 품질을 위해 AI가 정성껏 변환 중입니다.<br />완료될 때까지 잠시만 이 화면에서 기다려 주세요.
                   </p>
                 </div>
               </div>
