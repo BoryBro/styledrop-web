@@ -2,19 +2,20 @@ import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// In-memory rate limiter: IP → { count, resetAt }
+// In-memory rate limiter: key → { count, resetAt }
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 10;
-const WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const GUEST_LIMIT = 3;
+const USER_LIMIT = 10;
+const WINDOW_MS = 24 * 60 * 60 * 1000; // 24시간
 
-function checkRateLimit(ip: string): boolean {
+function checkRateLimit(key: string, limit: number): boolean {
   const now = Date.now();
-  const entry = rateLimitMap.get(ip);
+  const entry = rateLimitMap.get(key);
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    rateLimitMap.set(key, { count: 1, resetAt: now + WINDOW_MS });
     return true;
   }
-  if (entry.count >= RATE_LIMIT) return false;
+  if (entry.count >= limit) return false;
   entry.count++;
   return true;
 }
@@ -25,6 +26,14 @@ function getIp(request: NextRequest): string {
     request.headers.get("x-real-ip") ??
     "unknown"
   );
+}
+
+function parseSession(request: NextRequest): { id: string; nickname: string } | null {
+  try {
+    const cookie = request.cookies.get("sd_session")?.value;
+    if (!cookie) return null;
+    return JSON.parse(Buffer.from(cookie, "base64").toString());
+  } catch { return null; }
 }
 
 const STYLE_NAMES: Record<string, string> = {
@@ -45,12 +54,16 @@ const STYLE_PROMPTS: Record<string, string> = {
 };
 
 export async function POST(request: NextRequest) {
+  const session = parseSession(request);
   const ip = getIp(request);
-  if (!checkRateLimit(ip)) {
-    return NextResponse.json(
-      { error: "잠시 후 다시 시도해주세요. (1시간에 최대 10회 요청 가능)" },
-      { status: 429 }
-    );
+  const rateLimitKey = session ? "user:" + session.id : ip;
+  const limit = session ? USER_LIMIT : GUEST_LIMIT;
+
+  if (!checkRateLimit(rateLimitKey, limit)) {
+    const error = session
+      ? "오늘 사용량을 모두 소진했습니다. 내일 다시 이용해주세요!"
+      : "무료 체험 3회를 모두 사용했습니다. 로그인하면 더 많이 사용할 수 있어요!";
+    return NextResponse.json({ error }, { status: 429 });
   }
 
   try {
@@ -69,7 +82,7 @@ export async function POST(request: NextRequest) {
         { inlineData: { mimeType: mimeType || "image/jpeg", data: imageBase64 } },
         { text: "Edit this image: " + prompt }
       ],
-      config: { 
+      config: {
         responseModalities: ["TEXT", "IMAGE"]
       },
     });
@@ -86,8 +99,17 @@ export async function POST(request: NextRequest) {
           const { error } = await supabase.from("style_usage").insert({
             style_id: style,
             style_name: STYLE_NAMES[style] ?? style,
+            user_id: session?.id ?? null,
           });
           if (error) console.error("[Supabase] insert error:", error);
+
+          if (session) {
+            await supabase.from("user_events").insert({
+              user_id: session.id,
+              event_type: "transform",
+              metadata: { style_id: style },
+            });
+          }
         } catch (err) {
           console.error("[Supabase] unexpected error:", err);
         }
@@ -95,6 +117,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           image: part.inlineData.data,
           mimeType: part.inlineData.mimeType,
+          shouldSaveHistory: !!session,
         });
       }
     }

@@ -16,7 +16,7 @@ export default function Home() {
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((data) => setUser(data.user ?? null))
+      .then((data) => setUser(data.loggedIn ? data.user : null))
       .catch(() => {});
   }, []);
 
