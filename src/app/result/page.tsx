@@ -25,6 +25,7 @@ export default function Result() {
   const [toast, setToast] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isRateLimited, setIsRateLimited] = useState(false);
+  const [view, setView] = useState<"before" | "after">("after");
   const historySaved = useRef(false);
   const router = useRouter();
   const { user, loading: authLoading, login } = useAuth();
@@ -268,7 +269,7 @@ export default function Result() {
         )}
       </header>
 
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 flex flex-col">
+      <main className="max-w-2xl mx-auto w-full px-4 py-4 flex flex-col" style={{ height: "calc(100vh - 52px)" }}>
 
         {/* Loading */}
         {status === "loading" && (
@@ -313,19 +314,50 @@ export default function Result() {
 
         {/* Result */}
         {status === "done" && resultImage && (
-          <div className="flex flex-col gap-6">
-            {/* BEFORE */}
-            <div className="relative w-full rounded-2xl border border-white/10 bg-[#1A1A1A] overflow-hidden flex items-center justify-center">
-              <span className="absolute top-4 left-4 z-10 text-xs font-bold tracking-widest text-white bg-black/60 backdrop-blur-sm py-1.5 px-3 rounded-full">BEFORE</span>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {previewDataUrl && <img src={previewDataUrl} alt="원본" className="w-full h-auto object-contain max-h-[60vh]" />}
+          <div className="flex flex-col gap-4 flex-1">
+            {/* Toggle */}
+            <div className="w-full bg-[#1A1A1A] p-1.5 rounded-full flex relative border border-white/10 shadow-lg">
+              <div
+                className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-[#333] border border-white/10 rounded-full transition-all duration-300 ease-in-out ${
+                  view === "after" ? "left-[calc(50%+3px)]" : "left-[4px]"
+                }`}
+              />
+              <button
+                onClick={() => setView("before")}
+                className={`relative flex-1 py-2.5 text-sm font-bold z-10 transition-colors ${
+                  view === "before" ? "text-white" : "text-white/40"
+                }`}
+              >
+                원본 사진 (BEFORE)
+              </button>
+              <button
+                onClick={() => setView("after")}
+                className={`relative flex-1 py-2.5 text-sm font-bold z-10 transition-colors ${
+                  view === "after" ? "text-[#C9571A]" : "text-white/40"
+                }`}
+              >
+                AI 변환 (AFTER)
+              </button>
             </div>
 
-            {/* AFTER */}
-            <div className="relative w-full rounded-2xl border-2 border-[#C9571A]/50 bg-[#1A1A1A] overflow-hidden flex items-center justify-center shadow-[0_4px_20px_rgb(201,87,26,0.15)]">
-              <span className="absolute top-4 left-4 z-10 text-xs font-bold tracking-widest text-white bg-[#C9571A]/80 backdrop-blur-sm py-1.5 px-3 rounded-full">AFTER</span>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={resultImage} alt="변환 결과" className="w-full h-auto object-contain max-h-[60vh]" />
+            {/* Image */}
+            <div className="relative flex-1 rounded-2xl overflow-hidden bg-[#1A1A1A] border border-white/10 flex items-center justify-center min-h-0">
+              {view === "before" ? (
+                previewDataUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={previewDataUrl} alt="원본" className="w-full h-full object-contain" />
+                )
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={resultImage} alt="변환 결과" className="w-full h-full object-contain" />
+              )}
+              <div className="absolute top-4 left-4 z-10">
+                <span className={`text-xs font-bold tracking-widest px-4 py-2 rounded-full backdrop-blur-md shadow-lg transition-colors ${
+                  view === "before" ? "bg-black/70 text-white border border-white/20" : "bg-[#C9571A]/90 text-white border border-white/20"
+                }`}>
+                  {view === "before" ? "BEFORE" : "AFTER"}
+                </span>
+              </div>
             </div>
 
             {/* Action buttons */}
@@ -334,13 +366,19 @@ export default function Result() {
                 onClick={handleSaveToAlbum}
                 className="flex-1 bg-[#C9571A] hover:bg-[#B34A12] text-white py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
               >
-                <span>📥</span><span>이미지 저장</span>
+                <span>📥</span><span>저장</span>
               </button>
               <button
                 onClick={handleKakaoShare}
                 className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
               >
-                <span>💬</span><span>카카오톡 공유</span>
+                <span>💬</span><span>카카오 공유</span>
+              </button>
+              <button
+                onClick={() => router.push("/studio")}
+                className="flex-1 bg-[#2A2A2A] hover:bg-[#333] text-white py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+              >
+                <span>🔄</span><span>다시 하기</span>
               </button>
             </div>
 
@@ -353,20 +391,10 @@ export default function Result() {
                 🔗 링크 복사하기
               </button>
             )}
-
-            <button onClick={() => router.push("/studio")} className="w-full bg-[#2A2A2A] hover:bg-[#333] text-white py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
-              <span>🔄</span><span>다시 하기</span>
-            </button>
           </div>
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="py-6 text-center">
-        <p className="text-[11px] text-[#333]">
-          © 2026 StyleDrop · <Link href="/terms" className="hover:text-white/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/30 transition-colors">개인정보처리방침</Link> · v0.3
-        </p>
-      </footer>
     </div>
   );
 }
