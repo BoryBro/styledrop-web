@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { getGuestHistory, type GuestHistoryItem } from "@/lib/guest-history";
 
 const STYLE_LABELS: Record<string, string> = {
   "flash-selfie": "플래시 필터",
-  "grab-selfie": "그랩 셀카",
-  "voxel-character": "복셀 캐릭터",
+  "grab-selfie": "베트남 오토바이 셀카 필터",
+  "voxel-character": "픽셀 캐릭터 필터",
   "4k-upscale": "4K 업스케일링",
 };
 
@@ -42,6 +43,7 @@ function expiryBadge(iso: string): { label: string; className: string } {
 export default function MyPage() {
   const { user, loading, logout } = useAuth();
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [guestHistory, setGuestHistory] = useState<GuestHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -49,7 +51,12 @@ export default function MyPage() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) { setHistoryLoading(false); return; }
+    if (!user) {
+      // 비회원: 로컈스토리지에서 게스트 히스토리 읽기
+      setGuestHistory(getGuestHistory());
+      setHistoryLoading(false);
+      return;
+    }
     fetch("/api/history")
       .then(r => r.json())
       .then(data => setHistory(data.history ?? []))
@@ -89,19 +96,71 @@ export default function MyPage() {
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-6 pb-12 flex flex-col gap-6">
 
-        {/* 비로그인 */}
+        {/* 비로그인 상태: 게스트 히스토리 표시 */}
         {!loading && !user && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 text-center py-20">
-            <p className="text-white/60 text-base">로그인이 필요해요</p>
-            <button
-              onClick={() => { window.location.href = "/api/auth/kakao"; }}
-              className="bg-[#FEE500] text-[#3C1E1E] font-bold px-6 py-3 rounded-xl text-[15px] flex items-center gap-2"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
-              </svg>
-              카카오로 로그인하기
-            </button>
+          <div className="flex flex-col gap-5">
+            {/* 임시 보관 안내 배너 */}
+            <div className="bg-[#1A1010] border border-[#C9571A]/30 rounded-2xl px-4 py-3.5 flex flex-col gap-3">
+              <p className="text-[13px] text-[#C9571A]/90 font-medium leading-relaxed">
+                현재 기록은 이 브라우저에만 임시 보관됩니다.<br />
+                영구 저장하려면 카카오 로그인을 해주세요!
+              </p>
+              <button
+                onClick={() => { window.location.href = "/api/auth/kakao"; }}
+                className="bg-[#FEE500] text-[#3C1E1E] rounded-xl font-bold py-2.5 w-full text-[14px] flex items-center justify-center gap-2"
+              >
+                <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
+                </svg>
+                카카오로 로그인하기
+              </button>
+            </div>
+
+            {/* 게스트 히스토리 */}
+            {historyLoading ? (
+              <div className="flex justify-center py-10">
+                <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
+              </div>
+            ) : guestHistory.length === 0 ? (
+              <div className="flex flex-col items-center gap-4 py-10 text-center">
+                <p className="text-white/40 text-[15px]">아직 변환 기록이 없어요.<br />스타일을 적용해보세요!</p>
+                <button
+                  onClick={() => router.push("/studio")}
+                  className="bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold px-6 py-3 rounded-xl transition-colors"
+                >
+                  스타일 적용하러 가기
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-baseline gap-2 mb-4 px-1">
+                  <h2 className="text-[16px] font-bold text-white">임시 변환 기록</h2>
+                  <span className="text-[12px] text-[#666]">이 기기에만 보관</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {guestHistory.map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => window.open(item.result_image_url, "_blank")}
+                      className="flex flex-col gap-1"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.result_image_url}
+                        alt=""
+                        className="w-full aspect-square rounded-xl object-cover bg-white/5"
+                      />
+                      <div className="flex flex-col items-start gap-0.5 px-0.5">
+                        <span className="text-[11px] text-[#555]">{relativeTime(item.created_at)}</span>
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[#C9571A]/20 text-[#C9571A]/80">
+                          {STYLE_LABELS[item.style_id] ?? item.style_id}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

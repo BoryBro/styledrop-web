@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { addGuestHistoryItem } from "@/lib/guest-history";
 
 interface KakaoSDK {
   init: (key: string) => void;
@@ -90,6 +91,19 @@ export default function Result() {
           sessionStorage.setItem("sd_resultDataUrl", dataUrl);
           setStatus("done");
           fetchRemaining();
+
+          // 로그인 유저: 서버가 이미 히스토리 저장함 (클라이언트 포스트 불필요)
+          if (data.historyUrl) {
+            sessionStorage.setItem("sd_shareUrl", data.historyUrl);
+          }
+
+          // 비회원: 로여스토리지에 임시 저장
+          if (!data.shouldSaveHistory) {
+            addGuestHistoryItem({
+              style_id: styleId,
+              result_image_url: dataUrl,
+            });
+          }
         } else {
           setErrorMessage(data.error ?? null);
           setIsRateLimited(res.status === 429);
@@ -114,17 +128,7 @@ export default function Result() {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [status]);
 
-  // 히스토리 자동 저장 — status done + user + shareUrl 갖춰졌을 때
-  useEffect(() => {
-    if (status !== "done" || !user || !shareUrl || !selectedStyle) return;
-    if (historySaved.current) return;
-    historySaved.current = true;
-    fetch("/api/history", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ style_id: selectedStyle, result_image_url: shareUrl }),
-    }).catch(() => {});
-  }, [status, user, shareUrl, selectedStyle]);
+  // 히스토리 자동 저장 — 서버에서 이미 처리하므로 클라이언트에서는 불필요
 
   const handleSaveToAlbum = async () => {
     if (!resultImage) return;
@@ -300,6 +304,12 @@ export default function Result() {
               <div className="text-center">
                 <p className="text-white font-bold text-base">AI 변환 중</p>
                 <p className="text-white/50 text-xs mt-1">AI가 사진을 변환하고 있어요...</p>
+                {user && (
+                  <p className="text-[#C9571A]/80 text-xs mt-2.5 leading-relaxed">
+                    화면 밖으로 나가도<br />
+                    마이페이지에서 확인 가능합니다 📲
+                  </p>
+                )}
               </div>
             </div>
           </div>
