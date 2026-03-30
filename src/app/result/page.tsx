@@ -31,6 +31,7 @@ export default function Result() {
   const router = useRouter();
   const { user, loading: authLoading, login } = useAuth();
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
 
   const fetchRemaining = () => {
     fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
@@ -163,7 +164,8 @@ export default function Result() {
   };
 
   const handleKakaoShare = async () => {
-    if (!resultImage || !imageBase64) return;
+    if (!resultImage || !imageBase64 || isSharing) return;
+    setIsSharing(true);
     setShowFallback(false);
     try {
       let imgUrl = shareUrl || sessionStorage.getItem("sd_shareUrl");
@@ -214,6 +216,9 @@ export default function Result() {
     } catch (e) {
       console.error("Kakao share failed:", e);
       setShowFallback(true);
+    } finally {
+      // 앱 전환 여유 시간을 위해 1.5초 후 해제
+      setTimeout(() => setIsSharing(false), 1500);
     }
   };
 
@@ -453,6 +458,25 @@ export default function Result() {
           </div>
         )}
       </main>
+
+      {/* 공유 중 로딩 레이어 */}
+      {isSharing && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1A1A1A]/90 border border-white/10 rounded-3xl p-8 flex flex-col items-center gap-5 shadow-2xl max-w-[280px] w-full mx-4 backdrop-blur-md">
+            <div className="relative w-12 h-12">
+              <div className="absolute inset-0 rounded-full border-4 border-white/5" />
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-yellow-400 animate-spin" />
+            </div>
+            <div className="text-center flex flex-col gap-2">
+              <p className="text-white font-bold text-base">카카오톡 공유 준비 중</p>
+              <p className="text-white/40 text-xs leading-relaxed">
+                잠시만 기다려 주세요 💬<br />
+                곧 카카오톡 앱으로 연결됩니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
