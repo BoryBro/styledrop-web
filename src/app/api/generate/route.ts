@@ -91,57 +91,25 @@ export async function POST(request: NextRequest) {
     const parts = response.candidates?.[0]?.content?.parts || [];
     for (const part of parts) {
       if (part.inlineData) {
-        let historyUrl: string | null = null;
-
-        // Supabase 로깅 + 로그인 유저는 이미지 서버 업로드 후 히스토리 자동 저장
+        // Supabase 로깅 — 실패해도 이미지 응답에 영향 없음
         try {
           const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_KEY!
           );
-
-          // style_usage 기록
-          const { error: usageError } = await supabase.from("style_usage").insert({
+          const { error } = await supabase.from("style_usage").insert({
             style_id: style,
             style_name: STYLE_NAMES[style] ?? style,
             user_id: session?.id ?? null,
           });
-          if (usageError) console.error("[Supabase] style_usage insert error:", usageError);
+          if (error) console.error("[Supabase] insert error:", error);
 
           if (session) {
-            // 이미지를 Supabase Storage에 업로드
-            const imageBuffer = Buffer.from(part.inlineData.data!, "base64");
-            const filename = `results/${session.id}-${Date.now()}.jpg`;
-            const { error: uploadError } = await supabase.storage
-              .from("shared-images")
-              .upload(filename, imageBuffer, {
-                contentType: "image/jpeg",
-                cacheControl: "31536000",
-                upsert: false,
-              });
-
-            if (!uploadError) {
-              const { data: urlData } = supabase.storage
-                .from("shared-images")
-                .getPublicUrl(filename);
-              historyUrl = urlData.publicUrl;
-
-              // transform_history 자동 저장
-              await supabase.from("transform_history").insert({
-                user_id: session.id,
-                style_id: style,
-                result_image_url: historyUrl,
-              });
-
-              // transform 이벤트 기록
-              await supabase.from("user_events").insert({
-                user_id: session.id,
-                event_type: "transform",
-                metadata: { style_id: style },
-              });
-            } else {
-              console.error("[Supabase] storage upload error:", uploadError);
-            }
+            await supabase.from("user_events").insert({
+              user_id: session.id,
+              event_type: "transform",
+              metadata: { style_id: style },
+            });
           }
         } catch (err) {
           console.error("[Supabase] unexpected error:", err);
@@ -151,7 +119,6 @@ export async function POST(request: NextRequest) {
           image: part.inlineData.data,
           mimeType: part.inlineData.mimeType,
           shouldSaveHistory: !!session,
-          historyUrl,
         });
         res.cookies.set(cookieName, cookieValue, cookieOptions);
         return res;

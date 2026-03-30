@@ -44,13 +44,12 @@ export default function Result() {
   }, []);
 
   useEffect(() => {
-    // 새로고침 감지: 정상 진입 플래그 없으면 /studio로 리다이렉트
     const fromStudio = sessionStorage.getItem("sd_fromStudio");
     if (!fromStudio) {
       router.replace("/studio");
       return;
     }
-    sessionStorage.removeItem("sd_fromStudio"); // 플래그 소비 (1회용)
+    sessionStorage.removeItem("sd_fromStudio");
 
     const styleId = sessionStorage.getItem("sd_styleId");
     const base64 = sessionStorage.getItem("sd_imageBase64");
@@ -65,7 +64,6 @@ export default function Result() {
     setImageBase64(base64);
     setPreviewDataUrl(preview);
 
-    // 카카오앱 복귀 시 캐시된 결과 복원
     const cachedResult = sessionStorage.getItem("sd_resultDataUrl");
     const cachedShareUrl = sessionStorage.getItem("sd_shareUrl");
     const cachedShareLink = sessionStorage.getItem("sd_shareLink");
@@ -92,12 +90,6 @@ export default function Result() {
           setStatus("done");
           fetchRemaining();
 
-          // 로그인 유저: 서버가 이미 히스토리 저장함 (클라이언트 포스트 불필요)
-          if (data.historyUrl) {
-            sessionStorage.setItem("sd_shareUrl", data.historyUrl);
-          }
-
-          // 비회원: 로여스토리지에 임시 저장
           if (!data.shouldSaveHistory) {
             addGuestHistoryItem({
               style_id: styleId,
@@ -113,7 +105,16 @@ export default function Result() {
       .catch(() => setStatus("error"));
   }, [router]);
 
-  // visibilitychange — 카카오앱에서 복귀 시 결과 유지
+  useEffect(() => {
+    if (status !== "loading") return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [status]);
+
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
@@ -128,28 +129,36 @@ export default function Result() {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [status]);
 
-  // 히스토리 자동 저장 — 서버에서 이미 처리하므로 클라이언트에서는 불필요
+  useEffect(() => {
+    if (status !== "done" || !user || !shareUrl || !selectedStyle) return;
+    if (historySaved.current) return;
+    historySaved.current = true;
+    fetch("/api/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ style_id: selectedStyle, result_image_url: shareUrl }),
+    }).catch(() => {});
+  }, [status, user, shareUrl, selectedStyle]);
 
   const handleSaveToAlbum = async () => {
     if (!resultImage) return;
     try {
-      const res = await fetch(resultImage);
-      const blob = await res.blob();
-      const file = new File([blob], `styledrop-${Date.now()}.jpg`, { type: "image/jpeg" });
-      if (navigator.share && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "StyleDrop 이미지" });
+      const blob = await (await fetch(resultImage)).blob();
+      if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
+        const file = new File([blob], "styledrop.jpg", { type: "image/jpeg" });
+        await navigator.share({ files: [file] });
       } else {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `styledrop-${Date.now()}.jpg`;
+        link.download = "styledrop.jpg";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }
     } catch (e) {
-      console.error("저장 실패:", e);
+      console.error("Save failed:", e);
     }
   };
 
@@ -167,7 +176,7 @@ export default function Result() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ beforeBase64: imageBase64, afterBase64: base64 }),
         });
-        if (!response.ok) throw new Error("업로드 실패");
+        if (!response.ok) throw new Error("Upload failed");
         const { id, url } = await response.json();
         link = `${window.location.origin}/share?id=${id}`;
         imgUrl = url;
@@ -203,12 +212,11 @@ export default function Result() {
         }).catch(() => {});
       }
     } catch (e) {
-      console.error("카카오 공유 실패:", e);
+      console.error("Kakao share failed:", e);
       setShowFallback(true);
     }
   };
 
-  // 결과 준비되면 백그라운드에서 share URL 미리 업로드
   useEffect(() => {
     if (status !== "done" || !resultImage || !imageBase64) return;
     const cached = shareUrl || sessionStorage.getItem("sd_shareUrl");
@@ -228,7 +236,7 @@ export default function Result() {
         sessionStorage.setItem("sd_shareUrl", url);
         sessionStorage.setItem("sd_shareLink", link);
       })
-      .catch(() => {/* 백그라운드 실패 — 공유 시점에 재시도 */});
+      .catch(() => {});
   }, [status, resultImage, imageBase64, shareUrl]);
 
   const handleCopyLink = async () => {
@@ -249,17 +257,13 @@ export default function Result() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
-      {/* Toast */}
+    <div className="min-h-dvh bg-[#0A0A0A] flex flex-col">
       {toast && (
-        <div className="fixed top-4 left-0 right-0 z-[100] flex justify-center px-4 pointer-events-none">
-          <div className="bg-[#1A1A1A] border border-white/10 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-xl">
-            {toast}
-          </div>
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-white/10 backdrop-blur-xl text-white text-sm px-6 py-3 rounded-2xl border border-white/10 shadow-2xl">
+          {toast}
         </div>
       )}
 
-      {/* Header */}
       <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
         <div className="flex items-center gap-2.5">
           <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
@@ -290,32 +294,53 @@ export default function Result() {
 
       <main className="max-w-2xl mx-auto w-full px-4 py-4 flex flex-col" style={{ height: "calc(100vh - 52px)" }}>
 
-        {/* Loading */}
         {status === "loading" && (
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-5 bg-white/5 border border-white/10 rounded-3xl px-10 py-10 shadow-xl">
-              <div className="relative w-16 h-16">
+            <style>{`
+              @keyframes pulse-glow {
+                0%, 100% { box-shadow: 0 0 8px rgba(201,87,26,0.3); }
+                50% { box-shadow: 0 0 24px rgba(201,87,26,0.6); }
+              }
+              @keyframes dot-bounce {
+                0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+                40% { opacity: 1; transform: scale(1.2); }
+              }
+            `}</style>
+            <div className="flex flex-col items-center gap-6 bg-white/5 border border-white/10 rounded-3xl px-8 py-10 shadow-xl w-full max-w-xs" style={{ animation: "pulse-glow 2.5s ease-in-out infinite" }}>
+              {/* Spinner */}
+              <div className="relative w-20 h-20">
                 <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
+                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#C9571A] border-r-[#C9571A]/30" style={{ animation: "spin 1s linear infinite" }} />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white text-xl leading-none select-none">✦</span>
+                  <span className="text-[#C9571A] text-2xl leading-none select-none" style={{ animation: "pulse-glow 2s ease-in-out infinite" }}>✦</span>
                 </div>
               </div>
-              <div className="text-center">
-                <p className="text-white font-bold text-base">AI 변환 중</p>
-                <p className="text-white/50 text-xs mt-1">AI가 사진을 변환하고 있어요...</p>
-                {user && (
-                  <p className="text-[#C9571A]/80 text-xs mt-2.5 leading-relaxed">
-                    화면 밖으로 나가도<br />
-                    마이페이지에서 확인 가능합니다 📲
+
+              {/* Text + animated dots */}
+              <div className="text-center flex flex-col items-center gap-2">
+                <p className="text-white font-bold text-lg">AI 변환 중</p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  {[0, 1, 2].map(i => (
+                    <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#C9571A]" style={{ animation: `dot-bounce 1.4s ease-in-out ${i * 0.2}s infinite` }} />
+                  ))}
+                </div>
+                <p className="text-white/40 text-xs mt-1">사진을 분석하고 스타일을 적용하고 있어요</p>
+              </div>
+
+              {/* Warning banner */}
+              <div className="w-full bg-[#C9571A]/10 border border-[#C9571A]/30 rounded-2xl px-4 py-3.5 flex items-start gap-2.5">
+                <span className="text-base leading-none mt-0.5 flex-shrink-0">🚨</span>
+                <div className="flex flex-col gap-1">
+                  <p className="text-[#C9571A] font-bold text-[13px]">이 화면을 유지해주세요!</p>
+                  <p className="text-[#C9571A]/60 text-[11px] leading-relaxed">
+                    변환이 완료될 때까지 앱을 닫거나<br />다른 페이지로 이동하면 결과가 사라져요.
                   </p>
-                )}
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Error */}
         {status === "error" && (
           <div className="flex-1 flex items-center justify-center">
             <div className="flex flex-col items-center text-center max-w-xs w-full gap-3">
@@ -351,10 +376,8 @@ export default function Result() {
           </div>
         )}
 
-        {/* Result */}
         {status === "done" && resultImage && (
           <div className="flex flex-col gap-4 flex-1">
-            {/* Toggle */}
             <div className="w-full bg-[#1A1A1A] p-1.5 rounded-full flex relative border border-white/10 shadow-lg">
               <div
                 className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-[#333] border border-white/10 rounded-full transition-all duration-300 ease-in-out ${
@@ -379,7 +402,6 @@ export default function Result() {
               </button>
             </div>
 
-            {/* Image */}
             <div className="relative flex-1 rounded-2xl overflow-hidden bg-[#1A1A1A] border border-white/10 flex items-center justify-center min-h-0">
               {view === "before" ? (
                 previewDataUrl && (
@@ -399,7 +421,6 @@ export default function Result() {
               </div>
             </div>
 
-            {/* Action buttons */}
             <div className="flex gap-3">
               <button
                 onClick={handleSaveToAlbum}
@@ -421,7 +442,6 @@ export default function Result() {
               </button>
             </div>
 
-            {/* 링크 복사 폴백 */}
             {showFallback && (
               <button
                 onClick={handleCopyLink}
