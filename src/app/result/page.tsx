@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 
 interface KakaoSDK {
   init: (key: string) => void;
@@ -22,7 +23,11 @@ export default function Result() {
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [showFallback, setShowFallback] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const historySaved = useRef(false);
   const router = useRouter();
+  const { user, loading: authLoading, login } = useAuth();
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -51,7 +56,7 @@ export default function Result() {
     setImageBase64(base64);
     setPreviewDataUrl(preview);
 
-    // 문제 1: 카카오앱 복귀 시 캐시된 결과 복원 (API 재호출 방지)
+    // 카카오앱 복귀 시 캐시된 결과 복원
     const cachedResult = sessionStorage.getItem("sd_resultDataUrl");
     const cachedShareUrl = sessionStorage.getItem("sd_shareUrl");
     const cachedShareLink = sessionStorage.getItem("sd_shareLink");
@@ -69,21 +74,23 @@ export default function Result() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ style: styleId, imageBase64: base64, mimeType: "image/jpeg" }),
     })
-      .then((res) => res.json())
-      .then((data) => {
+      .then(async (res) => {
+        const data = await res.json();
         if (data.image) {
           const dataUrl = `data:image/jpeg;base64,${data.image}`;
           setResultImage(dataUrl);
           sessionStorage.setItem("sd_resultDataUrl", dataUrl);
           setStatus("done");
         } else {
+          setErrorMessage(data.error ?? null);
+          setIsRateLimited(res.status === 429);
           setStatus("error");
         }
       })
       .catch(() => setStatus("error"));
   }, [router]);
 
-  // 문제 1: visibilitychange — 카카오앱에서 복귀 시 결과 유지
+  // visibilitychange — 카카오앱에서 복귀 시 결과 유지
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
@@ -97,6 +104,18 @@ export default function Result() {
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [status]);
+
+  // 히스토리 자동 저장 — status done + user + shareUrl 갖춰졌을 때
+  useEffect(() => {
+    if (status !== "done" || !user || !shareUrl || !selectedStyle) return;
+    if (historySaved.current) return;
+    historySaved.current = true;
+    fetch("/api/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ style_id: selectedStyle, result_image_url: shareUrl }),
+    }).catch(() => {});
+  }, [status, user, shareUrl, selectedStyle]);
 
   const handleSaveToAlbum = async () => {
     if (!resultImage) return;
@@ -125,7 +144,6 @@ export default function Result() {
     if (!resultImage || !imageBase64) return;
     setShowFallback(false);
     try {
-      // 문제 3: 이미 업로드된 URL 재사용 (중복 업로드 방지)
       let imgUrl = shareUrl || sessionStorage.getItem("sd_shareUrl");
       let link = shareLink || sessionStorage.getItem("sd_shareLink");
 
@@ -146,7 +164,6 @@ export default function Result() {
         sessionStorage.setItem("sd_shareLink", link!);
       }
 
-      // 문제 2: SDK 준비 확인
       const kakao = (window as Window & { Kakao?: KakaoSDK }).Kakao;
       if (!kakao) {
         showToast("카카오 SDK 로딩 중이에요. 잠시 후 다시 시도해주세요.");
@@ -155,7 +172,6 @@ export default function Result() {
       }
       if (!kakao.isInitialized()) kakao.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY!);
 
-      // 문제 3: payload 최소화 (10KB 이하 유지)
       kakao.Share.sendDefault({
         objectType: "feed",
         content: {
@@ -165,9 +181,16 @@ export default function Result() {
           link: { mobileWebUrl: link, webUrl: link },
         },
       });
+
+      if (user) {
+        fetch("/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ event_type: "share_kakao", metadata: { style_id: selectedStyle } }),
+        }).catch(() => {});
+      }
     } catch (e) {
       console.error("카카오 공유 실패:", e);
-      // 문제 4: 폴백 처리
       setShowFallback(true);
     }
   };
@@ -195,7 +218,6 @@ export default function Result() {
       .catch(() => {/* 백그라운드 실패 — 공유 시점에 재시도 */});
   }, [status, resultImage, imageBase64, shareUrl]);
 
-  // 문제 4: 링크 복사 폴백
   const handleCopyLink = async () => {
     const link = shareLink || sessionStorage.getItem("sd_shareLink") || window.location.href;
     try {
@@ -203,6 +225,13 @@ export default function Result() {
       showToast("링크가 복사됐어요!");
     } catch {
       showToast("복사에 실패했어요.");
+    }
+    if (user) {
+      fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "share_link_copy", metadata: { style_id: selectedStyle } }),
+      }).catch(() => {});
     }
   };
 
@@ -218,8 +247,25 @@ export default function Result() {
       )}
 
       {/* Header */}
-      <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center px-4 sticky top-0 z-40">
+      <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
         <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
+        {!authLoading && (
+          user ? (
+            <div className="flex items-center gap-2.5">
+              <Link href="/mypage" className="flex items-center gap-1.5">
+                {user.profileImage && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
+                )}
+                <span className="text-white/70 text-[13px]">{user.nickname}</span>
+              </Link>
+            </div>
+          ) : (
+            <button onClick={login} className="bg-[#FEE500] text-[#3C1E1E] text-[13px] font-bold px-3 py-1.5 rounded-lg">
+              카카오 로그인
+            </button>
+          )
+        )}
       </header>
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 flex flex-col">
@@ -246,8 +292,18 @@ export default function Result() {
         {/* Error */}
         {status === "error" && (
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-6 text-center">
-              <p className="text-white/60 text-base">변환에 실패했어요. 다시 시도해주세요.</p>
+            <div className="flex flex-col items-center gap-4 text-center max-w-xs">
+              <p className="text-white/70 text-base">
+                {errorMessage ?? "변환에 실패했어요. 다시 시도해주세요."}
+              </p>
+              {isRateLimited && !user && (
+                <button
+                  onClick={login}
+                  className="bg-[#FEE500] text-[#3C1E1E] font-bold px-5 py-3 rounded-xl w-full text-[15px]"
+                >
+                  카카오로 로그인하기
+                </button>
+              )}
               <button onClick={() => router.push("/studio")} className="text-[#666] text-sm hover:text-white transition-colors">
                 다시 하기
               </button>
@@ -288,7 +344,7 @@ export default function Result() {
               </button>
             </div>
 
-            {/* 문제 4: 폴백 버튼 */}
+            {/* 링크 복사 폴백 */}
             {showFallback && (
               <button
                 onClick={handleCopyLink}

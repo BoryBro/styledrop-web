@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 function formatCount(n: number): string {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "K";
@@ -123,6 +124,7 @@ export default function Studio() {
   const selectedStyleRef = useRef<string | null>(null);
   const toastIdRef = useRef(0);
   const router = useRouter();
+  const { user, loading, login, logout } = useAuth();
 
   useEffect(() => {
     fetch("/api/usage")
@@ -198,8 +200,26 @@ export default function Studio() {
       <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
 
         {/* Header */}
-        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center px-4 sticky top-0 z-40">
+        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
           <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
+          {!loading && (
+            user ? (
+              <div className="flex items-center gap-2.5">
+                <button onClick={() => router.push("/mypage")} className="flex items-center gap-1.5">
+                  {user.profileImage && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={user.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  )}
+                  <span className="text-white/70 text-[13px]">{user.nickname}</span>
+                </button>
+                <button onClick={logout} className="text-[#666] text-[12px] hover:text-white/40 transition-colors">로그아웃</button>
+              </div>
+            ) : (
+              <button onClick={login} className="bg-[#FEE500] text-[#3C1E1E] text-[13px] font-bold px-3 py-1.5 rounded-lg">
+                카카오 로그인
+              </button>
+            )
+          )}
         </header>
 
         <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-6 pb-4">
@@ -276,6 +296,24 @@ export default function Studio() {
         </main>
 
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+
+        {/* 비로그인 배너 */}
+        {!loading && !user && (
+          <div className="max-w-2xl mx-auto w-full px-4 pb-4">
+            <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl px-5 py-4 flex flex-col gap-3">
+              <p className="text-white/80 text-[14px] font-medium">카카오 로그인하면 하루 10회 + 히스토리 저장!</p>
+              <button
+                onClick={login}
+                className="bg-[#FEE500] text-[#3C1E1E] rounded-xl font-bold py-3 w-full text-[15px] flex items-center justify-center gap-2"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
+                </svg>
+                카카오로 로그인하기
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <footer className="py-6 text-center">
