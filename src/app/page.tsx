@@ -127,8 +127,8 @@ export default function Home() {
 
         {/* Links */}
         <div className="flex gap-5">
-          <Link href="/terms" className="text-[12px] text-[#444] hover:text-white/40 transition-colors">[이용약관]</Link>
-          <Link href="/privacy" className="text-[12px] text-[#444] hover:text-white/40 transition-colors">[개인정보처리방침]</Link>
+          <Link href="/terms" className="text-[12px] text-[#444] hover:text-white/40 transition-colors">이용약관</Link>
+          <Link href="/privacy" className="text-[12px] text-[#444] hover:text-white/40 transition-colors">개인정보처리방침</Link>
         </div>
       </div>
 

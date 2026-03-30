@@ -1,24 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
-// In-memory rate limiter: key → { count, resetAt }
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const GUEST_LIMIT = 3;
-const USER_LIMIT = 10;
-const WINDOW_MS = 24 * 60 * 60 * 1000; // 24시간
-
-function checkRateLimit(key: string, limit: number): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(key);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= limit) return false;
-  entry.count++;
-  return true;
-}
+import { checkRateLimit, GUEST_LIMIT, USER_LIMIT } from "@/lib/rate-limit";
 
 function getIp(request: NextRequest): string {
   return (

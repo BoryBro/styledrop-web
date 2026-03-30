@@ -29,6 +29,13 @@ export default function Result() {
   const historySaved = useRef(false);
   const router = useRouter();
   const { user, loading: authLoading, login } = useAuth();
+  const [remaining, setRemaining] = useState<number | null>(null);
+
+  const fetchRemaining = () => {
+    fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
+  };
+
+  useEffect(() => { fetchRemaining(); }, []);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -82,6 +89,7 @@ export default function Result() {
           setResultImage(dataUrl);
           sessionStorage.setItem("sd_resultDataUrl", dataUrl);
           setStatus("done");
+          fetchRemaining();
         } else {
           setErrorMessage(data.error ?? null);
           setIsRateLimited(res.status === 429);
@@ -249,18 +257,23 @@ export default function Result() {
 
       {/* Header */}
       <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
-        <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
+        <div className="flex items-center gap-2.5">
+          <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
+          {remaining !== null && (
+            <span className={`text-[12px] px-2.5 py-1 rounded-full bg-[#1A1A1A] ${remaining === 0 ? "text-[#ff4444]" : "text-[#999]"}`}>
+              {remaining}회 남음
+            </span>
+          )}
+        </div>
         {!authLoading && (
           user ? (
-            <div className="flex items-center gap-2.5">
-              <Link href="/mypage" className="flex items-center gap-1.5">
-                {user.profileImage && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
-                )}
-                <span className="text-white/70 text-[13px]">{user.nickname}</span>
-              </Link>
-            </div>
+            <Link href="/mypage" className="flex items-center gap-2">
+              {user.profileImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
+              )}
+              <span className="text-[14px] font-medium text-white truncate max-w-[120px]">{user.nickname}</span>
+            </Link>
           ) : (
             <button onClick={login} className="bg-[#FEE500] text-[#3C1E1E] text-[13px] font-bold px-3 py-1.5 rounded-lg">
               카카오 로그인

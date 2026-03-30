@@ -11,6 +11,8 @@ const STYLE_LABELS: Record<string, string> = {
   "4k-upscale": "4K 업스케일링",
 };
 
+const STYLE_ORDER = ["flash-selfie", "grab-selfie", "4k-upscale"];
+
 type HistoryItem = {
   id: string;
   style_id: string;
@@ -40,6 +42,8 @@ export default function MyPage() {
   const { user, loading, logout } = useAuth();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -51,6 +55,23 @@ export default function MyPage() {
       .catch(() => {})
       .finally(() => setHistoryLoading(false));
   }, [user, loading]);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/auth/account", { method: "DELETE" });
+      if (res.ok) window.location.href = "/";
+    } catch { /* ignore */ } finally {
+      setDeleting(false);
+    }
+  };
+
+  // 스타일별 그룹핑
+  const grouped = STYLE_ORDER.reduce<Record<string, HistoryItem[]>>((acc, id) => {
+    const items = history.filter(h => h.style_id === id);
+    if (items.length > 0) acc[id] = items;
+    return acc;
+  }, {});
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
@@ -65,7 +86,8 @@ export default function MyPage() {
         <div className="w-8" />
       </header>
 
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-6 pb-8 flex flex-col gap-6">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-6 pb-12 flex flex-col gap-6">
+
         {/* 비로그인 */}
         {!loading && !user && (
           <div className="flex-1 flex flex-col items-center justify-center gap-6 text-center py-20">
@@ -86,22 +108,24 @@ export default function MyPage() {
         {!loading && user && (
           <>
             {/* 프로필 */}
-            <div className="flex items-center gap-4 bg-[#1A1A1A] border border-white/10 rounded-2xl px-5 py-4">
-              {user.profileImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.profileImage} alt="" className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white/30 text-2xl">?</span>
+            <div className="flex justify-between items-center px-1">
+              <div className="flex items-center gap-3">
+                {user.profileImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.profileImage} alt="" className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white/30 text-xl">?</span>
+                  </div>
+                )}
+                <div>
+                  <p className="text-[18px] font-bold text-white">{user.nickname}</p>
+                  <p className="text-[#555] text-[13px] mt-0.5">카카오 로그인</p>
                 </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-bold text-lg truncate">{user.nickname}</p>
-                <p className="text-[#555] text-[13px] mt-0.5">카카오 로그인</p>
               </div>
               <button
                 onClick={logout}
-                className="text-[#555] text-[13px] hover:text-white/40 transition-colors flex-shrink-0"
+                className="bg-[#2A2A2A] text-white text-[13px] font-medium px-4 py-2 rounded-xl border border-[#333] hover:bg-[#333] transition-colors flex-shrink-0"
               >
                 로그아웃
               </button>
@@ -109,7 +133,10 @@ export default function MyPage() {
 
             {/* 히스토리 */}
             <div>
-              <h2 className="text-[16px] font-bold text-white mb-3">최근 변환 기록 <span className="text-[#444] font-normal text-[13px]">(3일간 보관)</span></h2>
+              <div className="flex items-baseline gap-2 mb-4 px-1">
+                <h2 className="text-[16px] font-bold text-white">최근 변환 기록</h2>
+                <span className="text-[12px] text-[#666]">3일간 보관</span>
+              </div>
 
               {historyLoading ? (
                 <div className="flex justify-center py-10">
@@ -126,37 +153,50 @@ export default function MyPage() {
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
-                  {history.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => window.open(item.result_image_url, "_blank")}
-                      className="flex items-center gap-4 bg-[#1A1A1A] border border-white/10 rounded-2xl px-4 py-3 hover:border-white/20 transition-colors text-left"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.result_image_url}
-                        alt=""
-                        className="w-20 h-20 rounded-xl object-cover flex-shrink-0 bg-white/5"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white font-semibold text-[15px]">
-                          {STYLE_LABELS[item.style_id] ?? item.style_id}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-[#555] text-[13px]">{relativeTime(item.created_at)}</p>
-                          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${expiryBadge(item.created_at).className}`}>
-                            {expiryBadge(item.created_at).label}
-                          </span>
-                        </div>
+                <div className="flex flex-col">
+                  {Object.entries(grouped).map(([styleId, items], i) => (
+                    <div key={styleId} className={`py-4 ${i > 0 ? "border-t border-[#1A1A1A]" : ""}`}>
+                      <div className="flex items-center gap-2 mb-3 px-1">
+                        <span className="text-[14px] font-medium text-[#ccc]">{STYLE_LABELS[styleId] ?? styleId}</span>
+                        <span className="text-[12px] text-[#666]">{items.length}장</span>
                       </div>
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-white/20">
-                        <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
+                      <div className="grid grid-cols-3 gap-2">
+                        {items.map(item => {
+                          const badge = expiryBadge(item.created_at);
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => window.open(item.result_image_url, "_blank")}
+                              className="flex flex-col gap-1"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={item.result_image_url}
+                                alt=""
+                                className="w-full aspect-square rounded-xl object-cover bg-white/5"
+                              />
+                              <div className="flex flex-col items-start gap-0.5 px-0.5">
+                                <span className="text-[11px] text-[#555]">{relativeTime(item.created_at)}</span>
+                                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* 회원 탈퇴 */}
+            <div className="mt-12 flex justify-center">
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="text-[13px] text-[#555] underline hover:text-[#888] transition-colors"
+              >
+                회원 탈퇴
+              </button>
             </div>
           </>
         )}
@@ -168,6 +208,31 @@ export default function MyPage() {
           © 2026 StyleDrop · <Link href="/terms" className="hover:text-white/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/30 transition-colors">개인정보처리방침</Link> · v0.3
         </p>
       </footer>
+
+      {/* 회원 탈퇴 모달 */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-[#1A1A1A] rounded-2xl p-6 max-w-sm mx-4 border border-[#333] w-full" onClick={e => e.stopPropagation()}>
+            <p className="text-[16px] font-bold text-white">정말 탈퇴하시겠습니까?</p>
+            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">탈퇴 즉시 모든 데이터(변환 기록, 프로필 정보)가 영구 삭제되며 복구할 수 없습니다.</p>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="bg-[#2A2A2A] text-white rounded-xl py-3 flex-1 font-medium"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="bg-[#ff4444] text-white rounded-xl py-3 flex-1 font-bold disabled:opacity-50 transition-opacity"
+              >
+                {deleting ? "처리 중..." : "탈퇴하기"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

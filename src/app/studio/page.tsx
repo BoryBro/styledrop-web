@@ -124,7 +124,12 @@ export default function Studio() {
   const selectedStyleRef = useRef<string | null>(null);
   const toastIdRef = useRef(0);
   const router = useRouter();
-  const { user, loading, login, logout } = useAuth();
+  const { user, loading, login } = useAuth();
+  const [remaining, setRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/usage")
@@ -201,19 +206,23 @@ export default function Studio() {
 
         {/* Header */}
         <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
-          <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
+          <div className="flex items-center gap-2.5">
+            <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
+            {remaining !== null && (
+              <span className={`text-[12px] px-2.5 py-1 rounded-full bg-[#1A1A1A] ${remaining === 0 ? "text-[#ff4444]" : "text-[#999]"}`}>
+                {remaining}회 남음
+              </span>
+            )}
+          </div>
           {!loading && (
             user ? (
-              <div className="flex items-center gap-2.5">
-                <button onClick={() => router.push("/mypage")} className="flex items-center gap-1.5">
-                  {user.profileImage && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.profileImage} alt="" className="w-6 h-6 rounded-full object-cover" />
-                  )}
-                  <span className="text-white/70 text-[13px]">{user.nickname}</span>
-                </button>
-                <button onClick={logout} className="text-[#666] text-[12px] hover:text-white/40 transition-colors">로그아웃</button>
-              </div>
+              <button onClick={() => router.push("/mypage")} className="flex items-center gap-2">
+                {user.profileImage && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
+                )}
+                <span className="text-[14px] font-medium text-white truncate max-w-[120px]">{user.nickname}</span>
+              </button>
             ) : (
               <button onClick={login} className="bg-[#FEE500] text-[#3C1E1E] text-[13px] font-bold px-3 py-1.5 rounded-lg">
                 카카오 로그인
