@@ -189,11 +189,6 @@ export default function Studio() {
                 {remaining === 0 && !user ? "로그인 필요" : `${remaining}회 남음`}
               </span>
             )}
-            {user && credits !== null && credits > 0 && (
-              <Link href="/shop" className="text-[12px] px-2.5 py-1 rounded-full bg-[#C9571A]/20 text-[#C9571A] hover:bg-[#C9571A]/30 transition-colors">
-                ✦ {credits}크레딧
-              </Link>
-            )}
           </div>
           {!loading && (
             user ? (

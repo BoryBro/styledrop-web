@@ -46,6 +46,15 @@ export async function GET(request: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_KEY!
       );
+      // 기존 유저 확인
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("id")
+        .eq("kakao_id", kakaoId)
+        .single();
+
+      const isNewUser = !existingUser;
+
       const { data: user, error: upsertError } = await supabase
         .from("users")
         .upsert({ kakao_id: kakaoId, nickname, profile_image: profileImage, email, last_login_at: new Date().toISOString() }, { onConflict: "kakao_id" })
@@ -55,6 +64,12 @@ export async function GET(request: NextRequest) {
       if (!upsertError && user) {
         userId = user.id;
         await supabase.from("user_events").insert({ user_id: user.id, event_type: "login" });
+
+        // 신규 가입 시 3크레딧 지급
+        if (isNewUser) {
+          await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 3 });
+          await supabase.from("user_events").insert({ user_id: user.id, event_type: "signup_bonus", metadata: { credits: 3 } });
+        }
       } else {
         console.error("[kakao callback] upsert error:", upsertError);
       }

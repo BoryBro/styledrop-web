@@ -76,10 +76,12 @@ export default function Result() {
     const cachedShareUrl = sessionStorage.getItem("sd_shareUrl");
     const cachedShareLink = sessionStorage.getItem("sd_shareLink");
     const cachedImageKey = sessionStorage.getItem("sd_imageKey");
-    const cachedWatermarkRemoved = sessionStorage.getItem("sd_watermarkRemoved");
 
     if (cachedImageKey) setImageKey(cachedImageKey);
-    if (cachedWatermarkRemoved === "1") setWatermarkRemoved(true);
+    // watermarkRemoved는 캐시된 결과가 있을 때만 복원 (새 변환이면 리셋)
+    if (cachedResult && sessionStorage.getItem("sd_watermarkRemoved") === "1") {
+      setWatermarkRemoved(true);
+    }
 
     if (cachedResult) {
       setResultImage(cachedResult);
@@ -100,6 +102,8 @@ export default function Result() {
           const dataUrl = `data:image/jpeg;base64,${data.image}`;
           setResultImage(dataUrl);
           sessionStorage.setItem("sd_resultDataUrl", dataUrl);
+          sessionStorage.removeItem("sd_watermarkRemoved");
+          setWatermarkRemoved(false);
           if (data.imageKey) {
             setImageKey(data.imageKey);
             sessionStorage.setItem("sd_imageKey", data.imageKey);
@@ -531,8 +535,8 @@ export default function Result() {
                     <span>✦</span>
                     <span>
                       {credits === 0
-                        ? "크레딧 없음 — 워터마크 제거 불가"
-                        : `워터마크 없이 저장 (크레딧 ${credits}개 보유)`}
+                        ? "크레딧 없음 — 워터마크 없이 저장 불가"
+                        : `저장하기 — 크레딧 1개 사용 (잔여 ${credits}개)`}
                     </span>
                   </>
                 )}
@@ -548,7 +552,7 @@ export default function Result() {
             )}
             {watermarkRemoved && (
               <div className="w-full py-3 text-sm text-[#C9571A] text-center bg-[#C9571A]/10 border border-[#C9571A]/20 rounded-xl">
-                ✦ 워터마크가 제거됐어요. 저장 버튼을 눌러주세요.
+                ✦ 워터마크가 제거됐어요. 위 저장 버튼으로 다운로드하세요.
               </div>
             )}
           </div>

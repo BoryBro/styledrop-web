@@ -1,5 +1,5 @@
 export const GUEST_LIMIT = 2;
-export const USER_LIMIT = 10;
+export const USER_LIMIT = 5;
 export const WINDOW_MS = 24 * 60 * 60 * 1000; // 24시간
 
 export const GUEST_COOKIE = "sd_guest_cnt";

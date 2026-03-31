@@ -6,37 +6,49 @@ export async function addWatermark(imageBase64: string): Promise<string> {
   const width = meta.width ?? 1024;
   const height = meta.height ?? 1024;
 
-  const fontSize = Math.max(14, Math.round(width * 0.032));
-  const step = Math.round(Math.min(width, height) / 3.2);
+  const fontSize = Math.max(16, Math.round(width * 0.028));
+  const edgePad = Math.round(fontSize * 1.0);
+  const innerPadX = Math.round(fontSize * 0.55);
+  const innerPadY = Math.round(fontSize * 0.45);
 
-  // 대각선 반복 워터마크 타일 생성
-  const tiles: string[] = [];
-  for (let row = -2; row < Math.ceil(height / step) + 3; row++) {
-    for (let col = -2; col < Math.ceil(width / step) + 3; col++) {
-      const x = col * step + (row % 2) * (step / 2);
-      const y = row * step;
-      tiles.push(`
-        <text
-          x="${x}" y="${y}"
-          font-family="Arial, Helvetica, sans-serif"
-          font-weight="bold"
-          font-size="${fontSize}"
-          fill="white"
-          fill-opacity="0.22"
-          transform="rotate(-30, ${x}, ${y})"
-          letter-spacing="1"
-        >StyleDrop</text>
-      `);
-    }
-  }
+  const starSize = Math.round(fontSize * 0.78);
+  const gap = Math.round(fontSize * 0.32);
+  const textW = Math.round(fontSize * 0.58 * "StyleDrop".length);
+
+  const badgeW = innerPadX * 2 + starSize + gap + textW;
+  const badgeH = Math.round(fontSize + innerPadY * 2);
+
+  const badgeX = width - edgePad - badgeW;
+  const badgeY = height - edgePad - badgeH;
+
+  const cx = badgeX + innerPadX + starSize / 2;
+  const cy = badgeY + badgeH / 2;
+  const ro = starSize / 2;
+  const ri = ro * 0.36;
+  const starPath = [
+    `M ${cx},${cy - ro}`,
+    `L ${cx + ri},${cy - ri}`,
+    `L ${cx + ro},${cy}`,
+    `L ${cx + ri},${cy + ri}`,
+    `L ${cx},${cy + ro}`,
+    `L ${cx - ri},${cy + ri}`,
+    `L ${cx - ro},${cy}`,
+    `L ${cx - ri},${cy - ri}`,
+    "Z",
+  ].join(" ");
+
+  const textX = badgeX + innerPadX + starSize + gap;
+  const textY = badgeY + badgeH / 2 + fontSize * 0.36;
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-    ${tiles.join("")}
+    <rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}" rx="7" ry="7" fill="black" fill-opacity="0.38"/>
+    <path d="${starPath}" fill="white" fill-opacity="0.88"/>
+    <text x="${textX}" y="${textY}" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="${fontSize}" fill="white" fill-opacity="0.88" letter-spacing="0.4">StyleDrop</text>
   </svg>`;
 
   const result = await sharp(imageBuffer)
     .composite([{ input: Buffer.from(svg), top: 0, left: 0 }])
-    .jpeg({ quality: 62 })
+    .jpeg({ quality: 88 })
     .toBuffer();
 
   return result.toString("base64");
