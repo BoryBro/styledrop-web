@@ -48,6 +48,19 @@ const STYLES = [
     active: true,
     hidden: false,
   },
+  {
+    id: "joseon-farmer",
+    name: "조선시대 농부",
+    desc: "얼굴이 잘 보이는 정면 사진을 업로드해주세요.",
+    usage: "0",
+    bgImage: "/thumbnails/joseon-after.jpg",
+    beforeImg: "/thumbnails/joseon-before.jpg",
+    afterImg: "/thumbnails/joseon-after.jpg",
+    bgColor: "#1a1408",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+  },
   // 4K 업스케일링 — 데이터 보존, 화면 미표시
   {
     id: "4k-upscale",
@@ -97,11 +110,13 @@ export default function Studio() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showNoCreditModal, setShowNoCreditModal] = useState(false);
   const [notices, setNotices] = useState<{ id: number; text: string }[]>([]);
+  const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
 
   useEffect(() => {
     fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
     fetch("/api/notices").then(r => r.json()).then(d => setNotices(d.notices ?? [])).catch(() => {});
+    fetch("/api/visitors").then(r => r.json()).then(d => setVisitors(d)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -224,11 +239,25 @@ export default function Studio() {
           {/* 터미널 공지 */}
           {notices.length > 0 && (
             <div className="mb-5 bg-[#0D0D0D] border border-[#2a2a2a] rounded-xl px-4 py-3 font-mono overflow-hidden">
-              <div className="flex items-center gap-1.5 mb-2.5">
-                <div className="w-2 h-2 rounded-full bg-[#ff5f57]" />
-                <div className="w-2 h-2 rounded-full bg-[#febc2e]" />
-                <div className="w-2 h-2 rounded-full bg-[#28c840]" />
-                <span className="ml-1 text-[10px] text-[#444] tracking-wide">notice</span>
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-[#ff5f57]" />
+                  <div className="w-2 h-2 rounded-full bg-[#febc2e]" />
+                  <div className="w-2 h-2 rounded-full bg-[#28c840]" />
+                  <span className="ml-1 text-[10px] text-[#444] tracking-wide">notice</span>
+                </div>
+                {visitors && (
+                  <div className="flex items-center gap-2 text-[10px] text-[#444] font-mono">
+                    <span className="flex items-center gap-1">
+                      <svg width="6" height="6" viewBox="0 0 6 6" fill="none">
+                        <circle cx="3" cy="3" r="3" fill="#C9571A" opacity="0.6"/>
+                      </svg>
+                      오늘 {visitors.today.toLocaleString()}
+                    </span>
+                    <span className="text-[#333]">·</span>
+                    <span>누적 {visitors.total.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
               {notices.map((n, i) => (
                 <p key={n.id} className={`text-[12px] text-[#888] leading-relaxed ${i > 0 ? "mt-1" : ""}`}>

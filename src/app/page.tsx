@@ -11,12 +11,17 @@ export default function Home() {
   const [shaking, setShaking] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((data) => setUser(data.loggedIn ? data.user : null))
+      .catch(() => {});
+    fetch("/api/visitors")
+      .then((r) => r.json())
+      .then((d) => setVisitors(d))
       .catch(() => {});
   }, []);
 
@@ -45,6 +50,25 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-6 relative" suppressHydrationWarning>
+      {/* 방문자 카운터 */}
+      {visitors && (
+        <div className="absolute top-5 left-0 right-0 flex justify-center">
+          <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/4 border border-white/6 font-mono">
+            <span className="flex items-center gap-1.5 text-[11px] text-[#555]">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <circle cx="5" cy="5" r="3" fill="#C9571A" opacity="0.7"/>
+                <circle cx="5" cy="5" r="1.5" fill="#C9571A"/>
+              </svg>
+              오늘 <span className="text-[#888]">{visitors.today.toLocaleString()}</span>
+            </span>
+            <span className="text-[#333]">·</span>
+            <span className="text-[11px] text-[#555]">
+              누적 <span className="text-[#888]">{visitors.total.toLocaleString()}</span>
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col items-center gap-8 w-full max-w-xs">
 
         {/* Logo */}
