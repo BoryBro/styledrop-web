@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 
+type Notice = { id: number; text: string; active: boolean };
 type StyleStat = { style_id: string; style_name: string; count: number };
 type Stats = {
   total: number;
@@ -60,32 +61,53 @@ export default function AdminPage() {
   const [fetchedAt, setFetchedAt] = useState<Date | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [noticesSaving, setNoticesSaving] = useState(false);
+  const [noticesSaved, setNoticesSaved] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doLogin = async (pw: string) => {
     setError("");
     setIsLoading(true);
     try {
       const res = await fetch("/api/admin/stats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password: pw }),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.error || "오류가 발생했습니다.");
-      else {
+      if (!res.ok) {
+        setError(data.error || "오류가 발생했습니다.");
+        localStorage.removeItem("sd_admin_pw");
+      } else {
+        localStorage.setItem("sd_admin_pw", pw);
         setStats(data);
         const now = new Date();
         setFetchedAt(now);
         setElapsed(0);
         if (timerRef.current) clearInterval(timerRef.current);
         timerRef.current = setInterval(() => setElapsed(s => s + 1), 1000);
+        fetch("/api/notices").then(r => r.json()).then(d => setNotices(d.notices ?? [])).catch(() => {});
       }
     } catch {
       setError("요청 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 마운트 시 저장된 비밀번호로 자동 로그인
+  useEffect(() => {
+    const saved = localStorage.getItem("sd_admin_pw");
+    if (saved) {
+      setPassword(saved);
+      doLogin(saved);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    doLogin(password);
   };
 
   if (!stats) {
@@ -130,7 +152,7 @@ export default function AdminPage() {
             </span>
           )}
           <button
-            onClick={() => { setStats(null); setPassword(""); if (timerRef.current) clearInterval(timerRef.current); }}
+            onClick={() => { setStats(null); setPassword(""); localStorage.removeItem("sd_admin_pw"); if (timerRef.current) clearInterval(timerRef.current); }}
             className="text-xs text-[#444] hover:text-white transition-colors"
           >
             로그아웃
@@ -222,6 +244,54 @@ export default function AdminPage() {
           </Section>
         );
       })()}
+
+      {/* 공지 관리 */}
+      <div className="flex flex-col gap-1">
+        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">공지 관리 (터미널)</p>
+        <div className="bg-[#111] rounded-2xl px-4 py-4 border border-white/5 flex flex-col gap-3">
+          {notices.map((n, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <button
+                onClick={() => setNotices(prev => prev.map((x, j) => j === i ? { ...x, active: !x.active } : x))}
+                className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border transition-colors ${n.active ? "bg-[#C9571A] border-[#C9571A]" : "bg-transparent border-white/20"}`}
+              >
+                {n.active && <svg viewBox="0 0 10 8" fill="none" className="w-full h-full p-0.5"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </button>
+              <input
+                value={n.text}
+                onChange={e => setNotices(prev => prev.map((x, j) => j === i ? { ...x, text: e.target.value } : x))}
+                className="flex-1 bg-[#0D0D0D] border border-white/10 rounded-lg px-3 py-2 text-white text-[13px] font-mono focus:outline-none focus:border-[#C9571A]/50 transition-colors"
+              />
+              <button
+                onClick={() => setNotices(prev => prev.filter((_, j) => j !== i))}
+                className="mt-1 text-[#444] hover:text-[#ff5f57] transition-colors text-lg leading-none"
+              >×</button>
+            </div>
+          ))}
+          <button
+            onClick={() => setNotices(prev => [...prev, { id: Date.now(), text: "", active: true }])}
+            className="text-[12px] text-[#555] hover:text-white transition-colors text-left font-mono"
+          >+ 공지 추가</button>
+          <button
+            onClick={async () => {
+              setNoticesSaving(true);
+              setNoticesSaved(false);
+              await fetch("/api/notices", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password, notices }),
+              });
+              setNoticesSaving(false);
+              setNoticesSaved(true);
+              setTimeout(() => setNoticesSaved(false), 2000);
+            }}
+            disabled={noticesSaving}
+            className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-[#2A2A2A] text-white font-bold py-2.5 rounded-xl transition-colors text-[13px]"
+          >
+            {noticesSaving ? "저장 중..." : noticesSaved ? "✓ 저장됨" : "저장하기"}
+          </button>
+        </div>
+      </div>
 
       {/* 스타일별 */}
       <Section title="스타일별 사용">

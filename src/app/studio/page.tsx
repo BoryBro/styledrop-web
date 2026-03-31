@@ -95,10 +95,13 @@ export default function Studio() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showNoCreditModal, setShowNoCreditModal] = useState(false);
+  const [notices, setNotices] = useState<{ id: number; text: string }[]>([]);
 
   useEffect(() => {
     fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
+    fetch("/api/notices").then(r => r.json()).then(d => setNotices(d.notices ?? [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -125,8 +128,12 @@ export default function Studio() {
       showToast("곧 출시됩니다 ✨");
       return;
     }
-    if (remaining === 0 && !user) {
+    if (!user && remaining === 0) {
       setShowLoginModal(true);
+      return;
+    }
+    if (user && credits === 0) {
+      setShowNoCreditModal(true);
       return;
     }
     setSelectedStyle(style.id);
@@ -182,13 +189,6 @@ export default function Studio() {
         <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
           <div className="flex items-center gap-2">
             <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
-            {remaining !== null && (
-              <span className={`text-[12px] px-2.5 py-1 rounded-full bg-[#1A1A1A] ${
-                remaining === 0 && !user ? "text-[#FEE500]" : remaining === 0 ? "text-[#ff4444]" : "text-[#999]"
-              }`}>
-                {remaining === 0 && !user ? "로그인 필요" : `${remaining}회 남음`}
-              </span>
-            )}
           </div>
           {!loading && (
             user ? (
@@ -219,7 +219,29 @@ export default function Studio() {
 
         <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-6 pb-4">
           <h2 className="text-[20px] font-bold text-white mb-1">스타일 선택</h2>
-          <p className="text-[14px] text-[#666] mb-6">원하는 스타일을 선택하면 사진 앨범이 열립니다</p>
+          <p className="text-[14px] text-[#666] mb-3">원하는 스타일을 선택하면 사진 앨범이 열립니다</p>
+
+          {/* 터미널 공지 */}
+          {notices.length > 0 && (
+            <div className="mb-5 bg-[#0D0D0D] border border-[#2a2a2a] rounded-xl px-4 py-3 font-mono overflow-hidden">
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <div className="w-2 h-2 rounded-full bg-[#ff5f57]" />
+                <div className="w-2 h-2 rounded-full bg-[#febc2e]" />
+                <div className="w-2 h-2 rounded-full bg-[#28c840]" />
+                <span className="ml-1 text-[10px] text-[#444] tracking-wide">notice</span>
+              </div>
+              {notices.map((n, i) => (
+                <p key={n.id} className={`text-[12px] text-[#888] leading-relaxed ${i > 0 ? "mt-1" : ""}`}>
+                  <span className="text-[#C9571A]">›</span>{" "}
+                  <span className="text-white/60">{n.text}</span>
+                  {i === notices.length - 1 && (
+                    <span className="inline-block w-1.5 h-3.5 bg-[#C9571A]/70 ml-1 align-middle" style={{ animation: "blink 1.2s step-end infinite" }} />
+                  )}
+                </p>
+              ))}
+            </div>
+          )}
+          <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
 
           <div className="flex flex-col gap-3">
             {STYLES.filter(s => !s.hidden).map((style) => (
@@ -290,7 +312,8 @@ export default function Studio() {
         {!loading && !user && (
           <div className="max-w-2xl mx-auto w-full px-4 pb-4">
             <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl px-5 py-4 flex flex-col gap-3">
-              <p className="text-white/80 text-[14px] font-medium">카카오 로그인하면 하루 10회 + 히스토리 저장!</p>
+              <p className="text-white/80 text-[14px] font-medium">✦ 카카오 로그인하면 3크레딧 무료 지급!</p>
+              <p className="text-[12px] text-[#666]">1크레딧 = AI 변환 1회 · 워터마크 없이 고화질 저장</p>
               <button
                 onClick={login}
                 className="bg-[#FEE500] text-[#3C1E1E] rounded-xl font-bold py-3 w-full text-[15px] flex items-center justify-center gap-2"
@@ -304,22 +327,11 @@ export default function Studio() {
           </div>
         )}
 
-        {/* 크레딧 상품 안내 */}
-        <div className="max-w-2xl mx-auto w-full px-4 pb-4">
-          <Link href="/shop" className="block bg-[#111] border border-white/8 rounded-2xl px-5 py-4 hover:border-[#C9571A]/40 transition-colors">
-            <p className="text-white/60 text-[12px] mb-2">✦ 워터마크 제거 크레딧</p>
-            <div className="flex gap-2 flex-wrap">
-              <span className="text-[12px] bg-[#1A1A1A] text-white/70 px-3 py-1.5 rounded-full">10회 · 1,900원</span>
-              <span className="text-[12px] bg-[#C9571A]/15 text-[#C9571A] px-3 py-1.5 rounded-full border border-[#C9571A]/20">30회 · 4,900원 인기</span>
-              <span className="text-[12px] bg-[#1A1A1A] text-white/70 px-3 py-1.5 rounded-full">70회 · 9,900원</span>
-            </div>
-          </Link>
-        </div>
 
         {/* Footer */}
         <footer className="py-6 text-center px-4">
           <p className="text-[11px] text-[#333]">
-            © 2026 StyleDrop · <Link href="/terms" className="hover:text-white/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/30 transition-colors">개인정보처리방침</Link>
+            © 2026 StyleDrop v2.0 · <Link href="/terms" className="hover:text-white/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/30 transition-colors">개인정보처리방침</Link>
           </p>
           <p className="text-[10px] text-[#2a2a2a] mt-1 leading-relaxed">
             상호: 핑거 · 대표자: 문지환 · 사업자등록번호: 707-79-00261<br/>
@@ -332,9 +344,9 @@ export default function Studio() {
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => setShowLoginModal(false)}>
           <div className="bg-[#1A1A1A] rounded-2xl p-6 max-w-sm mx-4 border border-[#333] text-center w-full" onClick={e => e.stopPropagation()}>
-            <p className="text-[40px]">🔒</p>
+            <p className="text-[40px]">🎁</p>
             <p className="text-[18px] font-bold text-white mt-3">무료 체험이 끝났어요</p>
-            <p className="text-[14px] text-[#999] mt-2 whitespace-pre-line leading-relaxed">{`카카오 로그인하면 하루 10회까지\n무료로 이용할 수 있어요!`}</p>
+            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">카카오 로그인하면<br/><span className="text-[#C9571A] font-bold">3크레딧을 무료로 받아요!</span><br/>1크레딧 = AI 변환 1회</p>
             <button
               onClick={() => { window.location.href = "/api/auth/kakao"; }}
               className="bg-[#FEE500] text-[#3C1E1E] font-bold text-[15px] w-full py-4 rounded-xl mt-4 flex items-center justify-center gap-2"
@@ -342,10 +354,29 @@ export default function Studio() {
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
               </svg>
-              카카오로 로그인하기
+              카카오로 로그인하고 3크레딧 받기
             </button>
             <button onClick={() => setShowLoginModal(false)} className="text-[13px] text-[#555] mt-3 hover:text-[#888] transition-colors">
               다음에 할게요
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showNoCreditModal && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => setShowNoCreditModal(false)}>
+          <div className="bg-[#1A1A1A] rounded-2xl p-6 max-w-sm mx-4 border border-[#333] text-center w-full" onClick={e => e.stopPropagation()}>
+            <p className="text-[40px]">💳</p>
+            <p className="text-[18px] font-bold text-white mt-3">크레딧이 없어요</p>
+            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">1회 변환에 1크레딧이 필요해요.<br/>크레딧을 충전하고 계속 이용해보세요.</p>
+            <Link
+              href="/shop"
+              className="bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold text-[15px] w-full py-4 rounded-xl mt-4 flex items-center justify-center transition-colors"
+            >
+              크레딧 충전하기
+            </Link>
+            <button onClick={() => setShowNoCreditModal(false)} className="text-[13px] text-[#555] mt-3 hover:text-[#888] transition-colors">
+              나중에 할게요
             </button>
           </div>
         </div>

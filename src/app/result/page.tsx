@@ -30,22 +30,14 @@ export default function Result() {
   const historySaved = useRef(false);
   const router = useRouter();
   const { user, loading: authLoading, login } = useAuth();
-  const [remaining, setRemaining] = useState<number | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
-  const [imageKey, setImageKey] = useState<string | null>(null);
-  const [watermarkRemoved, setWatermarkRemoved] = useState(false);
-  const [removingWatermark, setRemovingWatermark] = useState(false);
-
-  const fetchRemaining = () => {
-    fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
-  };
 
   const fetchCredits = () => {
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
   };
 
-  useEffect(() => { fetchRemaining(); fetchCredits(); }, []);
+  useEffect(() => { fetchCredits(); }, []);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -75,13 +67,6 @@ export default function Result() {
     const cachedResult = sessionStorage.getItem("sd_resultDataUrl");
     const cachedShareUrl = sessionStorage.getItem("sd_shareUrl");
     const cachedShareLink = sessionStorage.getItem("sd_shareLink");
-    const cachedImageKey = sessionStorage.getItem("sd_imageKey");
-
-    if (cachedImageKey) setImageKey(cachedImageKey);
-    // watermarkRemoved는 캐시된 결과가 있을 때만 복원 (새 변환이면 리셋)
-    if (cachedResult && sessionStorage.getItem("sd_watermarkRemoved") === "1") {
-      setWatermarkRemoved(true);
-    }
 
     if (cachedResult) {
       setResultImage(cachedResult);
@@ -102,14 +87,7 @@ export default function Result() {
           const dataUrl = `data:image/jpeg;base64,${data.image}`;
           setResultImage(dataUrl);
           sessionStorage.setItem("sd_resultDataUrl", dataUrl);
-          sessionStorage.removeItem("sd_watermarkRemoved");
-          setWatermarkRemoved(false);
-          if (data.imageKey) {
-            setImageKey(data.imageKey);
-            sessionStorage.setItem("sd_imageKey", data.imageKey);
-          }
           setStatus("done");
-          fetchRemaining();
           fetchCredits();
 
           if (!data.shouldSaveHistory) {
@@ -265,36 +243,6 @@ export default function Result() {
       .catch(() => {});
   }, [status, resultImage, imageBase64, shareUrl]);
 
-  const handleRemoveWatermark = async () => {
-    if (!imageKey || removingWatermark) return;
-    setRemovingWatermark(true);
-    try {
-      const res = await fetch("/api/remove-watermark", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageKey }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        showToast(data.error ?? "워터마크 제거에 실패했어요.");
-        return;
-      }
-      const cleanUrl = `data:image/jpeg;base64,${data.image}`;
-      setResultImage(cleanUrl);
-      sessionStorage.setItem("sd_resultDataUrl", cleanUrl);
-      sessionStorage.removeItem("sd_imageKey");
-      sessionStorage.setItem("sd_watermarkRemoved", "1");
-      setWatermarkRemoved(true);
-      setImageKey(null);
-      setCredits(data.credits);
-      showToast("✦ 워터마크가 제거됐어요!");
-    } catch {
-      showToast("오류가 발생했어요. 다시 시도해주세요.");
-    } finally {
-      setRemovingWatermark(false);
-    }
-  };
-
   const handleCopyLink = async () => {
     const link = shareLink || sessionStorage.getItem("sd_shareLink") || window.location.href;
     try {
@@ -323,13 +271,6 @@ export default function Result() {
       <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
         <div className="flex items-center gap-2">
           <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
-          {remaining !== null && (
-            <span className={`text-[12px] px-2.5 py-1 rounded-full bg-[#1A1A1A] ${
-              remaining === 0 && !user ? "text-[#FEE500]" : remaining === 0 ? "text-[#ff4444]" : "text-[#999]"
-            }`}>
-              {remaining === 0 && !user ? "로그인 필요" : `${remaining}회 남음`}
-            </span>
-          )}
         </div>
         {!authLoading && (
           user ? (
@@ -412,10 +353,10 @@ export default function Result() {
             <div className="flex flex-col items-center text-center max-w-xs w-full gap-3">
               {isRateLimited && !user ? (
                 <>
-                  <span className="text-[40px]">🔒</span>
+                  <span className="text-[40px]">🎁</span>
                   <p className="text-white font-bold text-[18px] mt-1">무료 체험이 끝났어요</p>
                   <p className="text-[#999] text-[14px] leading-relaxed">
-                    {errorMessage ?? "카카오 로그인하면 하루 10회까지\n무료로 이용할 수 있어요!"}
+                    {errorMessage ?? "카카오 로그인하면 3크레딧을 무료로 받아요!"}
                   </p>
                   <button
                     onClick={() => { window.location.href = "/api/auth/kakao"; }}
@@ -424,9 +365,26 @@ export default function Result() {
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                       <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
                     </svg>
-                    카카오로 로그인하고 계속하기
+                    카카오로 로그인하고 3크레딧 받기
                   </button>
-                  <p className="text-[12px] text-[#666]">로그인하면 하루 10회 무료 + 변환 기록 저장</p>
+                  <p className="text-[12px] text-[#666]">1크레딧 = AI 변환 1회 · 워터마크 없음</p>
+                </>
+              ) : isRateLimited && user ? (
+                <>
+                  <span className="text-[40px]">💳</span>
+                  <p className="text-white font-bold text-[18px] mt-1">크레딧이 없어요</p>
+                  <p className="text-[#999] text-[14px] leading-relaxed">
+                    {errorMessage ?? "크레딧을 충전하고 계속 이용해보세요."}
+                  </p>
+                  <Link
+                    href="/shop"
+                    className="bg-[#C9571A] text-white font-bold text-[15px] w-full py-4 rounded-xl flex items-center justify-center mt-1"
+                  >
+                    크레딧 충전하기
+                  </Link>
+                  <button onClick={() => router.push("/studio")} className="text-[13px] text-[#555] mt-2 hover:text-white transition-colors">
+                    뒤로 가기
+                  </button>
                 </>
               ) : (
                 <>
@@ -517,43 +475,15 @@ export default function Result() {
               </button>
             )}
 
-            {/* 워터마크 제거 섹션 */}
-            {user && !watermarkRemoved && imageKey && (
-              <button
-                onClick={handleRemoveWatermark}
-                disabled={removingWatermark || credits === 0}
-                className="w-full py-3.5 rounded-xl font-bold text-[14px] transition-all border flex items-center justify-center gap-2 disabled:opacity-40"
-                style={credits && credits > 0
-                  ? { backgroundColor: "#1A1A1A", borderColor: "rgba(201,87,26,0.4)", color: "#C9571A" }
-                  : { backgroundColor: "#111", borderColor: "rgba(255,255,255,0.06)", color: "#555" }
-                }
-              >
-                {removingWatermark ? (
-                  <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                ) : (
-                  <>
-                    <span>✦</span>
-                    <span>
-                      {credits === 0
-                        ? "크레딧 부족 — 워터마크 제거 불가"
-                        : `✦ 워터마크 제거 후 저장 (크레딧 ${credits}개 → ${credits - 1}개)`}
-                    </span>
-                  </>
-                )}
-              </button>
-            )}
-            {user && credits === 0 && !watermarkRemoved && (
+            {/* 크레딧 부족 안내 (로그인 유저) */}
+            {user && credits !== null && credits <= 2 && (
               <Link
                 href="/shop"
-                className="w-full py-3 text-sm text-[#C9571A] text-center border border-[#C9571A]/20 rounded-xl hover:border-[#C9571A]/40 transition-colors block"
+                className="w-full py-3 text-sm text-center border rounded-xl transition-colors block"
+                style={{ color: credits === 0 ? "#C9571A" : "#888", borderColor: credits === 0 ? "rgba(201,87,26,0.3)" : "rgba(255,255,255,0.06)" }}
               >
-                크레딧 충전하기 →
+                {credits === 0 ? "✦ 크레딧 소진 — 충전하기 →" : `✦ 크레딧 ${credits}개 남음 · 충전하기 →`}
               </Link>
-            )}
-            {watermarkRemoved && (
-              <div className="w-full py-3 text-sm text-[#C9571A] text-center bg-[#C9571A]/10 border border-[#C9571A]/20 rounded-xl">
-                ✦ 워터마크가 제거됐어요. 위 저장 버튼으로 다운로드하세요.
-              </div>
             )}
           </div>
         )}
