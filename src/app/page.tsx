@@ -133,9 +133,13 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="absolute bottom-6 left-0 right-0 text-center">
+      <footer className="absolute bottom-4 left-0 right-0 text-center px-4">
         <p className="text-[11px] text-[#333]">
-          © 2026 StyleDrop · <Link href="/terms" className="hover:text-white/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/30 transition-colors">개인정보처리방침</Link> · v0.3
+          © 2026 StyleDrop · <Link href="/terms" className="hover:text-white/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/30 transition-colors">개인정보처리방침</Link>
+        </p>
+        <p className="text-[10px] text-[#2a2a2a] mt-1 leading-relaxed">
+          상호: 핑거 · 대표자: 문지환 · 사업자등록번호: 707-79-00261<br/>
+          주소: 대전광역시 서구 동서대로1030번길 8-6(내동) · 연락처: 010-5838-9960
         </p>
       </footer>
     </main>
