@@ -12,10 +12,12 @@
     "@google/genai": "^1.46.0",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.100.0",
+    "@types/sharp": "^0.31.1",
     "next": "16.2.1",
     "next-auth": "^4.24.13",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

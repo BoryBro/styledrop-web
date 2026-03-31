@@ -50,7 +50,6 @@ export default function Result() {
       router.replace("/studio");
       return;
     }
-    sessionStorage.removeItem("sd_fromStudio");
 
     const styleId = sessionStorage.getItem("sd_styleId");
     const base64 = sessionStorage.getItem("sd_imageBase64");

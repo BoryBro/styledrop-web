@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { addWatermark } from "@/lib/watermark";
 import {
   GUEST_LIMIT, USER_LIMIT, WINDOW_MS,
   GUEST_COOKIE, USER_COOKIE,
@@ -115,9 +116,12 @@ export async function POST(request: NextRequest) {
           console.error("[Supabase] unexpected error:", err);
         }
 
+        // 워터마크 적용 (크레딧 차감 없이 사용 시 항상 적용)
+        const watermarked = await addWatermark(part.inlineData.data!);
+
         const res = NextResponse.json({
-          image: part.inlineData.data,
-          mimeType: part.inlineData.mimeType,
+          image: watermarked,
+          mimeType: "image/jpeg",
           shouldSaveHistory: !!session,
         });
         res.cookies.set(cookieName, cookieValue, cookieOptions);
