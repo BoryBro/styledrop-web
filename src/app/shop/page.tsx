@@ -43,6 +43,7 @@ export default function ShopPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [earnedCredits, setEarnedCredits] = useState(0);
+  const [showRefund, setShowRefund] = useState(false);
   const router = useRouter();
 
   const pkg = PACKAGES.find((p) => p.id === selected)!;
@@ -248,7 +249,13 @@ export default function ShopPage() {
         {/* 안내 */}
         <div className="text-[11px] text-[#444] space-y-1 pb-4">
           <p>• 결제 완료 즉시 크레딧이 충전됩니다.</p>
-          <p>• 미사용 크레딧은 결제일로부터 7일 이내 환불 가능합니다.</p>
+          <p>• 미사용 크레딧은 결제일로부터 7일 이내{" "}
+            <button
+              onClick={() => setShowRefund(true)}
+              className="text-[#555] underline underline-offset-2 decoration-[#3a3a3a] hover:text-[#666] transition-colors"
+            >환불</button>
+            {" "}가능합니다.
+          </p>
           <p>• 문의: support@styledrop.cloud</p>
           <p className="pt-1">
             <Link href="/terms" className="underline underline-offset-2 hover:text-white/40 transition-colors">이용약관</Link>
@@ -256,6 +263,37 @@ export default function ShopPage() {
             <Link href="/privacy" className="underline underline-offset-2 hover:text-white/40 transition-colors">개인정보처리방침</Link>
           </p>
         </div>
+
+        {/* 환불 안내 모달 */}
+        {showRefund && (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-end justify-center" onClick={() => setShowRefund(false)}>
+            <div className="bg-[#141414] border border-white/10 rounded-t-3xl p-6 w-full max-w-lg pb-10 flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-bold text-[16px]">환불 안내</h3>
+                <button onClick={() => setShowRefund(false)} className="text-[#555] hover:text-white transition-colors text-xl leading-none">×</button>
+              </div>
+              <div className="flex flex-col gap-3 text-[13px] text-[#888] leading-relaxed">
+                <div className="bg-[#1A1A1A] rounded-2xl p-4 flex flex-col gap-2">
+                  <p className="text-white/70 font-semibold text-[13px]">환불 조건</p>
+                  <p>• 미사용 크레딧에 한해 결제일로부터 <span className="text-white/60">7일 이내</span> 전액 환불 가능</p>
+                  <p>• 크레딧을 1회라도 사용한 경우 부분 환불 불가</p>
+                  <p>• 결제 오류·이중결제는 전액 환불 처리</p>
+                </div>
+                <div className="bg-[#1A1A1A] rounded-2xl p-4 flex flex-col gap-2">
+                  <p className="text-white/70 font-semibold text-[13px]">환불 신청 방법</p>
+                  <p>아래 메일로 <span className="text-white/60">주문번호 또는 카카오 닉네임</span>을 함께 보내주세요.</p>
+                  <a
+                    href="mailto:support@styledrop.cloud?subject=환불 요청&body=카카오 닉네임: %0A결제 금액: %0A사유: "
+                    className="flex items-center justify-center gap-2 bg-[#C9571A]/15 border border-[#C9571A]/30 text-[#C9571A] font-bold py-3 rounded-xl mt-1 hover:bg-[#C9571A]/20 transition-colors"
+                  >
+                    ✉ support@styledrop.cloud
+                  </a>
+                  <p className="text-[11px] text-[#555]">처리 기간: 영업일 기준 3~5일</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

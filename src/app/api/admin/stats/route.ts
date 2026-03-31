@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     supabase.from("user_events").select("event_type"),
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
-    supabase.from("payments").select("amount, credits, user_id, created_at").eq("status", "paid"),
+    supabase.from("payments").select("id, amount, credits, user_id, status, created_at").order("created_at", { ascending: false }),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
     supabase.from("users").select("id, nickname").order("created_at", { ascending: false }).limit(50),
   ]);
@@ -31,8 +31,9 @@ export async function POST(request: NextRequest) {
 
   // 결제 통계
   const payments = paymentsRes.data ?? [];
-  const totalRevenue = payments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
-  const totalPaymentCount = payments.length;
+  const paidPayments = payments.filter(p => p.status === "paid");
+  const totalRevenue = paidPayments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+  const totalPaymentCount = paidPayments.length;
   const todayRevenue = (todayPaymentsRes.data ?? []).reduce((sum, p) => sum + (p.amount ?? 0), 0);
 
 
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     userList: userListRes.data ?? [],
+    paymentList: payments,
     total,
     todayTotal,
     guestCount,

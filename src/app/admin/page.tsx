@@ -4,9 +4,11 @@ import { useState, useEffect, useRef } from "react";
 
 type Notice = { id: number; text: string; active: boolean };
 type UserItem = { id: string; nickname: string | null };
+type PaymentItem = { id: string; user_id: string; amount: number; credits: number; status: string; created_at: string };
 type StyleStat = { style_id: string; style_name: string; count: number };
 type Stats = {
   userList: UserItem[];
+  paymentList: PaymentItem[];
   total: number;
   todayTotal: number;
   guestCount: number;
@@ -69,6 +71,8 @@ export default function AdminPage() {
   const [creditUserId, setCreditUserId] = useState("");
   const [creditAmount, setCreditAmount] = useState("3");
   const [creditMsg, setCreditMsg] = useState("");
+  const [refundingId, setRefundingId] = useState<string | null>(null);
+  const [refundMsg, setRefundMsg] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
 
   const doLogin = async (pw: string) => {
     setError("");
@@ -218,6 +222,55 @@ export default function AdminPage() {
         <Row label="오늘 매출" value={`${stats.todayRevenue.toLocaleString()}원`} />
         <Row label="결제 건수" value={`${stats.totalPaymentCount}건`} />
       </Section>
+
+      {/* 결제 목록 & 원클릭 환불 */}
+      {stats.paymentList.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">결제 목록 & 환불</p>
+          <div className="bg-[#111] rounded-2xl px-4 border border-white/5 flex flex-col">
+            {stats.paymentList.slice(0, 20).map((p) => {
+              const user = stats.userList.find(u => u.id === p.user_id);
+              const date = new Date(p.created_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+              const isRefunded = p.status === "refunded";
+              const isLoading = refundingId === p.id;
+              const msg = refundMsg?.id === p.id ? refundMsg : null;
+              return (
+                <div key={p.id} className="py-3 border-b border-white/5 last:border-0 flex items-center justify-between gap-2">
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-white text-[13px] font-bold truncate">{user?.nickname ?? p.user_id.slice(0, 8)}</span>
+                    <span className="text-[#555] text-[11px] font-mono">{p.amount.toLocaleString()}원 · {p.credits}크레딧 · {date}</span>
+                    {msg && <span className={`text-[11px] ${msg.ok ? "text-[#C9571A]" : "text-red-400"}`}>{msg.msg}</span>}
+                  </div>
+                  {isRefunded ? (
+                    <span className="text-[11px] text-[#444] flex-shrink-0">환불됨</span>
+                  ) : (
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`${user?.nickname ?? "유저"} · ${p.amount.toLocaleString()}원 환불하시겠어요?`)) return;
+                        setRefundingId(p.id);
+                        setRefundMsg(null);
+                        const res = await fetch("/api/admin/refund", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ password, paymentId: p.id }),
+                        });
+                        const data = await res.json();
+                        setRefundingId(null);
+                        setRefundMsg({ id: p.id, ok: data.ok, msg: data.ok ? `✓ ${data.refundedAmount.toLocaleString()}원 환불 완료` : `오류: ${data.error}` });
+                        if (data.ok) p.status = "refunded";
+                      }}
+                      disabled={isLoading}
+                      className="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-lg border border-white/10 text-[#888] hover:text-white hover:border-white/30 transition-colors disabled:opacity-40"
+                    >
+                      {isLoading ? "처리중..." : "환불"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* API 비용 & 손익 */}
       {(() => {
