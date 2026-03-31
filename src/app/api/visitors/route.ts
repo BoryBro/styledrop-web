@@ -8,14 +8,8 @@ function getSupabase() {
   );
 }
 
-// 방문 기록 + 카운트 반환
-export async function GET() {
+async function getCounts() {
   const supabase = getSupabase();
-
-  // 방문 기록 삽입
-  await supabase.from("page_views").insert({});
-
-  // 오늘 자정 기준
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
@@ -29,8 +23,19 @@ export async function GET() {
       .select("*", { count: "exact", head: true }),
   ]);
 
-  return NextResponse.json({
-    today: todayRes.count ?? 0,
-    total: totalRes.count ?? 0,
-  });
+  return { today: todayRes.count ?? 0, total: totalRes.count ?? 0 };
+}
+
+// GET: 카운트만 조회 (기록 없음)
+export async function GET() {
+  const counts = await getCounts();
+  return NextResponse.json(counts);
+}
+
+// POST: 방문 기록 + 카운트 반환
+export async function POST() {
+  const supabase = getSupabase();
+  await supabase.from("page_views").insert({});
+  const counts = await getCounts();
+  return NextResponse.json(counts);
 }

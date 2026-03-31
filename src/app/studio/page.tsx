@@ -116,7 +116,7 @@ export default function Studio() {
     fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
     fetch("/api/notices").then(r => r.json()).then(d => setNotices(d.notices ?? [])).catch(() => {});
-    fetch("/api/visitors").then(r => r.json()).then(d => setVisitors(d)).catch(() => {});
+    fetch("/api/visitors", { method: "GET" }).then(r => r.json()).then(d => setVisitors(d)).catch(() => {});
   }, []);
 
   useEffect(() => {

@@ -28,7 +28,7 @@ export default function PrivacyPolicy() {
               <p className="font-semibold text-white/90 mb-1">② 결제 시</p>
               <ul className="list-disc pl-5 space-y-1">
                 <li>결제 수단, 결제 금액, 결제 일시</li>
-                <li>결제 정보는 포트원(PortOne) 및 각 PG사(카카오페이·토스페이·네이버페이)가 처리하며, StyleDrop은 결제 식별자만 보관합니다.</li>
+                <li>결제 정보는 포트원(PortOne) 및 카카오페이가 처리하며, StyleDrop은 결제 식별자만 보관합니다.</li>
               </ul>
             </div>
             <div>
@@ -44,7 +44,7 @@ export default function PrivacyPolicy() {
         <section>
           <h2 className="text-xl font-bold mb-3 text-white">2. 개인정보 수집 및 이용 목적</h2>
           <ul className="list-disc pl-5 space-y-1.5 text-white/70">
-            <li>서비스 이용 횟수 관리 및 무료/유료 기능 구분</li>
+            <li>크레딧 기반 서비스 이용 관리 (1크레딧 = AI 변환 1회)</li>
             <li>크레딧 충전 및 이용 내역 관리</li>
             <li>결제 처리 및 환불 대응</li>
             <li>이용 기록 저장 및 마이페이지 기능 제공</li>
@@ -87,6 +87,11 @@ export default function PrivacyPolicy() {
                   <td className="py-2 pr-4">결제 처리 대행</td>
                   <td className="py-2">관련 법령에 따름</td>
                 </tr>
+                <tr className="border-b border-white/5">
+                  <td className="py-2 pr-4">카카오페이</td>
+                  <td className="py-2 pr-4">간편결제 처리</td>
+                  <td className="py-2">관련 법령에 따름</td>
+                </tr>
                 <tr>
                   <td className="py-2 pr-4">카카오</td>
                   <td className="py-2 pr-4">소셜 로그인 인증</td>
@@ -113,7 +118,7 @@ export default function PrivacyPolicy() {
 
         <section>
           <h2 className="text-xl font-bold mb-3 text-white">7. 쿠키 사용</h2>
-          <p className="text-white/70">서비스 이용 횟수 제한 및 로그인 상태 유지를 위해 쿠키를 사용합니다. 브라우저 설정에서 쿠키 저장을 거부할 수 있으나, 서비스 이용이 제한될 수 있습니다.</p>
+          <p className="text-white/70">비로그인 무료 체험 횟수 관리 및 로그인 상태 유지를 위해 쿠키를 사용합니다. 브라우저 설정에서 쿠키 저장을 거부할 수 있으나, 서비스 이용이 제한될 수 있습니다.</p>
         </section>
 
         <section className="pt-4 mt-6 border-t border-white/10 text-white/40 text-xs space-y-1">

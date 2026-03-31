@@ -19,9 +19,10 @@ export default function Home() {
       .then((r) => r.json())
       .then((data) => setUser(data.loggedIn ? data.user : null))
       .catch(() => {});
-    fetch("/api/visitors")
+    const alreadyVisited = sessionStorage.getItem("sd_visited");
+    fetch("/api/visitors", { method: alreadyVisited ? "GET" : "POST" })
       .then((r) => r.json())
-      .then((d) => setVisitors(d))
+      .then((d) => { setVisitors(d); sessionStorage.setItem("sd_visited", "1"); })
       .catch(() => {});
   }, []);
 
