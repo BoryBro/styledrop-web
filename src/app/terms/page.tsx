@@ -46,10 +46,15 @@ export default function TermsOfService() {
           <h2 className="text-xl font-bold mb-3 text-white">제 4조 (환불 정책)</h2>
           <ul className="list-disc pl-5 space-y-2 text-white/70">
             <li>미사용 크레딧에 한하여 결제일로부터 7일 이내 전액 환불 요청이 가능합니다.</li>
-            <li>크레딧을 1회라도 사용한 경우, 잔여 크레딧에 대한 부분 환불은 불가합니다.</li>
+            <li>크레딧을 1회 이상 사용한 경우, 사용분은 정가 단가(190원/회, 기본 패키지 기준)로 공제한 후 잔여 결제 금액을 부분 환불합니다.
+              <ul className="list-disc pl-5 mt-1.5 space-y-1 text-white/50 text-sm">
+                <li>환불금 계산: 결제 금액 − (사용 크레딧 수 × 190원)</li>
+                <li>공제 금액이 결제 금액 이상인 경우 환불이 불가합니다.</li>
+              </ul>
+            </li>
             <li>환불 요청은 고객센터(support@styledrop.cloud)를 통해 접수하며, 처리 기간은 영업일 기준 3~5일입니다.</li>
             <li>결제 오류 또는 시스템 장애로 인한 이중 결제의 경우 전액 환불 처리합니다.</li>
-            <li>디지털 콘텐츠의 특성상 크레딧이 소진된 경우 환불이 불가함을 동의한 것으로 간주합니다.</li>
+            <li>디지털 콘텐츠의 특성상 결제일로부터 7일이 경과하거나, 공제 후 환불 금액이 0원인 크레딧에 대해서는 환불이 불가함을 동의한 것으로 간주합니다.</li>
           </ul>
         </section>
 

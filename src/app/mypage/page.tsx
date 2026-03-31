@@ -5,15 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { getGuestHistory, type GuestHistoryItem } from "@/lib/guest-history";
-
-const STYLE_LABELS: Record<string, string> = {
-  "flash-selfie": "플래시 필터",
-  "grab-selfie": "베트남 오토바이 셀카 필터",
-  "voxel-character": "픽셀 캐릭터 필터",
-  "4k-upscale": "4K 업스케일링",
-};
-
-const STYLE_ORDER = ["flash-selfie", "grab-selfie", "voxel-character", "4k-upscale"];
+import { STYLE_LABELS, VISIBLE_STYLE_IDS } from "@/lib/styles";
 
 type HistoryItem = {
   id: string;
@@ -126,7 +118,7 @@ export default function MyPage() {
   };
 
   // 스타일별 그룹핑 (history가 없어도 STYLE_ORDER 전체 표시)
-  const grouped = STYLE_ORDER.reduce<Record<string, HistoryItem[]>>((acc, id) => {
+  const grouped = VISIBLE_STYLE_IDS.reduce<Record<string, HistoryItem[]>>((acc, id) => {
     acc[id] = history.filter(h => h.style_id === id);
     return acc;
   }, {});
@@ -269,7 +261,7 @@ export default function MyPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {STYLE_ORDER.map((styleId) => {
+                  {VISIBLE_STYLE_IDS.map((styleId) => {
                     const items = grouped[styleId] ?? [];
                     const latest = items[0];
                     return (

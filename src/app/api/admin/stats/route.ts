@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
     supabase.from("payments").select("id, amount, credits, user_id, status, created_at").order("created_at", { ascending: false }),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
-    supabase.from("users").select("id, nickname").order("created_at", { ascending: false }).limit(50),
+    supabase.from("users").select("id, nickname").order("created_at", { ascending: false }).limit(500),
   ]);
 
   if (usageRes.error || eventsRes.error) {

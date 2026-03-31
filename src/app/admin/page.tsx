@@ -73,6 +73,8 @@ export default function AdminPage() {
   const [creditMsg, setCreditMsg] = useState("");
   const [refundingId, setRefundingId] = useState<string | null>(null);
   const [refundMsg, setRefundMsg] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
+  const [creditSearch, setCreditSearch] = useState("");
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   const doLogin = async (pw: string) => {
     setError("");
@@ -246,9 +248,30 @@ export default function AdminPage() {
                   ) : (
                     <button
                       onClick={async () => {
-                        if (!confirm(`${user?.nickname ?? "유저"} · ${p.amount.toLocaleString()}원 환불하시겠어요?`)) return;
                         setRefundingId(p.id);
                         setRefundMsg(null);
+                        // Step 1: dryRun 미리보기
+                        const previewRes = await fetch("/api/admin/refund", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ password, paymentId: p.id, dryRun: true }),
+                        });
+                        const preview = await previewRes.json();
+                        setRefundingId(null);
+                        if (!previewRes.ok) {
+                          setRefundMsg({ id: p.id, ok: false, msg: `오류: ${preview.error}` });
+                          return;
+                        }
+                        if (!preview.canRefund) {
+                          setRefundMsg({ id: p.id, ok: false, msg: `사용분 공제(${preview.usedCredits}회×190원) 후 환불 가능 금액 없음` });
+                          return;
+                        }
+                        const confirmMsg = preview.wasPartial
+                          ? `${user?.nickname ?? "유저"} · 부분환불 ${preview.refundAmount.toLocaleString()}원\n(사용 ${preview.usedCredits}회 × 190원 = ${(preview.usedCredits * 190).toLocaleString()}원 공제)\n\n진행하시겠어요?`
+                          : `${user?.nickname ?? "유저"} · 전액환불 ${preview.refundAmount.toLocaleString()}원\n\n진행하시겠어요?`;
+                        if (!confirm(confirmMsg)) return;
+                        // Step 2: 실제 환불 처리
+                        setRefundingId(p.id);
                         const res = await fetch("/api/admin/refund", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
@@ -256,7 +279,13 @@ export default function AdminPage() {
                         });
                         const data = await res.json();
                         setRefundingId(null);
-                        setRefundMsg({ id: p.id, ok: data.ok, msg: data.ok ? `✓ ${data.refundedAmount.toLocaleString()}원 환불 완료` : `오류: ${data.error}` });
+                        setRefundMsg({
+                          id: p.id,
+                          ok: data.ok,
+                          msg: data.ok
+                            ? `✓ ${data.refundedAmount.toLocaleString()}원 환불 완료${data.wasPartial ? ` (${data.usedCredits}회 사용분 공제)` : ''}`
+                            : `오류: ${data.error}`,
+                        });
                         if (data.ok) p.status = "refunded";
                       }}
                       disabled={isLoading}
@@ -307,16 +336,54 @@ export default function AdminPage() {
       <div className="flex flex-col gap-1">
         <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">크레딧 조정</p>
         <div className="bg-[#111] rounded-2xl px-4 py-4 border border-white/5 flex flex-col gap-3">
-          <select
-            value={creditUserId}
-            onChange={e => setCreditUserId(e.target.value)}
-            className="w-full bg-[#0D0D0D] border border-white/10 rounded-lg px-3 py-2 text-white text-[13px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
-          >
-            <option value="">유저 선택</option>
-            {stats.userList.map(u => (
-              <option key={u.id} value={u.id}>{u.nickname ?? u.id.slice(0, 8)} — {u.id.slice(0, 12)}...</option>
-            ))}
-          </select>
+          <div className="relative">
+            <input
+              type="text"
+              value={creditSearch}
+              onChange={e => {
+                setCreditSearch(e.target.value);
+                setShowUserDropdown(true);
+                setCreditUserId("");
+              }}
+              onFocus={() => setShowUserDropdown(true)}
+              placeholder="닉네임 또는 ID로 검색..."
+              className="w-full bg-[#0D0D0D] border border-white/10 rounded-lg px-3 py-2 text-white text-[13px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
+            />
+            {showUserDropdown && (
+              <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-[#0D0D0D] border border-white/10 rounded-lg max-h-48 overflow-y-auto">
+                {stats.userList
+                  .filter(u => {
+                    if (!creditSearch) return true;
+                    const q = creditSearch.toLowerCase();
+                    return (u.nickname?.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
+                  })
+                  .slice(0, 20)
+                  .map(u => (
+                    <button
+                      key={u.id}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setCreditUserId(u.id);
+                        setCreditSearch(u.nickname ?? u.id.slice(0, 12));
+                        setShowUserDropdown(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-[13px] hover:bg-white/5 transition-colors ${
+                        creditUserId === u.id ? "text-[#C9571A]" : "text-white/70"
+                      }`}
+                    >
+                      {u.nickname ?? u.id.slice(0, 8)} — {u.id.slice(0, 12)}...
+                    </button>
+                  ))}
+                {stats.userList.filter(u => {
+                  if (!creditSearch) return true;
+                  const q = creditSearch.toLowerCase();
+                  return (u.nickname?.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
+                }).length === 0 && (
+                  <p className="px-3 py-2 text-[12px] text-[#555]">검색 결과 없음</p>
+                )}
+              </div>
+            )}
+          </div>
           <div className="flex gap-2">
             {[0, 1, 3, 5, 10, 30].map(n => (
               <button

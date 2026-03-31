@@ -4,78 +4,17 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { VISIBLE_STYLES } from "@/lib/styles";
 
 function formatCount(n: number): string {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "K";
   return String(n);
 }
 
-const STYLES = [
-  {
-    id: "flash-selfie",
-    name: "플래시 필터",
-    desc: "플래시 터트린듯한 느낌 적용",
-    usage: "12.3K",
-    bgImage: "/thumbnails/flash-after.jpg",
-    beforeImg: "/thumbnails/flash-before.jpg",
-    afterImg: "/thumbnails/flash-after.jpg",
-    bgColor: "#1a1010",
-    tag: "무료",
-    active: true,
-  },
-  {
-    id: "grab-selfie",
-    name: "베트남 오토바이 셀카 필터",
-    desc: "얼굴이 보이는 정확한 셀카 사진을 업로드해주세요.",
-    usage: "0",
-    bgImage: "/thumbnails/grab-after.jpg",
-    beforeImg: "/thumbnails/grab-before.jpg",
-    afterImg: "/thumbnails/grab-after.jpg",
-    bgColor: "#0e2a1a",
-    tag: "무료",
-    active: true,
-  },
-  {
-    id: "voxel-character",
-    name: "픽셀 캐릭터 필터",
-    desc: "사진 속 나를 블록으로 만든 3D 캐릭터로 변환",
-    usage: "0",
-    bgImage: "/thumbnails/voxel-after.jpg",
-    beforeImg: "/thumbnails/voxel-before.jpg",
-    afterImg: "/thumbnails/voxel-after.jpg",
-    bgColor: "#0a1a2a",
-    tag: "무료",
-    active: true,
-    hidden: false,
-  },
-  {
-    id: "joseon-farmer",
-    name: "조선시대 농부",
-    desc: "얼굴이 잘 보이는 정면 사진을 업로드해주세요.",
-    usage: "0",
-    bgImage: "/thumbnails/joseon-after.jpg?v=2",
-    beforeImg: "/thumbnails/joseon-before.jpg?v=2",
-    afterImg: "/thumbnails/joseon-after.jpg?v=2",
-    bgColor: "#1a1408",
-    tag: "NEW",
-    active: true,
-    hidden: false,
-  },
-  // 4K 업스케일링 — 데이터 보존, 화면 미표시
-  {
-    id: "4k-upscale",
-    name: "4K 업스케일링",
-    desc: "저화질 사진도 고해상도로 선명하게 복원",
-    usage: "8.7K",
-    bgImage: "/thumbnails/4k-after.jpg",
-    beforeImg: "/thumbnails/4k-before.jpg",
-    afterImg: "/thumbnails/4k-after.jpg",
-    bgColor: "#0e1a1a",
-    tag: "무료",
-    active: true,
-    hidden: true,
-  },
-];
+const STYLES = VISIBLE_STYLES.map((s) => ({
+  ...s,
+  bgImage: s.afterImg,
+}));
 
 type Toast = { id: number; message: string };
 
@@ -273,7 +212,7 @@ export default function Studio() {
           <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
 
           <div className="flex flex-col gap-3">
-            {STYLES.filter(s => !s.hidden).map((style) => (
+            {STYLES.map((style) => (
               <button
                 key={style.id}
                 onClick={() => handleCardClick(style)}

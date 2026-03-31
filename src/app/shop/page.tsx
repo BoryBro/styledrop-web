@@ -276,7 +276,14 @@ export default function ShopPage() {
                 <div className="bg-[#1A1A1A] rounded-2xl p-4 flex flex-col gap-2">
                   <p className="text-white/70 font-semibold text-[13px]">환불 조건</p>
                   <p>• 미사용 크레딧에 한해 결제일로부터 <span className="text-white/60">7일 이내</span> 전액 환불 가능</p>
-                  <p>• 크레딧을 1회라도 사용한 경우 부분 환불 불가</p>
+                  <p>• 1회 이상 사용 시 <span className="text-white/60">부분 환불</span> 적용</p>
+                  <div className="bg-[#0D0D0D] rounded-xl p-3 mt-1 text-[12px] text-[#777] space-y-1.5">
+                    <p className="text-white/50 font-semibold">부분 환불 계산 방식</p>
+                    <p>환불금 = 결제 금액 − (사용 크레딧 수 × <span className="text-white/60">190원</span>)</p>
+                    <p className="text-[#666]">예) 30회 패키지(4,900원)에서 5회 사용 시</p>
+                    <p className="text-[#666]">→ 4,900 − (5 × 190) = <span className="text-white/60">3,950원 환불</span></p>
+                    <p className="text-[11px] text-[#555] pt-1">* 공제액이 결제금 이상이면 환불 불가</p>
+                  </div>
                   <p>• 결제 오류·이중결제는 전액 환불 처리</p>
                 </div>
                 <div className="bg-[#1A1A1A] rounded-2xl p-4 flex flex-col gap-2">

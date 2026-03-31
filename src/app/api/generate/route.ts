@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { addWatermark } from "@/lib/watermark";
+import { STYLE_LABELS } from "@/lib/styles";
 import {
   GUEST_LIMIT, WINDOW_MS,
   GUEST_COOKIE,
@@ -16,13 +17,7 @@ function parseSession(request: NextRequest): { id: string; nickname: string } | 
   } catch { return null; }
 }
 
-const STYLE_NAMES: Record<string, string> = {
-  "flash-selfie": "플래시 필터",
-  "4k-upscale": "4K 업스케일링",
-  "grab-selfie": "베트남 오토바이 셀카",
-  "voxel-character": "픽셀 캐릭터",
-  "joseon-farmer": "조선시대 농부",
-};
+const STYLE_CONFIGS: Record<string, { temperature?: number; topP?: number; topK?: number }> = {};
 
 const STYLE_PROMPTS: Record<string, string> = {
   "4k-upscale": "Upscale this image to ultra-high 4K resolution. Enhance all details, textures, and clarity significantly. Make the lighting dynamic and remove all noise and blur, resulting in a perfectly sharp, professional photorealistic image.",
@@ -33,7 +28,8 @@ const STYLE_PROMPTS: Record<string, string> = {
   // v3 (2026-03-31): 헤어 + 얼굴 통합 강화
   "joseon-farmer": "Transform this photo into a Joseon Dynasty Korean farmer portrait.\n\nThis must look like a real historical photograph from 1900–1920s Korea — completely unretouched, raw, aged, and documentary. Not artistic. Not stylized. Real.\n\nFACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:\n- Preserve the person's facial features: bone structure, eye shape, nose, lips, proportions\n- Same expression and gaze direction\n- CRITICAL: The face must feel naturally integrated into the scene — same lighting direction, same contrast, same film grain texture as the rest of the image\n- The face must NOT look like it was pasted onto a different body\n- Match the neck and face seamlessly into the body and scene\n- Apply the same sepia/aged photo tone uniformly across the face and body\n- No beautification, no modern skin smoothing\n- Add surface weathering: sun damage, rough pores, uneven skin tone from outdoor labor\n\nHAIR — MUST CHANGE COMPLETELY:\n- Do NOT preserve the original hairstyle under any circumstances\n- Replace with authentic Joseon-era male farmer hair\n- Options: small topknot (상투) tied at the crown, OR very short roughly-cut hair typical of poor laborers\n- Hair must look unwashed, coarse, and unstyled\n- No modern haircut shapes, no volume, no styling\n\nCLOTHING:\n- Traditional Korean hemp work clothing (삼베옷)\n- Loose jeogori top and wide baji pants tied at ankles\n- Coarse, rough, worn fabric — visible fibers, stretched seams\n- Dirt stains, sweat marks embedded into fabric\n- No clean edges, no modern tailoring\n\nSCENE:\n- Wide dry Korean farmland, flat horizon, harvested field\n- Yellow-brown dry grass and soil\n- Pale overcast sky, flat harsh natural daylight\n- Holding a simple wooden farming tool (hoe or rake)\n- Full body visible head to toe\n\nPHOTOGRAPH QUALITY:\n- Early 1900s glass plate photograph\n- Heavy coarse analog film grain across entire image including face\n- Slight global softness, no sharp edges\n- No HDR, no digital sharpening\n- Low contrast, washed-out highlights, lifted blacks\n- Sepia/warm brown overall tone applied uniformly to entire image\n- Slight degradation as if scanned from aged print\n- Feels like a 100+ year-old archived Korean photograph\n- Must NOT look like a filter or modern composite\n- Raw, documentary, physically aged",
   // v4 (2026-03-31): 얼굴 보존 최우선 + 장면 합성
-  "grab-selfie": "Composite this person into a motorcycle selfie scene. The face must be preserved exactly.\n\nFACE PRESERVATION — HIGHEST PRIORITY:\n- Copy the person's face from the original photo with zero changes\n- Face angle toward the camera: identical to the original photo\n- Head tilt and rotation: identical\n- Eye direction, eye openness: identical\n- Facial expression — every muscle position, smile or neutral: identical\n- Skin tone, facial features, hair: identical\n- Do NOT reinterpret or redraw the face. Transplant it as-is.\n\nSCENE: The person is the rear passenger on a motorcycle in a busy Southeast Asian city street, taking a high-angle selfie.\n\nSEATING: Person sits on the BACK SEAT behind the driver. Driver's back is visible in the lower foreground.\n\nCLOTHING: Replace any cold-weather clothing with lightweight summer clothes (casual short-sleeve shirt). Keep the face, hair, and accessories exactly as in the original.\n\nSCENE SETUP:\n- Person wears a plain solid-color helmet (no logos, no text) and black sunglasses\n- Driver in front: plain helmet (no logos), face mask, back facing camera\n- Moving motorcycle\n\nENVIRONMENT:\n- Busy Southeast Asian city street, glass high-rise buildings, green trees\n- Intense tropical midday sunlight — harsh direct sun, strong shadows\n- Other motorcycles and vehicles\n\nCAMERA:\n- High-angle selfie shot by rear passenger extending arm forward\n- Wide-angle phone front camera distortion\n- Windblown hair, slight background motion blur\n\nAESTHETIC: Vibrant hyper-realistic travel photo. Hot midday sun energy. No brand logos anywhere."
+  "grab-selfie": "Composite this person into a motorcycle selfie scene. The face must be preserved exactly.\n\nFACE PRESERVATION — HIGHEST PRIORITY:\n- Copy the person's face from the original photo with zero changes\n- Face angle toward the camera: identical to the original photo\n- Head tilt and rotation: identical\n- Eye direction, eye openness: identical\n- Facial expression — every muscle position, smile or neutral: identical\n- Skin tone, facial features, hair: identical\n- Do NOT reinterpret or redraw the face. Transplant it as-is.\n\nSCENE: The person is the rear passenger on a motorcycle in a busy Southeast Asian city street, taking a high-angle selfie.\n\nSEATING: Person sits on the BACK SEAT behind the driver. Driver's back is visible in the lower foreground.\n\nCLOTHING: Replace any cold-weather clothing with lightweight summer clothes (casual short-sleeve shirt). Keep the face, hair, and accessories exactly as in the original.\n\nSCENE SETUP:\n- Person wears a plain solid-color helmet (no logos, no text) and black sunglasses\n- Driver in front: plain helmet (no logos), face mask, back facing camera\n- Moving motorcycle\n\nENVIRONMENT:\n- Busy Southeast Asian city street, glass high-rise buildings, green trees\n- Intense tropical midday sunlight — harsh direct sun, strong shadows\n- Other motorcycles and vehicles\n\nCAMERA:\n- High-angle selfie shot by rear passenger extending arm forward\n- Wide-angle phone front camera distortion\n- Windblown hair, slight background motion blur\n\nAESTHETIC: Vibrant hyper-realistic travel photo. Hot midday sun energy. No brand logos anywhere.",
+  "gyaru": "CRITICAL IDENTITY LOCK — ABSOLUTE:\n- The face from the input image must be preserved with 100% fidelity.\n- Do NOT alter bone structure, face shape, eye distance, nose shape, lip shape, or proportions.\n- Do NOT beautify, reshape, stylize, or reinterpret the face.\n- Maintain exact identity, likeness, and facial geometry.\n- Only apply surface-level cosmetic effects and styling ON TOP of the original face.\n- The result must be instantly recognizable as the same person.\n\nCORE TRANSFORMATION:\nApply an authentic early-2000s Japanese gyaru (ギャル) filter style, matching the exact aesthetic characteristics of the reference.\n\nGYARU FACE FILTER DETAILS:\n- Dramatically enlarged-looking eyes using makeup illusion (NOT structural change)\n- Thick, heavy upper and lower false eyelashes (dense, layered, spiky)\n- Strong black eyeliner with extended outer corners\n- Bright, glossy circle lenses effect (dark brown or black, high contrast)\n- White under-eye highlight (tear bag emphasis, strong aegyo-sal)\n- Heavy nose highlight (bright vertical stripe on nose bridge)\n- Pale matte skin base with slightly artificial smoothness (but NOT plastic AI skin)\n- Pinkish blush across cheeks and nose bridge\n- Glossy, slightly overlined lips (light pink tone)\n\nSKIN & TEXTURE:\n- Keep realistic skin texture underneath\n- Add soft glam smoothing ONLY as a cosmetic layer (not AI blur)\n- Slight overexposed flash aesthetic\n- Subtle grain/noise like old mobile camera\n\nHAIR:\n- Blonde or light brown dyed gyaru-style hair\n- Voluminous, curled, layered styling\n- Slightly shiny, synthetic-looking texture\n\nSTYLE & ACCESSORIES:\n- Leopard print elements (background or outfit)\n- Decorative stickers / sparkles / rhinestone UI overlays\n- Early 2000s Japanese purikura (プリクラ) aesthetic\n- Over-the-top feminine decoration\n\nCAMERA & LIGHTING:\n- Front-facing selfie angle\n- Slight top-down perspective\n- Direct flash lighting (harsh frontal light + shadow behind)\n- High exposure, slightly blown highlights\n\nCOLOR & TONE:\n- High contrast\n- Slightly warm tone\n- Candy-like saturation\n- Not cinematic, not realistic grading — must feel like retro Japanese photo booth / flip phone camera\n\nFRAME & UI:\n- Add decorative frame elements (pearls, sparkles, stickers)\n- Slight compression artifacts for authenticity\n- Optional Japanese text decoration (non-intrusive)\n\nSTRICT RULES:\n- NO face reshaping\n- NO identity drift\n- NO AI-style smoothing or plastic skin\n- NO modern influencer aesthetic\n- MUST look like real gyaru-era purikura photo\n\nFINAL GOAL:\nA perfect gyaru filter overlay applied to the original person, preserving identity 100%, while fully transforming the visual style into authentic gyaru culture.",
 };
 
 export async function POST(request: NextRequest) {
@@ -92,6 +88,7 @@ export async function POST(request: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
+    const styleConfig = STYLE_CONFIGS[style];
     const response = await ai.models.generateContent({
       model: "gemini-3.1-flash-image-preview",
       contents: [
@@ -99,7 +96,12 @@ export async function POST(request: NextRequest) {
         { text: "Edit this image: " + prompt }
       ],
       config: {
-        responseModalities: ["TEXT", "IMAGE"]
+        responseModalities: ["TEXT", "IMAGE"],
+        ...(styleConfig && {
+          temperature: styleConfig.temperature,
+          topP: styleConfig.topP,
+          topK: styleConfig.topK,
+        }),
       },
     });
 
@@ -114,7 +116,7 @@ export async function POST(request: NextRequest) {
           );
           const { error } = await supabase.from("style_usage").insert({
             style_id: style,
-            style_name: STYLE_NAMES[style] ?? style,
+            style_name: STYLE_LABELS[style] ?? style,
             user_id: session?.id ?? null,
           });
           if (error) console.error("[Supabase] insert error:", error);
