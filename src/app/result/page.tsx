@@ -535,8 +535,8 @@ export default function Result() {
                     <span>✦</span>
                     <span>
                       {credits === 0
-                        ? "크레딧 없음 — 워터마크 없이 저장 불가"
-                        : `저장하기 — 크레딧 1개 사용 (잔여 ${credits}개)`}
+                        ? "크레딧 부족 — 워터마크 제거 불가"
+                        : `✦ 워터마크 제거 후 저장 (크레딧 ${credits}개 → ${credits - 1}개)`}
                     </span>
                   </>
                 )}

@@ -38,28 +38,39 @@ const STYLE_PROMPTS: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   const session = parseSession(request);
-  const cookieName = session ? USER_COOKIE : GUEST_COOKIE;
-  const limit = session ? USER_LIMIT : GUEST_LIMIT;
   const now = Date.now();
 
-  const raw = request.cookies.get(cookieName)?.value;
-  const data = parseLimitCookie(raw);
-  let count = 0;
-  let resetAt = now + WINDOW_MS;
-  if (data && now < data.resetAt) {
-    count = data.count;
-    resetAt = data.resetAt;
+  // 회원: 서버 사이드(DB) 제한 — 쿠키 삭제로 우회 불가
+  if (session) {
+    const supabaseCheck = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!
+    );
+    const { data: allowed, error: usageError } = await supabaseCheck.rpc("check_and_increment_usage", {
+      p_user_id: session.id,
+      p_limit: USER_LIMIT,
+    });
+    if (usageError || !allowed) {
+      return NextResponse.json({ error: "오늘 사용량을 모두 소진했습니다. 내일 다시 이용해주세요!" }, { status: 429 });
+    }
   }
 
-  if (count >= limit) {
-    const error = session
-      ? "오늘 사용량을 모두 소진했습니다. 내일 다시 이용해주세요!"
-      : "무료 체험이 끝났습니다. 카카오 로그인하면 하루 10회까지 무료로 이용할 수 있어요!";
-    return NextResponse.json({ error }, { status: 429 });
+  // 비회원: 쿠키 기반 제한 (기존 방식 유지)
+  const cookieName = GUEST_COOKIE;
+  const now2 = now;
+  const raw = !session ? request.cookies.get(cookieName)?.value : undefined;
+  const limitData = !session ? parseLimitCookie(raw) : null;
+  let guestCount = 0;
+  let resetAt = now2 + WINDOW_MS;
+  if (!session && limitData && now2 < limitData.resetAt) {
+    guestCount = limitData.count;
+    resetAt = limitData.resetAt;
+  }
+  if (!session && guestCount >= GUEST_LIMIT) {
+    return NextResponse.json({ error: "무료 체험이 끝났습니다. 카카오 로그인하면 하루 5회까지 무료로 이용할 수 있어요!" }, { status: 429 });
   }
 
-  const newCount = count + 1;
-  const cookieValue = encodeLimitCookie({ count: newCount, resetAt });
+  const cookieValue = !session ? encodeLimitCookie({ count: guestCount + 1, resetAt }) : "";
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -134,7 +145,7 @@ export async function POST(request: NextRequest) {
           shouldSaveHistory: !!session,
           imageKey,
         });
-        res.cookies.set(cookieName, cookieValue, cookieOptions);
+        if (!session) res.cookies.set(cookieName, cookieValue, cookieOptions);
         return res;
       }
     }
