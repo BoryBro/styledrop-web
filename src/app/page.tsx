@@ -12,6 +12,7 @@ export default function Home() {
   const [logoError, setLogoError] = useState(false);
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function Home() {
       setTimeout(() => setShaking(false), 500);
       return;
     }
+    setIsLoggingIn(true);
     window.location.href = "/api/auth/kakao";
   };
 
@@ -156,6 +158,25 @@ export default function Home() {
           <Link href="/privacy" className="text-[12px] text-[#444] hover:text-white/40 transition-colors">개인정보처리방침</Link>
         </div>
       </div>
+
+      {/* 카카오 로그인 로딩 오버레이 */}
+      {isLoggingIn && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1A1A1A]/90 border border-white/10 rounded-3xl p-8 flex flex-col items-center gap-5 shadow-2xl max-w-[280px] w-full mx-4">
+            <div className="relative w-12 h-12">
+              <div className="absolute inset-0 rounded-full border-4 border-white/5" />
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FEE500] animate-spin" />
+            </div>
+            <div className="text-center flex flex-col gap-2">
+              <p className="text-white font-bold text-base">카카오 로그인 중</p>
+              <p className="text-white/40 text-xs leading-relaxed">
+                잠시만 기다려 주세요 💬<br />
+                카카오톡 앱으로 연결됩니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="absolute bottom-4 left-0 right-0 text-center px-4">
