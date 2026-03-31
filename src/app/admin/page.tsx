@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 
 type Notice = { id: number; text: string; active: boolean };
+type UserItem = { id: string; nickname: string | null };
 type StyleStat = { style_id: string; style_name: string; count: number };
 type Stats = {
+  userList: UserItem[];
   total: number;
   todayTotal: number;
   guestCount: number;
@@ -64,6 +66,9 @@ export default function AdminPage() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [noticesSaving, setNoticesSaving] = useState(false);
   const [noticesSaved, setNoticesSaved] = useState(false);
+  const [creditUserId, setCreditUserId] = useState("");
+  const [creditAmount, setCreditAmount] = useState("3");
+  const [creditMsg, setCreditMsg] = useState("");
 
   const doLogin = async (pw: string) => {
     setError("");
@@ -244,6 +249,50 @@ export default function AdminPage() {
           </Section>
         );
       })()}
+
+      {/* 크레딧 조정 */}
+      <div className="flex flex-col gap-1">
+        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">크레딧 조정</p>
+        <div className="bg-[#111] rounded-2xl px-4 py-4 border border-white/5 flex flex-col gap-3">
+          <select
+            value={creditUserId}
+            onChange={e => setCreditUserId(e.target.value)}
+            className="w-full bg-[#0D0D0D] border border-white/10 rounded-lg px-3 py-2 text-white text-[13px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
+          >
+            <option value="">유저 선택</option>
+            {stats.userList.map(u => (
+              <option key={u.id} value={u.id}>{u.nickname ?? u.id.slice(0, 8)} — {u.id.slice(0, 12)}...</option>
+            ))}
+          </select>
+          <div className="flex gap-2">
+            {[0, 1, 3, 5, 10, 30].map(n => (
+              <button
+                key={n}
+                onClick={() => setCreditAmount(String(n))}
+                className={`flex-1 py-2 rounded-lg text-[12px] font-bold transition-colors ${creditAmount === String(n) ? "bg-[#C9571A] text-white" : "bg-[#1A1A1A] text-[#666] hover:text-white"}`}
+              >{n}</button>
+            ))}
+          </div>
+          <button
+            onClick={async () => {
+              if (!creditUserId) { setCreditMsg("유저를 선택해주세요."); return; }
+              setCreditMsg("");
+              const res = await fetch("/api/admin/set-credits", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password, userId: creditUserId, credits: Number(creditAmount) }),
+              });
+              const data = await res.json();
+              setCreditMsg(data.ok ? `✓ ${stats.userList.find(u=>u.id===creditUserId)?.nickname ?? creditUserId.slice(0,8)} → ${creditAmount}크레딧 설정됨` : `오류: ${data.error}`);
+              setTimeout(() => setCreditMsg(""), 3000);
+            }}
+            className="w-full bg-[#1A1A1A] hover:bg-[#222] border border-white/10 text-white font-bold py-2.5 rounded-xl transition-colors text-[13px]"
+          >
+            크레딧 설정
+          </button>
+          {creditMsg && <p className={`text-[12px] text-center ${creditMsg.startsWith("✓") ? "text-[#C9571A]" : "text-red-400"}`}>{creditMsg}</p>}
+        </div>
+      </div>
 
       {/* 공지 관리 */}
       <div className="flex flex-col gap-1">

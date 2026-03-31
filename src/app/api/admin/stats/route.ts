@@ -15,13 +15,14 @@ export async function POST(request: NextRequest) {
 
   const todayIso = new Date(Date.now() - 24 * 3600000).toISOString();
 
-  const [usageRes, eventsRes, usersRes, todayUsageRes, paymentsRes, todayPaymentsRes] = await Promise.all([
+  const [usageRes, eventsRes, usersRes, todayUsageRes, paymentsRes, todayPaymentsRes, userListRes] = await Promise.all([
     supabase.from("style_usage").select("style_id, style_name, user_id"),
     supabase.from("user_events").select("event_type"),
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
     supabase.from("payments").select("amount, credits, user_id, created_at").eq("status", "paid"),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
+    supabase.from("users").select("id, nickname").order("created_at", { ascending: false }).limit(50),
   ]);
 
   if (usageRes.error || eventsRes.error) {
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({
+    userList: userListRes.data ?? [],
     total,
     todayTotal,
     guestCount,
