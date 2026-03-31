@@ -1,4 +1,14 @@
 import sharp from "sharp";
+import fs from "fs";
+import path from "path";
+
+let _fontBase64: string | null = null;
+function getFontBase64(): string {
+  if (_fontBase64) return _fontBase64;
+  const fontPath = path.join(process.cwd(), "public/fonts/Montserrat-Bold.ttf");
+  _fontBase64 = fs.readFileSync(fontPath).toString("base64");
+  return _fontBase64;
+}
 
 export async function addWatermark(imageBase64: string): Promise<string> {
   const imageBuffer = Buffer.from(imageBase64, "base64");
@@ -6,70 +16,62 @@ export async function addWatermark(imageBase64: string): Promise<string> {
   const width = meta.width ?? 1024;
   const height = meta.height ?? 1024;
 
-  const unit = Math.max(14, Math.round(width * 0.026));
-  const pad = Math.round(unit * 0.9);
+  const fontSize = Math.max(15, Math.round(width * 0.026));
+  const edgePad = Math.round(fontSize * 1.1);
+  const innerPadX = Math.round(fontSize * 0.6);
+  const innerPadY = Math.round(fontSize * 0.42);
 
-  // 배지 크기
-  const badgeW = unit * 4;
-  const badgeH = unit * 1.6;
-  const bx = width - pad - badgeW;
-  const by = height - pad - badgeH;
-  const cx = bx + badgeW / 2;
-  const cy = by + badgeH / 2;
+  // 4-pointed star (SVG path, 폰트 불필요)
+  const starSize = Math.round(fontSize * 0.72);
+  const gap = Math.round(fontSize * 0.3);
+  // 텍스트 폭 추정 (Montserrat Bold ~0.62 em/char)
+  const text = "StyleDrop";
+  const textW = Math.round(fontSize * 0.62 * text.length);
 
-  // 4-pointed star path (폰트 불필요)
-  const starR = unit * 0.42;
-  const starInner = starR * 0.36;
-  function starPath(ox: number, oy: number, ro: number, ri: number): string {
-    const pts = [];
-    for (let i = 0; i < 8; i++) {
-      const angle = (Math.PI / 4) * i - Math.PI / 2;
-      const r = i % 2 === 0 ? ro : ri;
-      pts.push(`${ox + r * Math.cos(angle)},${oy + r * Math.sin(angle)}`);
-    }
-    return `M ${pts.join(" L ")} Z`;
+  const badgeW = innerPadX * 2 + starSize + gap + textW;
+  const badgeH = Math.round(fontSize + innerPadY * 2);
+  const badgeX = width - edgePad - badgeW;
+  const badgeY = height - edgePad - badgeH;
+
+  // 별 중심
+  const scx = badgeX + innerPadX + starSize / 2;
+  const scy = badgeY + badgeH / 2;
+  const ro = starSize / 2;
+  const ri = ro * 0.36;
+  const starPoints: string[] = [];
+  for (let i = 0; i < 8; i++) {
+    const angle = (Math.PI / 4) * i - Math.PI / 2;
+    const r = i % 2 === 0 ? ro : ri;
+    starPoints.push(`${scx + r * Math.cos(angle)},${scy + r * Math.sin(angle)}`);
   }
+  const starPath = `M ${starPoints.join(" L ")} Z`;
 
-  // "SD" — S와 D를 간단한 rect 조합으로 렌더링 (폰트 없이)
-  const charW = unit * 0.52;
-  const charH = unit * 0.72;
-  const charGap = unit * 0.18;
-  const totalTextW = charW * 2 + charGap;
-  const textStartX = cx - totalTextW / 2 + unit * 0.5;
-  const textY = cy - charH / 2;
-  const th = charH / 5; // stroke thickness
+  const textX = badgeX + innerPadX + starSize + gap;
+  const textY = badgeY + badgeH / 2 + fontSize * 0.36;
 
-  // S: 5 rect segments (top, mid, bot horizontal + top-left, bot-right vertical)
-  const sx = textStartX;
-  const sRects = [
-    // top bar
-    `<rect x="${sx}" y="${textY}" width="${charW}" height="${th}" rx="1"/>`,
-    // mid bar
-    `<rect x="${sx}" y="${textY + charH / 2 - th / 2}" width="${charW}" height="${th}" rx="1"/>`,
-    // bot bar
-    `<rect x="${sx}" y="${textY + charH - th}" width="${charW}" height="${th}" rx="1"/>`,
-    // top-left vertical
-    `<rect x="${sx}" y="${textY}" width="${th}" height="${charH / 2}" rx="1"/>`,
-    // bot-right vertical
-    `<rect x="${sx + charW - th}" y="${textY + charH / 2}" width="${th}" height="${charH / 2}" rx="1"/>`,
-  ].join("");
-
-  // D: left vertical + top/bot bar + right arc (simplified as rect with radius)
-  const dx = textStartX + charW + charGap;
-  const dRects = [
-    `<rect x="${dx}" y="${textY}" width="${th}" height="${charH}" rx="1"/>`,
-    `<rect x="${dx}" y="${textY}" width="${charW * 0.75}" height="${th}" rx="1"/>`,
-    `<rect x="${dx}" y="${textY + charH - th}" width="${charW * 0.75}" height="${th}" rx="1"/>`,
-    `<rect x="${dx + charW * 0.75 - th}" y="${textY}" width="${th}" height="${charH}" rx="1"/>`,
-  ].join("");
-
-  const starCx = bx + unit * 0.72;
-  const starCy = cy;
+  const fontBase64 = getFontBase64();
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-    <rect x="${bx}" y="${by}" width="${badgeW}" height="${badgeH}" rx="${unit * 0.32}" fill="black" fill-opacity="0.42"/>
-    <path d="${starPath(starCx, starCy, starR, starInner)}" fill="white" fill-opacity="0.9"/>
-    <g fill="white" fill-opacity="0.82">${sRects}${dRects}</g>
+    <defs>
+      <style>
+        @font-face {
+          font-family: 'Montserrat';
+          font-weight: 700;
+          src: url('data:font/truetype;base64,${fontBase64}') format('truetype');
+        }
+      </style>
+    </defs>
+    <rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}" rx="6" ry="6" fill="black" fill-opacity="0.40"/>
+    <path d="${starPath}" fill="white" fill-opacity="0.90"/>
+    <text
+      x="${textX}" y="${textY}"
+      font-family="Montserrat, sans-serif"
+      font-weight="700"
+      font-size="${fontSize}"
+      fill="white"
+      fill-opacity="0.90"
+      letter-spacing="0.3"
+    >${text}</text>
   </svg>`;
 
   const result = await sharp(imageBuffer)
