@@ -331,13 +331,13 @@ export default function Result() {
                 <p className="text-white/40 text-xs mt-1">사진을 분석하고 스타일을 적용하고 있어요</p>
               </div>
 
-              {/* Warning banner */}
+              {/* Info banner */}
               <div className="w-full bg-[#C9571A]/10 border border-[#C9571A]/30 rounded-2xl px-4 py-3.5 flex items-start gap-2.5">
-                <span className="text-base leading-none mt-0.5 flex-shrink-0">🚨</span>
+                <span className="text-base leading-none mt-0.5 flex-shrink-0">⏳</span>
                 <div className="flex flex-col gap-1">
-                  <p className="text-[#C9571A] font-bold text-[13px]">화면을 고정해 주세요!</p>
-                  <p className="text-[#C9571A]/60 text-[11px] leading-relaxed">
-                    최상의 품질을 위해 AI가 정성껏 변환 중입니다.<br />완료될 때까지 잠시만 이 화면에서 기다려 주세요.
+                  <p className="text-[#C9571A] font-bold text-[13px]">잠시 기다려주세요</p>
+                  <p className="text-[#C9571A]/60 text-[11px] leading-relaxed break-keep">
+                    AI가 정성껏 변환 중이에요. 완료될 때까지 이 화면에서 기다려 주세요.
                   </p>
                 </div>
               </div>
