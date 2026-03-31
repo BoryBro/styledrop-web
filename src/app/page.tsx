@@ -125,6 +125,16 @@ export default function Home() {
           </span>
         </label>
 
+        {/* 크레딧 상품 링크 */}
+        <Link href="/shop" className="w-full bg-[#111] border border-white/8 rounded-2xl px-4 py-3 hover:border-[#C9571A]/40 transition-colors text-center">
+          <p className="text-[11px] text-[#555] mb-1.5">워터마크 제거 크레딧</p>
+          <div className="flex gap-1.5 justify-center flex-wrap">
+            <span className="text-[11px] bg-[#1A1A1A] text-white/50 px-2.5 py-1 rounded-full">10회 1,900원</span>
+            <span className="text-[11px] bg-[#C9571A]/10 text-[#C9571A]/80 px-2.5 py-1 rounded-full">30회 4,900원</span>
+            <span className="text-[11px] bg-[#1A1A1A] text-white/50 px-2.5 py-1 rounded-full">70회 9,900원</span>
+          </div>
+        </Link>
+
         {/* Links */}
         <div className="flex gap-5">
           <Link href="/terms" className="text-[12px] text-[#444] hover:text-white/40 transition-colors">이용약관</Link>

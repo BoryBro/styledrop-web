@@ -298,6 +298,18 @@ export default function Studio() {
           </div>
         )}
 
+        {/* 크레딧 상품 안내 */}
+        <div className="max-w-2xl mx-auto w-full px-4 pb-4">
+          <Link href="/shop" className="block bg-[#111] border border-white/8 rounded-2xl px-5 py-4 hover:border-[#C9571A]/40 transition-colors">
+            <p className="text-white/60 text-[12px] mb-2">✦ 워터마크 제거 크레딧</p>
+            <div className="flex gap-2 flex-wrap">
+              <span className="text-[12px] bg-[#1A1A1A] text-white/70 px-3 py-1.5 rounded-full">10회 · 1,900원</span>
+              <span className="text-[12px] bg-[#C9571A]/15 text-[#C9571A] px-3 py-1.5 rounded-full border border-[#C9571A]/20">30회 · 4,900원 인기</span>
+              <span className="text-[12px] bg-[#1A1A1A] text-white/70 px-3 py-1.5 rounded-full">70회 · 9,900원</span>
+            </div>
+          </Link>
+        </div>
+
         {/* Footer */}
         <footer className="py-6 text-center px-4">
           <p className="text-[11px] text-[#333]">
