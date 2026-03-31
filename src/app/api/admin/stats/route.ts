@@ -34,18 +34,6 @@ export async function POST(request: NextRequest) {
   const totalPaymentCount = payments.length;
   const todayRevenue = (todayPaymentsRes.data ?? []).reduce((sum, p) => sum + (p.amount ?? 0), 0);
 
-  // 사용자별 누적 결제
-  const revenueByUser: Record<string, { amount: number; count: number }> = {};
-  for (const p of payments) {
-    if (!p.user_id) continue;
-    if (!revenueByUser[p.user_id]) revenueByUser[p.user_id] = { amount: 0, count: 0 };
-    revenueByUser[p.user_id].amount += p.amount ?? 0;
-    revenueByUser[p.user_id].count += 1;
-  }
-  const topPayers = Object.entries(revenueByUser)
-    .map(([user_id, v]) => ({ user_id, ...v }))
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 10);
 
   const usage = usageRes.data ?? [];
   const events = eventsRes.data ?? [];
@@ -89,6 +77,5 @@ export async function POST(request: NextRequest) {
     totalRevenue,
     totalPaymentCount,
     todayRevenue,
-    topPayers,
   });
 }

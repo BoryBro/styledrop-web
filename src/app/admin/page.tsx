@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 
 type StyleStat = { style_id: string; style_name: string; count: number };
-type TopPayer = { user_id: string; amount: number; count: number };
 type Stats = {
   total: number;
   todayTotal: number;
@@ -20,7 +19,6 @@ type Stats = {
   totalRevenue: number;
   totalPaymentCount: number;
   todayRevenue: number;
-  topPayers: TopPayer[];
 };
 
 function Row({ label, value, note, highlight }: { label: string; value: string | number; note?: string; highlight?: boolean }) {
@@ -194,22 +192,36 @@ export default function AdminPage() {
         <Row label="결제 건수" value={`${stats.totalPaymentCount}건`} />
       </Section>
 
-      {/* 사용자별 결제 */}
-      {stats.topPayers.length > 0 && (
-        <Section title="사용자별 누적 결제">
-          {stats.topPayers.map((p) => (
-            <div key={p.user_id} className="py-3 border-b border-white/5 last:border-0">
+      {/* API 비용 & 손익 */}
+      {(() => {
+        const costPerCall = 95; // 약 $0.07 × 1,350원/USD
+        const totalCost = stats.total * costPerCall;
+        const profit = stats.totalRevenue - totalCost;
+        const profitRatio = stats.totalRevenue > 0 ? Math.round((profit / stats.totalRevenue) * 100) : 0;
+        const breakEvenCalls = costPerCall > 0 ? Math.ceil(stats.totalRevenue / costPerCall) : 0;
+        return (
+          <Section title="API 비용 & 손익">
+            <Row label="총 API 호출" value={`${stats.total.toLocaleString()}회`} />
+            <Row label="회당 추정 비용" value="약 95원" note="$0.07 × 1,350원" />
+            <Row label="총 API 지출 (추정)" value={`${totalCost.toLocaleString()}원`} />
+            <Row label="총 결제 수익" value={`${stats.totalRevenue.toLocaleString()}원`} />
+            <div className="py-3 border-b border-white/5">
               <div className="flex items-center justify-between">
-                <span className="text-[#888] text-xs font-mono truncate max-w-[160px]">{p.user_id.slice(0, 8)}…</span>
-                <span className="text-white font-bold text-sm">
-                  {p.amount.toLocaleString()}원
-                  <span className="text-[#555] font-normal text-xs ml-1">({p.count}건)</span>
+                <span className="text-[#888] text-sm">순이익</span>
+                <span className={`font-bold text-base tabular-nums ${profit >= 0 ? "text-green-400" : "text-red-400"}`}>
+                  {profit >= 0 ? "+" : ""}{profit.toLocaleString()}원
+                  <span className="text-xs font-normal ml-1 opacity-60">({profitRatio}%)</span>
                 </span>
               </div>
             </div>
-          ))}
-        </Section>
-      )}
+            <Row
+              label="손익분기 누적 변환"
+              value={`${breakEvenCalls.toLocaleString()}회`}
+              note={stats.total >= breakEvenCalls ? "달성 ✓" : `${(breakEvenCalls - stats.total).toLocaleString()}회 남음`}
+            />
+          </Section>
+        );
+      })()}
 
       {/* 스타일별 */}
       <Section title="스타일별 사용">

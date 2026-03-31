@@ -265,12 +265,6 @@ export default function Studio() {
                   )}
                 </div>
 
-                {/* Tag pill */}
-                <div className="absolute top-4 left-4">
-                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                    style.tag === "무료" ? "bg-[#C9571A] text-white" : "bg-[#444] text-[#888]"
-                  }`}>{style.tag}</span>
-                </div>
 
                 {/* Selected check */}
                 {selectedStyle === style.id && (
