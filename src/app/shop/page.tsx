@@ -221,15 +221,23 @@ export default function ShopPage() {
                 key={method.id}
                 onClick={() => handlePay(method)}
                 disabled={status === "loading"}
-                className="w-full h-[52px] rounded-2xl font-bold text-[15px] transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-[60px] rounded-2xl transition-opacity disabled:opacity-50 flex items-center px-5"
                 style={{ backgroundColor: method.color, color: method.textColor }}
               >
                 {status === "loading" ? (
-                  <div className="w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                  <div className="w-full flex items-center justify-center">
+                    <div className="w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                  </div>
                 ) : (
                   <>
-                    <span>{method.label}</span>
-                    <span className="font-normal text-[13px] opacity-70">로 {pkg.priceStr}원 결제</span>
+                    {/* 카카오 아이콘 */}
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" className="flex-shrink-0">
+                      <path fillRule="evenodd" clipRule="evenodd" d="M11 1.5C5.753 1.5 1.5 4.838 1.5 8.955c0 2.637 1.743 4.959 4.38 6.284L4.76 19.49a.3.3 0 00.46.327l5.01-3.353c.255.02.512.031.77.031 5.247 0 9.5-3.338 9.5-7.455 0-4.117-4.253-7.455-9.5-7.455z" fill="#191919"/>
+                    </svg>
+                    <div className="flex-1 flex flex-col items-center">
+                      <span className="text-[11px] font-medium opacity-60 leading-tight">카카오페이로 결제</span>
+                      <span className="text-[20px] font-extrabold leading-tight tracking-tight">{pkg.priceStr}원</span>
+                    </div>
                   </>
                 )}
               </button>

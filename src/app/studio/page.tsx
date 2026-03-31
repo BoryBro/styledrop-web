@@ -197,13 +197,23 @@ export default function Studio() {
           </div>
           {!loading && (
             user ? (
-              <button onClick={() => router.push("/mypage")} className="flex items-center gap-2">
-                {user.profileImage && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
-                )}
-                <span className="text-[14px] font-medium text-white truncate max-w-[120px]">{user.nickname}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <Link href="/shop" className="flex items-center gap-1.5 bg-[#1A1A1A] border border-white/8 px-3 py-1.5 rounded-full hover:border-[#C9571A]/40 transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                    <path d="M1 1h2l1.5 7h7l1-4.5H4" stroke="#C9571A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="6.5" cy="12" r="0.8" fill="#C9571A"/>
+                    <circle cx="11" cy="12" r="0.8" fill="#C9571A"/>
+                  </svg>
+                  <span className="text-[11px] text-[#C9571A] font-bold">{credits !== null ? `${credits}크레딧` : "충전"}</span>
+                </Link>
+                <button onClick={() => router.push("/mypage")} className="flex items-center gap-2">
+                  {user.profileImage && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={user.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  )}
+                  <span className="text-[14px] font-medium text-white truncate max-w-[80px]">{user.nickname}</span>
+                </button>
+              </div>
             ) : (
               <button onClick={login} className="bg-[#FEE500] text-[#3C1E1E] text-[13px] font-bold px-3 py-1.5 rounded-lg">
                 카카오 로그인

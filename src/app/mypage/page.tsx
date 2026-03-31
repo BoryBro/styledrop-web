@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,7 +54,9 @@ export default function MyPage() {
   const [deleting, setDeleting] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const showToast = useCallback((msg: string) => {
@@ -130,6 +132,20 @@ export default function MyPage() {
   }, {});
 
   const selectedItems = selectedStyle ? (grouped[selectedStyle] ?? []) : [];
+
+  useEffect(() => {
+    setActiveIndex(0);
+    if (scrollRef.current) scrollRef.current.scrollLeft = 0;
+  }, [selectedStyle]);
+
+  // 스크롤 시 현재 활성 인덱스 감지
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const itemWidth = el.clientWidth;
+    const idx = Math.round(el.scrollLeft / itemWidth);
+    setActiveIndex(Math.min(idx, selectedItems.length - 1));
+  }, [selectedItems.length]);
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
@@ -303,7 +319,7 @@ export default function MyPage() {
 
         {/* 스타일 상세 뷰 */}
         {!loading && user && selectedStyle && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <div className="px-1">
               <h2 className="text-[18px] font-bold text-white">{STYLE_LABELS[selectedStyle] ?? selectedStyle}</h2>
               <p className="text-[13px] text-[#555] mt-0.5">{selectedItems.length}장의 변환 기록</p>
@@ -317,41 +333,73 @@ export default function MyPage() {
                 </button>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-4 px-4">
-                <div className="flex gap-3" style={{ width: `max-content` }}>
-                  {selectedItems.map((item) => {
-                    const badge = expiryBadge(item.created_at);
-                    return (
-                      <div key={item.id} className="flex flex-col gap-2 flex-shrink-0" style={{ width: "72vw", maxWidth: "300px" }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={item.result_image_url}
-                          alt=""
-                          className="w-full aspect-square rounded-2xl object-cover bg-[#1A1A1A]"
-                        />
-                        <div className="flex items-center justify-between px-0.5">
-                          <span className="text-[12px] text-[#555]">{relativeTime(item.created_at)}</span>
-                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleSave(item.result_image_url)}
-                            className="flex-1 bg-[#C9571A] hover:bg-[#B34A12] text-white py-2.5 rounded-xl font-bold text-[13px] transition-colors flex items-center justify-center gap-1.5"
-                          >
-                            <span>📥</span><span>저장</span>
-                          </button>
-                          <button
-                            onClick={() => handleKakaoShare(item.result_image_url)}
-                            className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 py-2.5 rounded-xl font-bold text-[13px] transition-colors flex items-center justify-center gap-1.5"
-                          >
-                            <span>💬</span><span>공유</span>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+              <>
+                {/* 스크롤 캐러셀 */}
+                <div
+                  ref={scrollRef}
+                  onScroll={handleScroll}
+                  className="overflow-x-scroll -mx-4 flex"
+                  style={{ scrollSnapType: "x mandatory", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+                >
+                  {selectedItems.map((item, idx) => (
+                    <div
+                      key={item.id}
+                      className="flex-shrink-0 px-4"
+                      style={{ width: "100%", scrollSnapAlign: "center" }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.result_image_url}
+                        alt=""
+                        className={`w-full aspect-square rounded-2xl object-cover bg-[#1A1A1A] transition-opacity duration-300 ${idx === activeIndex ? "opacity-100" : "opacity-50"}`}
+                      />
+                    </div>
+                  ))}
                 </div>
-              </div>
+
+                {/* 페이지 인디케이터 */}
+                {selectedItems.length > 1 && (
+                  <div className="flex justify-center gap-1.5">
+                    {selectedItems.map((_, idx) => (
+                      <div
+                        key={idx}
+                        className={`rounded-full transition-all duration-300 ${idx === activeIndex ? "w-4 h-1.5 bg-[#C9571A]" : "w-1.5 h-1.5 bg-white/20"}`}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* 메타 정보 */}
+                {(() => {
+                  const item = selectedItems[activeIndex];
+                  if (!item) return null;
+                  const badge = expiryBadge(item.created_at);
+                  return (
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[12px] text-[#555]">{relativeTime(item.created_at)}</span>
+                      <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border ${badge.className}`}>{badge.label}</span>
+                    </div>
+                  );
+                })()}
+
+                {/* 고정 액션 버튼 */}
+                <div className="flex gap-3 pt-1 pb-2">
+                  <button
+                    onClick={() => selectedItems[activeIndex] && handleSave(selectedItems[activeIndex].result_image_url)}
+                    className="flex-1 bg-[#C9571A] hover:bg-[#B34A12] text-white py-3.5 rounded-2xl font-bold text-[15px] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M8 10l-3-3M8 10l3-3M1 12v1a2 2 0 002 2h10a2 2 0 002-2v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    저장하기
+                  </button>
+                  <button
+                    onClick={() => selectedItems[activeIndex] && handleKakaoShare(selectedItems[activeIndex].result_image_url)}
+                    className="flex-1 bg-[#FEE500] hover:bg-[#F0D900] text-[#191919] py-3.5 rounded-2xl font-bold text-[15px] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/></svg>
+                    카카오 공유
+                  </button>
+                </div>
+              </>
             )}
           </div>
         )}
