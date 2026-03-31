@@ -33,9 +33,7 @@ const PACKAGES = [
 ];
 
 const PG_METHODS = [
-  { id: "kakaopay",  label: "카카오페이", color: "#FEE500", textColor: "#191919", channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KAKAOPAY,  payMethod: "EASY_PAY" as const },
-  { id: "tosspay",   label: "토스페이",   color: "#0064FF", textColor: "#fff",     channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_TOSSPAY,   payMethod: "EASY_PAY" as const },
-  { id: "naverpay",  label: "네이버페이", color: "#03C75A", textColor: "#fff",     channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_NAVERPAY,  payMethod: "EASY_PAY" as const },
+  { id: "kakaopay", label: "카카오페이", color: "#FEE500", textColor: "#191919", channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KAKAOPAY, payMethod: "EASY_PAY" as const },
 ];
 
 type Status = "idle" | "loading" | "success" | "error";

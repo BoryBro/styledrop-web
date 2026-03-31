@@ -32,12 +32,20 @@ export default function Result() {
   const { user, loading: authLoading, login } = useAuth();
   const [remaining, setRemaining] = useState<number | null>(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [imageKey, setImageKey] = useState<string | null>(null);
+  const [watermarkRemoved, setWatermarkRemoved] = useState(false);
+  const [removingWatermark, setRemovingWatermark] = useState(false);
 
   const fetchRemaining = () => {
     fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
   };
 
-  useEffect(() => { fetchRemaining(); }, []);
+  const fetchCredits = () => {
+    fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
+  };
+
+  useEffect(() => { fetchRemaining(); fetchCredits(); }, []);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -67,6 +75,11 @@ export default function Result() {
     const cachedResult = sessionStorage.getItem("sd_resultDataUrl");
     const cachedShareUrl = sessionStorage.getItem("sd_shareUrl");
     const cachedShareLink = sessionStorage.getItem("sd_shareLink");
+    const cachedImageKey = sessionStorage.getItem("sd_imageKey");
+    const cachedWatermarkRemoved = sessionStorage.getItem("sd_watermarkRemoved");
+
+    if (cachedImageKey) setImageKey(cachedImageKey);
+    if (cachedWatermarkRemoved === "1") setWatermarkRemoved(true);
 
     if (cachedResult) {
       setResultImage(cachedResult);
@@ -87,8 +100,13 @@ export default function Result() {
           const dataUrl = `data:image/jpeg;base64,${data.image}`;
           setResultImage(dataUrl);
           sessionStorage.setItem("sd_resultDataUrl", dataUrl);
+          if (data.imageKey) {
+            setImageKey(data.imageKey);
+            sessionStorage.setItem("sd_imageKey", data.imageKey);
+          }
           setStatus("done");
           fetchRemaining();
+          fetchCredits();
 
           if (!data.shouldSaveHistory) {
             addGuestHistoryItem({
@@ -242,6 +260,36 @@ export default function Result() {
       })
       .catch(() => {});
   }, [status, resultImage, imageBase64, shareUrl]);
+
+  const handleRemoveWatermark = async () => {
+    if (!imageKey || removingWatermark) return;
+    setRemovingWatermark(true);
+    try {
+      const res = await fetch("/api/remove-watermark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageKey }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error ?? "워터마크 제거에 실패했어요.");
+        return;
+      }
+      const cleanUrl = `data:image/jpeg;base64,${data.image}`;
+      setResultImage(cleanUrl);
+      sessionStorage.setItem("sd_resultDataUrl", cleanUrl);
+      sessionStorage.removeItem("sd_imageKey");
+      sessionStorage.setItem("sd_watermarkRemoved", "1");
+      setWatermarkRemoved(true);
+      setImageKey(null);
+      setCredits(data.credits);
+      showToast("✦ 워터마크가 제거됐어요!");
+    } catch {
+      showToast("오류가 발생했어요. 다시 시도해주세요.");
+    } finally {
+      setRemovingWatermark(false);
+    }
+  };
 
   const handleCopyLink = async () => {
     const link = shareLink || sessionStorage.getItem("sd_shareLink") || window.location.href;
@@ -453,6 +501,45 @@ export default function Result() {
               >
                 🔗 링크 복사하기
               </button>
+            )}
+
+            {/* 워터마크 제거 섹션 */}
+            {user && !watermarkRemoved && imageKey && (
+              <button
+                onClick={handleRemoveWatermark}
+                disabled={removingWatermark || credits === 0}
+                className="w-full py-3.5 rounded-xl font-bold text-[14px] transition-all border flex items-center justify-center gap-2 disabled:opacity-40"
+                style={credits && credits > 0
+                  ? { backgroundColor: "#1A1A1A", borderColor: "rgba(201,87,26,0.4)", color: "#C9571A" }
+                  : { backgroundColor: "#111", borderColor: "rgba(255,255,255,0.06)", color: "#555" }
+                }
+              >
+                {removingWatermark ? (
+                  <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                ) : (
+                  <>
+                    <span>✦</span>
+                    <span>
+                      {credits === 0
+                        ? "크레딧 없음 — 워터마크 제거 불가"
+                        : `워터마크 없이 저장 (크레딧 ${credits}개 보유)`}
+                    </span>
+                  </>
+                )}
+              </button>
+            )}
+            {user && credits === 0 && !watermarkRemoved && (
+              <Link
+                href="/shop"
+                className="w-full py-3 text-sm text-[#C9571A] text-center border border-[#C9571A]/20 rounded-xl hover:border-[#C9571A]/40 transition-colors block"
+              >
+                크레딧 충전하기 →
+              </Link>
+            )}
+            {watermarkRemoved && (
+              <div className="w-full py-3 text-sm text-[#C9571A] text-center bg-[#C9571A]/10 border border-[#C9571A]/20 rounded-xl">
+                ✦ 워터마크가 제거됐어요. 저장 버튼을 눌러주세요.
+              </div>
             )}
           </div>
         )}

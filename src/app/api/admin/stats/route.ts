@@ -15,16 +15,37 @@ export async function POST(request: NextRequest) {
 
   const todayIso = new Date(Date.now() - 24 * 3600000).toISOString();
 
-  const [usageRes, eventsRes, usersRes, todayUsageRes] = await Promise.all([
+  const [usageRes, eventsRes, usersRes, todayUsageRes, paymentsRes, todayPaymentsRes] = await Promise.all([
     supabase.from("style_usage").select("style_id, style_name, user_id"),
     supabase.from("user_events").select("event_type"),
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
+    supabase.from("payments").select("amount, credits, user_id, created_at").eq("status", "paid"),
+    supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
   ]);
 
   if (usageRes.error || eventsRes.error) {
     return NextResponse.json({ error: "데이터 조회 실패" }, { status: 500 });
   }
+
+  // 결제 통계
+  const payments = paymentsRes.data ?? [];
+  const totalRevenue = payments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+  const totalPaymentCount = payments.length;
+  const todayRevenue = (todayPaymentsRes.data ?? []).reduce((sum, p) => sum + (p.amount ?? 0), 0);
+
+  // 사용자별 누적 결제
+  const revenueByUser: Record<string, { amount: number; count: number }> = {};
+  for (const p of payments) {
+    if (!p.user_id) continue;
+    if (!revenueByUser[p.user_id]) revenueByUser[p.user_id] = { amount: 0, count: 0 };
+    revenueByUser[p.user_id].amount += p.amount ?? 0;
+    revenueByUser[p.user_id].count += 1;
+  }
+  const topPayers = Object.entries(revenueByUser)
+    .map(([user_id, v]) => ({ user_id, ...v }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 10);
 
   const usage = usageRes.data ?? [];
   const events = eventsRes.data ?? [];
@@ -65,5 +86,9 @@ export async function POST(request: NextRequest) {
     shareLinkCopy: eventCounts["share_link_copy"] ?? 0,
     revisit: eventCounts["revisit"] ?? 0,
     transformEvents: eventCounts["transform"] ?? 0,
+    totalRevenue,
+    totalPaymentCount,
+    todayRevenue,
+    topPayers,
   });
 }

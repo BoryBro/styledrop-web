@@ -93,10 +93,12 @@ export default function Studio() {
   const router = useRouter();
   const { user, loading, login } = useAuth();
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
+    fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -178,7 +180,7 @@ export default function Studio() {
 
         {/* Header */}
         <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
             {remaining !== null && (
               <span className={`text-[12px] px-2.5 py-1 rounded-full bg-[#1A1A1A] ${
@@ -186,6 +188,11 @@ export default function Studio() {
               }`}>
                 {remaining === 0 && !user ? "로그인 필요" : `${remaining}회 남음`}
               </span>
+            )}
+            {user && credits !== null && credits > 0 && (
+              <Link href="/shop" className="text-[12px] px-2.5 py-1 rounded-full bg-[#C9571A]/20 text-[#C9571A] hover:bg-[#C9571A]/30 transition-colors">
+                ✦ {credits}크레딧
+              </Link>
             )}
           </div>
           {!loading && (

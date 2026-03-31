@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 
 type StyleStat = { style_id: string; style_name: string; count: number };
+type TopPayer = { user_id: string; amount: number; count: number };
 type Stats = {
   total: number;
   todayTotal: number;
@@ -16,6 +17,10 @@ type Stats = {
   shareLinkCopy: number;
   revisit: number;
   transformEvents: number;
+  totalRevenue: number;
+  totalPaymentCount: number;
+  todayRevenue: number;
+  topPayers: TopPayer[];
 };
 
 function Row({ label, value, note, highlight }: { label: string; value: string | number; note?: string; highlight?: boolean }) {
@@ -181,6 +186,30 @@ export default function AdminPage() {
           <Bar ratio={shareRatio} />
         </div>
       </Section>
+
+      {/* 결제 현황 */}
+      <Section title="결제 현황">
+        <Row label="누적 매출" value={`${stats.totalRevenue.toLocaleString()}원`} highlight />
+        <Row label="오늘 매출" value={`${stats.todayRevenue.toLocaleString()}원`} />
+        <Row label="결제 건수" value={`${stats.totalPaymentCount}건`} />
+      </Section>
+
+      {/* 사용자별 결제 */}
+      {stats.topPayers.length > 0 && (
+        <Section title="사용자별 누적 결제">
+          {stats.topPayers.map((p) => (
+            <div key={p.user_id} className="py-3 border-b border-white/5 last:border-0">
+              <div className="flex items-center justify-between">
+                <span className="text-[#888] text-xs font-mono truncate max-w-[160px]">{p.user_id.slice(0, 8)}…</span>
+                <span className="text-white font-bold text-sm">
+                  {p.amount.toLocaleString()}원
+                  <span className="text-[#555] font-normal text-xs ml-1">({p.count}건)</span>
+                </span>
+              </div>
+            </div>
+          ))}
+        </Section>
+      )}
 
       {/* 스타일별 */}
       <Section title="스타일별 사용">

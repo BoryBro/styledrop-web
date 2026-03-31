@@ -92,7 +92,8 @@ export async function POST(request: NextRequest) {
     const parts = response.candidates?.[0]?.content?.parts || [];
     for (const part of parts) {
       if (part.inlineData) {
-        // Supabase 로깅 — 실패해도 이미지 응답에 영향 없음
+        // Supabase 로깅 + clean 이미지 저장 — 실패해도 이미지 응답에 영향 없음
+        let imageKey: string | null = null;
         try {
           const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -112,6 +113,14 @@ export async function POST(request: NextRequest) {
               metadata: { style_id: style },
             });
           }
+
+          // clean 이미지 임시 저장 (워터마크 제거 시 사용)
+          const { data: tempImg } = await supabase
+            .from("temp_images")
+            .insert({ clean_data: part.inlineData.data!, user_id: session?.id ?? null })
+            .select("id")
+            .single();
+          imageKey = tempImg?.id ?? null;
         } catch (err) {
           console.error("[Supabase] unexpected error:", err);
         }
@@ -123,6 +132,7 @@ export async function POST(request: NextRequest) {
           image: watermarked,
           mimeType: "image/jpeg",
           shouldSaveHistory: !!session,
+          imageKey,
         });
         res.cookies.set(cookieName, cookieValue, cookieOptions);
         return res;
