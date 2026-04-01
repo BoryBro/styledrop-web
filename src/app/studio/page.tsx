@@ -185,6 +185,23 @@ export default function Studio() {
           <h2 className="text-[20px] font-bold text-white mb-1">스타일 선택</h2>
           <p className="text-[14px] text-[#666] mb-3">원하는 스타일을 선택하면 사진 앨범이 열립니다</p>
 
+          {/* AI 오디션 배너 */}
+          <Link href="/audition/solo" className="block mb-4">
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e0900] to-[#111] border border-[#C9571A]/40 px-4 py-4 flex items-center gap-3 hover:border-[#C9571A]/70 transition-colors">
+              <div className="text-[36px] flex-shrink-0">🎬</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="text-[9px] font-extrabold text-white bg-[#C9571A] px-1.5 py-0.5 rounded uppercase tracking-wide">🔥 신규</span>
+                </div>
+                <p className="text-white font-extrabold text-[15px] leading-snug">AI 오디션 — 내 연기력 테스트</p>
+                <p className="text-[#777] text-[12px] mt-0.5">3컷 촬영 → 감독 혹평 → 영화 스틸컷 생성</p>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-[#C9571A]">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </Link>
+
           {/* 터미널 공지 */}
           {notices.length > 0 && (
             <div className="mb-5 bg-[#0D0D0D] border border-[#2a2a2a] rounded-xl px-4 py-3 font-mono overflow-hidden">
