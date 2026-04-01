@@ -17,9 +17,9 @@ type Stats = {
   userRatio: number;
   byStyle: StyleStat[];
   totalUsers: number;
+  uniqueLoggedInUsers: number;
   shareKakao: number;
   shareLinkCopy: number;
-  revisit: number;
   transformEvents: number;
   totalRevenue: number;
   totalPaymentCount: number;
@@ -84,7 +84,6 @@ export default function AdminPage() {
   const [refundMsg, setRefundMsg] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
   const [creditSearch, setCreditSearch] = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
 
   const doLogin = async (pw: string) => {
     setError("");
@@ -160,13 +159,6 @@ export default function AdminPage() {
   const shareTotal = stats.shareKakao + stats.shareLinkCopy;
   const shareRatio = stats.total > 0 ? Math.round((shareTotal / stats.total) * 100) : 0;
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(window.location.origin).then(() => {
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-    });
-  };
-
   return (
     <main className="w-full max-w-sm mx-auto px-4 py-10 flex flex-col gap-6 bg-[#0A0A0A] min-h-screen">
 
@@ -194,23 +186,24 @@ export default function AdminPage() {
         <div className="grid grid-cols-2 gap-2">
           <MiniCard label="누적 변환" value={`${stats.total}회`} accent />
           <MiniCard label="오늘 변환" value={`${stats.todayTotal}회`} />
-          <MiniCard label="가입 유저" value={`${stats.totalUsers}명`} />
-          <MiniCard label="재방문" value={`${stats.revisit}회`} />
+          <MiniCard label="가입 유저 (전체)" value={`${stats.totalUsers}명`} />
+          <MiniCard label="변환한 유저 (고유)" value={`${stats.uniqueLoggedInUsers}명`} />
         </div>
       </div>
 
       {/* 로그인 vs 게스트 */}
       <div className="flex flex-col gap-1">
         <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">로그인 vs 게스트</p>
+        <p className="text-[10px] text-[#444] px-1 mb-1">변환 횟수 기준 — 1명이 여러 번 변환하면 중복 집계됨</p>
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-[#555] text-[11px]">로그인 유저</span>
+            <span className="text-[#555] text-[11px]">로그인 변환</span>
             <span className="text-white text-[18px] font-extrabold tabular-nums">{stats.userCount}회</span>
             <span className="text-[#C9571A] text-[13px] font-bold">{stats.userRatio}%</span>
             <Bar ratio={stats.userRatio} />
           </div>
           <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-[#555] text-[11px]">게스트</span>
+            <span className="text-[#555] text-[11px]">게스트 변환</span>
             <span className="text-white text-[18px] font-extrabold tabular-nums">{stats.guestCount}회</span>
             <span className="text-[#555] text-[13px] font-bold">{stats.guestRatio}%</span>
             <Bar ratio={stats.guestRatio} color="#555" />
@@ -238,12 +231,6 @@ export default function AdminPage() {
             <span className="text-[#555] text-[11px]">{shareTotal}회</span>
           </div>
         </div>
-        <button
-          onClick={copyLink}
-          className="w-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[#888] hover:text-white font-semibold py-2.5 rounded-xl transition-colors text-[13px]"
-        >
-          {linkCopied ? "✓ 링크 복사됨" : "링크 복사하기"}
-        </button>
       </div>
 
       {/* 결제 현황 */}

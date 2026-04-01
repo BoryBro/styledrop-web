@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
   const todayTotal = todayUsageRes.count ?? 0;
   const guestCount = usage.filter(r => !r.user_id).length;
   const userCount = usage.filter(r => !!r.user_id).length;
+  const uniqueLoggedInUsers = new Set(usage.filter(r => !!r.user_id).map(r => r.user_id)).size;
 
   const validStyleIds = new Set(ALL_STYLES.map(s => s.id));
   const counts: Record<string, { style_name: string; count: number }> = {};
@@ -77,9 +78,9 @@ export async function POST(request: NextRequest) {
     userRatio: total > 0 ? Math.round((userCount / total) * 100) : 0,
     byStyle,
     totalUsers: usersRes.count ?? 0,
+    uniqueLoggedInUsers,
     shareKakao: eventCounts["share_kakao"] ?? 0,
     shareLinkCopy: eventCounts["share_link_copy"] ?? 0,
-    revisit: eventCounts["revisit"] ?? 0,
     transformEvents: eventCounts["transform"] ?? 0,
     totalRevenue,
     totalPaymentCount,

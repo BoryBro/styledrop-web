@@ -69,18 +69,6 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/gyaru-before.jpg",
     afterImg: "/thumbnails/gyaru-after.jpg",
   },
-  // 4K 업스케일링 — 데이터 보존, 화면 미표시
-  {
-    id: "4k-upscale",
-    name: "4K 업스케일링",
-    desc: "저화질 사진도 고해상도로 선명하게 복원",
-    bgColor: "#0e1a1a",
-    tag: "무료",
-    active: true,
-    hidden: true,
-    beforeImg: "/thumbnails/4k-before.jpg",
-    afterImg: "/thumbnails/4k-after.jpg",
-  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */

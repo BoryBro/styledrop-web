@@ -13,15 +13,6 @@ const STYLES = [
     goodExample: "/examples/flash-good.jpg",
     badExample: "/examples/flash-bad.jpg",
   },
-  {
-    id: "4k-upscale",
-    name: "4K 업스케일링(무료)",
-    desc: "초고해상도 디테일 복원 및 화질 개선",
-    beforeImg: "/thumbnails/4k-before.jpg",
-    afterImg: "/thumbnails/4k-after.jpg",
-    goodExample: "/examples/4k-good.jpg",
-    badExample: "/examples/4k-bad.jpg",
-  },
 ];
 
 export default function HomeClient({ bottomSlot }: { bottomSlot?: React.ReactNode }) {
