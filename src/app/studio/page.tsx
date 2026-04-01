@@ -284,8 +284,13 @@ export default function Studio() {
                 {/* Bottom left text */}
                 <div className="absolute bottom-0 left-0 p-5">
                   <div className="mb-0.5 flex items-center gap-2">
-                    <p className="text-[24px] font-bold text-white leading-tight">{style.name}</p>
-                    <span className="text-[10px] text-white/40 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded-md">1크레딧 필요</span>
+                    <p className="text-[24px] font-bold text-white tracking-tight leading-tight">{style.name}</p>
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg backdrop-blur-md">
+                      <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                        <path d="M1 1h2l1.5 7h7l1-4.5H4" stroke="#C9571A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">1크레딧</span>
+                    </div>
                   </div>
                   <p className="text-[14px] text-[#ccc] mt-0.5 break-keep">{style.desc}</p>
                   {style.active && (
