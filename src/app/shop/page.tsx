@@ -106,8 +106,9 @@ export default function ShopPage() {
 
       setEarnedCredits(confirm.credits);
       setStatus("success");
-    } catch {
-      setErrorMsg("결제 중 오류가 발생했어요. 다시 시도해주세요.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setErrorMsg(`결제 오류: ${msg}`);
       setStatus("error");
     }
   };
