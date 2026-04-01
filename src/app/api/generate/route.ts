@@ -56,21 +56,32 @@ const STYLE_PROMPTS: Record<string, Record<string, string>> = {
   },
 };
 
-// 레퍼런스 이미지 경로 (public/ 기준, 비어있으면 멀티모달 스킵)
-const STYLE_REFERENCES: Record<string, Record<string, string>> = {
-  "voxel-character": { "default": "" },
-  "flash-selfie":    { "default": "" },
-  "joseon-farmer":   { "default": "" },
-  "grab-selfie":     { "default": "" },
+// 레퍼런스 이미지 경로 배열 (public/ 기준)
+// - 빈 배열 [] → 멀티모달 스킵 (텍스트 프롬프트만 사용)
+// - 파일이 여러 개면 전부 Gemini에 전송 → 공통 스타일 추출
+const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
+  "voxel-character": { "default": [] },
+  "flash-selfie":    { "default": [] },
+  "joseon-farmer":   { "default": [] },
+  "grab-selfie":     { "default": [] },
+  "gyaru":           { "default": [], "dark": [], "pinku": [] },
+  // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
-    "default": "references/angel-default.jpg",
-    "dark":    "references/angel-dark.jpg",
-    "soft":    "references/angel-soft.jpg",
-  },
-  "gyaru": {
-    "default": "references/gyaru-default.jpg",
-    "dark":    "references/gyaru-dark.jpg",
-    "pinku":   "references/gyaru-pinku.jpg",
+    "default": [
+      "references/angel-default-1.jpg",
+      "references/angel-default-2.jpg",
+      "references/angel-default-3.jpg",
+    ],
+    "dark": [
+      "references/angel-dark-1.jpg",
+      "references/angel-dark-2.jpg",
+      "references/angel-dark-3.jpg",
+    ],
+    "soft": [
+      "references/angel-soft-1.jpg",
+      "references/angel-soft-2.jpg",
+      "references/angel-soft-3.jpg",
+    ],
   },
 };
 
@@ -129,23 +140,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid style" }, { status: 400 });
     }
 
-    // 레퍼런스 이미지 로드 (없으면 null → 단일 이미지 모드로 fallback)
-    const refRelPath = STYLE_REFERENCES[style]?.[variant] ?? STYLE_REFERENCES[style]?.["default"] ?? "";
-    let refBase64: string | null = null;
-    if (refRelPath) {
+    // 레퍼런스 이미지 로드 (존재하는 파일만, 없으면 단일 이미지 모드 fallback)
+    const refPaths = STYLE_REFERENCES[style]?.[variant] ?? STYLE_REFERENCES[style]?.["default"] ?? [];
+    const loadedRefs: string[] = [];
+    for (const relPath of refPaths) {
       try {
-        const abs = path.join(process.cwd(), "public", refRelPath);
-        refBase64 = fs.readFileSync(abs).toString("base64");
-      } catch { /* 레퍼런스 이미지 미존재 — 단일 이미지 모드로 진행 */ }
+        const abs = path.join(process.cwd(), "public", relPath);
+        loadedRefs.push(fs.readFileSync(abs).toString("base64"));
+      } catch { /* 파일 없음 — 스킵 */ }
     }
 
-    const promptText = refBase64
-      ? `Image 1 is the original subject. Image 2 is the style reference. Extract identity from Image 1 and apply the exact style, color grading, and aesthetic of Image 2. Additional instructions: ${prompt}`
-      : `Edit this image: ${prompt}`;
+    const refCount = loadedRefs.length;
+    const promptText = refCount === 0
+      ? `Edit this image: ${prompt}`
+      : refCount === 1
+        ? `Image 1 is the original subject. Image 2 is the style reference. Extract identity from Image 1 and apply the exact style, color grading, and aesthetic of Image 2. Additional instructions: ${prompt}`
+        : `Image 1 is the original subject. Images 2 to ${refCount + 1} are style references showing the target aesthetic. Extract identity from Image 1 and apply the common style, color grading, and aesthetic seen across all reference images. Additional instructions: ${prompt}`;
 
     const contents = [
       { inlineData: { mimeType: mimeType || "image/jpeg", data: imageBase64 } },
-      ...(refBase64 ? [{ inlineData: { mimeType: "image/jpeg" as const, data: refBase64 } }] : []),
+      ...loadedRefs.map(b64 => ({ inlineData: { mimeType: "image/jpeg" as const, data: b64 } })),
       { text: promptText },
     ];
 
