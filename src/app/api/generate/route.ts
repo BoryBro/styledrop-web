@@ -67,11 +67,6 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "gyaru":           { "default": [], "dark": [], "pinku": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
-    "default": [
-      "references/angel-default-1.jpg",
-      "references/angel-default-2.jpg",
-      "references/angel-default-3.jpg",
-    ],
     "dark": [
       "references/angel-dark-1.jpg",
       "references/angel-dark-2.jpg",

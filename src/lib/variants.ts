@@ -10,8 +10,7 @@ export const STYLE_VARIANTS: Record<string, Variant[]> = {
     { id: "pinku",   label: "핑쿠 갸루",  desc: "파스텔 핑크 카와이 갸루" },
   ],
   "angel": [
-    { id: "default", label: "원본 천사",       desc: "청순하고 순수한 천사 스타일" },
-    { id: "dark",    label: "타락천사",         desc: "다크하고 강렬한 타락천사" },
-    { id: "soft",    label: "여리여리 천사",    desc: "파스텔 톤의 부드러운 천사" },
+    { id: "dark", label: "타락천사",      desc: "다크하고 강렬한 타락천사" },
+    { id: "soft", label: "여리여리 천사", desc: "파스텔 톤의 부드러운 천사" },
   ],
 };
