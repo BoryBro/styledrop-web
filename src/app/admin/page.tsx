@@ -57,6 +57,15 @@ function Bar({ ratio, color = "#C9571A" }: { ratio: number; color?: string }) {
   );
 }
 
+function MiniCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
+  return (
+    <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+      <span className="text-[#555] text-[11px]">{label}</span>
+      <span className={`text-[18px] font-extrabold tabular-nums leading-tight ${accent ? "text-[#C9571A]" : "text-white"}`}>{value}</span>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
@@ -75,6 +84,7 @@ export default function AdminPage() {
   const [refundMsg, setRefundMsg] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
   const [creditSearch, setCreditSearch] = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const doLogin = async (pw: string) => {
     setError("");
@@ -150,6 +160,13 @@ export default function AdminPage() {
   const shareTotal = stats.shareKakao + stats.shareLinkCopy;
   const shareRatio = stats.total > 0 ? Math.round((shareTotal / stats.total) * 100) : 0;
 
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.origin).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
+  };
+
   return (
     <main className="w-full max-w-sm mx-auto px-4 py-10 flex flex-col gap-6 bg-[#0A0A0A] min-h-screen">
 
@@ -172,51 +189,62 @@ export default function AdminPage() {
       </div>
 
       {/* 사용 현황 */}
-      <Section title="사용 현황">
-        <Row label="누적 변환" value={`${stats.total}회`} highlight />
-        <Row label="오늘 변환" value={`${stats.todayTotal}회`} />
-        <Row label="가입 유저" value={`${stats.totalUsers}명`} />
-        <Row label="재방문" value={`${stats.revisit}회`} />
-      </Section>
+      <div className="flex flex-col gap-1">
+        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">사용 현황</p>
+        <div className="grid grid-cols-2 gap-2">
+          <MiniCard label="누적 변환" value={`${stats.total}회`} accent />
+          <MiniCard label="오늘 변환" value={`${stats.todayTotal}회`} />
+          <MiniCard label="가입 유저" value={`${stats.totalUsers}명`} />
+          <MiniCard label="재방문" value={`${stats.revisit}회`} />
+        </div>
+      </div>
 
-      {/* 회원 vs 비회원 */}
-      <Section title="로그인 vs 게스트 (변환 횟수 기준)">
-        <div className="py-3 border-b border-white/5">
-          <div className="flex items-center justify-between">
-            <span className="text-[#888] text-sm">로그인 유저</span>
-            <span className="text-white font-bold">{stats.userCount}회 <span className="text-[#C9571A]">{stats.userRatio}%</span></span>
+      {/* 로그인 vs 게스트 */}
+      <div className="flex flex-col gap-1">
+        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">로그인 vs 게스트</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-[#555] text-[11px]">로그인 유저</span>
+            <span className="text-white text-[18px] font-extrabold tabular-nums">{stats.userCount}회</span>
+            <span className="text-[#C9571A] text-[13px] font-bold">{stats.userRatio}%</span>
+            <Bar ratio={stats.userRatio} />
           </div>
-          <Bar ratio={stats.userRatio} />
-        </div>
-        <div className="py-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[#888] text-sm">비로그인 게스트</span>
-            <span className="text-white font-bold">{stats.guestCount}회 <span className="text-[#555]">{stats.guestRatio}%</span></span>
+          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-[#555] text-[11px]">게스트</span>
+            <span className="text-white text-[18px] font-extrabold tabular-nums">{stats.guestCount}회</span>
+            <span className="text-[#555] text-[13px] font-bold">{stats.guestRatio}%</span>
+            <Bar ratio={stats.guestRatio} color="#555" />
           </div>
-          <Bar ratio={stats.guestRatio} color="#555" />
         </div>
-      </Section>
+      </div>
 
       {/* 공유 & 바이럴 */}
-      <Section title="공유 & 바이럴">
-        <Row
-          label="카카오톡 공유"
-          value={`${stats.shareKakao}회`}
-          note={stats.total > 0 ? `변환의 ${Math.round((stats.shareKakao / stats.total) * 100)}%` : undefined}
-        />
-        <Row
-          label="링크 복사"
-          value={`${stats.shareLinkCopy}회`}
-          note={stats.total > 0 ? `변환의 ${Math.round((stats.shareLinkCopy / stats.total) * 100)}%` : undefined}
-        />
-        <div className="py-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[#888] text-sm">공유 전환율</span>
-            <span className="text-white font-bold">{shareTotal}회 <span className="text-[#C9571A]">{shareRatio}%</span></span>
+      <div className="flex flex-col gap-1">
+        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">공유 & 바이럴</p>
+        <div className="grid grid-cols-3 gap-2 mb-2">
+          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-[#555] text-[10px]">카카오 공유</span>
+            <span className="text-white text-[16px] font-extrabold tabular-nums">{stats.shareKakao}회</span>
+            <span className="text-[#555] text-[11px]">{stats.total > 0 ? Math.round((stats.shareKakao / stats.total) * 100) : 0}%</span>
           </div>
-          <Bar ratio={shareRatio} />
+          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-[#555] text-[10px]">링크 복사</span>
+            <span className="text-white text-[16px] font-extrabold tabular-nums">{stats.shareLinkCopy}회</span>
+            <span className="text-[#555] text-[11px]">{stats.total > 0 ? Math.round((stats.shareLinkCopy / stats.total) * 100) : 0}%</span>
+          </div>
+          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-[#555] text-[10px]">공유 전환율</span>
+            <span className="text-[#C9571A] text-[16px] font-extrabold tabular-nums">{shareRatio}%</span>
+            <span className="text-[#555] text-[11px]">{shareTotal}회</span>
+          </div>
         </div>
-      </Section>
+        <button
+          onClick={copyLink}
+          className="w-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[#888] hover:text-white font-semibold py-2.5 rounded-xl transition-colors text-[13px]"
+        >
+          {linkCopied ? "✓ 링크 복사됨" : "링크 복사하기"}
+        </button>
+      </div>
 
       {/* 결제 현황 */}
       <Section title="결제 현황">

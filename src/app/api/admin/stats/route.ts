@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { ALL_STYLES, STYLE_LABELS } from "@/lib/styles";
 
 export async function POST(request: NextRequest) {
   const { password } = await request.json();
@@ -46,16 +47,18 @@ export async function POST(request: NextRequest) {
   const guestCount = usage.filter(r => !r.user_id).length;
   const userCount = usage.filter(r => !!r.user_id).length;
 
+  const validStyleIds = new Set(ALL_STYLES.map(s => s.id));
   const counts: Record<string, { style_name: string; count: number }> = {};
   for (const row of usage) {
-    if (!counts[row.style_id]) counts[row.style_id] = { style_name: row.style_name, count: 0 };
+    if (!validStyleIds.has(row.style_id)) continue; // 삭제된 테스트 스타일 제외
+    if (!counts[row.style_id]) counts[row.style_id] = { style_name: STYLE_LABELS[row.style_id] ?? row.style_name, count: 0 };
     counts[row.style_id].count++;
   }
   const byStyle = Object.entries(counts).map(([style_id, v]) => ({
     style_id,
     style_name: v.style_name,
     count: v.count,
-  }));
+  })).sort((a, b) => b.count - a.count);
 
   // 이벤트 집계
   const eventCounts: Record<string, number> = {};
