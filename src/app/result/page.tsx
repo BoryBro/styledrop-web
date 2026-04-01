@@ -76,10 +76,12 @@ export default function Result() {
       return;
     }
 
+    const variant = sessionStorage.getItem("sd_variant") ?? "default";
+
     fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ style: styleId, imageBase64: base64, mimeType: "image/jpeg" }),
+      body: JSON.stringify({ style: styleId, variant, imageBase64: base64, mimeType: "image/jpeg" }),
     })
       .then(async (res) => {
         const data = await res.json();
