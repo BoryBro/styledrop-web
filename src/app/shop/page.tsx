@@ -248,6 +248,7 @@ export default function ShopPage() {
 
         {/* 안내 */}
         <div className="text-[11px] text-[#444] space-y-1 pb-4">
+          <p>• <span className="text-[#666]">서비스 제공 기간: 결제 완료 즉시 사용 가능</span></p>
           <p>• 결제 완료 즉시 크레딧이 충전됩니다.</p>
           <p>• 미사용 크레딧은 결제일로부터 7일 이내{" "}
             <button
