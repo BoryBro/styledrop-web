@@ -40,11 +40,142 @@ const STYLE_PROMPTS: Record<string, Record<string, string>> = {
   "grab-selfie": {
     "default": "Composite this person into a motorcycle selfie scene. The face must be preserved exactly.\n\nFACE PRESERVATION — HIGHEST PRIORITY:\n- Copy the person's face from the original photo with zero changes\n- Face angle toward the camera: identical to the original photo\n- Head tilt and rotation: identical\n- Eye direction, eye openness: identical\n- Facial expression — every muscle position, smile or neutral: identical\n- Skin tone, facial features, hair: identical\n- Do NOT reinterpret or redraw the face. Transplant it as-is.\n\nSCENE: The person is the rear passenger on a motorcycle in a busy Southeast Asian city street, taking a high-angle selfie.\n\nSEATING: Person sits on the BACK SEAT behind the driver. Driver's back is visible in the lower foreground.\n\nCLOTHING: Replace any cold-weather clothing with lightweight summer clothes (casual short-sleeve shirt). Keep the face, hair, and accessories exactly as in the original.\n\nSCENE SETUP:\n- Person wears a plain solid-color helmet (no logos, no text) and black sunglasses\n- Driver in front: plain helmet (no logos), face mask, back facing camera\n- Moving motorcycle\n\nENVIRONMENT:\n- Busy Southeast Asian city street, glass high-rise buildings, green trees\n- Intense tropical midday sunlight — harsh direct sun, strong shadows\n- Other motorcycles and vehicles\n\nCAMERA:\n- High-angle selfie shot by rear passenger extending arm forward\n- Wide-angle phone front camera distortion\n- Windblown hair, slight background motion blur\n\nAESTHETIC: Vibrant hyper-realistic travel photo. Hot midday sun energy. No brand logos anywhere.",
   },
-  // 천사 변신 — 프롬프트 준비 중 (active: false)
+  // 천사 변신
   "angel": {
-    "default": "Transform this photo into a pure, ethereal angel aesthetic. Preserve the person's identity completely. Apply: soft glowing white/silver halo effect, delicate white feathered wings visible behind the subject, luminous skin with subtle inner glow, light pastel color grading (cool whites and soft golds), gentle bokeh light particles floating around. Clothing: flowing white or cream ethereal garments. Overall mood: divine, pure, celestial. Style reference: fantasy portrait photography with soft cinematic lighting.",
-    "dark": "Transform this photo into a fallen dark angel aesthetic. Preserve the person's identity completely. Apply: dark dramatic makeup with heavy eye shadow, black or dark grey feathered wings, deep moody color grading (desaturated with cool shadows), subtle black halo or broken halo effect, gothic ethereal clothing (black lace, dark leather). Background: dark cloudy dramatic sky or dark void with scattered embers. Overall mood: powerful, fallen, dramatic. Style: dark fantasy portrait.",
-    "soft": "Transform this photo into a soft, delicate gentle angel aesthetic. Preserve the person's identity completely. Apply: dreamy pastel color grade (soft pinks, lavenders, baby blues), fluffy small white wings, soft flower crown or delicate halo, dewy glowing skin, soft watercolor-like background with floating petals and sparkles. Overall mood: gentle, dreamy, innocent. Style: soft fantasy illustration meets portrait photography.",
+    "soft": `IDENTITY LOCK — NON-NEGOTIABLE:
+The uploaded person's face must be preserved with 100% fidelity.
+Keep the exact same bone structure, eye shape, nose, lips, proportions, and overall recognizable face.
+Do NOT replace the person with a generic model or beautify into a different identity.
+The result must be instantly recognizable as the same person from the original photo.
+If any conflict arises between style and identity, preserve identity first.
+
+TRANSFORMATION:
+Place the uploaded person into a dreamy soft angel fantasy portrait.
+
+FACE & MAKEUP:
+- Preserve all facial features exactly
+- Apply luminous ethereal makeup: shimmery white/iridescent eyeshadow, crystal glitter around eyes, rhinestone under-eye accents, glossy soft pink lips, dewy luminous skin with pearlescent glow
+- Skin should feel illuminated from within — bright, heavenly, smooth but human
+
+HAIR:
+- Keep the person's original hairstyle recognizable
+- Refine into a soft, silky, weightless angelic version
+- Long flowing hair, smooth glossy texture, gentle volume
+
+OUTFIT:
+- Flowing white angel dress: chiffon gown, ivory draped fabric, or soft celestial robe
+- Light, airy, elegant, modest but beautiful
+
+WINGS:
+- Large soft white feathered angel wings behind the body
+- Fluffy, glittering, translucent-shimmering, luminous
+- Wings should frame the upper body elegantly
+
+POSE:
+- Gentle seated pose inside clouds
+- Soft body language: relaxed shoulders, slightly tilted head, delicate hand placement
+- Calm, composed, fragile posture
+
+EXPRESSION:
+- Calm, slightly melancholic, dreamy distant gaze
+- Soft parted lips, serene stillness
+- No big smiles
+
+BACKGROUND:
+- Surreal heavenly cloudscape: oversized fluffy fantasy clouds, glittering mist, soft white fog
+- Pale silver-white atmosphere, dreamy cloud chamber
+- Clouds feel intentionally unreal, fantastical, immersive
+
+LIGHTING:
+- Soft diffused frontal light, gentle bloom and glow
+- Slightly overexposed heavenly light, no harsh shadows
+- Pearlescent reflections, low-shadow angelic illumination
+
+COLOR PALETTE:
+- White, pearl, ivory, silver, soft pastel pink, pale cool gray, iridescent shimmer
+- Airy, luminous, clean
+
+MOOD:
+- Tender, mystical, fragile, innocent, dreamy, ethereal
+- Like a soft angelic perfume campaign mixed with fantasy portrait photography
+
+STRICT RULES:
+- Do NOT change the person's identity
+- Do NOT make it dark, gothic, or edgy
+- Do NOT lose the softness, haze, and glow
+- Do NOT make the clouds realistic; they must feel surreal and heavenly`,
+
+    "dark": `IDENTITY LOCK — NON-NEGOTIABLE:
+The uploaded person's face must be preserved with 100% fidelity.
+Keep the exact same bone structure, eye shape, nose, lips, skin tone, proportions, and overall recognizable face.
+Do NOT replace the person with a generic model or beautify into a different identity.
+Do NOT change ethnicity or body type drastically.
+The result must feel like the same person wearing a fantasy themed filter, not a new character.
+If any conflict arises between style and identity, preserve identity first.
+
+TRANSFORMATION:
+Place the uploaded person into a surreal fallen angel / dark cupid fantasy portrait with a raw flash-photo aesthetic.
+
+FACE & MAKEUP:
+- Preserve all facial features exactly
+- Apply glamorous flash-reactive editorial makeup: metallic silver-white eyeshadow, glossy wet-look highlighter on cheekbones/nose bridge/eyelids, glossy or softly blurred lips, shimmer under-eye glitter accents
+- Skin should feel flash-lit: bright specular glow on cheeks, forehead, nose bridge, slightly overexposed from direct flash
+
+EXPRESSION:
+- Detached, dreamy, sultry, melancholic
+- Half-lidded eyes, distant gaze, slightly parted lips, soft pout
+- Cool, moody, glamorous, slightly sinful — not smiling widely
+
+HAIR:
+- Keep the person's original hairstyle recognizable
+- Refine for fantasy portrait: glossy, deliberate, styled
+- Long straight or softly waved hair, center part, slightly seductive texture
+
+OUTFIT:
+- Short fitted angelic-glam mini dress: white glitter mini, white satin slip, ivory bodycon, or black micro dress for darker variation
+- Minimal, feminine, short silhouette — satin, shimmer knit, or glitter stretch fabric
+
+WINGS:
+- Large dramatic feathered angel wings behind the body, filling major portion of the image
+- Pure white or off-white feathers, sculptural, layered, volumetric
+- Theatrical costume wings feel — not flat stickers
+
+HAND PROP:
+- Subject holds or rests a lit cigarette near lips or cheek
+- Soft thin smoke wisps drift upward gently
+- Cigarette is part of the styling attitude
+
+SURROUNDING DECORATIVE ELEMENTS:
+- Floating around the subject: tiny porcelain cherubs/cupids, glossy red heart icons, small glowing stars, cloud puffs, smoke trails
+- Arranged like a surreal digital collage orbiting the subject
+- Intentionally kitschy, symbolic, and stylish — not overwhelming the face
+
+BACKGROUND:
+- Surreal fantasy backdrop: stormy gray cloudscape, soft foggy celestial void, or warm dark gradient sky with cloud haze
+- Flat enough to keep subject clear, rich enough to feel immersive and themed
+
+LIGHTING:
+- Strong direct frontal flash photography
+- Hard immediate camera-mounted flash feel
+- Bright facial highlights, crisp illuminated skin against darker background
+- Visible reflective hotspots on glossy makeup and skin
+
+COLOR PALETTE:
+- White, silver, gray, pearl, smoke — with red heart accents
+- Or ivory + charcoal + soft blood-red
+- Controlled, editorial, not rainbow-colored
+
+MOOD:
+- Seductive, dreamy, eerie, internet-editorial, collage-like, feminine
+- Fallen angel / dark cupid energy — celestial but corrupted, glamorous but raw
+
+STRICT RULES:
+- Do NOT change the person's identity
+- Do NOT generate a generic AI beauty face
+- Do NOT make it painterly or hyper-cinematic
+- Do NOT remove the raw flash aesthetic
+- Do NOT make the cherubs grotesque or too realistic
+- Do NOT let props block the face`,
   },
   "gyaru": {
     "default": "CRITICAL IDENTITY LOCK — ABSOLUTE:\n- The face from the input image must be preserved with 100% fidelity.\n- Do NOT alter bone structure, face shape, eye distance, nose shape, lip shape, or proportions.\n- Do NOT beautify, reshape, stylize, or reinterpret the face.\n- Maintain exact identity, likeness, and facial geometry.\n- Only apply surface-level cosmetic effects and styling ON TOP of the original face.\n- The result must be instantly recognizable as the same person.\n\nCORE TRANSFORMATION:\nApply an authentic early-2000s Japanese gyaru (ギャル) filter style, matching the exact aesthetic characteristics of the reference.\n\nGYARU FACE FILTER DETAILS:\n- Dramatically enlarged-looking eyes using makeup illusion (NOT structural change)\n- Thick, heavy upper and lower false eyelashes (dense, layered, spiky)\n- Strong black eyeliner with extended outer corners\n- Bright, glossy circle lenses effect (dark brown or black, high contrast)\n- White under-eye highlight (tear bag emphasis, strong aegyo-sal)\n- Heavy nose highlight (bright vertical stripe on nose bridge)\n- Pale matte skin base with slightly artificial smoothness (but NOT plastic AI skin)\n- Pinkish blush across cheeks and nose bridge\n- Glossy, slightly overlined lips (light pink tone)\n\nSKIN & TEXTURE:\n- Keep realistic skin texture underneath\n- Add soft glam smoothing ONLY as a cosmetic layer (not AI blur)\n- Slight overexposed flash aesthetic\n- Subtle grain/noise like old mobile camera\n\nHAIR:\n- Blonde or light brown dyed gyaru-style hair\n- Voluminous, curled, layered styling\n- Slightly shiny, synthetic-looking texture\n\nSTYLE & ACCESSORIES:\n- Leopard print elements (background or outfit)\n- Decorative stickers / sparkles / rhinestone UI overlays\n- Early 2000s Japanese purikura (プリクラ) aesthetic\n- Over-the-top feminine decoration\n\nCAMERA & LIGHTING:\n- Front-facing selfie angle\n- Slight top-down perspective\n- Direct flash lighting (harsh frontal light + shadow behind)\n- High exposure, slightly blown highlights\n\nCOLOR & TONE:\n- High contrast\n- Slightly warm tone\n- Candy-like saturation\n- Not cinematic, not realistic grading — must feel like retro Japanese photo booth / flip phone camera\n\nFRAME & UI:\n- Add decorative frame elements (pearls, sparkles, stickers)\n- Slight compression artifacts for authenticity\n- Optional Japanese text decoration (non-intrusive)\n\nSTRICT RULES:\n- NO face reshaping\n- NO identity drift\n- NO AI-style smoothing or plastic skin\n- NO modern influencer aesthetic\n- MUST look like real gyaru-era purikura photo\n\nFINAL GOAL:\nA perfect gyaru filter overlay applied to the original person, preserving identity 100%, while fully transforming the visual style into authentic gyaru culture.",
