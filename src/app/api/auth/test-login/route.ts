@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const pw = new URL(request.url).searchParams.get("pw");
 
   if (!process.env.ADMIN_PASSWORD || pw !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ step: "auth_fail", ADMIN_PASSWORD_set: !!process.env.ADMIN_PASSWORD, pw_received: pw }, { status: 401 });
   }
 
   const supabase = createClient(
@@ -30,25 +30,15 @@ export async function GET(request: NextRequest) {
     .single();
 
   if (upsertError || !user) {
-    return NextResponse.json({ error: "유저 생성 실패", detail: upsertError?.message }, { status: 500 });
+    return NextResponse.json({ step: "upsert_fail", detail: upsertError?.message }, { status: 500 });
   }
 
-  // 크레딧 10개 보충 (테스트용 — 매 접근 시 충전)
-  await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 10 });
+  const { error: creditError } = await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 10 });
 
-  // 세션 쿠키 → /shop으로 리다이렉트
-  const session = Buffer.from(
-    JSON.stringify({ id: user.id, nickname: TEST_NICKNAME, profileImage: null })
-  ).toString("base64");
-
-  const base = process.env.NEXTAUTH_URL ?? `${new URL(request.url).protocol}//${new URL(request.url).host}`;
-  const response = NextResponse.redirect(`${base}/shop`);
-  response.cookies.set("sd_session", session, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24,
-    path: "/",
+  return NextResponse.json({
+    step: "ok",
+    userId: user.id,
+    creditError: creditError?.message ?? null,
+    message: "여기까지 성공. 이 내용을 캡처해서 알려주세요.",
   });
-
-  return response;
 }
