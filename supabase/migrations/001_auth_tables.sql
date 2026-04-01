@@ -32,5 +32,5 @@ CREATE TABLE IF NOT EXISTS user_events (
 -- style_usage에 user_id 추가 (nullable — 비로그인 호환)
 ALTER TABLE style_usage ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL;
 
--- 3일 지난 히스토리 자동 삭제 (Supabase cron 또는 pg_cron 사용)
--- SELECT cron.schedule('cleanup-old-history', '0 4 * * *', $$DELETE FROM transform_history WHERE created_at < NOW() - INTERVAL '3 days'$$);
+-- 24시간 지난 히스토리 자동 삭제 (Supabase cron 또는 pg_cron 사용)
+-- SELECT cron.schedule('cleanup-old-history', '0 4 * * *', $$DELETE FROM transform_history WHERE created_at < NOW() - INTERVAL '1 day'$$);

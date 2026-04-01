@@ -11,6 +11,7 @@ export type StyleDef = {
   hidden: boolean;
   beforeImg: string;
   afterImg: string;
+  popular?: boolean;
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -68,6 +69,7 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/angel-before.jpg",
     afterImg: "/thumbnails/angel-after.jpg",
+    popular: true,
   },
   {
     id: "gyaru",
@@ -79,6 +81,7 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/gyaru-before.jpg",
     afterImg: "/thumbnails/gyaru-after.jpg",
+    popular: true,
   },
 ];
 

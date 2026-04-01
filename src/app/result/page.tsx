@@ -142,10 +142,15 @@ export default function Result() {
     if (status !== "done" || !user || !shareUrl || !selectedStyle) return;
     if (historySaved.current) return;
     historySaved.current = true;
+    const variant = sessionStorage.getItem("sd_variant") || "default";
     fetch("/api/history", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ style_id: selectedStyle, result_image_url: shareUrl }),
+      body: JSON.stringify({
+        style_id: selectedStyle,
+        variant,
+        result_image_url: shareUrl,
+      }),
     }).catch(() => {});
   }, [status, user, shareUrl, selectedStyle]);
 

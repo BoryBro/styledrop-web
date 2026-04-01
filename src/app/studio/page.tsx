@@ -12,10 +12,12 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-const STYLES = VISIBLE_STYLES.map((s) => ({
-  ...s,
-  bgImage: s.afterImg,
-}));
+const ALL_STYLE_CARDS = VISIBLE_STYLES.map((s) => ({ ...s, bgImage: s.afterImg }));
+// 스타일 카드 리스트: 인기 먼저, 나머지는 원래 순서
+const STYLES = [
+  ...ALL_STYLE_CARDS.filter(s => s.popular),
+  ...ALL_STYLE_CARDS.filter(s => !s.popular),
+];
 
 type Toast = { id: number; message: string };
 
@@ -182,25 +184,28 @@ export default function Studio() {
         </header>
 
         <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-6 pb-4">
-          <h2 className="text-[20px] font-bold text-white mb-1">스타일 선택</h2>
-          <p className="text-[14px] text-[#666] mb-3">원하는 스타일을 선택하면 사진 앨범이 열립니다</p>
+          <h2 className="text-[20px] font-bold text-white mb-3">스타일 선택</h2>
 
-          {/* AI 오디션 배너 */}
-          <Link href="/audition/solo" className="block mb-4">
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e0900] to-[#111] border border-[#C9571A]/40 px-4 py-4 flex items-center gap-3 hover:border-[#C9571A]/70 transition-colors">
-              <div className="text-[36px] flex-shrink-0">🎬</div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-[9px] font-extrabold text-white bg-[#C9571A] px-1.5 py-0.5 rounded uppercase tracking-wide">🔥 신규</span>
+
+
+          {/* AI 오디션 배너 (로컬 환경에서만 표시) */}
+          {process.env.NODE_ENV === "development" && (
+            <Link href="/audition/solo" className="block mb-4">
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e0900] to-[#111] border border-[#C9571A]/40 px-4 py-4 flex items-center gap-3 hover:border-[#C9571A]/70 transition-colors">
+                <div className="text-[36px] flex-shrink-0">🎬</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-[9px] font-extrabold text-white bg-[#C9571A] px-1.5 py-0.5 rounded uppercase tracking-wide">🔥 신규</span>
+                  </div>
+                  <p className="text-white font-extrabold text-[15px] leading-snug">AI 오디션 — 내 연기력 테스트</p>
+                  <p className="text-[#777] text-[12px] mt-0.5">3컷 촬영 → 감독 혹평 → 영화 스틸컷 생성</p>
                 </div>
-                <p className="text-white font-extrabold text-[15px] leading-snug">AI 오디션 — 내 연기력 테스트</p>
-                <p className="text-[#777] text-[12px] mt-0.5">3컷 촬영 → 감독 혹평 → 영화 스틸컷 생성</p>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-[#C9571A]">
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-[#C9571A]">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </Link>
+            </Link>
+          )}
 
           {/* 터미널 공지 */}
           {notices.length > 0 && (
@@ -278,7 +283,10 @@ export default function Studio() {
 
                 {/* Bottom left text */}
                 <div className="absolute bottom-0 left-0 p-5">
-                  <p className="text-[24px] font-bold text-white leading-tight">{style.name}</p>
+                  <div className="mb-0.5 flex items-center gap-2">
+                    <p className="text-[24px] font-bold text-white leading-tight">{style.name}</p>
+                    <span className="text-[10px] text-white/40 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded-md">1크레딧 필요</span>
+                  </div>
                   <p className="text-[14px] text-[#ccc] mt-0.5 break-keep">{style.desc}</p>
                   {style.active && (
                     <span className="inline-block mt-2 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
@@ -286,6 +294,14 @@ export default function Studio() {
                     </span>
                   )}
                 </div>
+
+                {/* Popular Badge */}
+                {style.popular && (
+                  <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5 bg-[#C9571A] text-white text-[11px] font-extrabold px-2.5 py-1.5 rounded-xl shadow-lg ring-1 ring-white/20 scale-105 origin-top-left transition-transform">
+                    <span>인기</span>
+                    <span className="text-[13px] leading-none -mt-0.5">🔥</span>
+                  </div>
+                )}
 
 
                 {/* Selected check */}
@@ -350,7 +366,7 @@ export default function Studio() {
               <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5" />
               <p className="text-white font-bold text-[18px] mb-1">스타일 옵션 선택</p>
               <p className="text-[#555] text-[13px] mb-5">{variantSelectStyle.name} — 원하는 분위기를 골라주세요</p>
-              <div className="flex flex-col gap-2 mb-5">
+              <div className="grid grid-cols-2 gap-3 mb-5">
                 {variants.map((v) => (
                   <button
                     key={v.id}
@@ -359,26 +375,30 @@ export default function Studio() {
                       setVariantSelectStyle(null);
                       fileInputRef.current?.click();
                     }}
-                    className="w-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-[#C9571A]/50 rounded-2xl px-4 py-4 text-left transition-all flex items-center gap-3"
+                    className="group bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-[#C9571A]/50 rounded-2xl overflow-hidden transition-all text-left flex flex-col"
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-bold text-[15px]">{v.label}</p>
-                      {v.desc && <p className="text-[#666] text-[12px] mt-0.5">{v.desc}</p>}
-                    </div>
-                    {v.thumbnail && (
+                    {v.thumbnail ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={v.thumbnail}
                         alt={v.label}
-                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0 border border-white/10"
+                        className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500"
                       />
+                    ) : (
+                      <div className="w-full aspect-square bg-white/5 flex items-center justify-center">
+                        <span className="text-white/10 text-4xl">✦</span>
+                      </div>
                     )}
+                    <div className="px-4 py-3">
+                      <p className="text-white font-bold text-[14px]">{v.label}</p>
+                      {v.desc && <p className="text-[#555] text-[11px] mt-0.5 break-keep">{v.desc}</p>}
+                    </div>
                   </button>
                 ))}
               </div>
               <button
                 onClick={() => { setVariantSelectStyle(null); setSelectedStyle(null); }}
-                className="w-full py-3 text-[#444] hover:text-white text-[13px] transition-colors"
+                className="w-full py-2 text-[#444] hover:text-white text-[13px] transition-colors"
               >
                 취소
               </button>

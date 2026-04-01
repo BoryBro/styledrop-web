@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { getGuestHistory, type GuestHistoryItem } from "@/lib/guest-history";
 import { STYLE_LABELS, VISIBLE_STYLE_IDS } from "@/lib/styles";
+import { STYLE_VARIANTS } from "@/lib/variants";
 
 type HistoryItem = {
   id: string;
   style_id: string;
+  variant?: string;
   result_image_url: string;
   created_at: string;
 };
@@ -31,10 +33,10 @@ function relativeTime(iso: string): string {
 }
 
 function expiryBadge(iso: string): { label: string; className: string } {
-  const hoursLeft = (new Date(iso).getTime() + 3 * 24 * 3600000 - Date.now()) / 3600000;
-  if (hoursLeft < 24) return { label: "오늘 삭제", className: "bg-red-500/20 text-red-400" };
-  if (hoursLeft < 48) return { label: "내일 삭제", className: "bg-yellow-500/20 text-yellow-400" };
-  return { label: "2일 후 삭제", className: "bg-white/5 text-white/30" };
+  const hoursLeft = (new Date(iso).getTime() + 24 * 3600000 - Date.now()) / 3600000;
+  if (hoursLeft < 3) return { label: "곧 삭제됨", className: "bg-red-500/20 text-red-400" };
+  if (hoursLeft < 12) return { label: "오늘 삭제", className: "bg-yellow-500/20 text-yellow-400" };
+  return { label: "보관 중", className: "bg-white/5 text-white/30" };
 }
 
 export default function MyPage() {
@@ -252,7 +254,7 @@ export default function MyPage() {
             <div>
               <div className="flex items-baseline gap-2 mb-4 px-1">
                 <h2 className="text-[16px] font-bold text-white">최근 변환 기록</h2>
-                <span className="text-[12px] text-[#666]">3일간 보관</span>
+                <span className="text-[12px] text-[#C9571A] font-bold">24시간만 보관</span>
               </div>
 
               {historyLoading ? (
@@ -333,20 +335,34 @@ export default function MyPage() {
                   className="overflow-x-scroll -mx-4 flex"
                   style={{ scrollSnapType: "x mandatory", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
                 >
-                  {selectedItems.map((item, idx) => (
-                    <div
-                      key={item.id}
-                      className="flex-shrink-0 px-4"
-                      style={{ width: "100%", scrollSnapAlign: "center" }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.result_image_url}
-                        alt=""
-                        className={`w-full aspect-square rounded-2xl object-cover bg-[#1A1A1A] transition-opacity duration-300 ${idx === activeIndex ? "opacity-100" : "opacity-50"}`}
-                      />
-                    </div>
-                  ))}
+                  {selectedItems.map((item, idx) => {
+                    const variantLabel = item.variant && item.variant !== "default"
+                      ? (STYLE_VARIANTS[item.style_id]?.find(v => v.id === item.variant)?.label)
+                      : null;
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex-shrink-0 px-4"
+                        style={{ width: "100%", scrollSnapAlign: "center" }}
+                      >
+                        <div className="relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={item.result_image_url}
+                            alt=""
+                            className={`w-full aspect-square rounded-2xl object-cover bg-[#1A1A1A] transition-opacity duration-300 ${idx === activeIndex ? "opacity-100" : "opacity-50"}`}
+                          />
+                          {variantLabel && idx === activeIndex && (
+                            <div className="absolute top-4 right-4 z-10">
+                              <span className="bg-[#C9571A] text-white text-[11px] font-bold px-3 py-1.5 rounded-full shadow-lg ring-1 ring-white/20">
+                                {variantLabel}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* 페이지 인디케이터 */}
