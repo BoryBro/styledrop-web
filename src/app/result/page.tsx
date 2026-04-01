@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { addGuestHistoryItem } from "@/lib/guest-history";
+import { STYLE_VARIANTS } from "@/lib/variants";
 
 interface KakaoSDK {
   init: (key: string) => void;
@@ -32,6 +33,7 @@ export default function Result() {
   const { user, loading: authLoading, login } = useAuth();
   const [isSharing, setIsSharing] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
+  const [variantLabel, setVariantLabel] = useState<string | null>(null);
 
   const fetchCredits = () => {
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
@@ -63,6 +65,11 @@ export default function Result() {
     setSelectedStyle(styleId);
     setImageBase64(base64);
     setPreviewDataUrl(preview);
+
+    const variantId = sessionStorage.getItem("sd_variant") ?? "default";
+    const variants = STYLE_VARIANTS[styleId];
+    const found = variants?.find(v => v.id === variantId);
+    if (found && variants && variants.length > 1) setVariantLabel(found.label);
 
     const cachedResult = sessionStorage.getItem("sd_resultDataUrl");
     const cachedShareUrl = sessionStorage.getItem("sd_shareUrl");
@@ -427,6 +434,14 @@ export default function Result() {
                 AI 변환 (AFTER)
               </button>
             </div>
+
+            {variantLabel && (
+              <div className="flex justify-center">
+                <span className="text-[12px] font-bold text-[#C9571A] bg-[#C9571A]/10 border border-[#C9571A]/30 px-3 py-1 rounded-full">
+                  {variantLabel}
+                </span>
+              </div>
+            )}
 
             <div className="relative flex-1 rounded-2xl overflow-hidden bg-[#1A1A1A] border border-white/10 flex items-center justify-center min-h-0">
               {view === "before" ? (

@@ -342,10 +342,20 @@ export default function Studio() {
                       setVariantSelectStyle(null);
                       fileInputRef.current?.click();
                     }}
-                    className="w-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-[#C9571A]/50 rounded-2xl px-4 py-4 text-left transition-all"
+                    className="w-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-[#C9571A]/50 rounded-2xl px-4 py-4 text-left transition-all flex items-center gap-3"
                   >
-                    <p className="text-white font-bold text-[15px]">{v.label}</p>
-                    {v.desc && <p className="text-[#666] text-[12px] mt-0.5">{v.desc}</p>}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-bold text-[15px]">{v.label}</p>
+                      {v.desc && <p className="text-[#666] text-[12px] mt-0.5">{v.desc}</p>}
+                    </div>
+                    {v.thumbnail && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={v.thumbnail}
+                        alt={v.label}
+                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0 border border-white/10"
+                      />
+                    )}
                   </button>
                 ))}
               </div>

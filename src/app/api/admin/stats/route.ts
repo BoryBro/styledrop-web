@@ -16,8 +16,14 @@ export async function POST(request: NextRequest) {
 
   const todayIso = new Date(Date.now() - 24 * 3600000).toISOString();
 
-  const [usageRes, eventsRes, usersRes, todayUsageRes, paymentsRes, todayPaymentsRes, userListRes] = await Promise.all([
-    supabase.from("style_usage").select("style_id, style_name, user_id"),
+  // variant 컬럼이 없을 수 있으므로 먼저 시도, 실패하면 fallback
+  const usageWithVariant = await supabase.from("style_usage").select("style_id, style_name, user_id, variant");
+  const hasVariantCol = !usageWithVariant.error;
+  const usageRes = hasVariantCol
+    ? usageWithVariant
+    : await supabase.from("style_usage").select("style_id, style_name, user_id");
+
+  const [eventsRes, usersRes, todayUsageRes, paymentsRes, todayPaymentsRes, userListRes] = await Promise.all([
     supabase.from("user_events").select("event_type"),
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
@@ -61,6 +67,17 @@ export async function POST(request: NextRequest) {
     count: v.count,
   })).sort((a, b) => b.count - a.count);
 
+  // 스타일별 베리에이션 집계 (variant 컬럼이 없으면 전부 "default"로 처리)
+  const byStyleVariants: Record<string, Record<string, number>> = {};
+  if (hasVariantCol) {
+    for (const row of usage) {
+      if (!validStyleIds.has(row.style_id)) continue;
+      const v = (row as { style_id: string; variant?: string | null }).variant ?? "default";
+      if (!byStyleVariants[row.style_id]) byStyleVariants[row.style_id] = {};
+      byStyleVariants[row.style_id][v] = (byStyleVariants[row.style_id][v] ?? 0) + 1;
+    }
+  }
+
   // 이벤트 집계
   const eventCounts: Record<string, number> = {};
   for (const e of events) {
@@ -77,6 +94,7 @@ export async function POST(request: NextRequest) {
     guestRatio: total > 0 ? Math.round((guestCount / total) * 100) : 0,
     userRatio: total > 0 ? Math.round((userCount / total) * 100) : 0,
     byStyle,
+    byStyleVariants,
     totalUsers: usersRes.count ?? 0,
     uniqueLoggedInUsers,
     shareKakao: eventCounts["share_kakao"] ?? 0,

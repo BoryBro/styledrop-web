@@ -187,6 +187,7 @@ export async function POST(request: NextRequest) {
             style_id: style,
             style_name: STYLE_LABELS[style] ?? style,
             user_id: session?.id ?? null,
+            variant: variant ?? "default",
           });
           if (error) console.error("[Supabase] insert error:", error);
 

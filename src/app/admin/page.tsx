@@ -17,6 +17,7 @@ type Stats = {
   guestRatio: number;
   userRatio: number;
   byStyle: StyleStat[];
+  byStyleVariants: Record<string, Record<string, number>>;
   totalUsers: number;
   uniqueLoggedInUsers: number;
   shareKakao: number;
@@ -495,9 +496,14 @@ export default function AdminPage() {
                 <Bar ratio={ratio} />
                 {variants && variants.length > 1 && (
                   <div className="flex gap-1 mt-2 flex-wrap">
-                    {variants.map(v => (
-                      <span key={v.id} className="text-[10px] text-[#555] bg-white/5 border border-white/8 rounded-full px-2 py-0.5">{v.label}</span>
-                    ))}
+                    {variants.map(v => {
+                      const cnt = stats.byStyleVariants?.[s.style_id]?.[v.id] ?? 0;
+                      return (
+                        <span key={v.id} className="text-[10px] text-[#555] bg-white/5 border border-white/8 rounded-full px-2 py-0.5">
+                          {v.label}{cnt > 0 ? ` · ${cnt}회` : ""}
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
               </div>

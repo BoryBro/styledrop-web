@@ -16,6 +16,29 @@ export async function addWatermark(imageBase64: string): Promise<string> {
   const width = meta.width ?? 1024;
   const height = meta.height ?? 1024;
 
+  // PNG 워터마크 파일이 있으면 우선 사용
+  const pngPath = path.join(process.cwd(), "public/watermark.png");
+  if (fs.existsSync(pngPath)) {
+    const targetW = Math.round(width * 0.28);
+    const wmBuf = await sharp(fs.readFileSync(pngPath))
+      .resize(targetW, null, { fit: "inside" })
+      .toBuffer();
+    const wmMeta = await sharp(wmBuf).metadata();
+    const wmW = wmMeta.width ?? targetW;
+    const wmH = wmMeta.height ?? Math.round(targetW * 0.25);
+    const edgePad = Math.round(width * 0.04);
+    const result = await sharp(imageBuffer)
+      .composite([{
+        input: wmBuf,
+        top: height - edgePad - wmH,
+        left: width - edgePad - wmW,
+        blend: "over",
+      }])
+      .jpeg({ quality: 88 })
+      .toBuffer();
+    return result.toString("base64");
+  }
+
   const fontSize = Math.max(15, Math.round(width * 0.026));
   const edgePad = Math.round(fontSize * 1.1);
   const innerPadX = Math.round(fontSize * 0.6);
