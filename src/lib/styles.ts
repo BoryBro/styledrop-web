@@ -59,6 +59,17 @@ export const ALL_STYLES: StyleDef[] = [
     afterImg: "/thumbnails/joseon-after.jpg?v=2",
   },
   {
+    id: "angel",
+    name: "천사 변신",
+    desc: "타락천사부터 여리여리 천사까지, 나만의 천사 스타일",
+    bgColor: "#0e0e1a",
+    tag: "SOON",
+    active: false,
+    hidden: false,
+    beforeImg: "/thumbnails/angel-before.jpg",
+    afterImg: "/thumbnails/angel-after.jpg",
+  },
+  {
     id: "gyaru",
     name: "나는 이제부터 갸루",
     desc: "2000년대 일본 프리쿠라 갸루 스타일로 변신",

@@ -5,27 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { VISIBLE_STYLES } from "@/lib/styles";
+import { STYLE_VARIANTS } from "@/lib/variants";
 
 function formatCount(n: number): string {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "K";
   return String(n);
 }
 
-type Variant = { id: string; label: string; desc?: string };
-
-// 서브 필터(베리에이션)가 있는 스타일에만 정의. 없는 스타일은 모달 없이 바로 진행.
-const STYLE_VARIANTS: Record<string, Variant[]> = {
-  "gyaru": [
-    { id: "default", label: "기본 갸루",  desc: "2000년대 정통 갸루 스타일" },
-    { id: "dark",    label: "다크 갸루",  desc: "고딕 × 갸루, 강렬한 블랙 무드" },
-    { id: "pinku",   label: "핑쿠 갸루",  desc: "파스텔 핑크 카와이 갸루" },
-  ],
-};
-
 const STYLES = VISIBLE_STYLES.map((s) => ({
   ...s,
   bgImage: s.afterImg,
-  variants: STYLE_VARIANTS[s.id] ?? null,
 }));
 
 type Toast = { id: number; message: string };
@@ -60,11 +49,7 @@ export default function Studio() {
   const [credits, setCredits] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showNoCreditModal, setShowNoCreditModal] = useState(false);
-  const [variantModal, setVariantModal] = useState<{
-    style: typeof STYLES[0];
-    base64: string;
-    dataUrl: string;
-  } | null>(null);
+  const [variantSelectStyle, setVariantSelectStyle] = useState<typeof STYLES[0] | null>(null);
   const [notices, setNotices] = useState<{ id: number; text: string }[]>([]);
   const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
 
@@ -109,7 +94,16 @@ export default function Studio() {
     }
     setSelectedStyle(style.id);
     selectedStyleRef.current = style.id;
-    fileInputRef.current?.click();
+
+    const variants = STYLE_VARIANTS[style.id];
+    if (variants && variants.length > 1) {
+      // 베리에이션 있는 스타일 → 카드 클릭 즉시 옵션 모달 표시
+      setVariantSelectStyle(style);
+    } else {
+      // 베리에이션 없음 → 바로 파일 선택
+      sessionStorage.setItem("sd_variant", "default");
+      fileInputRef.current?.click();
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,23 +132,14 @@ export default function Studio() {
       const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
       const base64 = dataUrl.split(",")[1];
 
-      const styleData = STYLES.find(s => s.id === styleId);
-
-      if (styleData?.variants && styleData.variants.length > 1) {
-        // 베리에이션이 있는 스타일 → 모달 표시
-        setVariantModal({ style: styleData, base64, dataUrl });
-      } else {
-        // 베리에이션 없음 → 기존처럼 바로 이동
-        sessionStorage.setItem("sd_styleId", styleId);
-        sessionStorage.setItem("sd_imageBase64", base64);
-        sessionStorage.setItem("sd_previewDataUrl", dataUrl);
-        sessionStorage.setItem("sd_variant", "default");
-        sessionStorage.removeItem("sd_resultDataUrl");
-        sessionStorage.removeItem("sd_shareUrl");
-        sessionStorage.removeItem("sd_shareLink");
-        sessionStorage.setItem("sd_fromStudio", "1");
-        router.push("/result");
-      }
+      sessionStorage.setItem("sd_styleId", styleId);
+      sessionStorage.setItem("sd_imageBase64", base64);
+      sessionStorage.setItem("sd_previewDataUrl", dataUrl);
+      sessionStorage.removeItem("sd_resultDataUrl");
+      sessionStorage.removeItem("sd_shareUrl");
+      sessionStorage.removeItem("sd_shareLink");
+      sessionStorage.setItem("sd_fromStudio", "1");
+      router.push("/result");
     };
     img.src = url;
   };
@@ -333,52 +318,47 @@ export default function Studio() {
         </footer>
       </div>
 
-      {/* 베리에이션 선택 모달 */}
-      {variantModal && (
-        <div
-          className="fixed inset-0 bg-black/80 z-50 flex items-end justify-center pb-safe"
-          onClick={() => setVariantModal(null)}
-        >
+      {/* 베리에이션 선택 모달 (카드 클릭 직후 — 파일 선택 전) */}
+      {variantSelectStyle && (() => {
+        const variants = STYLE_VARIANTS[variantSelectStyle.id] ?? [];
+        return (
           <div
-            className="bg-[#111] border border-white/10 rounded-t-3xl w-full max-w-2xl px-5 pt-5 pb-8"
-            onClick={e => e.stopPropagation()}
+            className="fixed inset-0 bg-black/80 z-50 flex items-end justify-center"
+            onClick={() => { setVariantSelectStyle(null); setSelectedStyle(null); }}
           >
-            <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5" />
-            <p className="text-white font-bold text-[18px] mb-1">스타일 옵션 선택</p>
-            <p className="text-[#555] text-[13px] mb-5">{variantModal.style.name} — 원하는 분위기를 골라주세요</p>
-            <div className="flex flex-col gap-2 mb-5">
-              {variantModal.style.variants!.map((v) => (
-                <button
-                  key={v.id}
-                  onClick={() => {
-                    const { style, base64, dataUrl } = variantModal;
-                    sessionStorage.setItem("sd_styleId", style.id);
-                    sessionStorage.setItem("sd_imageBase64", base64);
-                    sessionStorage.setItem("sd_previewDataUrl", dataUrl);
-                    sessionStorage.setItem("sd_variant", v.id);
-                    sessionStorage.removeItem("sd_resultDataUrl");
-                    sessionStorage.removeItem("sd_shareUrl");
-                    sessionStorage.removeItem("sd_shareLink");
-                    sessionStorage.setItem("sd_fromStudio", "1");
-                    setVariantModal(null);
-                    router.push("/result");
-                  }}
-                  className="w-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-[#C9571A]/50 rounded-2xl px-4 py-4 text-left transition-all"
-                >
-                  <p className="text-white font-bold text-[15px]">{v.label}</p>
-                  {v.desc && <p className="text-[#666] text-[12px] mt-0.5">{v.desc}</p>}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setVariantModal(null)}
-              className="w-full py-3 text-[#444] hover:text-white text-[13px] transition-colors"
+            <div
+              className="bg-[#111] border border-white/10 rounded-t-3xl w-full max-w-2xl px-5 pt-5 pb-8"
+              onClick={e => e.stopPropagation()}
             >
-              취소
-            </button>
+              <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5" />
+              <p className="text-white font-bold text-[18px] mb-1">스타일 옵션 선택</p>
+              <p className="text-[#555] text-[13px] mb-5">{variantSelectStyle.name} — 원하는 분위기를 골라주세요</p>
+              <div className="flex flex-col gap-2 mb-5">
+                {variants.map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => {
+                      sessionStorage.setItem("sd_variant", v.id);
+                      setVariantSelectStyle(null);
+                      fileInputRef.current?.click();
+                    }}
+                    className="w-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-[#C9571A]/50 rounded-2xl px-4 py-4 text-left transition-all"
+                  >
+                    <p className="text-white font-bold text-[15px]">{v.label}</p>
+                    {v.desc && <p className="text-[#666] text-[12px] mt-0.5">{v.desc}</p>}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => { setVariantSelectStyle(null); setSelectedStyle(null); }}
+                className="w-full py-3 text-[#444] hover:text-white text-[13px] transition-colors"
+              >
+                취소
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 로그인 유도 모달 */}
       {showLoginModal && (
