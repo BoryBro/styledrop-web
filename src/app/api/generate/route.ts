@@ -254,6 +254,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
       "references/angel-dark-1.jpg",
       "references/angel-dark-2.jpg",
       "references/angel-dark-3.jpg",
+      "references/angel-dark-4.jpg",
     ],
     "soft": [
       "references/angel-soft-1.jpg",
