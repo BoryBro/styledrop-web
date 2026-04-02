@@ -367,16 +367,21 @@ export default function AdminPage() {
 
       {/* API 비용 & 손익 */}
       {(() => {
-        const costPerCall = 95; // 약 $0.07 × 1,350원/USD
+        // 3월 GCP 실청구 역산 기준
+        const marBilling = 17944;       // 3월 실청구액 (원)
+        const marEstCalls = 320;        // 역산 총 호출 (로그 前 포함)
+        const costPerCall = Math.round(marBilling / marEstCalls); // 약 56원/회
         const totalCost = stats.total * costPerCall;
         const profit = stats.totalRevenue - totalCost;
         const profitRatio = stats.totalRevenue > 0 ? Math.round((profit / stats.totalRevenue) * 100) : 0;
         const breakEvenCalls = costPerCall > 0 ? Math.ceil(stats.totalRevenue / costPerCall) : 0;
         return (
           <Section title="API 비용 & 손익">
-            <Row label="총 API 호출" value={`${stats.total.toLocaleString()}회`} />
-            <Row label="회당 추정 비용" value="약 95원" note="$0.07 × 1,350원" />
-            <Row label="총 API 지출 (추정)" value={`${totalCost.toLocaleString()}원`} />
+            <Row label="3월 GCP 실청구액" value={`${marBilling.toLocaleString()}원`} note="VAT 포함" />
+            <Row label="역산 총 호출 (3월)" value={`약 ${marEstCalls}회`} note="로그 前 테스트 포함" />
+            <Row label="1회당 실측 비용" value={`약 ${costPerCall}원`} note={`₩${marBilling.toLocaleString()} ÷ ${marEstCalls}회`} highlight />
+            <Row label="로그 기록 호출 (누적)" value={`${stats.total.toLocaleString()}회`} />
+            <Row label="누적 API 지출 (추정)" value={`${totalCost.toLocaleString()}원`} note={`${stats.total}회 × ${costPerCall}원`} />
             <Row label="총 결제 수익" value={`${stats.totalRevenue.toLocaleString()}원`} />
             <div className="py-3 border-b border-white/5">
               <div className="flex items-center justify-between">
