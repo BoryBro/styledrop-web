@@ -329,16 +329,19 @@ export async function POST(request: NextRequest) {
       } catch { /* 파일 없음 — 스킵 */ }
     }
 
-    const refCount = loadedRefs.length;
+    // 셔플: 특정 이미지(특히 첫 번째)에 대한 모델의 편향성을 방지하기 위해 순서를 랜덤하게 섞음
+    const shuffledRefs = [...loadedRefs].sort(() => Math.random() - 0.5);
+    const refCount = shuffledRefs.length;
+
     const promptText = refCount === 0
       ? `Edit this image: ${prompt}`
       : refCount === 1
         ? `Image 1 is the original subject. Image 2 is the style reference. Extract identity from Image 1 and apply the exact style, color grading, and aesthetic of Image 2. Additional instructions: ${prompt}`
-        : `Image 1 is the original subject. Images 2 to ${refCount + 1} are style references showing the target aesthetic. Extract identity from Image 1 and apply the common style, color grading, and aesthetic seen across all reference images. Additional instructions: ${prompt}`;
+        : `Image 1 is the original subject. Images 2 to ${refCount + 1} are style references showing the target aesthetic. Extract identity from Image 1 and apply the overall common style, color grading, and aesthetic seen across ALL reference images equally. Do not be biased toward any single reference image; instead, synthesize the shared look and feel of all examples. Additional instructions: ${prompt}`;
 
     const contents = [
       { inlineData: { mimeType: mimeType || "image/jpeg", data: imageBase64 } },
-      ...loadedRefs.map(b64 => ({ inlineData: { mimeType: "image/jpeg" as const, data: b64 } })),
+      ...shuffledRefs.map(b64 => ({ inlineData: { mimeType: "image/jpeg" as const, data: b64 } })),
       { text: promptText },
     ];
 
