@@ -20,19 +20,31 @@ export async function POST(request: NextRequest) {
   const session = parseSession(request);
   const now = Date.now();
 
-  // ── 회원: 크레딧 차감 (원자적) ──────────────────────────────────────
+  // ── 회원: 크레딧 2개 차감 ─────────────────────────────────────────
   if (session) {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_KEY!
     );
-    const { data: newCredits, error: deductError } = await supabase.rpc("deduct_credit", {
-      p_user_id: session.id,
-    });
-    if (deductError || newCredits === null || newCredits === undefined) {
+    // 잔액 확인
+    const { data: creditRow } = await supabase
+      .from("user_credits")
+      .select("credits")
+      .eq("user_id", session.id)
+      .single();
+    if (!creditRow || creditRow.credits < 2) {
       return NextResponse.json(
-        { error: "크레딧이 없어요. 충전 후 이용해주세요!" },
+        { error: "크레딧이 부족해요. AI 오디션은 2크레딧이 필요합니다!" },
         { status: 429 }
+      );
+    }
+    // 2회 차감
+    const { error: e1 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
+    const { error: e2 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
+    if (e1 || e2) {
+      return NextResponse.json(
+        { error: "크레딧 차감에 실패했어요. 다시 시도해주세요." },
+        { status: 500 }
       );
     }
   }
@@ -95,6 +107,12 @@ export async function POST(request: NextRequest) {
         } else {
           imageData = await addWatermark(part.inlineData.data!);
         }
+
+        // 사용 횟수 로깅
+        createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_KEY!
+        ).from("style_usage").insert({ style_id: "audition" }).then(() => {});
 
         const res = NextResponse.json({ image: imageData, mimeType: "image/jpeg" });
         if (!session) res.cookies.set(GUEST_COOKIE, cookieValue, cookieOptions);

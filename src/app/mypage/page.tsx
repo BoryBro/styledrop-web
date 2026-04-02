@@ -174,7 +174,7 @@ export default function MyPage() {
             </svg>
           </button>
         )}
-        <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
+        <Link href="/" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
         <div className="w-8" />
       </header>
 

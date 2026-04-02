@@ -26,8 +26,7 @@ function ShareContent() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-md border-b border-white/5">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="StyleDrop" style={{ height: "28px", width: "auto" }} />
+            <span className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</span>
             <span className="text-white/40 text-xs font-medium">사진 한 장, 감성은 AI가</span>
           </Link>
           <Link href="/" className="text-xs bg-white/10 text-white px-3 py-1.5 rounded-full hover:bg-white/20 transition-colors">

@@ -155,7 +155,7 @@ export default function Studio() {
         {/* Header */}
         <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
           <div className="flex items-center gap-2">
-            <Link href="/" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
+            <Link href="/" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
           </div>
           {!loading && (
             user ? (
@@ -194,24 +194,33 @@ export default function Studio() {
 
 
 
-          {/* AI 오디션 배너 (로컬 환경에서만 표시) */}
-          {process.env.NODE_ENV === "development" && (
-            <Link href="/audition/solo" className="block mb-4">
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e0900] to-[#111] border border-[#C9571A]/40 px-4 py-4 flex items-center gap-3 hover:border-[#C9571A]/70 transition-colors">
-                <div className="text-[36px] flex-shrink-0">🎬</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-[9px] font-extrabold text-white bg-[#C9571A] px-1.5 py-0.5 rounded uppercase tracking-wide">🔥 신규</span>
-                  </div>
-                  <p className="text-white font-extrabold text-[15px] leading-snug">AI 오디션 — 내 연기력 테스트</p>
-                  <p className="text-[#777] text-[12px] mt-0.5">3컷 촬영 → 감독 혹평 → 영화 스틸컷 생성</p>
+          {/* AI 오디션 배너 (개발 환경 전용) */}
+          {process.env.NODE_ENV === "development" && <Link href="/audition/solo" className="block mb-4">
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e0900] to-[#111] border border-[#C9571A]/40 px-4 py-4 flex items-center gap-3 hover:border-[#C9571A]/70 transition-colors">
+              <div className="text-[36px] flex-shrink-0">🎬</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-[9px] font-extrabold text-white bg-[#C9571A] px-1.5 py-0.5 rounded uppercase tracking-wide">🔥 신규</span>
                 </div>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-[#C9571A]">
-                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <p className="text-white font-extrabold text-[15px] leading-snug">AI 오디션 — 내 연기력 테스트</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="flex items-center gap-1.5 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 border border-white/10">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.85"/>
+                      <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round"/>
+                    </svg>
+                    {usageCounts === null ? "..." : formatCount(usageCounts["audition"] ?? 0)}
+                  </span>
+                  <div className="flex items-center px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg">
+                    <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">2크레딧</span>
+                  </div>
+                </div>
               </div>
-            </Link>
-          )}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-[#C9571A]">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </Link>}
 
           {/* 터미널 공지 */}
           {notices.length > 0 && (
@@ -293,17 +302,14 @@ export default function Studio() {
                   <p className="text-[14px] text-[#ccc] mt-0.5 break-keep">{style.desc}</p>
                   {style.active && (
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="flex items-center gap-1 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
-                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                          <circle cx="6" cy="3.5" r="2" fill="currentColor" fillOpacity="0.8"/>
-                          <path d="M1.5 10.5c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.5" strokeLinecap="round"/>
+                      <span className="flex items-center gap-1.5 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                          <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.85"/>
+                          <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round"/>
                         </svg>
                         {usageCounts === null ? "..." : formatCount(usageCounts[style.id] ?? 0)}
                       </span>
-                      <div className="flex items-center gap-1.5 px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg backdrop-blur-md">
-                        <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                          <path d="M1 1h2l1.5 7h7l1-4.5H4" stroke="#C9571A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
+                      <div className="flex items-center px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg backdrop-blur-md">
                         <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">1크레딧</span>
                       </div>
                     </div>

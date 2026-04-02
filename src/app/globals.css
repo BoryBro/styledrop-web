@@ -14,6 +14,7 @@
   --color-card: var(--card);
   --color-point: var(--point-orange);
   --font-sans: "SUIT Variable", "SUIT", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-playfair: var(--font-playfair);
 }
 
 body {
@@ -42,6 +43,49 @@ body {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+
+@keyframes logo-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes logo-glow-pulse {
+  0%, 100% { opacity: 0.55; filter: blur(18px); }
+  50%       { opacity: 0.85; filter: blur(22px); }
+}
+
+.logo-gradient-text {
+  background: linear-gradient(90deg, #fff 0%, #FFD4B0 28%, #C9571A 50%, #FFD4B0 72%, #fff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: logo-shimmer 4s linear infinite;
+}
+
+
+@keyframes orb-1 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  25%      { transform: translate(40px, -30px) scale(1.06); }
+  50%      { transform: translate(20px, 40px) scale(0.94); }
+  75%      { transform: translate(-30px, 10px) scale(1.03); }
+}
+@keyframes orb-2 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  30%      { transform: translate(-35px, 25px) scale(1.08); }
+  60%      { transform: translate(25px, -35px) scale(0.96); }
+  80%      { transform: translate(10px, 20px) scale(1.04); }
+}
+@keyframes orb-3 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  35%      { transform: translate(30px, 30px) scale(0.92); }
+  65%      { transform: translate(-20px, -25px) scale(1.07); }
+}
+@keyframes orb-4 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  40%      { transform: translate(-25px, -20px) scale(1.05); }
+  70%      { transform: translate(35px, 15px) scale(0.95); }
 }
 
 @keyframes split-clip {

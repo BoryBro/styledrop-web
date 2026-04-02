@@ -101,7 +101,7 @@ export default function AuditionSolo() {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
         <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center px-4 sticky top-0 z-40">
-          <Link href="/studio" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
+          <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
         </header>
         <main className="flex-1 flex flex-col items-center justify-center px-5 text-center gap-6 max-w-sm mx-auto w-full py-10">
           <div className="text-[52px]">🎬</div>
@@ -191,7 +191,7 @@ export default function AuditionSolo() {
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 flex-shrink-0 z-40">
-        <Link href="/studio" className="font-[family-name:var(--font-montserrat)] font-bold text-lg tracking-[-0.02em] text-[#C9571A]">StyleDrop</Link>
+        <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
         {/* 진행 도트 */}
         <div className="flex items-center gap-1.5">
           {STEPS.map((_, i) => (

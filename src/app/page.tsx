@@ -6,6 +6,111 @@ import Link from "next/link";
 
 type User = { id: string; nickname: string | null; profileImage: string | null };
 
+// ── 픽셀아트 배경 요소 ───────────────────────────────────────────────
+const PIXEL_ITEMS = [
+  // 별 ⭐
+  { id: "star1", x: "8%",  y: "12%", anim: "orb-1", dur: "9s",  delay: "0s",   scale: 1.1, color: "#C9571A" },
+  { id: "star2", x: "80%", y: "8%",  anim: "orb-3", dur: "12s", delay: "2s",   scale: 0.8, color: "#FCD34D" },
+  { id: "star3", x: "88%", y: "55%", anim: "orb-2", dur: "10s", delay: "1.5s", scale: 0.9, color: "#C9571A" },
+  { id: "star4", x: "5%",  y: "70%", anim: "orb-4", dur: "14s", delay: "3s",   scale: 0.7, color: "#FCD34D" },
+  // 하트 💖
+  { id: "heart1", x: "75%", y: "30%", anim: "orb-4", dur: "11s", delay: "0.5s", scale: 1.0, color: "#F472B6" },
+  { id: "heart2", x: "12%", y: "45%", anim: "orb-2", dur: "13s", delay: "4s",   scale: 0.8, color: "#F472B6" },
+  // 다이아 💎
+  { id: "gem1", x: "85%", y: "75%", anim: "orb-1", dur: "15s", delay: "1s",   scale: 0.9, color: "#A78BFA" },
+  { id: "gem2", x: "3%",  y: "30%", anim: "orb-3", dur: "11s", delay: "5s",   scale: 0.7, color: "#A78BFA" },
+  // 카메라 📷
+  { id: "cam1", x: "70%", y: "88%", anim: "orb-2", dur: "16s", delay: "2.5s", scale: 1.0, color: "#C9571A" },
+  { id: "cam2", x: "18%", y: "85%", anim: "orb-4", dur: "13s", delay: "0s",   scale: 0.8, color: "#FCD34D" },
+];
+
+function PixelStar({ color, size = 28 }: { color: string; size?: number }) {
+  const p = size / 7;
+  return (
+    <svg width={size} height={size} viewBox="0 0 7 7" fill="none">
+      <rect x="3" y="0" width="1" height="1" fill={color}/>
+      <rect x="2" y="1" width="3" height="1" fill={color}/>
+      <rect x="0" y="2" width="7" height="1" fill={color}/>
+      <rect x="1" y="3" width="5" height="2" fill={color}/>
+      <rect x="0" y="5" width="2" height="1" fill={color}/>
+      <rect x="5" y="5" width="2" height="1" fill={color}/>
+      <rect x="0" y="6" width="1" height="1" fill={color}/>
+      <rect x="6" y="6" width="1" height="1" fill={color}/>
+    </svg>
+  );
+}
+
+function PixelHeart({ color, size = 26 }: { color: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 7 6" fill="none">
+      <rect x="1" y="0" width="2" height="1" fill={color}/>
+      <rect x="4" y="0" width="2" height="1" fill={color}/>
+      <rect x="0" y="1" width="7" height="2" fill={color}/>
+      <rect x="1" y="3" width="5" height="1" fill={color}/>
+      <rect x="2" y="4" width="3" height="1" fill={color}/>
+      <rect x="3" y="5" width="1" height="1" fill={color}/>
+    </svg>
+  );
+}
+
+function PixelGem({ color, size = 26 }: { color: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 7 7" fill="none">
+      <rect x="2" y="0" width="3" height="1" fill={color}/>
+      <rect x="1" y="1" width="5" height="1" fill={color}/>
+      <rect x="0" y="2" width="7" height="3" fill={color}/>
+      <rect x="1" y="5" width="5" height="1" fill={color}/>
+      <rect x="2" y="6" width="3" height="1" fill={color}/>
+      <rect x="3" y="3" width="1" height="1" fill="white" fillOpacity="0.4"/>
+    </svg>
+  );
+}
+
+function PixelCamera({ color, size = 30 }: { color: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 9 7" fill="none">
+      <rect x="2" y="0" width="2" height="1" fill={color}/>
+      <rect x="0" y="1" width="9" height="5" fill={color}/>
+      <rect x="1" y="2" width="7" height="3" fill="#0A0A0A" fillOpacity="0.5"/>
+      <rect x="3" y="2" width="3" height="3" fill={color} fillOpacity="0.7"/>
+      <rect x="4" y="3" width="1" height="1" fill="white" fillOpacity="0.5"/>
+      <rect x="7" y="2" width="1" height="1" fill="white" fillOpacity="0.6"/>
+    </svg>
+  );
+}
+
+function PixelBackground() {
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden>
+      {PIXEL_ITEMS.map((item) => {
+        const isHeart = item.id.startsWith("heart");
+        const isGem   = item.id.startsWith("gem");
+        const isCam   = item.id.startsWith("cam");
+        return (
+          <div
+            key={item.id}
+            className="absolute"
+            style={{
+              left: item.x,
+              top: item.y,
+              opacity: 0.35,
+              transform: `scale(${item.scale})`,
+              animation: `${item.anim} ${item.dur} ease-in-out infinite`,
+              animationDelay: item.delay,
+              imageRendering: "pixelated",
+            }}
+          >
+            {isHeart ? <PixelHeart color={item.color} /> :
+             isGem   ? <PixelGem   color={item.color} /> :
+             isCam   ? <PixelCamera color={item.color} /> :
+                       <PixelStar  color={item.color} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Home() {
   const [isAgreed, setIsAgreed] = useState(false);
   const [shaking, setShaking] = useState(false);
@@ -53,9 +158,10 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-6 relative" suppressHydrationWarning>
+      <PixelBackground />
       {/* 방문자 카운터 */}
       {visitors && (
-        <div className="absolute top-5 left-0 right-0 flex justify-center">
+        <div className="absolute top-5 left-0 right-0 flex justify-center z-10">
           <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/4 border border-white/6 font-mono">
             <span className="flex items-center gap-1.5 text-[11px] text-[#555]">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -72,15 +178,33 @@ export default function Home() {
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-8 w-full max-w-xs">
+      <div className="flex flex-col items-center gap-8 w-full max-w-xs relative z-10">
 
         {/* Logo */}
-        {logoError ? (
-          <span className="font-[family-name:var(--font-montserrat)] font-bold text-3xl tracking-[-0.02em] text-[#C9571A]">StyleDrop</span>
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src="/logo.png" alt="StyleDrop" className="h-14 w-auto" onError={() => setLogoError(true)} />
-        )}
+        <div className="relative flex items-center select-none px-2" style={{ padding: "0.2em 0.5em" }} aria-label="StyleDrop">
+          {/* 하트 */}
+          <span aria-hidden style={{ position: "absolute", top: "-10px", right: "-26px", fontSize: "0.95rem", opacity: 0.75, transform: "rotate(14deg)" }}>🤍</span>
+          <span aria-hidden style={{ position: "absolute", bottom: "-6px", left: "-22px", fontSize: "0.7rem", opacity: 0.55, transform: "rotate(-10deg)" }}>🧡</span>
+
+          {/* StyleDrop */}
+          <span
+            className="logo-gradient-text"
+            style={{
+              position: "relative",
+              zIndex: 1,
+              fontFamily: "var(--font-boldonse)",
+              fontWeight: 400,
+              fontSize: "2.2rem",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              lineHeight: 1.3,
+              display: "block",
+              overflow: "visible",
+            }}
+          >
+            StyleDrop
+          </span>
+        </div>
 
         {/* Subcopy */}
         <p className="text-[18px] text-[#888] tracking-[-0.02em]">사진 한 장, 감성은 AI가</p>
