@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
-import { addWatermark } from "@/lib/watermark";
+import { addWatermark, makeSquare } from "@/lib/watermark";
 import { STYLE_LABELS } from "@/lib/styles";
 import {
   GUEST_LIMIT, WINDOW_MS,
@@ -403,13 +403,16 @@ export async function POST(request: NextRequest) {
           console.error("[Supabase] unexpected error:", err);
         }
 
+        // 1:1 정방형 변환 (블러 패딩, 원본 크롭 없음)
+        const squaredData = await makeSquare(part.inlineData.data!);
+
         // 회원: clean 이미지 반환 (워터마크 없음)
         // 비회원: 워터마크 적용
         let imageData: string;
         if (session) {
-          imageData = part.inlineData.data!;
+          imageData = squaredData;
         } else {
-          imageData = await addWatermark(part.inlineData.data!);
+          imageData = await addWatermark(squaredData);
         }
 
         const res = NextResponse.json({
