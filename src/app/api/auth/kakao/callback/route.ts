@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
       }),
     });
     const tokenData = await tokenRes.json();
-    console.error("[kakao callback] tokenData:", JSON.stringify(tokenData));
     if (!tokenData.access_token) throw new Error("토큰 발급 실패: " + JSON.stringify(tokenData));
 
     // 2. 카카오 유저 정보 조회

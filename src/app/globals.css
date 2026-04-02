@@ -39,40 +39,9 @@ body {
   80%       { transform: translateX(5px); }
 }
 
-@keyframes shimmer {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
-}
-
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
-}
-
-@keyframes card-after-fade {
-  0%, 44% { opacity: 0; }
-  50%, 94% { opacity: 1; }
-  100%     { opacity: 0; }
-}
-
-@keyframes card-before-label {
-  0%, 44% { opacity: 1; }
-  50%, 94% { opacity: 0; }
-  100%     { opacity: 1; }
-}
-
-@keyframes card-after-label {
-  0%, 44% { opacity: 0; }
-  50%, 94% { opacity: 1; }
-  100%     { opacity: 0; }
-}
-
-@keyframes card-line-flash {
-  0%, 40%       { opacity: 0; }
-  44%, 48%      { opacity: 0.7; }
-  52%, 90%      { opacity: 0; }
-  94%, 98%      { opacity: 0.7; }
-  100%          { opacity: 0; }
 }
 
 @keyframes split-clip {

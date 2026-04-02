@@ -10,8 +10,6 @@ const STYLES = [
     desc: "아날로그 플래시 샷을 적용한 필터",
     beforeImg: "/thumbnails/flash-before.jpg",
     afterImg: "/thumbnails/flash-after.jpg",
-    goodExample: "/examples/flash-good.jpg",
-    badExample: "/examples/flash-bad.jpg",
   },
 ];
 

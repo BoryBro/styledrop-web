@@ -1,9 +1,7 @@
 export const GUEST_LIMIT = 1;
-export const USER_LIMIT = 999; // v2.0: 크레딧 기반, daily limit 없음
 export const WINDOW_MS = 24 * 60 * 60 * 1000; // 24시간
 
 export const GUEST_COOKIE = "sd_guest_cnt";
-export const USER_COOKIE = "sd_user_cnt";
 
 export type LimitData = { count: number; resetAt: number };
 
