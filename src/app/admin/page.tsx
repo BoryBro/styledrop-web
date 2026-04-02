@@ -124,7 +124,6 @@ export default function AdminPage() {
       setPassword(saved);
       doLogin(saved);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

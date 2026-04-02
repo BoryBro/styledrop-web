@@ -15,7 +15,7 @@ export default function TermsOfService() {
 
         <section>
           <h2 className="text-xl font-bold mb-3 text-white">제 1조 (목적)</h2>
-          <p>본 약관은 StyleDrop(이하 "서비스")이 제공하는 AI 이미지 변환 서비스 및 크레딧 기반 유료 서비스 이용에 관하여 서비스와 이용자 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다.</p>
+          <p>본 약관은 StyleDrop(이하 &quot;서비스&quot;)이 제공하는 AI 이미지 변환 서비스 및 크레딧 기반 유료 서비스 이용에 관하여 서비스와 이용자 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다.</p>
         </section>
 
         <section>

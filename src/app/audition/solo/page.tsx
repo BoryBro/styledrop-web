@@ -117,7 +117,7 @@ export default function AuditionSolo() {
                 <span className="text-[10px] font-bold text-[#C9571A] bg-[#C9571A]/10 border border-[#C9571A]/20 rounded-full w-5 h-5 flex-shrink-0 flex items-center justify-center mt-0.5">
                   {i + 1}
                 </span>
-                <p className="text-[12px] text-[#888] leading-relaxed">"{s.cue}"</p>
+                <p className="text-[12px] text-[#888] leading-relaxed">&quot;{s.cue}&quot;</p>
               </div>
             ))}
           </div>
@@ -217,7 +217,7 @@ export default function AuditionSolo() {
             STEP {stepIdx + 1} / 3
           </p>
           <p className="text-white font-bold text-[15px] leading-snug px-2">
-            "{STEPS[stepIdx].cue}"
+            &quot;{STEPS[stepIdx].cue}&quot;
           </p>
         </div>
 

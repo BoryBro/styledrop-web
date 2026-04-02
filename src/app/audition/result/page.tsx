@@ -86,7 +86,7 @@ export default function AuditionResult() {
           <p className="text-white font-bold text-[18px] leading-snug">
             감독님이 스틸컷을<br />제작 중입니다...
           </p>
-          <p className="text-[#555] text-[13px] mt-1.5">"{result.assigned_role}"</p>
+          <p className="text-[#555] text-[13px] mt-1.5">&quot;{result.assigned_role}&quot;</p>
           <div className="flex items-center justify-center gap-1.5 mt-3">
             {[0, 1, 2].map(i => (
               <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#C9571A]" style={{ animation: `dot-bounce 1.4s ease-in-out ${i * 0.2}s infinite` }} />
