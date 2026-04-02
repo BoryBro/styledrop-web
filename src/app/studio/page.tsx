@@ -293,7 +293,11 @@ export default function Studio() {
                   <p className="text-[14px] text-[#ccc] mt-0.5 break-keep">{style.desc}</p>
                   {style.active && (
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
+                      <span className="flex items-center gap-1 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
+                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                          <circle cx="6" cy="3.5" r="2" fill="currentColor" fillOpacity="0.8"/>
+                          <path d="M1.5 10.5c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
                         {usageCounts === null ? "..." : formatCount(usageCounts[style.id] ?? 0)}
                       </span>
                       <div className="flex items-center gap-1.5 px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg backdrop-blur-md">
