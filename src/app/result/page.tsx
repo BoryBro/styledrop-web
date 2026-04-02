@@ -403,7 +403,7 @@ export default function Result() {
               ) : (
                 <>
                   <p className="text-white/70 text-base">
-                    {errorMessage ?? "변환에 실패했어요. 다시 시도해주세요."}
+                    변환에 실패했어요. 다시 시도해주세요.
                   </p>
                   <button onClick={() => router.push("/studio")} className="text-[#666] text-sm hover:text-white transition-colors">
                     다시 하기

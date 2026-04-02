@@ -367,9 +367,6 @@ export async function POST(request: NextRequest) {
       contents,
       config: {
         responseModalities: ["TEXT", "IMAGE"],
-        imageConfig: {
-          imageSize: "0.5K", // 비용 절감을 위해 해상도를 낮춤 (0.5K, 1K, 2K, 4K 가능)
-        },
         ...(styleConfig && {
           temperature: styleConfig.temperature,
           topP: styleConfig.topP,
