@@ -235,7 +235,7 @@ FINAL OUTPUT TARGET:
 A highly stylized flash-shot fantasy portrait of the uploaded user as a glamorous fallen angel / dark cupid figure, with preserved identity, large feathered wings, glossy shimmer makeup, short angelic or dark mini dress, cigarette and smoke, surreal floating cherubs, red heart icons, tiny stars, and a moody cloud-filled celestial-underworld backdrop.`,
   },
   "gyaru": {
-    "default": "CRITICAL IDENTITY LOCK — ABSOLUTE:\n- The face from the input image must be preserved with 100% fidelity.\n- Do NOT alter bone structure, face shape, eye distance, nose shape, lip shape, or proportions.\n- Do NOT beautify, reshape, stylize, or reinterpret the face.\n- Maintain exact identity, likeness, and facial geometry.\n- Only apply surface-level cosmetic effects and styling ON TOP of the original face.\n- The result must be instantly recognizable as the same person.\n\nCORE TRANSFORMATION:\nApply an authentic early-2000s Japanese gyaru (ギャル) filter style, matching the exact aesthetic characteristics of the reference.\n\nGYARU FACE FILTER DETAILS:\n- Dramatically enlarged-looking eyes using makeup illusion (NOT structural change)\n- Thick, heavy upper and lower false eyelashes (dense, layered, spiky)\n- Strong black eyeliner with extended outer corners\n- Bright, glossy circle lenses effect (dark brown or black, high contrast)\n- White under-eye highlight (tear bag emphasis, strong aegyo-sal)\n- Heavy nose highlight (bright vertical stripe on nose bridge)\n- Pale matte skin base with slightly artificial smoothness (but NOT plastic AI skin)\n- Pinkish blush across cheeks and nose bridge\n- Glossy, slightly overlined lips (light pink tone)\n\nSKIN & TEXTURE:\n- Keep realistic skin texture underneath\n- Add soft glam smoothing ONLY as a cosmetic layer (not AI blur)\n- Slight overexposed flash aesthetic\n- Subtle grain/noise like old mobile camera\n\nHAIR:\n- Blonde or light brown dyed gyaru-style hair\n- Voluminous, curled, layered styling\n- Slightly shiny, synthetic-looking texture\n\nSTYLE & ACCESSORIES:\n- Leopard print elements (background or outfit)\n- Decorative stickers / sparkles / rhinestone UI overlays\n- Early 2000s Japanese purikura (プリクラ) aesthetic\n- Over-the-top feminine decoration\n\nCAMERA & LIGHTING:\n- Front-facing selfie angle\n- Slight top-down perspective\n- Direct flash lighting (harsh frontal light + shadow behind)\n- High exposure, slightly blown highlights\n\nCOLOR & TONE:\n- High contrast\n- Slightly warm tone\n- Candy-like saturation\n- Not cinematic, not realistic grading — must feel like retro Japanese photo booth / flip phone camera\n\nFRAME & UI:\n- Add decorative frame elements (pearls, sparkles, stickers)\n- Slight compression artifacts for authenticity\n- Optional Japanese text decoration (non-intrusive)\n\nSTRICT RULES:\n- NO face reshaping\n- NO identity drift\n- NO AI-style smoothing or plastic skin\n- NO modern influencer aesthetic\n- MUST look like real gyaru-era purikura photo\n\nFINAL GOAL:\nA perfect gyaru filter overlay applied to the original person, preserving identity 100%, while fully transforming the visual style into authentic gyaru culture.",
+    "default": "Transform this photo into an authentic early-2000s Japanese gyaru (ギャル) portrait style. Keep the person's identity intact — same face structure, same person.\n\nMAKEUP TRANSFORMATION:\n- Heavy dramatic eye makeup: thick layered false lashes, strong black eyeliner with extended outer corners\n- Dark dramatic contact lens effect (high contrast, enlarged-looking)\n- White shimmer highlight under the eyes (tear bag / aegyo-sal emphasis)\n- Bright vertical nose highlight stripe\n- Pale matte skin base with soft airbrushed finish\n- Pink blush across cheeks and nose bridge\n- Glossy light pink overlined lips\n\nHAIR:\n- Dye to blonde or light brown\n- Voluminous, curled, layered gyaru styling\n- Shiny, slightly synthetic-looking texture\n\nOUTFIT & BACKGROUND:\n- Leopard or animal print elements in outfit or background\n- Sparkly, rhinestone-style accessories\n- Feminine, over-the-top Y2K gyaru fashion\n\nPHOTO STYLE:\n- Front-facing selfie angle, slightly top-down\n- Direct flash lighting: overexposed skin highlights, high contrast\n- Warm candy-like color tone\n- Retro Japanese photo booth (purikura) aesthetic: slight grain, warm saturation\n\nSTRICT RULES:\n- Preserve the person's identity: same face, same bone structure\n- No face reshaping or identity change\n- Output must look like a real early-2000s gyaru photo",
   },
 };
 
@@ -375,7 +375,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const parts = response.candidates?.[0]?.content?.parts || [];
+    const candidate = response.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+    const parts = candidate?.content?.parts || [];
+
+    // 이미지 없이 종료된 경우 원인 로그
+    if (!parts.some(p => p.inlineData)) {
+      const textParts = parts.filter(p => p.text).map(p => p.text).join(" ");
+      console.error(`[generate] style=${style} finishReason=${finishReason} textResponse=${textParts || "(없음)"}`);
+    }
+
     for (const part of parts) {
       if (part.inlineData) {
         // Supabase 로깅 — 실패해도 이미지 응답에 영향 없음
@@ -425,6 +434,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No image generated" }, { status: 500 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[generate] catch error:", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
