@@ -260,6 +260,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
       "references/angel-soft-1.jpg",
       "references/angel-soft-2.jpg",
       "references/angel-soft-3.jpg",
+      "references/angel-soft-4.jpg",
     ],
   },
 };
