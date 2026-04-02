@@ -33,10 +33,20 @@ function relativeTime(iso: string): string {
 }
 
 function expiryBadge(iso: string): { label: string; className: string } {
-  const hoursLeft = (new Date(iso).getTime() + 24 * 3600000 - Date.now()) / 3600000;
-  if (hoursLeft < 3) return { label: "곧 삭제됨", className: "bg-red-500/20 text-red-400" };
-  if (hoursLeft < 12) return { label: "오늘 삭제", className: "bg-yellow-500/20 text-yellow-400" };
-  return { label: "보관 중", className: "bg-white/5 text-white/30" };
+  const msLeft = new Date(iso).getTime() + 24 * 3600000 - Date.now();
+  const totalMins = Math.max(0, Math.floor(msLeft / 60000));
+  const hours = Math.floor(totalMins / 60);
+  const mins = totalMins % 60;
+  const label = hours > 0 ? `${hours}시간 ${mins}분 뒤 삭제` : `${mins}분 뒤 삭제`;
+  if (msLeft < 3 * 3600000) return { label, className: "bg-red-500/20 text-red-400" };
+  if (msLeft < 12 * 3600000) return { label, className: "bg-yellow-500/20 text-yellow-400" };
+  return { label, className: "bg-white/5 text-white/30" };
+}
+
+function categoryExpiry(items: { created_at: string }[]): { label: string; className: string } | null {
+  if (items.length === 0) return null;
+  const oldest = items.reduce((a, b) => a.created_at < b.created_at ? a : b);
+  return expiryBadge(oldest.created_at);
 }
 
 export default function MyPage() {
@@ -254,7 +264,6 @@ export default function MyPage() {
             <div>
               <div className="flex items-baseline gap-2 mb-4 px-1">
                 <h2 className="text-[16px] font-bold text-white">최근 변환 기록</h2>
-                <span className="text-[12px] text-[#C9571A] font-bold">24시간만 보관</span>
               </div>
 
               {historyLoading ? (
@@ -263,9 +272,10 @@ export default function MyPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {VISIBLE_STYLE_IDS.map((styleId) => {
+                  {VISIBLE_STYLE_IDS.filter(styleId => (grouped[styleId] ?? []).length > 0).map((styleId) => {
                     const items = grouped[styleId] ?? [];
                     const latest = items[0];
+                    const expiry = categoryExpiry(items);
                     return (
                       <button
                         key={styleId}
@@ -287,9 +297,13 @@ export default function MyPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-white font-bold text-[15px]">{STYLE_LABELS[styleId] ?? styleId}</p>
                           <p className="text-[#555] text-[13px] mt-0.5">
-                            {items.length === 0 ? "변환 기록 없음" : `${items.length}장`}
-                            {latest && ` · ${relativeTime(latest.created_at)}`}
+                            {`${items.length}장`}{latest && ` · ${relativeTime(latest.created_at)}`}
                           </p>
+                          {expiry && (
+                            <span className={`inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full ${expiry.className}`}>
+                              {expiry.label}
+                            </span>
+                          )}
                         </div>
                         {/* 화살표 */}
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#444] flex-shrink-0">
@@ -298,6 +312,11 @@ export default function MyPage() {
                       </button>
                     );
                   })}
+                  {VISIBLE_STYLE_IDS.every(id => (grouped[id] ?? []).length === 0) && (
+                    <div className="flex flex-col items-center gap-3 py-12 text-center">
+                      <p className="text-white/40 text-[15px]">아직 변환 기록이 없어요.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

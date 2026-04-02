@@ -51,6 +51,7 @@ export default function Studio() {
   const [credits, setCredits] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showNoCreditModal, setShowNoCreditModal] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
   const [variantSelectStyle, setVariantSelectStyle] = useState<typeof STYLES[0] | null>(null);
   const [notices, setNotices] = useState<{ id: number; text: string }[]>([]);
   const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
@@ -176,8 +177,13 @@ export default function Studio() {
                 </button>
               </div>
             ) : (
-              <button onClick={login} className="bg-[#FEE500] text-[#3C1E1E] text-[13px] font-bold px-3 py-1.5 rounded-lg">
-                카카오 로그인
+              <button
+                onClick={() => { setLoginLoading(true); login(); }}
+                disabled={loginLoading}
+                className="bg-[#FEE500] text-[#3C1E1E] text-[13px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 disabled:opacity-70"
+              >
+                {loginLoading && <span className="w-3.5 h-3.5 rounded-full border-2 border-[#3C1E1E]/30 border-t-[#3C1E1E] inline-block" style={{ animation: "spin 0.7s linear infinite" }} />}
+                {loginLoading ? "연결 중..." : "카카오 로그인"}
               </button>
             )
           )}
@@ -283,20 +289,20 @@ export default function Studio() {
 
                 {/* Bottom left text */}
                 <div className="absolute bottom-0 left-0 p-5">
-                  <div className="mb-0.5 flex items-center gap-2">
-                    <p className="text-[24px] font-bold text-white tracking-tight leading-tight">{style.name}</p>
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg backdrop-blur-md">
-                      <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                        <path d="M1 1h2l1.5 7h7l1-4.5H4" stroke="#C9571A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">1크레딧</span>
-                    </div>
-                  </div>
+                  <p className="text-[24px] font-bold text-white tracking-tight leading-tight mb-0.5">{style.name}</p>
                   <p className="text-[14px] text-[#ccc] mt-0.5 break-keep">{style.desc}</p>
                   {style.active && (
-                    <span className="inline-block mt-2 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
-                      사용 {usageCounts === null ? "..." : formatCount(usageCounts[style.id] ?? 0)}
-                    </span>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
+                        {usageCounts === null ? "..." : formatCount(usageCounts[style.id] ?? 0)}
+                      </span>
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg backdrop-blur-md">
+                        <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                          <path d="M1 1h2l1.5 7h7l1-4.5H4" stroke="#C9571A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">1크레딧</span>
+                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -331,13 +337,18 @@ export default function Studio() {
               <p className="text-white/80 text-[14px] font-medium">✦ 카카오 로그인하면 3크레딧 무료 지급!</p>
               <p className="text-[12px] text-[#666]">1크레딧 = AI 변환 1회 · 워터마크 없이 고화질 저장</p>
               <button
-                onClick={login}
-                className="bg-[#FEE500] text-[#3C1E1E] rounded-xl font-bold py-3 w-full text-[15px] flex items-center justify-center gap-2"
+                onClick={() => { setLoginLoading(true); login(); }}
+                disabled={loginLoading}
+                className="bg-[#FEE500] text-[#3C1E1E] rounded-xl font-bold py-3 w-full text-[15px] flex items-center justify-center gap-2 disabled:opacity-70"
               >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
-                </svg>
-                카카오로 로그인하기
+                {loginLoading ? (
+                  <span className="w-5 h-5 rounded-full border-2 border-[#3C1E1E]/30 border-t-[#3C1E1E]" style={{ animation: "spin 0.7s linear infinite" }} />
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
+                  </svg>
+                )}
+                {loginLoading ? "연결 중..." : "카카오로 로그인하기"}
               </button>
             </div>
           </div>
