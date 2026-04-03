@@ -48,49 +48,49 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
   const profit = m ? m.revenue - m.apiCost : 0;
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1">API 비용 & 손익</p>
+      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">API 비용 & 손익</p>
       <div className="flex gap-2">
         {months.map(({ key, label, note }) => (
           <button
             key={key}
             onClick={() => setActiveMonth(key)}
-            className={`flex-1 py-2 rounded-xl text-[13px] font-bold transition-colors border ${
-              activeMonth === key ? "bg-[#C9571A] border-[#C9571A] text-white" : "bg-white/[0.04] border-white/10 text-[#555]"
+            className={`flex-1 py-2 rounded-xl text-[14px] font-bold transition-colors border ${
+              activeMonth === key ? "bg-[#C9571A] border-[#C9571A] text-white" : "bg-gray-100 border-gray-200 text-gray-600"
             }`}
           >
-            {label} <span className="text-[10px] font-normal opacity-60">{note}</span>
+            {label} <span className="text-[12px] font-normal opacity-60">{note}</span>
           </button>
         ))}
       </div>
       {m && (
-        <div className="bg-[#111] border border-white/5 rounded-2xl px-4 py-4 flex flex-col gap-3">
+        <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4 flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-              <span className="text-[#555] text-[10px]">스타일 변환</span>
-              <span className="text-white text-[16px] font-extrabold tabular-nums">{m.styleCount}건</span>
+            <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-1">
+              <span className="text-gray-500 text-[12px]">스타일 변환</span>
+              <span className="text-gray-900 text-[18px] font-extrabold tabular-nums">{m.styleCount}건</span>
             </div>
-            <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-              <span className="text-[#555] text-[10px]">AI 오디션</span>
-              <span className="text-white text-[16px] font-extrabold tabular-nums">{m.auditionCount}건</span>
+            <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-1">
+              <span className="text-gray-500 text-[12px]">AI 오디션</span>
+              <span className="text-gray-900 text-[18px] font-extrabold tabular-nums">{m.auditionCount}건</span>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-              <span className="text-[#555] text-[10px]">매출</span>
-              <span className="text-white text-[15px] font-extrabold tabular-nums">₩{m.revenue.toLocaleString()}</span>
+            <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-1">
+              <span className="text-gray-500 text-[12px]">매출</span>
+              <span className="text-gray-900 text-[15px] font-extrabold tabular-nums">₩{m.revenue.toLocaleString()}</span>
             </div>
-            <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-              <span className="text-[#555] text-[10px]">API 비용</span>
-              <span className="text-red-400 text-[15px] font-extrabold tabular-nums">-₩{m.apiCost.toLocaleString()}</span>
+            <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-1">
+              <span className="text-gray-500 text-[12px]">API 비용</span>
+              <span className="text-red-500 text-[15px] font-extrabold tabular-nums">-₩{m.apiCost.toLocaleString()}</span>
             </div>
-            <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-              <span className="text-[#555] text-[10px]">손익</span>
-              <span className={`text-[15px] font-extrabold tabular-nums ${profit >= 0 ? "text-[#4ade80]" : "text-red-400"}`}>
+            <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-1">
+              <span className="text-gray-500 text-[12px]">손익</span>
+              <span className={`text-[15px] font-extrabold tabular-nums ${profit >= 0 ? "text-green-600" : "text-red-500"}`}>
                 {profit >= 0 ? "+" : ""}₩{profit.toLocaleString()}
               </span>
             </div>
           </div>
-          <p className="text-[10px] text-[#444] px-1">
+          <p className="text-[12px] text-gray-400 px-1">
             {activeMonth === "2026-03"
               ? "* API 비용은 Google Cloud 청구서 실측값 (3/25~31, 세전)"
               : "* API 비용은 건당 단가 기준 추정값 (스타일 ₩117 · 오디션 ₩468)"}
@@ -103,11 +103,11 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
 
 function Row({ label, value, note, highlight }: { label: string; value: string | number; note?: string; highlight?: boolean }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
-      <span className="text-[#888] text-sm">{label}</span>
+    <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+      <span className="text-gray-500 text-[15px]">{label}</span>
       <div className="flex items-center gap-2">
-        {note && <span className="text-[#555] text-xs">{note}</span>}
-        <span className={`text-base font-bold tabular-nums ${highlight ? "text-[#C9571A]" : "text-white"}`}>{value}</span>
+        {note && <span className="text-gray-400 text-[13px]">{note}</span>}
+        <span className={`text-[17px] font-bold tabular-nums ${highlight ? "text-[#C9571A]" : "text-gray-900"}`}>{value}</span>
       </div>
     </div>
   );
@@ -116,8 +116,8 @@ function Row({ label, value, note, highlight }: { label: string; value: string |
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">{title}</p>
-      <div className="bg-[#111] rounded-2xl px-4 border border-white/5">
+      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">{title}</p>
+      <div className="bg-white rounded-2xl px-4 border border-gray-200">
         {children}
       </div>
     </div>
@@ -126,17 +126,17 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Bar({ ratio, color = "#C9571A" }: { ratio: number; color?: string }) {
   return (
-    <div className="w-full bg-white/5 rounded-full h-1 mt-1">
-      <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${ratio}%`, backgroundColor: color }} />
+    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+      <div className="h-1.5 rounded-full transition-all duration-500" style={{ width: `${ratio}%`, backgroundColor: color }} />
     </div>
   );
 }
 
 function MiniCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
-    <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-      <span className="text-[#555] text-[11px]">{label}</span>
-      <span className={`text-[18px] font-extrabold tabular-nums leading-tight ${accent ? "text-[#C9571A]" : "text-white"}`}>{value}</span>
+    <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+      <span className="text-gray-500 text-[13px]">{label}</span>
+      <span className={`text-[20px] font-extrabold tabular-nums leading-tight ${accent ? "text-[#C9571A]" : "text-gray-900"}`}>{value}</span>
     </div>
   );
 }
@@ -206,22 +206,22 @@ export default function AdminPage() {
 
   if (!stats) {
     return (
-      <main className="w-full max-w-sm mx-auto px-4 py-20 flex flex-col gap-6 bg-[#0A0A0A] min-h-screen">
-        <h1 className="text-2xl font-extrabold text-white">Admin</h1>
+      <main className="w-full max-w-sm mx-auto px-4 py-20 flex flex-col gap-6 bg-gray-50 min-h-screen">
+        <h1 className="text-2xl font-extrabold text-gray-900">Admin</h1>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호 입력"
-            className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#C9571A] transition-colors"
+            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 text-[15px] focus:outline-none focus:border-[#C9571A] transition-colors"
             autoFocus
           />
-          {error && <p className="text-[#C9571A] text-sm font-medium">{error}</p>}
+          {error && <p className="text-[#C9571A] text-[15px] font-medium">{error}</p>}
           <button
             type="submit"
             disabled={isLoading || !password}
-            className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-[#2A2A2A] disabled:text-white/30 text-white font-bold py-3 rounded-xl transition-colors"
+            className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-3 rounded-xl transition-colors"
           >
             {isLoading ? "확인 중..." : "확인"}
           </button>
@@ -234,20 +234,20 @@ export default function AdminPage() {
   const shareRatio = stats.total > 0 ? Math.round((shareTotal / stats.total) * 100) : 0;
 
   return (
-    <main className="w-full max-w-sm mx-auto px-4 py-10 flex flex-col gap-6 bg-[#0A0A0A] min-h-screen">
+    <main className="w-full max-w-sm mx-auto px-4 py-10 flex flex-col gap-6 bg-gray-50 min-h-screen">
 
       {/* 헤더 */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-extrabold text-white">Admin</h1>
+        <h1 className="text-xl font-extrabold text-gray-900">Admin</h1>
         <div className="flex items-center gap-3">
           {fetchedAt && (
-            <span className="text-[10px] text-[#333] font-mono tabular-nums">
+            <span className="text-[12px] text-gray-400 font-mono tabular-nums">
               {fetchedAt.toTimeString().slice(0, 8)} +{elapsed}s
             </span>
           )}
           <button
             onClick={() => { setStats(null); setPassword(""); localStorage.removeItem("sd_admin_pw"); if (timerRef.current) clearInterval(timerRef.current); }}
-            className="text-xs text-[#444] hover:text-white transition-colors"
+            className="text-[13px] text-gray-500 hover:text-gray-900 transition-colors"
           >
             로그아웃
           </button>
@@ -256,30 +256,30 @@ export default function AdminPage() {
 
       {/* 공지 관리 */}
       <div className="flex flex-col gap-1">
-        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">공지 관리 (터미널)</p>
-        <div className="bg-[#111] rounded-2xl px-4 py-4 border border-white/5 flex flex-col gap-3">
+        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">공지 관리 (터미널)</p>
+        <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
           {notices.map((n, i) => (
             <div key={i} className="flex items-start gap-2">
               <button
                 onClick={() => setNotices(prev => prev.map((x, j) => j === i ? { ...x, active: !x.active } : x))}
-                className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border transition-colors ${n.active ? "bg-[#C9571A] border-[#C9571A]" : "bg-transparent border-white/20"}`}
+                className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border transition-colors ${n.active ? "bg-[#C9571A] border-[#C9571A]" : "bg-white border-gray-300"}`}
               >
                 {n.active && <svg viewBox="0 0 10 8" fill="none" className="w-full h-full p-0.5"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </button>
               <input
                 value={n.text}
                 onChange={e => setNotices(prev => prev.map((x, j) => j === i ? { ...x, text: e.target.value } : x))}
-                className="flex-1 bg-[#0D0D0D] border border-white/10 rounded-lg px-3 py-2 text-white text-[13px] font-mono focus:outline-none focus:border-[#C9571A]/50 transition-colors"
+                className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] font-mono focus:outline-none focus:border-[#C9571A]/50 transition-colors"
               />
               <button
                 onClick={() => setNotices(prev => prev.filter((_, j) => j !== i))}
-                className="mt-1 text-[#444] hover:text-[#ff5f57] transition-colors text-lg leading-none"
+                className="mt-1 text-gray-400 hover:text-red-500 transition-colors text-lg leading-none"
               >×</button>
             </div>
           ))}
           <button
             onClick={() => setNotices(prev => [...prev, { id: Date.now(), text: "", active: true }])}
-            className="text-[12px] text-[#555] hover:text-white transition-colors text-left font-mono"
+            className="text-[13px] text-gray-500 hover:text-gray-900 transition-colors text-left font-mono"
           >+ 공지 추가</button>
           <button
             onClick={async () => {
@@ -295,7 +295,7 @@ export default function AdminPage() {
               setTimeout(() => setNoticesSaved(false), 2000);
             }}
             disabled={noticesSaving}
-            className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-[#2A2A2A] text-white font-bold py-2.5 rounded-xl transition-colors text-[13px]"
+            className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-gray-200 text-white font-bold py-2.5 rounded-xl transition-colors text-[14px]"
           >
             {noticesSaving ? "저장 중..." : noticesSaved ? "✓ 저장됨" : "저장하기"}
           </button>
@@ -304,7 +304,7 @@ export default function AdminPage() {
 
       {/* 사용 현황 */}
       <div className="flex flex-col gap-1">
-        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">사용 현황</p>
+        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">사용 현황</p>
         <div className="grid grid-cols-2 gap-2">
           <MiniCard label="누적 변환" value={`${stats.total}회`} accent />
           <MiniCard label="오늘 변환" value={`${stats.todayTotal}회`} />
@@ -315,61 +315,61 @@ export default function AdminPage() {
 
       {/* 로그인 vs 게스트 */}
       <div className="flex flex-col gap-1">
-        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">로그인 vs 게스트</p>
-        <p className="text-[10px] text-[#444] px-1 mb-1">변환 횟수 기준 — 1명이 여러 번 변환하면 중복 집계됨</p>
+        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">로그인 vs 게스트</p>
+        <p className="text-[12px] text-gray-400 px-1 mb-1">변환 횟수 기준 — 1명이 여러 번 변환하면 중복 집계됨</p>
         <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-[#555] text-[11px]">로그인 변환</span>
-            <span className="text-white text-[18px] font-extrabold tabular-nums">{stats.userCount}회</span>
-            <span className="text-[#C9571A] text-[13px] font-bold">{stats.userRatio}%</span>
+          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-gray-500 text-[13px]">로그인 변환</span>
+            <span className="text-gray-900 text-[20px] font-extrabold tabular-nums">{stats.userCount}회</span>
+            <span className="text-[#C9571A] text-[14px] font-bold">{stats.userRatio}%</span>
             <Bar ratio={stats.userRatio} />
           </div>
-          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-[#555] text-[11px]">게스트 변환</span>
-            <span className="text-white text-[18px] font-extrabold tabular-nums">{stats.guestCount}회</span>
-            <span className="text-[#555] text-[13px] font-bold">{stats.guestRatio}%</span>
-            <Bar ratio={stats.guestRatio} color="#555" />
+          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-gray-500 text-[13px]">게스트 변환</span>
+            <span className="text-gray-900 text-[20px] font-extrabold tabular-nums">{stats.guestCount}회</span>
+            <span className="text-gray-500 text-[14px] font-bold">{stats.guestRatio}%</span>
+            <Bar ratio={stats.guestRatio} color="#9ca3af" />
           </div>
         </div>
       </div>
 
       {/* 공유 & 바이럴 — 스타일 */}
       <div className="flex flex-col gap-1">
-        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">공유 & 바이럴 · 스타일</p>
+        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">공유 & 바이럴 · 스타일</p>
         <div className="grid grid-cols-3 gap-2 mb-2">
-          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-[#555] text-[10px]">카카오 공유</span>
-            <span className="text-white text-[16px] font-extrabold tabular-nums">{stats.shareKakao}회</span>
-            <span className="text-[#555] text-[11px]">{stats.total > 0 ? Math.round((stats.shareKakao / stats.total) * 100) : 0}%</span>
+          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-gray-500 text-[12px]">카카오 공유</span>
+            <span className="text-gray-900 text-[18px] font-extrabold tabular-nums">{stats.shareKakao}회</span>
+            <span className="text-gray-400 text-[12px]">{stats.total > 0 ? Math.round((stats.shareKakao / stats.total) * 100) : 0}%</span>
           </div>
-          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-[#555] text-[10px]">링크 복사</span>
-            <span className="text-white text-[16px] font-extrabold tabular-nums">{stats.shareLinkCopy}회</span>
-            <span className="text-[#555] text-[11px]">{stats.total > 0 ? Math.round((stats.shareLinkCopy / stats.total) * 100) : 0}%</span>
+          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-gray-500 text-[12px]">링크 복사</span>
+            <span className="text-gray-900 text-[18px] font-extrabold tabular-nums">{stats.shareLinkCopy}회</span>
+            <span className="text-gray-400 text-[12px]">{stats.total > 0 ? Math.round((stats.shareLinkCopy / stats.total) * 100) : 0}%</span>
           </div>
-          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-[#555] text-[10px]">공유 전환율</span>
-            <span className="text-[#C9571A] text-[16px] font-extrabold tabular-nums">{shareRatio}%</span>
-            <span className="text-[#555] text-[11px]">{shareTotal}회</span>
+          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-gray-500 text-[12px]">공유 전환율</span>
+            <span className="text-[#C9571A] text-[18px] font-extrabold tabular-nums">{shareRatio}%</span>
+            <span className="text-gray-400 text-[12px]">{shareTotal}회</span>
           </div>
         </div>
       </div>
 
       {/* 공유 & 바이럴 — 실험실 (AI 오디션) */}
       <div className="flex flex-col gap-1">
-        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">공유 & 바이럴 · 실험실</p>
+        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">공유 & 바이럴 · 실험실</p>
         <div className="grid grid-cols-3 gap-2 mb-2">
-          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-[#555] text-[10px]">카카오 공유</span>
-            <span className="text-white text-[16px] font-extrabold tabular-nums">{stats.auditionShareKakao}회</span>
+          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-gray-500 text-[12px]">카카오 공유</span>
+            <span className="text-gray-900 text-[18px] font-extrabold tabular-nums">{stats.auditionShareKakao}회</span>
           </div>
-          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-[#555] text-[10px]">링크 복사</span>
-            <span className="text-white text-[16px] font-extrabold tabular-nums">{stats.auditionShareLinkCopy}회</span>
+          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-gray-500 text-[12px]">링크 복사</span>
+            <span className="text-gray-900 text-[18px] font-extrabold tabular-nums">{stats.auditionShareLinkCopy}회</span>
           </div>
-          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-[#555] text-[10px]">합계</span>
-            <span className="text-[#C9571A] text-[16px] font-extrabold tabular-nums">{stats.auditionShareKakao + stats.auditionShareLinkCopy}회</span>
+          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-gray-500 text-[12px]">합계</span>
+            <span className="text-[#C9571A] text-[18px] font-extrabold tabular-nums">{stats.auditionShareKakao + stats.auditionShareLinkCopy}회</span>
           </div>
         </div>
       </div>
@@ -387,8 +387,8 @@ export default function AdminPage() {
       {/* 결제 목록 & 원클릭 환불 */}
       {stats.paymentList.length > 0 && (
         <div className="flex flex-col gap-1">
-          <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">결제 목록 & 환불</p>
-          <div className="bg-[#111] rounded-2xl px-4 border border-white/5 flex flex-col">
+          <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">결제 목록 & 환불</p>
+          <div className="bg-white rounded-2xl px-4 border border-gray-200 flex flex-col">
             {stats.paymentList.slice(0, 20).map((p) => {
               const user = stats.userList.find(u => u.id === p.user_id);
               const date = new Date(p.created_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -396,20 +396,19 @@ export default function AdminPage() {
               const isLoading = refundingId === p.id;
               const msg = refundMsg?.id === p.id ? refundMsg : null;
               return (
-                <div key={p.id} className="py-3 border-b border-white/5 last:border-0 flex items-center justify-between gap-2">
+                <div key={p.id} className="py-3 border-b border-gray-100 last:border-0 flex items-center justify-between gap-2">
                   <div className="flex flex-col gap-0.5 min-w-0">
-                    <span className="text-white text-[13px] font-bold truncate">{user?.nickname ?? p.user_id.slice(0, 8)}</span>
-                    <span className="text-[#555] text-[11px] font-mono">{p.amount.toLocaleString()}원 · {p.credits}크레딧 · {date}</span>
-                    {msg && <span className={`text-[11px] ${msg.ok ? "text-[#C9571A]" : "text-red-400"}`}>{msg.msg}</span>}
+                    <span className="text-gray-900 text-[14px] font-bold truncate">{user?.nickname ?? p.user_id.slice(0, 8)}</span>
+                    <span className="text-gray-500 text-[12px] font-mono">{p.amount.toLocaleString()}원 · {p.credits}크레딧 · {date}</span>
+                    {msg && <span className={`text-[12px] ${msg.ok ? "text-[#C9571A]" : "text-red-500"}`}>{msg.msg}</span>}
                   </div>
                   {isRefunded ? (
-                    <span className="text-[11px] text-[#444] flex-shrink-0">환불됨</span>
+                    <span className="text-[12px] text-gray-400 flex-shrink-0">환불됨</span>
                   ) : (
                     <button
                       onClick={async () => {
                         setRefundingId(p.id);
                         setRefundMsg(null);
-                        // Step 1: dryRun 미리보기
                         const previewRes = await fetch("/api/admin/refund", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
@@ -429,7 +428,6 @@ export default function AdminPage() {
                           ? `${user?.nickname ?? "유저"} · 부분환불 ${preview.refundAmount.toLocaleString()}원\n(사용 ${preview.usedCredits}회 × 190원 = ${(preview.usedCredits * 190).toLocaleString()}원 공제)\n\n진행하시겠어요?`
                           : `${user?.nickname ?? "유저"} · 전액환불 ${preview.refundAmount.toLocaleString()}원\n\n진행하시겠어요?`;
                         if (!confirm(confirmMsg)) return;
-                        // Step 2: 실제 환불 처리
                         setRefundingId(p.id);
                         const res = await fetch("/api/admin/refund", {
                           method: "POST",
@@ -448,7 +446,7 @@ export default function AdminPage() {
                         if (data.ok) p.status = "refunded";
                       }}
                       disabled={isLoading}
-                      className="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-lg border border-white/10 text-[#888] hover:text-white hover:border-white/30 transition-colors disabled:opacity-40"
+                      className="flex-shrink-0 text-[12px] px-3 py-1.5 rounded-lg border border-gray-300 text-gray-500 hover:text-gray-900 hover:border-gray-400 transition-colors disabled:opacity-40"
                     >
                       {isLoading ? "처리중..." : "환불"}
                     </button>
@@ -460,30 +458,29 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* API 비용 & 손익 */}
+      {/* API 비용 & 손익 (누적 역산) */}
       {(() => {
-        // 3월 GCP 실청구 역산 기준
-        const marBilling = 17944;       // 3월 실청구액 (원)
-        const marEstCalls = 320;        // 역산 총 호출 (로그 前 포함)
-        const costPerCall = Math.round(marBilling / marEstCalls); // 약 56원/회
+        const marBilling = 17944;
+        const marEstCalls = 320;
+        const costPerCall = Math.round(marBilling / marEstCalls);
         const totalCost = stats.total * costPerCall;
         const profit = stats.totalRevenue - totalCost;
         const profitRatio = stats.totalRevenue > 0 ? Math.round((profit / stats.totalRevenue) * 100) : 0;
         const breakEvenCalls = costPerCall > 0 ? Math.ceil(stats.totalRevenue / costPerCall) : 0;
         return (
-          <Section title="API 비용 & 손익">
+          <Section title="API 비용 & 손익 (누적 역산)">
             <Row label="3월 GCP 실청구액" value={`${marBilling.toLocaleString()}원`} note="VAT 포함" />
             <Row label="역산 총 호출 (3월)" value={`약 ${marEstCalls}회`} note="로그 前 테스트 포함" />
             <Row label="1회당 실측 비용" value={`약 ${costPerCall}원`} note={`₩${marBilling.toLocaleString()} ÷ ${marEstCalls}회`} highlight />
             <Row label="로그 기록 호출 (누적)" value={`${stats.total.toLocaleString()}회`} />
             <Row label="누적 API 지출 (추정)" value={`${totalCost.toLocaleString()}원`} note={`${stats.total}회 × ${costPerCall}원`} />
             <Row label="총 결제 수익" value={`${stats.totalRevenue.toLocaleString()}원`} />
-            <div className="py-3 border-b border-white/5">
+            <div className="py-3 border-b border-gray-100">
               <div className="flex items-center justify-between">
-                <span className="text-[#888] text-sm">순이익</span>
-                <span className={`font-bold text-base tabular-nums ${profit >= 0 ? "text-green-400" : "text-red-400"}`}>
+                <span className="text-gray-500 text-[15px]">순이익</span>
+                <span className={`font-bold text-[17px] tabular-nums ${profit >= 0 ? "text-green-600" : "text-red-500"}`}>
                   {profit >= 0 ? "+" : ""}{profit.toLocaleString()}원
-                  <span className="text-xs font-normal ml-1 opacity-60">({profitRatio}%)</span>
+                  <span className="text-[13px] font-normal ml-1 opacity-60">({profitRatio}%)</span>
                 </span>
               </div>
             </div>
@@ -498,8 +495,8 @@ export default function AdminPage() {
 
       {/* 크레딧 조정 */}
       <div className="flex flex-col gap-1">
-        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">크레딧 조정</p>
-        <div className="bg-[#111] rounded-2xl px-4 py-4 border border-white/5 flex flex-col gap-3">
+        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">크레딧 조정</p>
+        <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
           <div className="relative">
             <input
               type="text"
@@ -511,10 +508,10 @@ export default function AdminPage() {
               }}
               onFocus={() => setShowUserDropdown(true)}
               placeholder="닉네임 또는 ID로 검색..."
-              className="w-full bg-[#0D0D0D] border border-white/10 rounded-lg px-3 py-2 text-white text-[13px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
+              className="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
             />
             {showUserDropdown && (
-              <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-[#0D0D0D] border border-white/10 rounded-lg max-h-48 overflow-y-auto">
+              <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto shadow-md">
                 {stats.userList
                   .filter(u => {
                     if (!creditSearch) return true;
@@ -531,8 +528,8 @@ export default function AdminPage() {
                         setCreditSearch(u.nickname ?? u.id.slice(0, 12));
                         setShowUserDropdown(false);
                       }}
-                      className={`w-full text-left px-3 py-2 text-[13px] hover:bg-white/5 transition-colors ${
-                        creditUserId === u.id ? "text-[#C9571A]" : "text-white/70"
+                      className={`w-full text-left px-3 py-2 text-[14px] hover:bg-gray-50 transition-colors ${
+                        creditUserId === u.id ? "text-[#C9571A]" : "text-gray-700"
                       }`}
                     >
                       {u.nickname ?? u.id.slice(0, 8)} — {u.id.slice(0, 12)}...
@@ -543,7 +540,7 @@ export default function AdminPage() {
                   const q = creditSearch.toLowerCase();
                   return (u.nickname?.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
                 }).length === 0 && (
-                  <p className="px-3 py-2 text-[12px] text-[#555]">검색 결과 없음</p>
+                  <p className="px-3 py-2 text-[13px] text-gray-400">검색 결과 없음</p>
                 )}
               </div>
             )}
@@ -553,7 +550,7 @@ export default function AdminPage() {
               <button
                 key={n}
                 onClick={() => setCreditAmount(String(n))}
-                className={`flex-1 py-2 rounded-lg text-[12px] font-bold transition-colors ${creditAmount === String(n) ? "bg-[#C9571A] text-white" : "bg-[#1A1A1A] text-[#666] hover:text-white"}`}
+                className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${creditAmount === String(n) ? "bg-[#C9571A] text-white" : "bg-gray-100 text-gray-500 hover:text-gray-900"}`}
               >{n}</button>
             ))}
           </div>
@@ -570,27 +567,27 @@ export default function AdminPage() {
               setCreditMsg(data.ok ? `✓ ${stats.userList.find(u=>u.id===creditUserId)?.nickname ?? creditUserId.slice(0,8)} → ${creditAmount}크레딧 설정됨` : `오류: ${data.error}`);
               setTimeout(() => setCreditMsg(""), 3000);
             }}
-            className="w-full bg-[#1A1A1A] hover:bg-[#222] border border-white/10 text-white font-bold py-2.5 rounded-xl transition-colors text-[13px]"
+            className="w-full bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-900 font-bold py-2.5 rounded-xl transition-colors text-[14px]"
           >
             크레딧 설정
           </button>
-          {creditMsg && <p className={`text-[12px] text-center ${creditMsg.startsWith("✓") ? "text-[#C9571A]" : "text-red-400"}`}>{creditMsg}</p>}
+          {creditMsg && <p className={`text-[13px] text-center ${creditMsg.startsWith("✓") ? "text-[#C9571A]" : "text-red-500"}`}>{creditMsg}</p>}
         </div>
       </div>
 
       {/* 스타일별 */}
       <Section title="스타일별 사용">
         {stats.byStyle.length === 0 ? (
-          <p className="text-[#444] text-sm py-4">데이터 없음</p>
+          <p className="text-gray-400 text-[15px] py-4">데이터 없음</p>
         ) : (
           stats.byStyle.map((s) => {
             const ratio = stats.total > 0 ? Math.round((s.count / stats.total) * 100) : 0;
             const variants = STYLE_VARIANTS[s.style_id];
             return (
-              <div key={s.style_id} className="py-3 border-b border-white/5 last:border-0">
+              <div key={s.style_id} className="py-3 border-b border-gray-100 last:border-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-white/90 text-[15px] font-bold">{s.style_name}</span>
-                  <span className="text-white font-bold">{s.count}회 <span className="text-[#555] font-normal text-xs">{ratio}%</span></span>
+                  <span className="text-gray-800 text-[15px] font-bold">{s.style_name}</span>
+                  <span className="text-gray-900 font-bold text-[15px]">{s.count}회 <span className="text-gray-400 font-normal text-[13px]">{ratio}%</span></span>
                 </div>
                 <Bar ratio={ratio} />
                 {variants && variants.length > 1 && (
@@ -598,7 +595,7 @@ export default function AdminPage() {
                     {variants.map(v => {
                       const cnt = stats.byStyleVariants?.[s.style_id]?.[v.id] ?? 0;
                       return (
-                        <span key={v.id} className="text-[10px] text-[#555] bg-white/5 border border-white/8 rounded-full px-2 py-0.5">
+                        <span key={v.id} className="text-[12px] text-gray-500 bg-gray-100 border border-gray-200 rounded-full px-2 py-0.5">
                           {v.label}{cnt > 0 ? ` · ${cnt}회` : ""}
                         </span>
                       );
