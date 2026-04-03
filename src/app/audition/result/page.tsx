@@ -695,12 +695,16 @@ export default function AuditionResult() {
           <button
             onClick={handleKakaoShare}
             disabled={isSharing}
-            className="flex-1 flex items-center justify-center gap-1.5 bg-[#FEE500] hover:bg-[#F0D900] text-[#191919] font-bold py-3.5 rounded-2xl text-[13px] transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 bg-[#FEE500] hover:bg-[#F0D900] disabled:opacity-60 text-[#191919] font-bold py-3.5 rounded-2xl text-[13px] transition-colors"
           >
-            <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
-              <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/>
-            </svg>
-            공유
+            {isSharing ? (
+              <div className="w-4 h-4 rounded-full border-2 border-[#191919]/30 border-t-[#191919]" style={{ animation: "spin 0.8s linear infinite" }} />
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+                <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/>
+              </svg>
+            )}
+            {isSharing ? "링크 생성 중..." : "공유"}
           </button>
           <Link
             href="/studio"
