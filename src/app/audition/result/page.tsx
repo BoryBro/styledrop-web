@@ -38,15 +38,15 @@ function scoreColor(v: number) {
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-[10px] text-[#555] w-14 shrink-0">{label}</span>
-      <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+    <div className="flex items-center gap-2.5">
+      <span className="text-[12px] text-[#999] w-16 shrink-0">{label}</span>
+      <div className="flex-1 h-2 bg-white/8 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{ width: `${value}%`, backgroundColor: scoreColor(value) }}
         />
       </div>
-      <span className="text-[11px] font-bold w-7 text-right" style={{ color: scoreColor(value) }}>{value}</span>
+      <span className="text-[13px] font-bold w-8 text-right" style={{ color: scoreColor(value) }}>{value}</span>
     </div>
   );
 }
@@ -305,19 +305,19 @@ function OverallTab({
             </div>
 
             {/* 하단: 장르별 점수 바 */}
-            <div className="bg-black/30 rounded-xl px-4 py-3 border border-white/5">
-              <p className="text-[9px] text-[#555] font-bold tracking-widest uppercase mb-2.5">장르별 점수</p>
-              <div className="flex flex-col gap-2">
+            <div className="bg-black/30 rounded-xl px-4 py-4 border border-white/8">
+              <p className="text-[11px] text-[#777] font-bold tracking-widest uppercase mb-3">장르별 점수</p>
+              <div className="flex flex-col gap-3">
                 {result.scenes.map((s, i) => {
                   const avg = Math.round(SCORE_LABELS.reduce((sum, l) => sum + (s.scores?.[l] ?? 0), 0) / 4);
                   return (
-                    <div key={i} className="flex items-center gap-2">
-                      <span className="text-[12px] w-5 text-center">{GENRE_EMOJIS[s.genre] ?? "🎬"}</span>
-                      <span className="text-[10px] text-[#555] w-10 shrink-0">{s.genre}</span>
-                      <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div key={i} className="flex items-center gap-2.5">
+                      <span className="text-[14px] w-5 text-center">{GENRE_EMOJIS[s.genre] ?? "🎬"}</span>
+                      <span className="text-[12px] text-[#888] w-12 shrink-0">{s.genre}</span>
+                      <div className="flex-1 h-2 bg-white/8 rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${avg}%`, backgroundColor: scoreColor(avg) }} />
                       </div>
-                      <span className="text-[12px] font-bold w-7 text-right" style={{ color: scoreColor(avg) }}>{avg}</span>
+                      <span className="text-[13px] font-bold w-8 text-right" style={{ color: scoreColor(avg) }}>{avg}</span>
                     </div>
                   );
                 })}
@@ -339,10 +339,10 @@ function OverallTab({
           </div>
 
           {/* 연기 총평 한마디 */}
-          <div className="border border-[#C9571A]/20 rounded-xl px-4 py-4 mb-5 bg-[#C9571A]/5">
-            <p className="text-[9px] font-bold text-[#C9571A] uppercase tracking-widest mb-2">🎯 연기 총평 한마디</p>
+          <div className="border border-[#C9571A]/30 rounded-xl px-4 py-5 mb-5 bg-[#C9571A]/8">
+            <p className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest mb-3">🎯 연기 총평 한마디</p>
             <p className="text-white font-extrabold leading-snug"
-              style={{ fontSize: "clamp(16px, 5vw, 22px)" }}>
+              style={{ fontSize: "clamp(18px, 5.5vw, 24px)" }}>
               {result.overall_one_liner}
             </p>
           </div>
@@ -375,9 +375,9 @@ function OverallTab({
           </div>
 
           {/* 감독 총평 */}
-          <div className="border-t border-white/8 pt-4 mb-4">
-            <p className="text-[9px] font-bold text-[#444] uppercase tracking-widest mb-2">감독 총평</p>
-            <p className="text-[#888] text-[13px] leading-relaxed">{result.overall_critique}</p>
+          <div className="border-t border-white/10 pt-5 mb-4">
+            <p className="text-[11px] font-bold text-[#666] uppercase tracking-widest mb-3">감독 총평</p>
+            <p className="text-white/80 text-[15px] leading-[1.9]">{result.overall_critique}</p>
           </div>
 
           <div className="border-t border-white/5 pt-3 flex items-center justify-between">
@@ -504,22 +504,39 @@ export default function AuditionResult() {
     }
   }, [result, isSaving, userPhotos, genres, activeTab, isOverall]);
 
-  const handleKakaoShare = () => {
-    if (isSharing) return;
+  const handleKakaoShare = async () => {
+    if (isSharing || !result) return;
     setIsSharing(true);
     try {
+      // 1) 결과를 서버에 저장해서 공개 URL 생성
+      const bestPhoto = userPhotos[bestSceneIdx] ?? null;
+      const res = await fetch("/api/audition/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          result,
+          genres,
+          bestSceneIdx,
+          userPhotoBase64: bestPhoto ? bestPhoto.split(",")[1] : null,
+          stillImageBase64: stillImageRef.current ? stillImageRef.current.split(",")[1] : null,
+        }),
+      });
+      const { id } = await res.json();
+      const shareUrl = window.location.origin + "/audition/share/" + id;
+
+      // 2) 카카오 공유
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const Kakao = (window as any).Kakao;
       if (!Kakao?.isInitialized()) {
         Kakao?.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
       }
-      const scene = result?.scenes[activeTab < 3 ? activeTab : 0];
+      const bestScene = result.scenes[bestSceneIdx];
       Kakao?.Share?.sendDefault({
         objectType: "text",
-        text: `AI 감독이 나한테 "${scene?.assigned_role}" 역할을 줬어 😂\nStyleDrop AI 오디션에서 내 연기력 테스트해봐`,
+        text: `AI 감독이 나한테 "${bestScene?.assigned_role}" 역할을 줬어 😂\n내 오디션 결과 보러와`,
         link: {
-          mobileWebUrl: window.location.origin + "/audition/solo",
-          webUrl: window.location.origin + "/audition/solo",
+          mobileWebUrl: shareUrl,
+          webUrl: shareUrl,
         },
       });
     } catch {
@@ -651,28 +668,28 @@ export default function AuditionResult() {
               </div>
 
               {/* 감독의 한마디 */}
-              <div className="bg-[#111] border border-white/8 rounded-2xl px-4 py-4 mb-3">
-                <div className="flex items-center gap-2 mb-2.5">
-                  <span className="text-[15px]">🎬</span>
-                  <span className="text-[9px] font-bold text-[#C9571A] uppercase tracking-widest">감독의 한마디</span>
+              <div className="bg-[#111] border border-white/10 rounded-2xl px-4 py-5 mb-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[16px]">🎬</span>
+                  <span className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest">감독의 한마디</span>
                 </div>
-                <p className="text-[#ccc] text-[13px] leading-[1.8] tracking-tight">{scene.critique}</p>
+                <p className="text-white/90 text-[15px] leading-[1.9] tracking-tight">{scene.critique}</p>
               </div>
 
               {/* 점수 */}
               {scene.scores && (
-                <div className="bg-[#0D0D0D] border border-white/5 rounded-2xl px-4 py-4 mb-3">
-                  <p className="text-[9px] font-bold text-[#444] uppercase tracking-widest mb-3">연기 점수</p>
-                  <div className="flex flex-col gap-2.5">
+                <div className="bg-[#0D0D0D] border border-white/8 rounded-2xl px-4 py-5 mb-3">
+                  <p className="text-[11px] font-bold text-[#666] uppercase tracking-widest mb-4">연기 점수</p>
+                  <div className="flex flex-col gap-3">
                     {SCORE_LABELS.map(label => (
                       <ScoreBar key={label} label={label} value={scene.scores[label] ?? 0} />
                     ))}
                   </div>
-                  <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-                    <span className="text-[10px] text-[#444]">평균</span>
-                    <span className="text-[18px] font-extrabold" style={{ color: scoreColor(Math.round(SCORE_LABELS.reduce((s, l) => s + (scene.scores[l] ?? 0), 0) / 4)) }}>
+                  <div className="mt-4 pt-3 border-t border-white/8 flex items-center justify-between">
+                    <span className="text-[12px] text-[#666]">평균</span>
+                    <span className="text-[22px] font-extrabold" style={{ color: scoreColor(Math.round(SCORE_LABELS.reduce((s, l) => s + (scene.scores[l] ?? 0), 0) / 4)) }}>
                       {Math.round(SCORE_LABELS.reduce((s, l) => s + (scene.scores[l] ?? 0), 0) / 4)}
-                      <span className="text-[11px] text-[#444] ml-1">/ 100</span>
+                      <span className="text-[13px] text-[#555] ml-1">/ 100</span>
                     </span>
                   </div>
                 </div>
