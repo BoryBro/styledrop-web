@@ -323,12 +323,7 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    const { style, imageBase64, mimeType, variant: rawVariant = "default" } = await request.json();
-
-    // joseon-farmer: 서버에서 v1/v2/v3 랜덤 선택 (UI 선택지 없음)
-    const variant = style === "joseon-farmer"
-      ? (["v1", "v2", "v3"] as const)[Math.floor(Math.random() * 3)]
-      : rawVariant;
+    const { style, imageBase64, mimeType, variant = "default" } = await request.json();
 
     const stylePrompts = STYLE_PROMPTS[style];
     const prompt = stylePrompts?.[variant] ?? stylePrompts?.["default"];
