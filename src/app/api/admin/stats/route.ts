@@ -16,6 +16,11 @@ export async function POST(request: NextRequest) {
 
   const todayIso = new Date(Date.now() - 24 * 3600000).toISOString();
 
+  // ── 월별 비용 & 손익 계산 상수 ──────────────────────────────────────
+  const STYLE_UNIT_COST = 117;    // ₩/건 (3월 실측 역산)
+  const AUDITION_UNIT_COST = 468; // ₩/건 (Gemini 4회 호출 기준)
+  const MAR_ACTUAL_API_COST = 16313; // 3월 Google 청구서 실측값 (세전)
+
   // variant 컬럼이 없을 수 있으므로 먼저 시도, 실패하면 fallback
   const usageWithVariant = await supabase.from("style_usage").select("style_id, style_name, user_id, variant");
   const hasVariantCol = !usageWithVariant.error;
@@ -23,13 +28,23 @@ export async function POST(request: NextRequest) {
     ? usageWithVariant
     : await supabase.from("style_usage").select("style_id, style_name, user_id");
 
-  const [eventsRes, usersRes, todayUsageRes, paymentsRes, todayPaymentsRes, userListRes] = await Promise.all([
+  const [eventsRes, usersRes, todayUsageRes, paymentsRes, todayPaymentsRes, userListRes,
+    marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marRevenueRes, aprRevenueRes] = await Promise.all([
     supabase.from("user_events").select("event_type"),
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
     supabase.from("payments").select("id, amount, credits, user_id, status, created_at").order("created_at", { ascending: false }),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
     supabase.from("users").select("id, nickname").order("created_at", { ascending: false }).limit(500),
+    // 월별 스타일 변환
+    supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
+    supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    // 월별 오디션 (audition_history 또는 user_events)
+    supabase.from("user_events").select("id", { count: "exact", head: true }).eq("event_type", "audition_complete").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
+    supabase.from("user_events").select("id", { count: "exact", head: true }).eq("event_type", "audition_complete").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    // 월별 매출
+    supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
+    supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
   ]);
 
   if (usageRes.error || eventsRes.error) {
@@ -105,5 +120,19 @@ export async function POST(request: NextRequest) {
     totalRevenue,
     totalPaymentCount,
     todayRevenue,
+    monthlyCosts: {
+      "2026-03": {
+        styleCount: marUsageRes.count ?? 0,
+        auditionCount: marAuditionRes.count ?? 0,
+        apiCost: MAR_ACTUAL_API_COST, // 실측값
+        revenue: (marRevenueRes.data ?? []).reduce((s, p) => s + (p.amount ?? 0), 0),
+      },
+      "2026-04": {
+        styleCount: aprUsageRes.count ?? 0,
+        auditionCount: aprAuditionRes.count ?? 0,
+        apiCost: Math.round((aprUsageRes.count ?? 0) * STYLE_UNIT_COST + (aprAuditionRes.count ?? 0) * AUDITION_UNIT_COST),
+        revenue: (aprRevenueRes.data ?? []).reduce((s, p) => s + (p.amount ?? 0), 0),
+      },
+    },
   });
 }
