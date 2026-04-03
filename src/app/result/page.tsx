@@ -488,14 +488,15 @@ export default function Result() {
               </button>
             </div>
 
-            {showFallback && (
-              <button
-                onClick={handleCopyLink}
-                className="w-full py-3 text-sm text-[#888] border border-white/10 rounded-xl hover:text-white hover:border-white/20 transition-colors"
-              >
-                🔗 링크 복사하기
-              </button>
-            )}
+            <button
+              onClick={handleCopyLink}
+              className="w-full py-3 text-sm text-[#888] border border-white/10 rounded-xl hover:text-white hover:border-white/20 transition-colors flex items-center justify-center gap-2"
+            >
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <path d="M6.5 3.5H3.5a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V9.5M9.5 1.5h5m0 0v5m0-5L7 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              링크 복사
+            </button>
 
             {/* 크레딧 부족 안내 (로그인 유저) */}
             {user && credits !== null && credits <= 2 && (

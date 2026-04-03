@@ -370,6 +370,9 @@ export default function AuditionResult() {
   const [activeTab, setActiveTab] = useState(0); // 0~2 = 씬, 3 = 총평
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
+  const [copyToast, setCopyToast] = useState(false);
+  const cachedShareId = useRef<string | null>(null);
   const stillImageRef = useRef<string | null>(null);
   const router = useRouter();
 
@@ -503,6 +506,7 @@ export default function AuditionResult() {
       });
       const json = await res.json();
       if (!res.ok || !json.id) throw new Error(json.error ?? "공유 링크 생성 실패");
+      cachedShareId.current = json.id;
       const shareUrl = window.location.origin + "/audition/share/" + json.id;
 
       // 2) 카카오 공유
@@ -524,6 +528,41 @@ export default function AuditionResult() {
       navigator.clipboard?.writeText(window.location.origin + "/audition/solo");
     } finally {
       setIsSharing(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (isCopying || !result) return;
+    setIsCopying(true);
+    try {
+      let id = cachedShareId.current;
+      if (!id) {
+        const bestPhoto = userPhotos[bestSceneIdx] ?? null;
+        const res = await fetch("/api/audition/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            result,
+            genres,
+            bestSceneIdx,
+            userPhotoBase64: bestPhoto ? bestPhoto.split(",")[1] : null,
+            userPhotosBase64: userPhotos.map(p => p ? p.split(",")[1] : null),
+            stillImageBase64: stillImageRef.current ? stillImageRef.current.split(",")[1] : null,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.id) throw new Error("링크 생성 실패");
+        id = json.id;
+        cachedShareId.current = id;
+      }
+      const link = window.location.origin + "/audition/share/" + id;
+      await navigator.clipboard.writeText(link);
+      setCopyToast(true);
+      setTimeout(() => setCopyToast(false), 2500);
+    } catch {
+      // silent
+    } finally {
+      setIsCopying(false);
     }
   };
 
@@ -713,6 +752,23 @@ export default function AuditionResult() {
             나가기
           </Link>
         </div>
+        <button
+          onClick={handleCopyLink}
+          disabled={isCopying}
+          className="max-w-sm mx-auto w-full mt-2.5 flex items-center justify-center gap-2 py-3 rounded-2xl border border-white/10 bg-transparent text-[#888] hover:text-white hover:border-white/20 transition-colors text-[13px] font-bold disabled:opacity-50"
+        >
+          {isCopying ? (
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-white/20 border-t-white" style={{ animation: "spin 0.8s linear infinite" }} />
+          ) : (
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <path d="M6.5 3.5H3.5a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V9.5M9.5 1.5h5m0 0v5m0-5L7 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+          {isCopying ? "링크 생성 중..." : "링크 복사"}
+        </button>
+        {copyToast && (
+          <div className="max-w-sm mx-auto w-full mt-2 text-center text-[12px] text-[#4ade80] font-bold">링크가 복사됐어요!</div>
+        )}
       </div>
     </div>
   );
