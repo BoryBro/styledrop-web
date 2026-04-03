@@ -42,6 +42,7 @@ export default async function AuditionSharePage({ params }: { params: Promise<{ 
   const genres: GenreMeta[] = share.genres_json ?? [];
   const bestIdx: number = share.best_scene_idx ?? 0;
   const userPhotoUrl: string | null = share.user_photo_url;
+  const userPhotosJson: (string | null)[] = share.user_photos_json ?? [];
   const stillImageUrl: string | null = share.still_image_url;
   const bestScene = result.scenes[bestIdx];
 
@@ -125,33 +126,60 @@ export default async function AuditionSharePage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        {/* 장르별 씬 */}
-        <div className="flex flex-col gap-3">
-          {result.scenes.map((scene, i) => {
-            const avg = Math.round(SCORE_LABELS.reduce((s, l) => s + (scene.scores?.[l] ?? 0), 0) / 4);
-            return (
-              <div key={i} className="bg-[#111] border border-white/8 rounded-2xl px-4 py-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[16px]">{GENRE_EMOJIS[scene.genre] ?? "🎬"}</span>
-                    <span className="text-[12px] font-bold text-[#C9571A] tracking-wide">{scene.genre}</span>
+        {/* 장르별 씬 — 가로 스크롤 */}
+        <div>
+          <p className="text-[11px] font-bold text-[#666] uppercase tracking-widest mb-3 px-0.5">장르별 씬</p>
+          <div
+            className="flex gap-3 overflow-x-auto pb-3 -mx-4 px-4"
+            style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+          >
+            {result.scenes.map((scene, i) => {
+              const avg = Math.round(SCORE_LABELS.reduce((s, l) => s + (scene.scores?.[l] ?? 0), 0) / 4);
+              const photoUrl = userPhotosJson[i] ?? userPhotoUrl;
+              return (
+                <div
+                  key={i}
+                  className="flex-shrink-0 bg-[#111] border border-white/8 rounded-2xl overflow-hidden"
+                  style={{ width: "82vw", maxWidth: "320px", scrollSnapAlign: "start" }}
+                >
+                  {/* 상단: 사진 + 점수/장르 */}
+                  <div className="flex gap-0">
+                    {/* 사진 좌측 */}
+                    <div className="w-[110px] h-[130px] flex-shrink-0 bg-[#0a0a0a] overflow-hidden">
+                      {photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={photoUrl} alt="연기 사진" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#333] text-[28px]">🎭</div>
+                      )}
+                    </div>
+                    {/* 우측 헤더 */}
+                    <div className="flex-1 px-3 py-3 flex flex-col justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[15px]">{GENRE_EMOJIS[scene.genre] ?? "🎬"}</span>
+                        <span className="text-[12px] font-bold text-[#C9571A]">{scene.genre}</span>
+                      </div>
+                      <div>
+                        <p className="text-[30px] font-black leading-none" style={{ color: scoreColor(avg) }}>{avg}</p>
+                        <p className="text-[11px] font-bold" style={{ color: scoreColor(avg) }}>점</p>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[20px] font-extrabold" style={{ color: scoreColor(avg) }}>{avg}점</span>
+
+                  {/* 하단: 지시 상황 + 총평 */}
+                  <div className="px-4 py-3">
+                    {genres[i]?.cue && (
+                      <div className="bg-black/40 border-l-[3px] border-[#C9571A] rounded-r-lg px-3 py-2 mb-3">
+                        <p className="text-[10px] text-[#666] mb-0.5 uppercase tracking-widest">지시 상황</p>
+                        <p className="text-white/80 text-[12px] leading-snug">{genres[i].cue}</p>
+                      </div>
+                    )}
+                    <p className="text-white/85 text-[13px] leading-[1.8]">{scene.critique}</p>
+                  </div>
                 </div>
-                {genres[i]?.cue && (
-                  <div className="bg-black/40 border-l-[3px] border-[#C9571A] rounded-r-lg px-3 py-2 mb-3">
-                    <p className="text-[10px] text-[#666] mb-1 uppercase tracking-widest">지시 상황</p>
-                    <p className="text-white/80 text-[13px] leading-snug">{genres[i].cue}</p>
-                  </div>
-                )}
-                {/* 비평 3줄 제한 */}
-                <p className="text-white/85 text-[14px] leading-[1.85] overflow-hidden"
-                  style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>
-                  {scene.critique}
-                </p>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {/* CTA */}

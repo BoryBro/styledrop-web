@@ -497,6 +497,7 @@ export default function AuditionResult() {
           genres,
           bestSceneIdx,
           userPhotoBase64: bestPhoto ? bestPhoto.split(",")[1] : null,
+          userPhotosBase64: userPhotos.map(p => p ? p.split(",")[1] : null),
           stillImageBase64: stillImageRef.current ? stillImageRef.current.split(",")[1] : null,
         }),
       });

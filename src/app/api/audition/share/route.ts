@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { result, genres, bestSceneIdx, userPhotoBase64, stillImageBase64 } = await request.json();
+    const { result, genres, bestSceneIdx, userPhotoBase64, userPhotosBase64, stillImageBase64 } = await request.json();
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
 
     let userPhotoUrl: string | null = null;
     let stillImageUrl: string | null = null;
+    const userPhotosUrls: (string | null)[] = [null, null, null];
 
     // 베스트 씬 사진 업로드
     if (userPhotoBase64) {
@@ -44,6 +45,21 @@ export async function POST(request: NextRequest) {
         const { data } = supabase.storage.from("shared-images").getPublicUrl(`audition/${id}-photo.jpg`);
         userPhotoUrl = data.publicUrl;
       }
+    }
+
+    // 3장 전체 사진 업로드
+    if (Array.isArray(userPhotosBase64)) {
+      await Promise.all(userPhotosBase64.map(async (b64: string | null, i: number) => {
+        if (!b64) return;
+        const buf = Buffer.from(b64, "base64");
+        const { error } = await supabase.storage
+          .from("shared-images")
+          .upload(`audition/${id}-photo${i}.jpg`, buf, { contentType: "image/jpeg", upsert: false });
+        if (!error) {
+          const { data } = supabase.storage.from("shared-images").getPublicUrl(`audition/${id}-photo${i}.jpg`);
+          userPhotosUrls[i] = data.publicUrl;
+        }
+      }));
     }
 
     // AI 스틸컷 업로드
@@ -64,6 +80,7 @@ export async function POST(request: NextRequest) {
       genres_json: genres,
       best_scene_idx: bestSceneIdx ?? 0,
       user_photo_url: userPhotoUrl,
+      user_photos_json: userPhotosUrls,
       still_image_url: stillImageUrl,
     });
 

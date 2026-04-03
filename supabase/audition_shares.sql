@@ -1,4 +1,7 @@
 -- AI 오디션 공유 결과 테이블
+-- 기존 테이블에 user_photos_json 컬럼 추가 (이미 테이블이 있는 경우)
+ALTER TABLE audition_shares ADD COLUMN IF NOT EXISTS user_photos_json JSONB;
+
 CREATE TABLE IF NOT EXISTS audition_shares (
   id TEXT PRIMARY KEY,
   result_json JSONB NOT NULL,
