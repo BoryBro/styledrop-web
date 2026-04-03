@@ -16,6 +16,15 @@ type HistoryItem = {
   created_at: string;
 };
 
+type AuditionHistoryItem = {
+  id: string;
+  share_id: string;
+  avg_score: number;
+  assigned_role: string;
+  still_image_url: string | null;
+  created_at: string;
+};
+
 interface KakaoSDK {
   init: (key: string) => void;
   isInitialized: () => boolean;
@@ -53,6 +62,7 @@ export default function MyPage() {
   const { user, loading, logout } = useAuth();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [guestHistory, setGuestHistory] = useState<GuestHistoryItem[]>([]);
+  const [auditionHistory, setAuditionHistory] = useState<AuditionHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -75,11 +85,10 @@ export default function MyPage() {
       setHistoryLoading(false);
       return;
     }
-    fetch("/api/history")
-      .then(r => r.json())
-      .then(data => setHistory(data.history ?? []))
-      .catch(() => {})
-      .finally(() => setHistoryLoading(false));
+    Promise.all([
+      fetch("/api/history").then(r => r.json()).then(d => setHistory(d.history ?? [])).catch(() => {}),
+      fetch("/api/audition/history").then(r => r.json()).then(d => setAuditionHistory(d.history ?? [])).catch(() => {}),
+    ]).finally(() => setHistoryLoading(false));
     fetch("/api/credits")
       .then(r => r.json())
       .then(d => setCredits(d.credits ?? 0))
@@ -320,6 +329,56 @@ export default function MyPage() {
                 </div>
               )}
             </div>
+
+            {/* AI 오디션 기록 */}
+            {auditionHistory.length > 0 && (
+              <div>
+                <div className="flex items-baseline gap-2 mb-4 px-1">
+                  <h2 className="text-[16px] font-bold text-white">AI 오디션 기록</h2>
+                  <span className="text-[12px] text-[#555]">24시간 보관</span>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {auditionHistory.map(item => {
+                    const expiry = expiryBadge(item.created_at);
+                    const scoreColor = item.avg_score >= 70 ? "#4ade80" : item.avg_score >= 45 ? "#f97316" : "#ef4444";
+                    return (
+                      <a
+                        key={item.id}
+                        href={`/audition/share/${item.share_id}`}
+                        className="flex items-center gap-4 bg-[#111] border border-white/5 rounded-2xl px-4 py-3.5 hover:border-white/15 transition-colors"
+                      >
+                        {/* 스틸컷 썸네일 */}
+                        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-[#1A1A1A]">
+                          {item.still_image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={item.still_image_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[#333] text-[22px]">🎬</div>
+                          )}
+                        </div>
+                        {/* 정보 */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest">AI 오디션</span>
+                            <span className="text-[15px] font-extrabold" style={{ color: scoreColor }}>{item.avg_score}점</span>
+                          </div>
+                          <p className="text-white/80 text-[13px] font-bold leading-snug truncate" style={{ fontStyle: "italic" }}>
+                            {item.assigned_role}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[11px] text-[#555]">{relativeTime(item.created_at)}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${expiry.className}`}>{expiry.label}</span>
+                          </div>
+                        </div>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#444] flex-shrink-0">
+                          <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* 회원 탈퇴 */}
             <div className="mt-8 flex justify-center">

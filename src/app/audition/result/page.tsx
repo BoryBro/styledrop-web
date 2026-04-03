@@ -46,7 +46,7 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
           style={{ width: `${value}%`, backgroundColor: scoreColor(value) }}
         />
       </div>
-      <span className="text-[13px] font-bold w-8 text-right" style={{ color: scoreColor(value) }}>{value}</span>
+      <span className="text-[13px] font-bold w-10 text-right" style={{ color: scoreColor(value) }}>{value}점</span>
     </div>
   );
 }
@@ -259,109 +259,54 @@ function OverallTab({
             <h2 className="text-[22px] font-extrabold text-white leading-tight">오디션 지원서</h2>
           </div>
 
-          {/* 증명사진 + 종합점수 + 장르별 점수 */}
-          <div className="mb-5">
-            {/* 상단: 사진 + 종합점수 나란히 */}
-            <div className="flex gap-3 mb-4">
-              {/* 사진 + 도장 */}
-              <div className="relative w-[96px] h-[120px] shrink-0">
-                <div className="w-full h-full border-2 border-white/15 bg-[#0a0a0a] overflow-hidden rounded-sm">
-                  {userPhotos[bestSceneIdx] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={userPhotos[bestSceneIdx]} alt="증명사진" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[#333] text-[10px]">사진</div>
-                  )}
-                </div>
-                <div
-                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                  style={{
-                    opacity: stamped ? 1 : 0,
-                    transform: stamped ? "scale(1) rotate(-18deg)" : "scale(3) rotate(-18deg)",
-                    transition: stamped ? "opacity 0.08s ease-out, transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275)" : "none",
-                  }}
-                >
-                  <div className="px-2 py-1 border-[3px] border-[#dc2626] rounded"
-                    style={{ color: "#dc2626", fontWeight: 900, fontSize: "15px", letterSpacing: "0.08em",
-                      textShadow: "0 0 8px rgba(220,38,38,0.5)", boxShadow: "0 0 10px rgba(220,38,38,0.3)", opacity: 0.92 }}>
-                    불합격
-                  </div>
-                </div>
-              </div>
-
-              {/* 종합 점수 */}
-              <div className="flex-1 flex flex-col justify-center bg-black/40 rounded-xl px-4 py-3 border border-white/5">
-                <p className="text-[9px] text-[#555] font-bold tracking-[0.2em] uppercase mb-1">TOTAL SCORE</p>
-                <div className="flex items-end gap-1.5">
-                  <p className="text-[58px] font-black leading-none" style={{ color: scoreColor(avgScore), textShadow: `0 0 20px ${scoreColor(avgScore)}66` }}>
-                    {avgScore}
-                  </p>
-                  <p className="text-[15px] text-[#444] font-bold mb-2">/ 100</p>
-                </div>
-                <p className="text-[10px] font-bold mt-0.5" style={{ color: avgScore >= 70 ? "#4ade80" : avgScore >= 45 ? "#f97316" : "#ef4444" }}>
-                  {avgScore >= 70 ? "✓ 합격권" : avgScore >= 45 ? "△ 보류" : "✗ 불합격"}
-                </p>
-              </div>
+          {/* 배정 단역 (좌) + 종합점수 (우) */}
+          <div className="flex items-center bg-black/40 border border-white/8 rounded-xl px-4 py-4 mb-4 gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-[9px] font-bold text-[#555] uppercase tracking-widest mb-1.5">당신에게 어울리는 역할</p>
+              <p className="font-black text-[#ef4444] leading-tight"
+                style={{ fontSize: "clamp(16px, 5.5vw, 24px)", fontStyle: "italic",
+                  textShadow: "0 0 20px rgba(239,68,68,0.4)", letterSpacing: "-0.02em" }}>
+                {bestScene?.assigned_role}
+              </p>
             </div>
+            <div className="text-right shrink-0">
+              <p className="text-[9px] text-[#555] font-bold uppercase tracking-widest mb-0.5">종합점수</p>
+              <p className="font-black leading-none" style={{ fontSize: "52px", color: scoreColor(avgScore), textShadow: `0 0 20px ${scoreColor(avgScore)}66` }}>
+                {avgScore}
+              </p>
+              <p className="text-[10px] font-bold" style={{ color: avgScore >= 70 ? "#4ade80" : avgScore >= 45 ? "#f97316" : "#ef4444" }}>
+                {avgScore >= 70 ? "✓ 합격권" : avgScore >= 45 ? "△ 보류" : "✗ 불합격"}
+              </p>
+            </div>
+          </div>
 
-            {/* 하단: 장르별 점수 바 */}
-            <div className="bg-black/30 rounded-xl px-4 py-4 border border-white/8">
-              <p className="text-[11px] text-[#777] font-bold tracking-widest uppercase mb-3">장르별 점수</p>
-              <div className="flex flex-col gap-3">
-                {result.scenes.map((s, i) => {
-                  const avg = Math.round(SCORE_LABELS.reduce((sum, l) => sum + (s.scores?.[l] ?? 0), 0) / 4);
-                  return (
-                    <div key={i} className="flex items-center gap-2.5">
-                      <span className="text-[14px] w-5 text-center">{GENRE_EMOJIS[s.genre] ?? "🎬"}</span>
-                      <span className="text-[12px] text-[#888] w-12 shrink-0">{s.genre}</span>
-                      <div className="flex-1 h-2 bg-white/8 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${avg}%`, backgroundColor: scoreColor(avg) }} />
-                      </div>
-                      <span className="text-[13px] font-bold w-8 text-right" style={{ color: scoreColor(avg) }}>{avg}</span>
+          {/* 장르별 점수 바 */}
+          <div className="bg-black/30 rounded-xl px-4 py-4 border border-white/8 mb-5">
+            <p className="text-[11px] text-[#777] font-bold tracking-widest uppercase mb-3">장르별 점수</p>
+            <div className="flex flex-col gap-3">
+              {result.scenes.map((s, i) => {
+                const avg = Math.round(SCORE_LABELS.reduce((sum, l) => sum + (s.scores?.[l] ?? 0), 0) / 4);
+                return (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <span className="text-[14px] w-5 text-center">{GENRE_EMOJIS[s.genre] ?? "🎬"}</span>
+                    <span className="text-[12px] text-[#888] w-12 shrink-0">{s.genre}</span>
+                    <div className="flex-1 h-2 bg-white/8 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${avg}%`, backgroundColor: scoreColor(avg) }} />
                     </div>
-                  );
-                })}
-              </div>
+                    <span className="text-[13px] font-bold w-11 text-right" style={{ color: scoreColor(avg) }}>{avg}점</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* 배정 단역 — 병맛 강조 */}
-          <div className="bg-black/60 border border-red-900/50 rounded-xl px-4 py-4 mb-5"
-            style={{ boxShadow: "inset 0 0 20px rgba(220,38,38,0.05)" }}>
-            <p className="text-[9px] font-bold text-[#555] uppercase tracking-widest mb-2">당신에게 어울리는 역할은</p>
-            <p className="font-black leading-tight mb-1"
-              style={{ fontSize: "clamp(24px, 8vw, 36px)", color: "#ef4444",
-                textShadow: "0 0 30px rgba(239,68,68,0.5), 0 0 60px rgba(239,68,68,0.2)",
-                fontStyle: "italic", letterSpacing: "-0.02em" }}>
-              {bestScene?.assigned_role}
-            </p>
-            <p className="text-[15px] text-white/50 font-bold">입니다.</p>
-          </div>
-
-          {/* 연기 총평 한마디 */}
-          <div className="border border-[#C9571A]/30 rounded-xl px-4 py-5 mb-5 bg-[#C9571A]/8">
-            <p className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest mb-3">🎯 연기 총평 한마디</p>
-            <p className="text-white font-extrabold leading-snug"
-              style={{ fontSize: "clamp(18px, 5.5vw, 24px)" }}>
-              {result.overall_one_liner}
-            </p>
-          </div>
-
-          {/* BEST SCENE — 원본 + 스틸컷 세로 */}
+          {/* BEST SCENE — 스틸컷 full + 촬영컷 PIP 좌측하단 */}
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-3">
               <p className="text-[9px] font-bold text-[#C9571A] uppercase tracking-widest">🏆 BEST SCENE</p>
               <span className="text-[9px] text-[#555]">{GENRE_EMOJIS[bestScene?.genre] ?? "🎬"} {bestScene?.genre}</span>
             </div>
-            {/* 원본 사진 */}
-            <div className="w-full aspect-square rounded-xl overflow-hidden border border-white/8 bg-[#0f0f0f] mb-2">
-              {userPhotos[bestSceneIdx] ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={userPhotos[bestSceneIdx]} alt="원본" className="w-full h-full object-cover" />
-              ) : null}
-            </div>
-            {/* 스틸컷 */}
-            <div className="w-full aspect-square rounded-xl overflow-hidden border border-[#C9571A]/30 bg-[#0f0f0f]">
+            <div className="relative w-full aspect-square rounded-xl overflow-hidden border border-[#C9571A]/30 bg-[#0f0f0f]">
               {stillImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={stillImage} alt="AI 스틸컷" className="w-full h-full object-cover" />
@@ -371,13 +316,36 @@ function OverallTab({
                   <p className="text-[10px] text-[#444]">AI 스틸컷 생성 중...</p>
                 </div>
               )}
+              {/* 촬영컷 PIP */}
+              {userPhotos[bestSceneIdx] && (
+                <div className="absolute bottom-3 left-3 w-[80px] h-[80px] rounded-xl overflow-hidden border-2 border-white/50 shadow-2xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={userPhotos[bestSceneIdx]} alt="내 연기" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                    style={{
+                      opacity: stamped ? 1 : 0,
+                      transform: stamped ? "scale(1) rotate(-15deg)" : "scale(3) rotate(-15deg)",
+                      transition: stamped ? "opacity 0.08s ease-out, transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275)" : "none",
+                    }}>
+                    <div className="px-1.5 py-0.5 border-[2px] border-[#dc2626] rounded"
+                      style={{ color: "#dc2626", fontWeight: 900, fontSize: "10px", letterSpacing: "0.06em",
+                        textShadow: "0 0 6px rgba(220,38,38,0.6)", opacity: 0.95 }}>불합격</div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* 감독 총평 */}
-          <div className="border-t border-white/10 pt-5 mb-4">
-            <p className="text-[11px] font-bold text-[#666] uppercase tracking-widest mb-3">감독 총평</p>
-            <p className="text-white/80 text-[15px] leading-[1.9]">{result.overall_critique}</p>
+          {/* 감독 총평 (one-liner + 상세 총평 병합) */}
+          <div className="border border-[#C9571A]/30 rounded-xl px-4 py-5 mb-5 bg-[#C9571A]/5">
+            <p className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest mb-3">🎬 감독 총평</p>
+            <p className="text-white font-extrabold leading-snug mb-4"
+              style={{ fontSize: "clamp(17px, 5vw, 22px)" }}>
+              {result.overall_one_liner}
+            </p>
+            <div className="border-t border-white/10 pt-4">
+              <p className="text-white/80 text-[15px] leading-[1.9]">{result.overall_critique}</p>
+            </div>
           </div>
 
           <div className="border-t border-white/5 pt-3 flex items-center justify-between">
@@ -450,6 +418,17 @@ export default function AuditionResult() {
           stillImageRef.current = dataUrl;
           setStillImage(dataUrl);
           setPhase("ready");
+          // 로그인 유저 히스토리 저장 (fire and forget)
+          fetch("/api/audition/history", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              result: parsed,
+              genres: genreRaw ? JSON.parse(genreRaw) : [],
+              bestSceneIdx: bestIdx,
+              stillImageBase64: data.image,
+            }),
+          }).catch(() => {});
         })
         .catch(err => {
           setErrorMsg(err.message ?? "스틸컷 생성에 실패했어요.");
@@ -640,32 +619,26 @@ export default function AuditionResult() {
             <OverallTab result={result} userPhotos={userPhotos} stillImage={stillImageRef.current} bestSceneIdx={bestSceneIdx} />
           ) : scene ? (
             <>
-              {/* 장르 타이틀 */}
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2.5">
-                  <span className="text-[15px]">{GENRE_EMOJIS[scene.genre] ?? "🎬"}</span>
-                  <span className="text-[11px] font-bold text-[#C9571A] tracking-[0.2em] uppercase">{scene.genre} · SCENE {activeTab + 1}</span>
-                </div>
-                {genres[activeTab] && (
-                  <div className="bg-[#111] border-l-[3px] border-[#C9571A] rounded-r-xl px-4 py-3">
-                    <p className="text-[9px] font-bold text-[#555] uppercase tracking-widest mb-1.5">📋 지시 상황</p>
-                    <p className="text-white text-[15px] font-bold leading-snug">{genres[activeTab].cue}</p>
-                  </div>
+              {/* 내 연기 사진 — 최상단 */}
+              <div className="mb-4 relative rounded-xl overflow-hidden border border-white/8 aspect-square bg-[#111]">
+                {userPhoto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={userPhoto} alt="내 사진" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[#333] text-[11px]">없음</div>
                 )}
+                <div className="absolute bottom-2.5 left-2.5 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                  <span className="text-[11px] font-bold text-[#C9571A] tracking-wide">{GENRE_EMOJIS[scene.genre] ?? "🎬"} {scene.genre} · SCENE {activeTab + 1}</span>
+                </div>
               </div>
 
-              {/* 내 연기 사진 */}
-              <div className="mb-3">
-                <p className="text-[9px] font-bold text-[#444] uppercase tracking-widest text-center mb-1.5">내 연기</p>
-                <div className="relative rounded-xl overflow-hidden border border-white/8 aspect-square bg-[#111]">
-                  {userPhoto ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={userPhoto} alt="내 사진" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[#333] text-[11px]">없음</div>
-                  )}
+              {/* 지시 상황 */}
+              {genres[activeTab] && (
+                <div className="bg-[#111] border-l-[3px] border-[#C9571A] rounded-r-xl px-4 py-3 mb-4">
+                  <p className="text-[9px] font-bold text-[#555] uppercase tracking-widest mb-1.5">📋 지시 상황</p>
+                  <p className="text-white text-[15px] font-bold leading-snug">{genres[activeTab].cue}</p>
                 </div>
-              </div>
+              )}
 
               {/* 감독의 한마디 */}
               <div className="bg-[#111] border border-white/10 rounded-2xl px-4 py-5 mb-3">
@@ -689,7 +662,7 @@ export default function AuditionResult() {
                     <span className="text-[12px] text-[#666]">평균</span>
                     <span className="text-[22px] font-extrabold" style={{ color: scoreColor(Math.round(SCORE_LABELS.reduce((s, l) => s + (scene.scores[l] ?? 0), 0) / 4)) }}>
                       {Math.round(SCORE_LABELS.reduce((s, l) => s + (scene.scores[l] ?? 0), 0) / 4)}
-                      <span className="text-[13px] text-[#555] ml-1">/ 100</span>
+                      <span className="text-[13px] ml-0.5">점</span>
                     </span>
                   </div>
                 </div>

@@ -61,57 +61,69 @@ export default async function AuditionSharePage({ params }: { params: Promise<{ 
 
       <main className="flex-1 max-w-sm mx-auto w-full px-4 py-6 flex flex-col gap-4 pb-36">
 
-        {/* 타이틀 배너 */}
-        <div className="text-center mb-2">
+        {/* 타이틀 */}
+        <div className="text-center mb-1">
           <p className="text-[11px] font-bold text-[#C9571A] tracking-[0.2em] uppercase mb-1">친구의 오디션 결과</p>
-          <h1 className="text-[22px] font-extrabold text-white">무명배우 탈출기</h1>
+          <h1 className="text-[22px] font-extrabold text-white">AI 오디션</h1>
         </div>
 
-        {/* 베스트 씬 사진 + 스틸컷 */}
+        {/* 스틸컷 full + 촬영컷 PIP 좌측하단 */}
         {(userPhotoUrl || stillImageUrl) && (
-          <div className="flex flex-col gap-2">
-            {userPhotoUrl && (
-              <div className="w-full aspect-square rounded-xl overflow-hidden border border-white/10 bg-[#111]">
+          <div className="relative w-full aspect-square rounded-xl overflow-hidden border border-[#C9571A]/30 bg-[#111]">
+            {stillImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={stillImageUrl} alt="AI 스틸컷" className="w-full h-full object-cover" />
+            ) : userPhotoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={userPhotoUrl} alt="오디션 사진" className="w-full h-full object-cover" />
+            ) : null}
+            {/* 촬영컷 PIP */}
+            {userPhotoUrl && stillImageUrl && (
+              <div className="absolute bottom-3 left-3 w-[80px] h-[80px] rounded-xl overflow-hidden border-2 border-white/50 shadow-2xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={userPhotoUrl} alt="오디션 사진" className="w-full h-full object-cover" />
+                <img src={userPhotoUrl} alt="내 연기" className="w-full h-full object-cover" />
               </div>
             )}
-            {stillImageUrl && (
-              <div className="w-full aspect-square rounded-xl overflow-hidden border border-[#C9571A]/30 bg-[#111]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={stillImageUrl} alt="AI 스틸컷" className="w-full h-full object-cover" />
-                <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-0.5 rounded text-[10px] text-[#C9571A] font-bold">AI 스틸컷</div>
-              </div>
-            )}
+            <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full">
+              <span className="text-[10px] font-bold text-[#C9571A]">🏆 BEST SCENE · {GENRE_EMOJIS[bestScene?.genre] ?? "🎬"} {bestScene?.genre}</span>
+            </div>
           </div>
         )}
 
-        {/* 종합 점수 */}
-        <div className="bg-[#111] border border-white/10 rounded-2xl px-5 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-[11px] text-[#666] font-bold uppercase tracking-widest mb-1">종합 점수</p>
-            <div className="flex items-end gap-1.5">
-              <span className="text-[52px] font-black leading-none" style={{ color: scoreColor(avgScore) }}>{avgScore}</span>
-              <span className="text-[15px] text-[#444] font-bold mb-1.5">/ 100</span>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-[11px] text-[#666] mb-1.5">배정 단역</p>
-            <p className="font-black text-[#ef4444] leading-tight text-right" style={{ fontSize: "clamp(14px, 4.5vw, 20px)", fontStyle: "italic" }}>
+        {/* 배정 단역 (좌) + 종합점수 (우) */}
+        <div className="flex items-center bg-[#111] border border-white/10 rounded-2xl px-4 py-4 gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-[9px] font-bold text-[#555] uppercase tracking-widest mb-1.5">배정 단역</p>
+            <p className="font-black text-[#ef4444] leading-tight"
+              style={{ fontSize: "clamp(15px, 5vw, 22px)", fontStyle: "italic",
+                textShadow: "0 0 20px rgba(239,68,68,0.4)", letterSpacing: "-0.02em" }}>
               {bestScene?.assigned_role}
             </p>
           </div>
-        </div>
-
-        {/* 총평 한마디 */}
-        {result.overall_one_liner && (
-          <div className="border border-[#C9571A]/30 rounded-xl px-4 py-5 bg-[#C9571A]/8">
-            <p className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest mb-3">🎯 연기 총평 한마디</p>
-            <p className="text-white font-extrabold leading-snug" style={{ fontSize: "clamp(16px, 5vw, 22px)" }}>
-              {result.overall_one_liner}
+          <div className="text-right shrink-0">
+            <p className="text-[9px] text-[#555] font-bold uppercase tracking-widest mb-0.5">종합점수</p>
+            <p className="font-black leading-none" style={{ fontSize: "48px", color: scoreColor(avgScore) }}>
+              {avgScore}
+            </p>
+            <p className="text-[10px] font-bold" style={{ color: avgScore >= 70 ? "#4ade80" : avgScore >= 45 ? "#f97316" : "#ef4444" }}>
+              {avgScore >= 70 ? "✓ 합격권" : avgScore >= 45 ? "△ 보류" : "✗ 불합격"}
             </p>
           </div>
-        )}
+        </div>
+
+        {/* 감독 총평 (one-liner + 상세 총평 병합) */}
+        <div className="border border-[#C9571A]/30 rounded-xl px-4 py-5 bg-[#C9571A]/5">
+          <p className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest mb-3">🎬 감독 총평</p>
+          {result.overall_one_liner && (
+            <p className="text-white font-extrabold leading-snug mb-4"
+              style={{ fontSize: "clamp(17px, 5vw, 22px)" }}>
+              {result.overall_one_liner}
+            </p>
+          )}
+          <div className="border-t border-white/10 pt-4">
+            <p className="text-white/80 text-[15px] leading-[1.9]">{result.overall_critique}</p>
+          </div>
+        </div>
 
         {/* 장르별 씬 */}
         <div className="flex flex-col gap-3">
@@ -122,26 +134,24 @@ export default async function AuditionSharePage({ params }: { params: Promise<{ 
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-[16px]">{GENRE_EMOJIS[scene.genre] ?? "🎬"}</span>
-                    <span className="text-[12px] font-bold text-[#C9571A] uppercase tracking-wide">{scene.genre}</span>
+                    <span className="text-[12px] font-bold text-[#C9571A] tracking-wide">{scene.genre}</span>
                   </div>
-                  <span className="text-[20px] font-extrabold" style={{ color: scoreColor(avg) }}>{avg}</span>
+                  <span className="text-[20px] font-extrabold" style={{ color: scoreColor(avg) }}>{avg}점</span>
                 </div>
                 {genres[i]?.cue && (
                   <div className="bg-black/40 border-l-[3px] border-[#C9571A] rounded-r-lg px-3 py-2 mb-3">
-                    <p className="text-[11px] text-[#666] mb-1">지시 상황</p>
+                    <p className="text-[10px] text-[#666] mb-1 uppercase tracking-widest">지시 상황</p>
                     <p className="text-white/80 text-[13px] leading-snug">{genres[i].cue}</p>
                   </div>
                 )}
-                <p className="text-white/85 text-[14px] leading-[1.85]">{scene.critique}</p>
+                {/* 비평 3줄 제한 */}
+                <p className="text-white/85 text-[14px] leading-[1.85] overflow-hidden"
+                  style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>
+                  {scene.critique}
+                </p>
               </div>
             );
           })}
-        </div>
-
-        {/* 감독 총평 */}
-        <div className="bg-[#0D0D0D] border border-white/8 rounded-2xl px-4 py-5">
-          <p className="text-[11px] font-bold text-[#666] uppercase tracking-widest mb-3">감독 총평</p>
-          <p className="text-white/80 text-[15px] leading-[1.9]">{result.overall_critique}</p>
         </div>
 
         {/* CTA */}

@@ -566,7 +566,7 @@ export default function AuditionSolo() {
           <div className="text-[52px]">🎬</div>
           <div>
             <p className="text-[11px] font-bold text-[#C9571A] tracking-[0.2em] uppercase mb-2">AI 오디션</p>
-            <h1 className="text-[28px] font-extrabold text-white leading-tight">무명배우 탈출기</h1>
+            <h1 className="text-[28px] font-extrabold text-white leading-tight">AI 오디션</h1>
             <p className="text-[13px] text-[#555] mt-2 leading-relaxed">
               장르 3개를 고르고 표정 연기를 해봐요.<br />
               AI 감독이 냉혹하게 심사합니다.
