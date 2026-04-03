@@ -17,6 +17,7 @@ type SceneResult = {
 type AuditionResult = {
   scenes: SceneResult[];
   overall_critique: string;
+  overall_one_liner: string;
 };
 
 type GenreMeta = { genre: string; cue: string };
@@ -213,11 +214,13 @@ async function buildSceneSaveCanvas(
 function OverallTab({
   result,
   userPhotos,
-  stillImages,
+  stillImage,
+  bestSceneIdx,
 }: {
   result: AuditionResult;
   userPhotos: string[];
-  stillImages: (string | null)[];
+  stillImage: string | null;
+  bestSceneIdx: number;
 }) {
   const [stamped, setStamped] = useState(false);
 
@@ -234,9 +237,11 @@ function OverallTab({
     }, 0) / result.scenes.length
   );
 
+  const bestScene = result.scenes[bestSceneIdx];
+
   return (
     <div className="flex flex-col gap-4">
-      {/* 이력서 카드 */}
+      {/* 오디션 지원서 카드 */}
       <div
         className="relative rounded-2xl overflow-hidden border border-white/10"
         style={{
@@ -244,33 +249,27 @@ function OverallTab({
           boxShadow: "inset 0 0 40px rgba(0,0,0,0.6)",
         }}
       >
-        {/* 종이 질감 노이즈 */}
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E\")" }} />
 
-        <div className="relative px-6 py-6">
+        <div className="relative px-5 py-6">
           {/* 헤더 */}
-          <div className="border-b border-white/10 pb-4 mb-6">
-            <p className="text-[10px] text-[#666] font-bold tracking-[0.25em] uppercase mb-2">CASTING DOCUMENT · 2026</p>
-            <h2 className="text-[20px] font-extrabold text-white leading-tight mb-2">오디션 지원서</h2>
-            <p className="text-[14px] text-[#C9571A] font-bold">
-              지원 배역: {result.scenes[0]?.assigned_role}
-            </p>
+          <div className="mb-5">
+            <p className="text-[10px] text-[#555] font-bold tracking-[0.25em] uppercase mb-1">CASTING DOCUMENT · 2026</p>
+            <h2 className="text-[22px] font-extrabold text-white leading-tight">오디션 지원서</h2>
           </div>
 
-          {/* 증명사진 + 도장 */}
-          <div className="flex gap-5 mb-6">
-            <div className="relative w-32 h-40 shrink-0">
-              {/* 증명사진 프레임 */}
+          {/* 증명사진 + 종합점수 */}
+          <div className="flex gap-4 mb-5">
+            <div className="relative w-[90px] h-[112px] shrink-0">
               <div className="w-full h-full border-2 border-white/15 bg-[#0a0a0a] overflow-hidden">
-                {userPhotos[0] ? (
+                {userPhotos[bestSceneIdx] ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={userPhotos[0]} alt="증명사진" className="w-full h-full object-cover" />
+                  <img src={userPhotos[bestSceneIdx]} alt="증명사진" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[#333] text-[10px]">사진 없음</div>
+                  <div className="w-full h-full flex items-center justify-center text-[#333] text-[10px]">사진</div>
                 )}
               </div>
-              {/* 불합격 도장 */}
               <div
                 className="absolute inset-0 flex items-center justify-center pointer-events-none"
                 style={{
@@ -279,75 +278,97 @@ function OverallTab({
                   transition: stamped ? "opacity 0.08s ease-out, transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275)" : "none",
                 }}
               >
-                <div
-                  className="px-3 py-1.5 border-[3px] border-[#dc2626] rounded"
-                  style={{
-                    color: "#dc2626",
-                    fontFamily: "sans-serif",
-                    fontWeight: 900,
-                    fontSize: "18px",
-                    letterSpacing: "0.05em",
-                    textShadow: "0 0 8px rgba(220,38,38,0.5)",
-                    boxShadow: "0 0 10px rgba(220,38,38,0.3)",
-                    opacity: 0.92,
-                  }}
-                >
+                <div className="px-2.5 py-1 border-[3px] border-[#dc2626] rounded"
+                  style={{ color: "#dc2626", fontWeight: 900, fontSize: "16px", letterSpacing: "0.05em",
+                    textShadow: "0 0 8px rgba(220,38,38,0.5)", boxShadow: "0 0 10px rgba(220,38,38,0.3)", opacity: 0.92 }}>
                   불합격
                 </div>
               </div>
             </div>
 
-            {/* 지원 정보 */}
-            <div className="flex-1 flex flex-col gap-3">
+            <div className="flex-1 flex flex-col justify-between">
               <div>
-                <p className="text-[10px] text-[#666] font-bold tracking-widest uppercase mb-1">종합 점수</p>
-                <p className="text-[32px] font-extrabold leading-none" style={{ color: scoreColor(avgScore) }}>
-                  {avgScore}<span className="text-[15px] text-[#666] ml-2">/ 100</span>
+                <p className="text-[9px] text-[#555] font-bold tracking-widest uppercase mb-1">종합 점수</p>
+                <p className="text-[52px] font-extrabold leading-none" style={{ color: scoreColor(avgScore) }}>
+                  {avgScore}
                 </p>
+                <p className="text-[13px] text-[#444] font-bold">/ 100</p>
               </div>
-              <div className="flex flex-col gap-2">
-                {result.scenes.map((s, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="text-[12px]">{GENRE_EMOJIS[s.genre] ?? "🎬"}</span>
-                    <span className="text-[12px] text-[#888] font-medium">{s.genre}</span>
-                    <span className="text-[12px] font-bold text-[#666]">→</span>
-                    <span className="text-[12px] text-[#999] break-all">{s.assigned_role}</span>
-                  </div>
-                ))}
+              <div className="flex flex-col gap-1.5 mt-2">
+                {result.scenes.map((s, i) => {
+                  const avg = Math.round(SCORE_LABELS.reduce((sum, l) => sum + (s.scores?.[l] ?? 0), 0) / 4);
+                  return (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <span className="text-[11px]">{GENRE_EMOJIS[s.genre] ?? "🎬"}</span>
+                      <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${avg}%`, backgroundColor: scoreColor(avg) }} />
+                      </div>
+                      <span className="text-[11px] font-bold w-6 text-right" style={{ color: scoreColor(avg) }}>{avg}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* 장르별 사진 (일상, 스릴러, 액션) */}
-          <div className="border-t border-white/8 pt-5 mb-5">
-            <p className="text-[10px] font-bold text-[#C9571A] uppercase tracking-widest mb-4">🎬 장르별 연기</p>
-            <div className="grid grid-cols-3 gap-3">
-              {result.scenes.map((scene, i) => (
-                <div key={i} className="flex flex-col gap-2">
-                  <p className="text-[11px] font-bold text-[#666] text-center">{scene.genre}</p>
-                  <div className="relative rounded-lg overflow-hidden border border-white/8 aspect-square bg-[#0f0f0f]">
-                    {stillImages[i] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={stillImages[i]!} alt={scene.genre} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[#333] text-[10px]">로딩</div>
-                    )}
-                  </div>
+          {/* 배정 단역 — 병맛 강조 */}
+          <div className="bg-black/60 border border-red-900/50 rounded-xl px-4 py-4 mb-5"
+            style={{ boxShadow: "inset 0 0 20px rgba(220,38,38,0.05)" }}>
+            <p className="text-[9px] font-bold text-[#555] uppercase tracking-widest mb-2">당신에게 어울리는 역할은</p>
+            <p className="font-black leading-tight mb-1"
+              style={{ fontSize: "clamp(24px, 8vw, 36px)", color: "#ef4444",
+                textShadow: "0 0 30px rgba(239,68,68,0.5), 0 0 60px rgba(239,68,68,0.2)",
+                fontStyle: "italic", letterSpacing: "-0.02em" }}>
+              {bestScene?.assigned_role}
+            </p>
+            <p className="text-[15px] text-white/50 font-bold">입니다.</p>
+          </div>
+
+          {/* 연기 총평 한마디 */}
+          <div className="border border-[#C9571A]/20 rounded-xl px-4 py-4 mb-5 bg-[#C9571A]/5">
+            <p className="text-[9px] font-bold text-[#C9571A] uppercase tracking-widest mb-2">🎯 연기 총평 한마디</p>
+            <p className="text-white font-extrabold leading-snug"
+              style={{ fontSize: "clamp(16px, 5vw, 22px)" }}>
+              {result.overall_one_liner}
+            </p>
+          </div>
+
+          {/* BEST SCENE — 원본 + 스틸컷 세로 */}
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-3">
+              <p className="text-[9px] font-bold text-[#C9571A] uppercase tracking-widest">🏆 BEST SCENE</p>
+              <span className="text-[9px] text-[#555]">{GENRE_EMOJIS[bestScene?.genre] ?? "🎬"} {bestScene?.genre}</span>
+            </div>
+            {/* 원본 사진 */}
+            <div className="w-full aspect-square rounded-xl overflow-hidden border border-white/8 bg-[#0f0f0f] mb-2">
+              {userPhotos[bestSceneIdx] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={userPhotos[bestSceneIdx]} alt="원본" className="w-full h-full object-cover" />
+              ) : null}
+            </div>
+            {/* 스틸컷 */}
+            <div className="w-full aspect-square rounded-xl overflow-hidden border border-[#C9571A]/30 bg-[#0f0f0f]">
+              {stillImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={stillImage} alt="AI 스틸컷" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                  <div className="w-8 h-8 rounded-full border-2 border-transparent border-t-[#C9571A]" style={{ animation: "spin 0.8s linear infinite" }} />
+                  <p className="text-[10px] text-[#444]">AI 스틸컷 생성 중...</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
-          {/* 총평 */}
-          <div className="border-t border-white/8 pt-5">
-            <p className="text-[10px] font-bold text-[#C9571A] uppercase tracking-widest mb-3">🎬 감독 총평</p>
-            <p className="text-[#aaa] text-[14px] leading-[2]">{result.overall_critique}</p>
+          {/* 감독 총평 */}
+          <div className="border-t border-white/8 pt-4 mb-4">
+            <p className="text-[9px] font-bold text-[#444] uppercase tracking-widest mb-2">감독 총평</p>
+            <p className="text-[#888] text-[13px] leading-relaxed">{result.overall_critique}</p>
           </div>
 
-          {/* 최종 도장 줄 */}
-          <div className="mt-5 border-t border-white/5 pt-4 flex items-center justify-between">
-            <p className="text-[10px] text-[#444] font-mono">STYLEDROP CASTING DEPT.</p>
-            <p className="text-[10px] text-[#444] font-mono">2026. 04.</p>
+          <div className="border-t border-white/5 pt-3 flex items-center justify-between">
+            <p className="text-[9px] text-[#333] font-mono">STYLEDROP CASTING DEPT.</p>
+            <p className="text-[9px] text-[#333] font-mono">2026. 04.</p>
           </div>
         </div>
       </div>
@@ -359,14 +380,15 @@ function OverallTab({
 export default function AuditionResult() {
   const [result, setResult] = useState<AuditionResult | null>(null);
   const [userPhotos, setUserPhotos] = useState<string[]>([]);
-  const [stillImages, setStillImages] = useState<(string | null)[]>([null, null, null]);
+  const [stillImage, setStillImage] = useState<string | null>(null);
+  const [bestSceneIdx, setBestSceneIdx] = useState<number>(0);
   const [genres, setGenres] = useState<GenreMeta[]>([]);
   const [phase, setPhase] = useState<Phase>("generating");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0); // 0~2 = 씬, 3 = 총평
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
-  const stillImagesRef = useRef<(string | null)[]>([null, null, null]);
+  const stillImageRef = useRef<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -390,21 +412,29 @@ export default function AuditionResult() {
         return;
       }
 
-      const stylePrompts = parsed.scenes.map(s => s.style_prompt);
+      // 베스트 씬 계산 (평균 점수 가장 높은 씬)
+      const bestIdx = parsed.scenes.reduce((best, scene, i) => {
+        const avg = SCORE_LABELS.reduce((s, l) => s + (scene.scores?.[l] ?? 0), 0) / 4;
+        const bestAvg = SCORE_LABELS.reduce((s, l) => s + (parsed.scenes[best].scores?.[l] ?? 0), 0) / 4;
+        return avg > bestAvg ? i : best;
+      }, 0);
+      setBestSceneIdx(bestIdx);
 
       fetch("/api/audition/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ images: base64List, mimeType: "image/jpeg", stylePrompts }),
+        body: JSON.stringify({
+          image: base64List[bestIdx],
+          mimeType: "image/jpeg",
+          stylePrompt: parsed.scenes[bestIdx].style_prompt,
+        }),
       })
         .then(async res => {
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? "생성 실패");
-          const dataUrls = (data.images as string[]).map(
-            (b64: string) => `data:image/jpeg;base64,${b64}`
-          );
-          stillImagesRef.current = dataUrls;
-          setStillImages(dataUrls);
+          const dataUrl = `data:image/jpeg;base64,${data.image}`;
+          stillImageRef.current = dataUrl;
+          setStillImage(dataUrl);
           setPhase("ready");
         })
         .catch(err => {
@@ -426,36 +456,21 @@ export default function AuditionResult() {
       let blob: Blob;
       let filename: string;
       if (isOverall) {
-        // 총평 탭 — 현재 화면을 html2canvas 없이 씬 3개 세로 합성
-        const scenes = result.scenes;
-        const blobs = await Promise.all(
-          scenes.map((s, i) => buildSceneSaveCanvas(
-            s, i,
-            userPhotos[i] ?? null,
-            stillImagesRef.current[i],
-            genres[i] ?? null
-          ))
+        blob = await buildSceneSaveCanvas(
+          result.scenes[bestSceneIdx],
+          bestSceneIdx,
+          userPhotos[bestSceneIdx] ?? null,
+          stillImageRef.current,
+          genres[bestSceneIdx] ?? null
         );
-        // 3장을 세로로 합칩니다
-        const images = await Promise.all(blobs.map(b => loadImage(URL.createObjectURL(b))));
-        const W = images[0].width;
-        const H = images.reduce((s, img) => s + img.height, 0) + 8;
-        const canvas = document.createElement("canvas");
-        canvas.width = W; canvas.height = H;
-        const ctx = canvas.getContext("2d")!;
-        ctx.fillStyle = "#0A0A0A";
-        ctx.fillRect(0, 0, W, H);
-        let y = 0;
-        for (const img of images) { ctx.drawImage(img, 0, y); y += img.height + 4; }
-        blob = await new Promise(res => canvas.toBlob(b => res(b!), "image/jpeg", 0.92));
-        filename = "styledrop_audition_all.jpg";
+        filename = "styledrop_audition_best.jpg";
       } else {
         const sceneIdx = activeTab;
         blob = await buildSceneSaveCanvas(
           result.scenes[sceneIdx],
           sceneIdx,
           userPhotos[sceneIdx] ?? null,
-          stillImagesRef.current[sceneIdx],
+          null,
           genres[sceneIdx] ?? null
         );
         filename = `styledrop_${result.scenes[sceneIdx].genre}_scene${sceneIdx + 1}.jpg`;
@@ -505,26 +520,26 @@ export default function AuditionResult() {
   // ── GENERATING ──────────────────────────────────────────────────────
   if (phase === "generating") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center gap-6 px-6 text-center">
+      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center gap-8 px-6 text-center">
         <style>{`
           @keyframes spin { to { transform: rotate(360deg); } }
           @keyframes dot-bounce { 0%,80%,100%{opacity:0.3;transform:scale(0.8)} 40%{opacity:1;transform:scale(1.2)} }
         `}</style>
-        <div className="relative w-28 h-28">
+        <div className="relative w-[134px] h-[134px]">
           {userPhotos[0] && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={userPhotos[0]} alt="" className="w-28 h-28 rounded-2xl object-cover border border-white/10 opacity-40" />
+            <img src={userPhotos[0]} alt="" className="w-[134px] h-[134px] rounded-2xl object-cover border border-white/10 opacity-40" />
           )}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-14 h-14 rounded-full border-4 border-transparent border-t-[#C9571A] border-r-[#C9571A]/30" style={{ animation: "spin 1s linear infinite" }} />
+            <div className="w-[67px] h-[67px] rounded-full border-[5px] border-transparent border-t-[#C9571A] border-r-[#C9571A]/30" style={{ animation: "spin 1s linear infinite" }} />
           </div>
         </div>
         <div>
-          <p className="text-[#C9571A] text-[11px] font-bold tracking-[0.2em] uppercase mb-2">🎬 스틸컷 제작 중</p>
-          <p className="text-white font-bold text-[18px] leading-snug">감독님이 배역을<br />결정하고 있습니다...</p>
-          <div className="flex items-center justify-center gap-1.5 mt-4">
+          <p className="text-[#C9571A] text-[13px] font-bold tracking-[0.2em] uppercase mb-3">🎬 베스트 스틸컷 제작 중</p>
+          <p className="text-white font-bold text-[22px] leading-snug">감독님이 배역을<br />결정하고 있습니다...</p>
+          <div className="flex items-center justify-center gap-2 mt-5">
             {[0, 1, 2].map(i => (
-              <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#C9571A]" style={{ animation: `dot-bounce 1.4s ease-in-out ${i * 0.2}s infinite` }} />
+              <div key={i} className="w-2 h-2 rounded-full bg-[#C9571A]" style={{ animation: `dot-bounce 1.4s ease-in-out ${i * 0.2}s infinite` }} />
             ))}
           </div>
         </div>
@@ -547,7 +562,6 @@ export default function AuditionResult() {
   // ── READY ────────────────────────────────────────────────────────────
   const scene = !isOverall ? result.scenes[activeTab] : null;
   const userPhoto = !isOverall ? (userPhotos[activeTab] ?? null) : null;
-  const stillImage = !isOverall ? (stillImages[activeTab] ?? null) : null;
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
@@ -592,7 +606,7 @@ export default function AuditionResult() {
         <div className="scene-content" key={activeTab}>
 
           {isOverall ? (
-            <OverallTab result={result} userPhotos={userPhotos} stillImages={stillImagesRef.current} />
+            <OverallTab result={result} userPhotos={userPhotos} stillImage={stillImageRef.current} bestSceneIdx={bestSceneIdx} />
           ) : scene ? (
             <>
               {/* 장르 타이틀 */}
@@ -609,35 +623,16 @@ export default function AuditionResult() {
                 )}
               </div>
 
-              {/* 사진 2장 */}
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <div className="flex flex-col gap-1.5">
-                  <p className="text-[9px] font-bold text-[#444] uppercase tracking-widest text-center">내 연기</p>
-                  <div className="relative rounded-xl overflow-hidden border border-white/8 aspect-square bg-[#111]">
-                    {userPhoto ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={userPhoto} alt="내 사진" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[#333] text-[11px]">없음</div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <p className="text-[9px] font-bold text-[#C9571A] uppercase tracking-widest text-center">AI 스틸컷</p>
-                  <div className="relative rounded-xl overflow-hidden border border-[#C9571A]/20 aspect-square bg-[#111]">
-                    {stillImage ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={stillImage} alt="스틸컷" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 pointer-events-none"
-                          style={{ backgroundImage: "repeating-linear-gradient(90deg,transparent,transparent 3px,rgba(255,255,255,0.015) 3px,rgba(255,255,255,0.015) 4px)", opacity: 0.6 }} />
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="w-6 h-6 rounded-full border-2 border-transparent border-t-[#C9571A]" style={{ animation: "spin 0.8s linear infinite" }} />
-                      </div>
-                    )}
-                  </div>
+              {/* 내 연기 사진 */}
+              <div className="mb-3">
+                <p className="text-[9px] font-bold text-[#444] uppercase tracking-widest text-center mb-1.5">내 연기</p>
+                <div className="relative rounded-xl overflow-hidden border border-white/8 aspect-square bg-[#111]">
+                  {userPhoto ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={userPhoto} alt="내 사진" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[#333] text-[11px]">없음</div>
+                  )}
                 </div>
               </div>
 

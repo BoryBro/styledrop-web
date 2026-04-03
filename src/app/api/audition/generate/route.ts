@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   const session = parseSession(request);
   const now = Date.now();
 
-  // ── 회원: 크레딧 3개 차감 ─────────────────────────────────────────
+  // ── 회원: 크레딧 2개 차감 (이미지 1장으로 줄어서 2크레딧) ──────────────
   if (session) {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,16 +31,15 @@ export async function POST(request: NextRequest) {
       .select("credits")
       .eq("user_id", session.id)
       .single();
-    if (!creditRow || creditRow.credits < 3) {
+    if (!creditRow || creditRow.credits < 2) {
       return NextResponse.json(
-        { error: "크레딧이 부족해요. AI 오디션은 3크레딧이 필요합니다!" },
+        { error: "크레딧이 부족해요. AI 오디션은 2크레딧이 필요합니다!" },
         { status: 429 }
       );
     }
     const { error: e1 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
     const { error: e2 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
-    const { error: e3 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
-    if (e1 || e2 || e3) {
+    if (e1 || e2) {
       return NextResponse.json(
         { error: "크레딧 차감에 실패했어요. 다시 시도해주세요." },
         { status: 500 }
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
   }
   if (!session && guestCount >= GUEST_LIMIT) {
     return NextResponse.json(
-      { error: "무료 체험이 끝났어요. 카카오 로그인하면 3크레딧을 무료로 받을 수 있어요!" },
+      { error: "무료 체험이 끝났어요. 카카오 로그인하면 2크레딧을 무료로 받을 수 있어요!" },
       { status: 429 }
     );
   }
@@ -74,49 +73,43 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    const { images, mimeType, stylePrompts } = await request.json();
+    const { image, mimeType, stylePrompt } = await request.json();
 
-    if (!Array.isArray(images) || images.length !== 3 || !Array.isArray(stylePrompts) || stylePrompts.length !== 3) {
-      return NextResponse.json({ error: "이미지 3장과 프롬프트 3개가 필요합니다." }, { status: 400 });
+    if (!image || !stylePrompt) {
+      return NextResponse.json({ error: "이미지와 프롬프트가 필요합니다." }, { status: 400 });
     }
 
     // ── Mock 모드: API 호출 없이 원본 이미지를 그대로 반환 ─────────────
     if (process.env.MOCK_GEMINI === "true") {
       console.log("[MOCK] audition/generate — Gemini API 호출 생략, 원본 이미지 반환");
-      return NextResponse.json({ images, mimeType: "image/jpeg" });
+      return NextResponse.json({ image, mimeType: "image/jpeg" });
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
-    // 씬별 이미지 생성 (순차 처리)
-    const generatedImages: string[] = [];
-    for (let i = 0; i < 3; i++) {
-      const promptText = `이 사람의 얼굴 형태와 이목구비를 100% 유지하면서, 다음 배역에 맞게 합성해: ${stylePrompts[i]}`;
-      const contents = [
-        { inlineData: { mimeType: (mimeType || "image/jpeg") as "image/jpeg", data: images[i] } },
-        { text: promptText },
-      ];
+    const promptText = `이 사람의 얼굴 형태와 이목구비를 100% 유지하면서, 다음 배역에 맞게 합성해: ${stylePrompt}`;
+    const contents = [
+      { inlineData: { mimeType: (mimeType || "image/jpeg") as "image/jpeg", data: image } },
+      { text: promptText },
+    ];
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.1-flash-image-preview",
-        contents,
-        config: { responseModalities: ["TEXT", "IMAGE"] },
-      });
+    const response = await ai.models.generateContent({
+      model: "gemini-3.1-flash-image-preview",
+      contents,
+      config: { responseModalities: ["TEXT", "IMAGE"] },
+    });
 
-      const parts = response.candidates?.[0]?.content?.parts || [];
-      let found = false;
-      for (const part of parts) {
-        if (part.inlineData) {
-          const imageData = session
-            ? part.inlineData.data!
-            : await addWatermark(part.inlineData.data!);
-          generatedImages.push(imageData);
-          found = true;
-          break;
-        }
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    let generatedImage: string | null = null;
+    for (const part of parts) {
+      if (part.inlineData) {
+        generatedImage = session
+          ? part.inlineData.data!
+          : await addWatermark(part.inlineData.data!);
+        break;
       }
-      if (!found) throw new Error(`씬 ${i + 1} 이미지 생성 실패`);
     }
+    if (!generatedImage) throw new Error("스틸컷 이미지 생성 실패");
 
     // 사용 횟수 로깅
     createClient(
@@ -124,7 +117,7 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_KEY!
     ).from("style_usage").insert({ style_id: "audition" }).then(() => {});
 
-    const res = NextResponse.json({ images: generatedImages, mimeType: "image/jpeg" });
+    const res = NextResponse.json({ image: generatedImage, mimeType: "image/jpeg" });
     if (!session) res.cookies.set(GUEST_COOKIE, cookieValue, cookieOptions);
     return res;
   } catch (error: unknown) {
