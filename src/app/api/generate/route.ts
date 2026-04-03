@@ -364,10 +364,14 @@ export async function POST(request: NextRequest) {
     }
 
     const refCount = loadedRefs.length;
-    // 항상 1개의 레퍼런스만 보내므로 지시문 간소화
+
+    // joseon-farmer 레퍼런스: 인물이 아닌 장면/색감/사진 품질만 참고
+    const isJoseonRef = style === "joseon-farmer" && refCount > 0;
     const promptText = refCount === 0
       ? `Edit this image: ${prompt}`
-      : `Image 1 is the original subject. Image 2 is the style reference. Extract identity from Image 1 and apply the exact style, color grading, and aesthetic of Image 2. Additional instructions: ${prompt}`;
+      : isJoseonRef
+        ? `Image 1 is the person to transform. Image 2 is a SCENE AND STYLE REFERENCE ONLY — use it solely for the background environment, photographic color grading, film grain, sepia tone, and overall atmosphere. Do NOT copy or blend the person in Image 2 into the output. The subject's identity, face, and body must come entirely from Image 1. Additional instructions: ${prompt}`
+        : `Image 1 is the original subject. Image 2 is the style reference. Extract identity from Image 1 and apply the exact style, color grading, and aesthetic of Image 2. Additional instructions: ${prompt}`;
 
     const contents = [
       { inlineData: { mimeType: mimeType || "image/jpeg", data: imageBase64 } },
