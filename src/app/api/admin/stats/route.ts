@@ -37,11 +37,11 @@ export async function POST(request: NextRequest) {
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
     supabase.from("users").select("id, nickname").order("created_at", { ascending: false }).limit(500),
     // 월별 스타일 변환
-    supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
-    supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
-    // 월별 오디션 (audition_history 또는 user_events)
-    supabase.from("user_events").select("id", { count: "exact", head: true }).eq("event_type", "audition_complete").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
-    supabase.from("user_events").select("id", { count: "exact", head: true }).eq("event_type", "audition_complete").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
+    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    // 월별 오디션
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_complete").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_complete").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
     // 월별 매출
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
@@ -124,14 +124,14 @@ export async function POST(request: NextRequest) {
       "2026-03": {
         styleCount: marUsageRes.count ?? 0,
         auditionCount: marAuditionRes.count ?? 0,
-        apiCost: MAR_ACTUAL_API_COST, // 실측값
-        revenue: (marRevenueRes.data ?? []).reduce((s, p) => s + (p.amount ?? 0), 0),
+        apiCost: MAR_ACTUAL_API_COST,
+        revenue: (marRevenueRes.data ?? []).reduce((s: number, p: { amount: number }) => s + (p.amount ?? 0), 0),
       },
       "2026-04": {
         styleCount: aprUsageRes.count ?? 0,
         auditionCount: aprAuditionRes.count ?? 0,
         apiCost: Math.round((aprUsageRes.count ?? 0) * STYLE_UNIT_COST + (aprAuditionRes.count ?? 0) * AUDITION_UNIT_COST),
-        revenue: (aprRevenueRes.data ?? []).reduce((s, p) => s + (p.amount ?? 0), 0),
+        revenue: (aprRevenueRes.data ?? []).reduce((s: number, p: { amount: number }) => s + (p.amount ?? 0), 0),
       },
     },
   });
