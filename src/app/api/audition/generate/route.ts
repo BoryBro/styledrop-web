@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   const session = parseSession(request);
   const now = Date.now();
 
-  // ── 회원: 크레딧 2개 차감 (이미지 1장으로 줄어서 2크레딧) ──────────────
+  // ── 회원: 크레딧 3개 차감 ─────────────────────────────────────────
   if (session) {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,15 +31,16 @@ export async function POST(request: NextRequest) {
       .select("credits")
       .eq("user_id", session.id)
       .single();
-    if (!creditRow || creditRow.credits < 2) {
+    if (!creditRow || creditRow.credits < 3) {
       return NextResponse.json(
-        { error: "크레딧이 부족해요. AI 오디션은 2크레딧이 필요합니다!" },
+        { error: "크레딧이 부족해요. AI 오디션은 3크레딧이 필요합니다!" },
         { status: 429 }
       );
     }
     const { error: e1 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
     const { error: e2 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
-    if (e1 || e2) {
+    const { error: e3 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
+    if (e1 || e2 || e3) {
       return NextResponse.json(
         { error: "크레딧 차감에 실패했어요. 다시 시도해주세요." },
         { status: 500 }
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
   }
   if (!session && guestCount >= GUEST_LIMIT) {
     return NextResponse.json(
-      { error: "무료 체험이 끝났어요. 카카오 로그인하면 2크레딧을 무료로 받을 수 있어요!" },
+      { error: "무료 체험이 끝났어요. 카카오 로그인하면 3크레딧을 무료로 받을 수 있어요!" },
       { status: 429 }
     );
   }
