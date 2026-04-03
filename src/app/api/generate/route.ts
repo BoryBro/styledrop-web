@@ -354,8 +354,14 @@ export async function POST(request: NextRequest) {
     if (chosenPath) {
       try {
         const abs = path.join(process.cwd(), "public", chosenPath);
+        console.log(`[ref] loading: ${abs}`);
         loadedRefs.push(fs.readFileSync(abs).toString("base64"));
-      } catch { /* 파일 없음 — 스킵 */ }
+        console.log(`[ref] loaded OK: ${chosenPath}`);
+      } catch (e) {
+        console.error(`[ref] load failed: ${chosenPath}`, e);
+      }
+    } else {
+      console.log(`[ref] no ref — style=${style} variant=${variant}`);
     }
 
     const refCount = loadedRefs.length;
