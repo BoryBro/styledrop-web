@@ -190,39 +190,9 @@ export default function Studio() {
         </header>
 
         <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-6 pb-4">
-          <h2 className="text-[20px] font-bold text-white mb-3">스타일 선택</h2>
+          <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
 
-
-
-          {/* AI 오디션 배너 */}
-          <Link href="/audition/solo" className="block mb-4">
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e0900] to-[#111] border border-[#C9571A]/40 px-4 py-4 flex items-center gap-3 hover:border-[#C9571A]/70 transition-colors">
-              <div className="text-[36px] flex-shrink-0">🎬</div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[9px] font-extrabold text-white bg-[#C9571A] px-1.5 py-0.5 rounded uppercase tracking-wide">🔥 신규</span>
-                </div>
-                <p className="text-white font-extrabold text-[15px] leading-snug">AI 오디션 — 내 연기력 테스트</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="flex items-center gap-1.5 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 border border-white/10">
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.85"/>
-                      <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round"/>
-                    </svg>
-                    {usageCounts === null ? "..." : formatCount(usageCounts["audition"] ?? 0)}
-                  </span>
-                  <div className="flex items-center px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg">
-                    <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">3크레딧</span>
-                  </div>
-                </div>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-[#C9571A]">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </Link>
-
-          {/* 터미널 공지 */}
+          {/* 터미널 공지 — 최상단 */}
           {notices.length > 0 && (
             <div className="mb-5 bg-[#0D0D0D] border border-[#2a2a2a] rounded-xl px-4 py-3 font-mono overflow-hidden">
               <div className="flex items-center justify-between mb-2.5">
@@ -256,7 +226,12 @@ export default function Studio() {
               ))}
             </div>
           )}
-          <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
+
+          {/* 스타일 선택 섹션 헤더 */}
+          <div className="mb-4">
+            <h2 className="text-[20px] font-bold text-white">스타일 선택</h2>
+            <p className="text-[13px] text-[#666] mt-1">원하는 스타일의 카드를 선택해봐요</p>
+          </div>
 
           <div className="flex flex-col gap-3">
             {STYLES.map((style) => (
@@ -336,6 +311,40 @@ export default function Studio() {
               </button>
             ))}
           </div>
+
+          {/* 실험실 섹션 헤더 */}
+          <div className="mt-8 mb-4">
+            <h2 className="text-[20px] font-bold text-white">실험실</h2>
+            <p className="text-[13px] text-[#666] mt-1">색다른 AI 기능을 체험해봐요</p>
+          </div>
+
+          {/* AI 오디션 배너 */}
+          <Link href="/audition/solo" className="block mb-4">
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e0900] to-[#111] border border-[#C9571A]/40 px-4 py-4 flex items-center gap-3 hover:border-[#C9571A]/70 transition-colors">
+              <div className="text-[36px] flex-shrink-0">🎬</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-[9px] font-extrabold text-white bg-[#C9571A] px-1.5 py-0.5 rounded uppercase tracking-wide">🔥 신규</span>
+                </div>
+                <p className="text-white font-extrabold text-[15px] leading-snug">AI 오디션 — 내 연기력 테스트</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="flex items-center gap-1.5 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 border border-white/10">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.85"/>
+                      <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round"/>
+                    </svg>
+                    {usageCounts === null ? "..." : formatCount(usageCounts["audition"] ?? 0)}
+                  </span>
+                  <div className="flex items-center px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg">
+                    <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">3크레딧</span>
+                  </div>
+                </div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-[#C9571A]">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </Link>
         </main>
 
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
