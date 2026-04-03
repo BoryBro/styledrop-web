@@ -23,6 +23,8 @@ type Stats = {
   shareKakao: number;
   shareLinkCopy: number;
   transformEvents: number;
+  auditionShareKakao: number;
+  auditionShareLinkCopy: number;
   totalRevenue: number;
   totalPaymentCount: number;
   todayRevenue: number;
@@ -260,9 +262,9 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* 공유 & 바이럴 */}
+      {/* 공유 & 바이럴 — 스타일 */}
       <div className="flex flex-col gap-1">
-        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">공유 & 바이럴</p>
+        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">공유 & 바이럴 · 스타일</p>
         <div className="grid grid-cols-3 gap-2 mb-2">
           <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
             <span className="text-[#555] text-[10px]">카카오 공유</span>
@@ -278,6 +280,25 @@ export default function AdminPage() {
             <span className="text-[#555] text-[10px]">공유 전환율</span>
             <span className="text-[#C9571A] text-[16px] font-extrabold tabular-nums">{shareRatio}%</span>
             <span className="text-[#555] text-[11px]">{shareTotal}회</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 공유 & 바이럴 — 실험실 (AI 오디션) */}
+      <div className="flex flex-col gap-1">
+        <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1 mb-1">공유 & 바이럴 · 실험실</p>
+        <div className="grid grid-cols-3 gap-2 mb-2">
+          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-[#555] text-[10px]">카카오 공유</span>
+            <span className="text-white text-[16px] font-extrabold tabular-nums">{stats.auditionShareKakao}회</span>
+          </div>
+          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-[#555] text-[10px]">링크 복사</span>
+            <span className="text-white text-[16px] font-extrabold tabular-nums">{stats.auditionShareLinkCopy}회</span>
+          </div>
+          <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+            <span className="text-[#555] text-[10px]">합계</span>
+            <span className="text-[#C9571A] text-[16px] font-extrabold tabular-nums">{stats.auditionShareKakao + stats.auditionShareLinkCopy}회</span>
           </div>
         </div>
       </div>

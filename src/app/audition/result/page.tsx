@@ -524,6 +524,11 @@ export default function AuditionResult() {
           webUrl: shareUrl,
         },
       });
+      fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "audition_share_kakao" }),
+      }).catch(() => {});
     } catch {
       navigator.clipboard?.writeText(window.location.origin + "/audition/solo");
     } finally {
@@ -559,6 +564,11 @@ export default function AuditionResult() {
       await navigator.clipboard.writeText(link);
       setCopyToast(true);
       setTimeout(() => setCopyToast(false), 2500);
+      fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "audition_share_link_copy" }),
+      }).catch(() => {});
     } catch {
       // silent
     } finally {
