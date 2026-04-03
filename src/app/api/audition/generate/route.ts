@@ -20,28 +20,27 @@ export async function POST(request: NextRequest) {
   const session = parseSession(request);
   const now = Date.now();
 
-  // ── 회원: 크레딧 2개 차감 ─────────────────────────────────────────
+  // ── 회원: 크레딧 3개 차감 ─────────────────────────────────────────
   if (session) {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_KEY!
     );
-    // 잔액 확인
     const { data: creditRow } = await supabase
       .from("user_credits")
       .select("credits")
       .eq("user_id", session.id)
       .single();
-    if (!creditRow || creditRow.credits < 2) {
+    if (!creditRow || creditRow.credits < 3) {
       return NextResponse.json(
-        { error: "크레딧이 부족해요. AI 오디션은 2크레딧이 필요합니다!" },
+        { error: "크레딧이 부족해요. AI 오디션은 3크레딧이 필요합니다!" },
         { status: 429 }
       );
     }
-    // 2회 차감
     const { error: e1 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
     const { error: e2 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
-    if (e1 || e2) {
+    const { error: e3 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
+    if (e1 || e2 || e3) {
       return NextResponse.json(
         { error: "크레딧 차감에 실패했어요. 다시 시도해주세요." },
         { status: 500 }
@@ -75,54 +74,62 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    const { imageBase64, mimeType, stylePrompt } = await request.json();
+    const { images, mimeType, stylePrompts } = await request.json();
 
-    if (!imageBase64 || !stylePrompt) {
-      return NextResponse.json({ error: "이미지와 프롬프트가 필요합니다." }, { status: 400 });
+    if (!Array.isArray(images) || images.length !== 3 || !Array.isArray(stylePrompts) || stylePrompts.length !== 3) {
+      return NextResponse.json({ error: "이미지 3장과 프롬프트 3개가 필요합니다." }, { status: 400 });
+    }
+
+    // ── Mock 모드: API 호출 없이 원본 이미지를 그대로 반환 ─────────────
+    if (process.env.MOCK_GEMINI === "true") {
+      console.log("[MOCK] audition/generate — Gemini API 호출 생략, 원본 이미지 반환");
+      return NextResponse.json({ images, mimeType: "image/jpeg" });
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
-    const promptText = `이 사람의 얼굴 형태와 이목구비를 100% 유지하면서, 다음 배역에 맞게 합성해: ${stylePrompt}`;
+    // 씬별 이미지 생성 (순차 처리)
+    const generatedImages: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const promptText = `이 사람의 얼굴 형태와 이목구비를 100% 유지하면서, 다음 배역에 맞게 합성해: ${stylePrompts[i]}`;
+      const contents = [
+        { inlineData: { mimeType: (mimeType || "image/jpeg") as "image/jpeg", data: images[i] } },
+        { text: promptText },
+      ];
 
-    const contents = [
-      { inlineData: { mimeType: (mimeType || "image/jpeg") as "image/jpeg", data: imageBase64 } },
-      { text: promptText },
-    ];
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-flash-image-preview",
+        contents,
+        config: { responseModalities: ["TEXT", "IMAGE"] },
+      });
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-image-preview",
-      contents,
-      config: {
-        responseModalities: ["TEXT", "IMAGE"],
-      },
-    });
-
-    const parts = response.candidates?.[0]?.content?.parts || [];
-    for (const part of parts) {
-      if (part.inlineData) {
-        let imageData: string;
-        if (session) {
-          imageData = part.inlineData.data!;
-        } else {
-          imageData = await addWatermark(part.inlineData.data!);
+      const parts = response.candidates?.[0]?.content?.parts || [];
+      let found = false;
+      for (const part of parts) {
+        if (part.inlineData) {
+          const imageData = session
+            ? part.inlineData.data!
+            : await addWatermark(part.inlineData.data!);
+          generatedImages.push(imageData);
+          found = true;
+          break;
         }
-
-        // 사용 횟수 로깅
-        createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_KEY!
-        ).from("style_usage").insert({ style_id: "audition" }).then(() => {});
-
-        const res = NextResponse.json({ image: imageData, mimeType: "image/jpeg" });
-        if (!session) res.cookies.set(GUEST_COOKIE, cookieValue, cookieOptions);
-        return res;
       }
+      if (!found) throw new Error(`씬 ${i + 1} 이미지 생성 실패`);
     }
 
-    return NextResponse.json({ error: "이미지 생성 실패" }, { status: 500 });
+    // 사용 횟수 로깅
+    createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!
+    ).from("style_usage").insert({ style_id: "audition" }).then(() => {});
+
+    const res = NextResponse.json({ images: generatedImages, mimeType: "image/jpeg" });
+    if (!session) res.cookies.set(GUEST_COOKIE, cookieValue, cookieOptions);
+    return res;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[audition/generate] error:", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
