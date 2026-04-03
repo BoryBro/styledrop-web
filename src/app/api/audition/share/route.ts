@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { error: dbError } = await supabase.from("audition_shares").insert({
+    // user_photos_json 포함해서 저장 시도, 실패 시 없이 재시도
+    let dbError = (await supabase.from("audition_shares").insert({
       id,
       result_json: result,
       genres_json: genres,
@@ -82,7 +83,20 @@ export async function POST(request: NextRequest) {
       user_photo_url: userPhotoUrl,
       user_photos_json: userPhotosUrls,
       still_image_url: stillImageUrl,
-    });
+    })).error;
+
+    if (dbError) {
+      // 컬럼 없을 경우 fallback
+      const fallback = await supabase.from("audition_shares").insert({
+        id,
+        result_json: result,
+        genres_json: genres,
+        best_scene_idx: bestSceneIdx ?? 0,
+        user_photo_url: userPhotoUrl,
+        still_image_url: stillImageUrl,
+      });
+      dbError = fallback.error;
+    }
 
     if (dbError) throw dbError;
 

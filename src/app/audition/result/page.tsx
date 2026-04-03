@@ -501,8 +501,9 @@ export default function AuditionResult() {
           stillImageBase64: stillImageRef.current ? stillImageRef.current.split(",")[1] : null,
         }),
       });
-      const { id } = await res.json();
-      const shareUrl = window.location.origin + "/audition/share/" + id;
+      const json = await res.json();
+      if (!res.ok || !json.id) throw new Error(json.error ?? "공유 링크 생성 실패");
+      const shareUrl = window.location.origin + "/audition/share/" + json.id;
 
       // 2) 카카오 공유
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
