@@ -36,6 +36,71 @@ type Stats = {
   }>;
 };
 
+type MonthlyCost = { styleCount: number; auditionCount: number; apiCost: number; revenue: number };
+
+function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, MonthlyCost> }) {
+  const [activeMonth, setActiveMonth] = useState("2026-04");
+  const months = [
+    { key: "2026-03", label: "3월", note: "실측" },
+    { key: "2026-04", label: "4월", note: "추정" },
+  ];
+  const m = monthlyCosts?.[activeMonth];
+  const profit = m ? m.revenue - m.apiCost : 0;
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1">API 비용 & 손익</p>
+      <div className="flex gap-2">
+        {months.map(({ key, label, note }) => (
+          <button
+            key={key}
+            onClick={() => setActiveMonth(key)}
+            className={`flex-1 py-2 rounded-xl text-[13px] font-bold transition-colors border ${
+              activeMonth === key ? "bg-[#C9571A] border-[#C9571A] text-white" : "bg-white/[0.04] border-white/10 text-[#555]"
+            }`}
+          >
+            {label} <span className="text-[10px] font-normal opacity-60">{note}</span>
+          </button>
+        ))}
+      </div>
+      {m && (
+        <div className="bg-[#111] border border-white/5 rounded-2xl px-4 py-4 flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+              <span className="text-[#555] text-[10px]">스타일 변환</span>
+              <span className="text-white text-[16px] font-extrabold tabular-nums">{m.styleCount}건</span>
+            </div>
+            <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+              <span className="text-[#555] text-[10px]">AI 오디션</span>
+              <span className="text-white text-[16px] font-extrabold tabular-nums">{m.auditionCount}건</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+              <span className="text-[#555] text-[10px]">매출</span>
+              <span className="text-white text-[15px] font-extrabold tabular-nums">₩{m.revenue.toLocaleString()}</span>
+            </div>
+            <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+              <span className="text-[#555] text-[10px]">API 비용</span>
+              <span className="text-red-400 text-[15px] font-extrabold tabular-nums">-₩{m.apiCost.toLocaleString()}</span>
+            </div>
+            <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
+              <span className="text-[#555] text-[10px]">손익</span>
+              <span className={`text-[15px] font-extrabold tabular-nums ${profit >= 0 ? "text-[#4ade80]" : "text-red-400"}`}>
+                {profit >= 0 ? "+" : ""}₩{profit.toLocaleString()}
+              </span>
+            </div>
+          </div>
+          <p className="text-[10px] text-[#444] px-1">
+            {activeMonth === "2026-03"
+              ? "* API 비용은 Google Cloud 청구서 실측값 (3/25~31, 세전)"
+              : "* API 비용은 건당 단가 기준 추정값 (스타일 ₩117 · 오디션 ₩468)"}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Row({ label, value, note, highlight }: { label: string; value: string | number; note?: string; highlight?: boolean }) {
   return (
     <div className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
@@ -310,71 +375,7 @@ export default function AdminPage() {
       </div>
 
       {/* API 비용 & 손익 */}
-      {(() => {
-        const months = [
-          { key: "2026-03", label: "3월", note: "실측" },
-          { key: "2026-04", label: "4월", note: "추정" },
-        ];
-        const [activeMonth, setActiveMonth] = useState("2026-04");
-        const m = stats.monthlyCosts?.[activeMonth];
-        const profit = m ? m.revenue - m.apiCost : 0;
-        return (
-          <div className="flex flex-col gap-2">
-            <p className="text-[11px] font-semibold text-[#444] uppercase tracking-widest px-1">API 비용 & 손익</p>
-            <div className="flex gap-2">
-              {months.map(({ key, label, note }) => (
-                <button
-                  key={key}
-                  onClick={() => setActiveMonth(key)}
-                  className={`flex-1 py-2 rounded-xl text-[13px] font-bold transition-colors border ${
-                    activeMonth === key
-                      ? "bg-[#C9571A] border-[#C9571A] text-white"
-                      : "bg-white/[0.04] border-white/10 text-[#555]"
-                  }`}
-                >
-                  {label} <span className="text-[10px] font-normal opacity-60">{note}</span>
-                </button>
-              ))}
-            </div>
-            {m && (
-              <div className="bg-[#111] border border-white/5 rounded-2xl px-4 py-4 flex flex-col gap-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-                    <span className="text-[#555] text-[10px]">스타일 변환</span>
-                    <span className="text-white text-[16px] font-extrabold tabular-nums">{m.styleCount}건</span>
-                  </div>
-                  <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-                    <span className="text-[#555] text-[10px]">AI 오디션</span>
-                    <span className="text-white text-[16px] font-extrabold tabular-nums">{m.auditionCount}건</span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-                    <span className="text-[#555] text-[10px]">매출</span>
-                    <span className="text-white text-[15px] font-extrabold tabular-nums">₩{m.revenue.toLocaleString()}</span>
-                  </div>
-                  <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-                    <span className="text-[#555] text-[10px]">API 비용</span>
-                    <span className="text-red-400 text-[15px] font-extrabold tabular-nums">-₩{m.apiCost.toLocaleString()}</span>
-                  </div>
-                  <div className="bg-white/[0.04] rounded-xl p-3 flex flex-col gap-1">
-                    <span className="text-[#555] text-[10px]">손익</span>
-                    <span className={`text-[15px] font-extrabold tabular-nums ${profit >= 0 ? "text-[#4ade80]" : "text-red-400"}`}>
-                      {profit >= 0 ? "+" : ""}₩{profit.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-                {activeMonth === "2026-04" && (
-                  <p className="text-[10px] text-[#444] px-1">* API 비용은 건당 단가 기준 추정값 (스타일 ₩117 · 오디션 ₩468)</p>
-                )}
-                {activeMonth === "2026-03" && (
-                  <p className="text-[10px] text-[#444] px-1">* API 비용은 Google Cloud 청구서 실측값 (3/25~31, 세전)</p>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })()}
+      <MonthlyCostSection monthlyCosts={stats.monthlyCosts ?? {}} />
 
       {/* 결제 현황 */}
       <Section title="결제 현황">
