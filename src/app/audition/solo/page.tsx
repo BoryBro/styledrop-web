@@ -357,7 +357,8 @@ function pickRandomCue(genreId: GenreId): string {
 const VIDEO_CONSTRAINTS = { width: 720, height: 720, facingMode: "user" };
 
 type CaptureItem = { base64: string; dataUrl: string };
-type Phase = "loading" | "login_required" | "no_credits" | "intro" | "genre_select" | "capture" | "analyzing" | "error";
+type Phase = "loading" | "login_required" | "no_credits" | "intro" | "genre_select" | "capture" | "flavor_select" | "analyzing" | "error";
+type Flavor = "spicy" | "mild";
 
 // ── 컴포넌트 ──────────────────────────────────────────────────────────
 export default function AuditionSolo() {
@@ -369,6 +370,8 @@ export default function AuditionSolo() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credits, setCredits] = useState<number>(0);
+  const [flavor, setFlavor] = useState<Flavor>("spicy");
+  const [bubbleIdx, setBubbleIdx] = useState(0);
   const webcamRef = useRef<{ getScreenshot: () => string | null }>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
@@ -390,14 +393,28 @@ export default function AuditionSolo() {
       .catch(() => setPhase("no_credits"));
   }, [authLoading, user]);
 
-  // 3장 모이면 분석 시작
+  // 3장 모이면 맛 선택 화면으로
   useEffect(() => {
     if (captures.length === 0) return;
     if (captures.length < 3) { setStepIdx(captures.length); return; }
+    setPhase("flavor_select");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [captures]);
+
+  // 말풍선 메시지 순환
+  useEffect(() => {
+    if (phase !== "analyzing") return;
+    const timer = setInterval(() => setBubbleIdx(i => (i + 1) % 9), 2200);
+    return () => clearInterval(timer);
+  }, [phase]);
+
+  const handleFlavorSelect = useCallback((f: Flavor) => {
+    setFlavor(f);
     setPhase("analyzing");
+    setBubbleIdx(0);
+
     const images = captures.map(c => c.base64);
     const previewDataUrl = captures[captures.length - 1].dataUrl;
-
     const genreLabels = selectedGenres.map(g => GENRES.find(x => x.id === g)?.label ?? g);
     const genreMeta = selectedGenres.map((g, i) => ({
       genre: GENRES.find(x => x.id === g)?.label ?? g,
@@ -407,7 +424,7 @@ export default function AuditionSolo() {
     fetch("/api/audition/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ images, genres: genreLabels, cues: stepCues }),
+      body: JSON.stringify({ images, genres: genreLabels, cues: stepCues, flavor: f }),
     })
       .then(async res => {
         const data = await res.json();
@@ -415,7 +432,6 @@ export default function AuditionSolo() {
         sessionStorage.setItem("sd_au_result", JSON.stringify(data));
         sessionStorage.setItem("sd_au_preview", previewDataUrl);
         sessionStorage.setItem("sd_au_genres", JSON.stringify(genreMeta));
-        // 씬별 사진 저장 (result 페이지에서 탭별로 표시)
         sessionStorage.setItem("sd_au_images", JSON.stringify(captures.map(c => c.dataUrl)));
         router.push("/audition/result");
       })
@@ -424,7 +440,7 @@ export default function AuditionSolo() {
         setPhase("error");
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [captures]);
+  }, [captures, selectedGenres, stepCues]);
 
   const doCapture = useCallback(() => {
     const screenshot = webcamRef.current?.getScreenshot();
@@ -644,26 +660,97 @@ export default function AuditionSolo() {
   }
 
   // ── ANALYZING ────────────────────────────────────────────────────
+  const BUBBLE_MESSAGES = [
+    "뭘봐 이자식아 👁️", "좀만 기다려라 ☕", "너 표정 다보여 😏",
+    "기다려! 🐾", "왜냐고? 난 감독이니까 🎬", "심사 중이거든? 📋",
+    "눈치채지 마라 🤫", "조금만 더... 😤", "내 시간도 소중해 ⏰",
+  ];
+  const PIXEL_ANIMALS = ["🐶", "🐱", "🐸", "🦊", "🐨", "🐯", "🐻", "🦁", "🐼"];
+  const lastPhoto = captures[2]?.dataUrl ?? captures[captures.length - 1]?.dataUrl;
+
+  if (phase === "flavor_select") {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] relative overflow-hidden flex flex-col">
+        {lastPhoto && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={lastPhoto} alt="" className="absolute inset-0 w-full h-full object-cover opacity-25 blur-[2px]" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90" />
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center gap-8">
+          <div>
+            <p className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest mb-3">🎬 촬영 완료</p>
+            <h2 className="text-[30px] font-extrabold text-white leading-tight mb-2">
+              어떤 맛으로<br />드릴까요?
+            </h2>
+            <p className="text-[#777] text-[14px]">감독의 평가 강도를 선택하세요</p>
+          </div>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <button
+              onClick={() => handleFlavorSelect("spicy")}
+              className="w-full py-5 rounded-2xl relative overflow-hidden"
+              style={{ background: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)" }}
+            >
+              <p className="text-white font-extrabold text-[22px]">🌶️ 매운맛</p>
+              <p className="text-white/60 text-[12px] mt-0.5">욕 포함 진짜 독설 · 뒤통수 맞을 각오</p>
+            </button>
+            <button
+              onClick={() => handleFlavorSelect("mild")}
+              className="w-full py-5 rounded-2xl border border-white/15"
+              style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #252540 100%)" }}
+            >
+              <p className="text-white font-extrabold text-[22px]">🥛 순한맛</p>
+              <p className="text-white/50 text-[12px] mt-0.5">욕 없는 독설 · 그래도 뼈는 때림</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (phase === "analyzing") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center gap-6 px-6 text-center">
+      <div className="min-h-screen bg-[#0A0A0A] relative overflow-hidden flex flex-col items-center justify-center">
         <style>{`
           @keyframes spin { to { transform: rotate(360deg); } }
           @keyframes dot-bounce { 0%,80%,100%{opacity:0.3;transform:scale(0.8)} 40%{opacity:1;transform:scale(1.2)} }
+          @keyframes bubble-fade { 0%{opacity:0;transform:scale(0.8) translateY(6px)} 15%{opacity:1;transform:scale(1) translateY(0)} 75%{opacity:1} 100%{opacity:0} }
         `}</style>
-        <div className="relative w-20 h-20">
-          <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#C9571A] border-r-[#C9571A]/30" style={{ animation: "spin 1s linear infinite" }} />
-          <div className="absolute inset-0 flex items-center justify-center text-2xl">🎬</div>
-        </div>
-        <div>
-          <p className="text-white font-bold text-[18px] leading-snug">
-            감독님이 당신의 프로필을<br />쓰레기통에 버릴지 고민 중입니다...
-          </p>
-          <div className="flex items-center justify-center gap-1.5 mt-3">
-            {[0, 1, 2].map(i => (
-              <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#C9571A]" style={{ animation: `dot-bounce 1.4s ease-in-out ${i * 0.2}s infinite` }} />
-            ))}
+        {lastPhoto && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={lastPhoto} alt="" className="absolute inset-0 w-full h-full object-cover opacity-35" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/50 to-black/85" />
+
+        <div className="relative z-10 flex flex-col items-center gap-7 text-center px-6">
+          {/* 픽셀 동물 + 스피너 + 말풍선 */}
+          <div className="relative flex items-center justify-center w-44 h-44">
+            {/* 말풍선 */}
+            <div key={bubbleIdx} className="absolute -top-14 bg-white text-[#111] text-[13px] font-extrabold px-3.5 py-2 rounded-2xl whitespace-nowrap shadow-lg"
+              style={{ animation: "bubble-fade 2.2s ease-in-out forwards" }}>
+              {BUBBLE_MESSAGES[bubbleIdx]}
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0"
+                style={{ borderLeft: "8px solid transparent", borderRight: "8px solid transparent", borderTop: "8px solid white" }} />
+            </div>
+            {/* 동물 이모지 */}
+            <span className="text-[72px] select-none">{PIXEL_ANIMALS[bubbleIdx % PIXEL_ANIMALS.length]}</span>
+            {/* 스피너 링 */}
+            <div className="absolute inset-0 rounded-full border-[5px] border-transparent border-t-[#C9571A] border-r-[#C9571A]/40"
+              style={{ animation: "spin 1.2s linear infinite" }} />
+          </div>
+
+          <div>
+            <p className="text-[#C9571A] text-[12px] font-bold tracking-widest uppercase mb-2">
+              {flavor === "spicy" ? "🌶️ 매운맛 심사 중" : "🥛 순한맛 심사 중"}
+            </p>
+            <p className="text-white font-bold text-[20px] leading-snug">
+              감독이 심사 중입니다...
+            </p>
+            <div className="flex items-center justify-center gap-2 mt-3">
+              {[0, 1, 2].map(i => (
+                <div key={i} className="w-2 h-2 rounded-full bg-[#C9571A]"
+                  style={{ animation: `dot-bounce 1.4s ease-in-out ${i * 0.2}s infinite` }} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
