@@ -367,6 +367,7 @@ export default function AuditionSolo() {
   const [stepCues, setStepCues] = useState<string[]>([]);
   const [stepIdx, setStepIdx] = useState(0);
   const [captures, setCaptures] = useState<CaptureItem[]>([]);
+  const [agreed, setAgreed] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credits, setCredits] = useState<number>(0);
@@ -393,28 +394,16 @@ export default function AuditionSolo() {
       .catch(() => setPhase("no_credits"));
   }, [authLoading, user]);
 
-  // 3장 모이면 맛 선택 화면으로
+  // 3장 모이면 바로 분석 시작
   useEffect(() => {
     if (captures.length === 0) return;
     if (captures.length < 3) { setStepIdx(captures.length); return; }
-    setPhase("flavor_select");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [captures]);
 
-  // 말풍선 메시지 순환
-  useEffect(() => {
-    if (phase !== "analyzing") return;
-    const timer = setInterval(() => setBubbleIdx(i => (i + 1) % 9), 2200);
-    return () => clearInterval(timer);
-  }, [phase]);
-
-  const handleFlavorSelect = useCallback((f: Flavor) => {
-    setFlavor(f);
     setPhase("analyzing");
     setBubbleIdx(0);
 
     const images = captures.map(c => c.base64);
-    const previewDataUrl = captures[captures.length - 1].dataUrl;
+    const previewDataUrl = captures[2].dataUrl;
     const genreLabels = selectedGenres.map(g => GENRES.find(x => x.id === g)?.label ?? g);
     const genreMeta = selectedGenres.map((g, i) => ({
       genre: GENRES.find(x => x.id === g)?.label ?? g,
@@ -424,7 +413,7 @@ export default function AuditionSolo() {
     fetch("/api/audition/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ images, genres: genreLabels, cues: stepCues, flavor: f }),
+      body: JSON.stringify({ images, genres: genreLabels, cues: stepCues, flavor }),
     })
       .then(async res => {
         const data = await res.json();
@@ -440,7 +429,23 @@ export default function AuditionSolo() {
         setPhase("error");
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [captures, selectedGenres, stepCues]);
+  }, [captures]);
+
+  // 말풍선 메시지 순환
+  useEffect(() => {
+    if (phase !== "analyzing") return;
+    const timer = setInterval(() => setBubbleIdx(i => (i + 1) % 9), 2200);
+    return () => clearInterval(timer);
+  }, [phase]);
+
+  const handleFlavorAndCapture = (f: Flavor) => {
+    setFlavor(f);
+    const cues = selectedGenres.map(g => pickRandomCue(g));
+    setStepCues(cues);
+    setCaptures([]);
+    setStepIdx(0);
+    setPhase("capture");
+  };
 
   const doCapture = useCallback(() => {
     const screenshot = webcamRef.current?.getScreenshot();
@@ -477,13 +482,6 @@ export default function AuditionSolo() {
     );
   };
 
-  const startCapture = () => {
-    const cues = selectedGenres.map(g => pickRandomCue(g));
-    setStepCues(cues);
-    setCaptures([]);
-    setStepIdx(0);
-    setPhase("capture");
-  };
 
   // ── LOADING ──────────────────────────────────────────────────────
   if (phase === "loading") {
@@ -582,10 +580,36 @@ export default function AuditionSolo() {
             </p>
           </div>
 
+          {/* 동의 사항 */}
+          <div className="w-full bg-[#111] border border-white/8 rounded-2xl px-5 py-4 flex flex-col gap-3">
+            <p className="text-[11px] font-bold text-[#555] tracking-widest uppercase">오디션 전 확인사항</p>
+            <ul className="flex flex-col gap-2.5">
+              <li className="flex items-start gap-2.5">
+                <span className="text-[#C9571A] text-[14px] shrink-0 mt-0.5">🌶️</span>
+                <p className="text-[12px] text-[#888] leading-snug">매운맛/순한맛에 따라 평가 강도가 달라집니다. 상처받지 말고 재미로 봐주세요</p>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-[#C9571A] text-[14px] shrink-0 mt-0.5">📸</span>
+                <p className="text-[12px] text-[#888] leading-snug">한번 촬영한 컷은 다시 찍을 수 없으니 이점 유의해주세요</p>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-[#C9571A] text-[14px] shrink-0 mt-0.5">💳</span>
+                <p className="text-[12px] text-[#888] leading-snug">크레딧 3개가 소모되며, 이 서비스는 환불이 어렵습니다</p>
+              </li>
+            </ul>
+            <label className="flex items-center gap-3 mt-1 cursor-pointer select-none" onClick={() => setAgreed(v => !v)}>
+              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${agreed ? "bg-[#C9571A] border-[#C9571A]" : "border-white/20 bg-transparent"}`}>
+                {agreed && <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </div>
+              <p className="text-[13px] text-white font-bold">위 내용을 모두 확인했습니다</p>
+            </label>
+          </div>
+
           <div className="w-full flex flex-col gap-2">
             <button
               onClick={() => setPhase("genre_select")}
-              className="w-full bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold py-4 rounded-2xl text-[16px] transition-colors flex items-center justify-center gap-2.5"
+              disabled={!agreed}
+              className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-[#2A2A2A] disabled:text-white/30 text-white font-bold py-4 rounded-2xl text-[16px] transition-colors flex items-center justify-center gap-2.5"
             >
               <span className="text-[12px] font-extrabold bg-white/20 rounded-lg px-2 py-0.5">3크레딧</span>
               시작하기
@@ -644,11 +668,11 @@ export default function AuditionSolo() {
 
           <div className="flex flex-col gap-2 mt-auto">
             <button
-              onClick={startCapture}
+              onClick={() => setPhase("flavor_select")}
               disabled={selectedGenres.length < 3}
               className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-[#2A2A2A] disabled:text-white/30 text-white font-bold py-4 rounded-2xl text-[16px] transition-colors"
             >
-              {selectedGenres.length < 3 ? `${3 - selectedGenres.length}개 더 선택해요` : "오디션 시작 →"}
+              {selectedGenres.length < 3 ? `${3 - selectedGenres.length}개 더 선택해요` : "다음 →"}
             </button>
             <button onClick={() => setPhase("intro")} className="text-[13px] text-[#444] hover:text-white transition-colors py-1">
               이전으로
@@ -670,23 +694,22 @@ export default function AuditionSolo() {
 
   if (phase === "flavor_select") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] relative overflow-hidden flex flex-col">
-        {lastPhoto && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={lastPhoto} alt="" className="absolute inset-0 w-full h-full object-cover opacity-25 blur-[2px]" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90" />
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center gap-8">
+      <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
+        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
+          <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
+          <span className="text-[12px] text-[#555]">STEP 2</span>
+        </header>
+        <main className="flex-1 flex flex-col items-center justify-center px-5 text-center gap-8 max-w-sm mx-auto w-full py-10">
           <div>
-            <p className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest mb-3">🎬 촬영 완료</p>
-            <h2 className="text-[30px] font-extrabold text-white leading-tight mb-2">
+            <p className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest mb-3">평가 강도 선택</p>
+            <h2 className="text-[28px] font-extrabold text-white leading-tight mb-2">
               어떤 맛으로<br />드릴까요?
             </h2>
-            <p className="text-[#777] text-[14px]">감독의 평가 강도를 선택하세요</p>
+            <p className="text-[13px] text-[#555] leading-snug">촬영 전에 미리 선택해두세요<br />선택 후엔 변경이 안 됩니다</p>
           </div>
-          <div className="flex flex-col gap-3 w-full max-w-xs">
+          <div className="flex flex-col gap-3 w-full">
             <button
-              onClick={() => handleFlavorSelect("spicy")}
+              onClick={() => handleFlavorAndCapture("spicy")}
               className="w-full py-5 rounded-2xl relative overflow-hidden"
               style={{ background: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)" }}
             >
@@ -694,7 +717,7 @@ export default function AuditionSolo() {
               <p className="text-white/60 text-[12px] mt-0.5">욕 포함 진짜 독설 · 뒤통수 맞을 각오</p>
             </button>
             <button
-              onClick={() => handleFlavorSelect("mild")}
+              onClick={() => handleFlavorAndCapture("mild")}
               className="w-full py-5 rounded-2xl border border-white/15"
               style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #252540 100%)" }}
             >
@@ -702,7 +725,10 @@ export default function AuditionSolo() {
               <p className="text-white/50 text-[12px] mt-0.5">욕 없는 독설 · 그래도 뼈는 때림</p>
             </button>
           </div>
-        </div>
+          <button onClick={() => setPhase("genre_select")} className="text-[13px] text-[#444] hover:text-white transition-colors">
+            이전으로
+          </button>
+        </main>
       </div>
     );
   }
