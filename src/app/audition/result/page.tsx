@@ -259,51 +259,65 @@ function OverallTab({
             <h2 className="text-[22px] font-extrabold text-white leading-tight">오디션 지원서</h2>
           </div>
 
-          {/* 증명사진 + 종합점수 */}
-          <div className="flex gap-4 mb-5">
-            <div className="relative w-[90px] h-[112px] shrink-0">
-              <div className="w-full h-full border-2 border-white/15 bg-[#0a0a0a] overflow-hidden">
-                {userPhotos[bestSceneIdx] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={userPhotos[bestSceneIdx]} alt="증명사진" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[#333] text-[10px]">사진</div>
-                )}
-              </div>
-              <div
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                style={{
-                  opacity: stamped ? 1 : 0,
-                  transform: stamped ? "scale(1) rotate(-18deg)" : "scale(3) rotate(-18deg)",
-                  transition: stamped ? "opacity 0.08s ease-out, transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275)" : "none",
-                }}
-              >
-                <div className="px-2.5 py-1 border-[3px] border-[#dc2626] rounded"
-                  style={{ color: "#dc2626", fontWeight: 900, fontSize: "16px", letterSpacing: "0.05em",
-                    textShadow: "0 0 8px rgba(220,38,38,0.5)", boxShadow: "0 0 10px rgba(220,38,38,0.3)", opacity: 0.92 }}>
-                  불합격
+          {/* 증명사진 + 종합점수 + 장르별 점수 */}
+          <div className="mb-5">
+            {/* 상단: 사진 + 종합점수 나란히 */}
+            <div className="flex gap-3 mb-4">
+              {/* 사진 + 도장 */}
+              <div className="relative w-[96px] h-[120px] shrink-0">
+                <div className="w-full h-full border-2 border-white/15 bg-[#0a0a0a] overflow-hidden rounded-sm">
+                  {userPhotos[bestSceneIdx] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={userPhotos[bestSceneIdx]} alt="증명사진" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[#333] text-[10px]">사진</div>
+                  )}
                 </div>
+                <div
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  style={{
+                    opacity: stamped ? 1 : 0,
+                    transform: stamped ? "scale(1) rotate(-18deg)" : "scale(3) rotate(-18deg)",
+                    transition: stamped ? "opacity 0.08s ease-out, transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275)" : "none",
+                  }}
+                >
+                  <div className="px-2 py-1 border-[3px] border-[#dc2626] rounded"
+                    style={{ color: "#dc2626", fontWeight: 900, fontSize: "15px", letterSpacing: "0.08em",
+                      textShadow: "0 0 8px rgba(220,38,38,0.5)", boxShadow: "0 0 10px rgba(220,38,38,0.3)", opacity: 0.92 }}>
+                    불합격
+                  </div>
+                </div>
+              </div>
+
+              {/* 종합 점수 */}
+              <div className="flex-1 flex flex-col justify-center bg-black/40 rounded-xl px-4 py-3 border border-white/5">
+                <p className="text-[9px] text-[#555] font-bold tracking-[0.2em] uppercase mb-1">TOTAL SCORE</p>
+                <div className="flex items-end gap-1.5">
+                  <p className="text-[58px] font-black leading-none" style={{ color: scoreColor(avgScore), textShadow: `0 0 20px ${scoreColor(avgScore)}66` }}>
+                    {avgScore}
+                  </p>
+                  <p className="text-[15px] text-[#444] font-bold mb-2">/ 100</p>
+                </div>
+                <p className="text-[10px] font-bold mt-0.5" style={{ color: avgScore >= 70 ? "#4ade80" : avgScore >= 45 ? "#f97316" : "#ef4444" }}>
+                  {avgScore >= 70 ? "✓ 합격권" : avgScore >= 45 ? "△ 보류" : "✗ 불합격"}
+                </p>
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col justify-between">
-              <div>
-                <p className="text-[9px] text-[#555] font-bold tracking-widest uppercase mb-1">종합 점수</p>
-                <p className="text-[52px] font-extrabold leading-none" style={{ color: scoreColor(avgScore) }}>
-                  {avgScore}
-                </p>
-                <p className="text-[13px] text-[#444] font-bold">/ 100</p>
-              </div>
-              <div className="flex flex-col gap-1.5 mt-2">
+            {/* 하단: 장르별 점수 바 */}
+            <div className="bg-black/30 rounded-xl px-4 py-3 border border-white/5">
+              <p className="text-[9px] text-[#555] font-bold tracking-widest uppercase mb-2.5">장르별 점수</p>
+              <div className="flex flex-col gap-2">
                 {result.scenes.map((s, i) => {
                   const avg = Math.round(SCORE_LABELS.reduce((sum, l) => sum + (s.scores?.[l] ?? 0), 0) / 4);
                   return (
-                    <div key={i} className="flex items-center gap-1.5">
-                      <span className="text-[11px]">{GENRE_EMOJIS[s.genre] ?? "🎬"}</span>
-                      <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${avg}%`, backgroundColor: scoreColor(avg) }} />
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="text-[12px] w-5 text-center">{GENRE_EMOJIS[s.genre] ?? "🎬"}</span>
+                      <span className="text-[10px] text-[#555] w-10 shrink-0">{s.genre}</span>
+                      <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${avg}%`, backgroundColor: scoreColor(avg) }} />
                       </div>
-                      <span className="text-[11px] font-bold w-6 text-right" style={{ color: scoreColor(avg) }}>{avg}</span>
+                      <span className="text-[12px] font-bold w-7 text-right" style={{ color: scoreColor(avg) }}>{avg}</span>
                     </div>
                   );
                 })}
