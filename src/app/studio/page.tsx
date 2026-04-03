@@ -194,8 +194,8 @@ export default function Studio() {
 
 
 
-          {/* AI 오디션 배너 (개발 환경 전용) */}
-          {process.env.NODE_ENV === "development" && <Link href="/audition/solo" className="block mb-4">
+          {/* AI 오디션 배너 */}
+          <Link href="/audition/solo" className="block mb-4">
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e0900] to-[#111] border border-[#C9571A]/40 px-4 py-4 flex items-center gap-3 hover:border-[#C9571A]/70 transition-colors">
               <div className="text-[36px] flex-shrink-0">🎬</div>
               <div className="flex-1 min-w-0">
@@ -212,7 +212,7 @@ export default function Studio() {
                     {usageCounts === null ? "..." : formatCount(usageCounts["audition"] ?? 0)}
                   </span>
                   <div className="flex items-center px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg">
-                    <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">2크레딧</span>
+                    <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">3크레딧</span>
                   </div>
                 </div>
               </div>
@@ -220,7 +220,7 @@ export default function Studio() {
                 <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-          </Link>}
+          </Link>
 
           {/* 터미널 공지 */}
           {notices.length > 0 && (
