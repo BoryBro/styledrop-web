@@ -314,10 +314,16 @@ export default function AuditionResult() {
   const [isSharing, setIsSharing] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
   const [copyToast, setCopyToast] = useState(false);
+  const [isGeneratingStill, setIsGeneratingStill] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [shareRewardToast, setShareRewardToast] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [referralCopied, setReferralCopied] = useState(false);
   const cachedShareId = useRef<string | null>(null);
   const stillImageRef = useRef<string | null>(null);
   const router = useRouter();
 
+  // 분석 결과 로드 (무료 — 스틸컷 자동 생성 안 함)
   useEffect(() => {
     const raw = sessionStorage.getItem("sd_au_result");
     const imagesRaw = sessionStorage.getItem("sd_au_images");
@@ -332,56 +338,81 @@ export default function AuditionResult() {
       const photos: string[] = imagesRaw ? JSON.parse(imagesRaw) : [];
       setUserPhotos(photos);
 
-      const base64List = photos.map(p => p.split(",")[1]).filter(Boolean);
-      if (base64List.length !== 3) {
-        setErrorMsg("촬영 이미지를 찾을 수 없어요.");
-        setPhase("error");
-        return;
-      }
-
       const bestIdx = parsed.scenes.reduce((best, scene, i) => {
         const a = SCORE_LABELS.reduce((s, l) => s + (scene.scores?.[l] ?? 0), 0) / 4;
         const b = SCORE_LABELS.reduce((s, l) => s + (parsed.scenes[best].scores?.[l] ?? 0), 0) / 4;
         return a > b ? i : best;
       }, 0);
       setBestSceneIdx(bestIdx);
-
-      fetch("/api/audition/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: base64List[bestIdx],
-          mimeType: "image/jpeg",
-          stylePrompt: parsed.scenes[bestIdx].style_prompt,
-        }),
-      })
-        .then(async res => {
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error ?? "생성 실패");
-          const dataUrl = `data:image/jpeg;base64,${data.image}`;
-          stillImageRef.current = dataUrl;
-          setStillImage(dataUrl);
-          setPhase("ready");
-          fetch("/api/audition/history", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              result: parsed,
-              genres: genreRaw ? JSON.parse(genreRaw) : [],
-              bestSceneIdx: bestIdx,
-              stillImageBase64: data.image,
-            }),
-          }).catch(() => {});
-        })
-        .catch(err => {
-          setErrorMsg(err.message ?? "스틸컷 생성에 실패했어요.");
-          setPhase("error");
-        });
+      setPhase("ready");
     } catch {
       router.replace("/audition/solo");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 크레딧 + 유저 ID 조회
+  useEffect(() => {
+    fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => setCredits(0));
+    fetch("/api/auth/me").then(r => r.json()).then(d => setUserId(d.id ?? null)).catch(() => {});
+  }, []);
+
+  // 스틸컷 생성 (5크레딧 소모)
+  const handleGenerateStill = async () => {
+    if (isGeneratingStill || !result) return;
+    const photos: string[] = sessionStorage.getItem("sd_au_images")
+      ? JSON.parse(sessionStorage.getItem("sd_au_images")!)
+      : userPhotos;
+    const base64List = photos.map(p => p.split(",")[1]).filter(Boolean);
+    if (base64List.length === 0) return;
+    setIsGeneratingStill(true);
+    try {
+      const genreRaw = sessionStorage.getItem("sd_au_genres");
+      const res = await fetch("/api/audition/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: base64List[bestSceneIdx] ?? base64List[0],
+          mimeType: "image/jpeg",
+          stylePrompt: result.scenes[bestSceneIdx].style_prompt,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "생성 실패");
+      const dataUrl = `data:image/jpeg;base64,${data.image}`;
+      stillImageRef.current = dataUrl;
+      setStillImage(dataUrl);
+      setCredits(c => (c !== null ? Math.max(0, c - 5) : 0));
+      fetch("/api/audition/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          result,
+          genres: genreRaw ? JSON.parse(genreRaw) : [],
+          bestSceneIdx,
+          stillImageBase64: data.image,
+        }),
+      }).catch(() => {});
+    } catch (err) {
+      alert((err instanceof Error ? err.message : "") || "스틸컷 생성에 실패했어요. 다시 시도해주세요.");
+    } finally {
+      setIsGeneratingStill(false);
+    }
+  };
+
+  // 공유 후 1크레딧 보상
+  const claimShareReward = () => {
+    fetch("/api/reward/share", { method: "POST" })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) {
+          setCredits(d.credits);
+          setShareRewardToast(true);
+          setTimeout(() => setShareRewardToast(false), 3000);
+        }
+      })
+      .catch(() => {});
+  };
 
   const handleSave = useCallback(async () => {
     if (!result || isSaving) return;
@@ -436,6 +467,7 @@ export default function AuditionResult() {
         link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       });
       fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event_type: "audition_share_kakao" }) }).catch(() => {});
+      claimShareReward();
     } catch {
       navigator.clipboard?.writeText(window.location.origin + "/audition/solo");
     } finally {
@@ -469,38 +501,12 @@ export default function AuditionResult() {
       setCopyToast(true);
       setTimeout(() => setCopyToast(false), 2500);
       fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event_type: "audition_share_link_copy" }) }).catch(() => {});
+      claimShareReward();
     } catch { /* silent */ }
     finally { setIsCopying(false); }
   };
 
   if (!result) return null;
-
-  // ── GENERATING ───────────────────────────────────────────────────
-  if (phase === "generating") {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-8 px-6 text-center">
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes dot-bounce { 0%,80%,100%{opacity:0.3;transform:scale(0.8)} 40%{opacity:1;transform:scale(1.2)} }`}</style>
-        <div className="relative w-[120px] h-[120px]">
-          {userPhotos[0] && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={userPhotos[0]} alt="" className="w-[120px] h-[120px] rounded-2xl object-cover border border-gray-100" />
-          )}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-[60px] h-[60px] rounded-full border-[4px] border-transparent border-t-[#C9571A] border-r-[#C9571A]/30" style={{ animation: "spin 1s linear infinite" }} />
-          </div>
-        </div>
-        <div>
-          <p className="text-[#C9571A] text-[12px] font-black tracking-[0.25em] uppercase mb-3">AI 스틸컷 제작 중</p>
-          <p className="text-gray-900 font-black text-[22px] leading-snug">감독님이 배역을<br />결정하고 있습니다...</p>
-          <div className="flex items-center justify-center gap-2 mt-5">
-            {[0, 1, 2].map(i => (
-              <div key={i} className="w-2 h-2 rounded-full bg-[#C9571A]" style={{ animation: `dot-bounce 1.4s ease-in-out ${i * 0.2}s infinite` }} />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // ── ERROR ─────────────────────────────────────────────────────────
   if (phase === "error") {
@@ -526,10 +532,23 @@ export default function AuditionResult() {
     <div className="min-h-screen bg-white">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }`}</style>
 
+      {/* ── 공유 크레딧 보상 토스트 ──────────────────────── */}
+      {shareRewardToast && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-[13px] font-bold px-5 py-3 rounded-full shadow-xl flex items-center gap-2"
+          style={{ animation: "fade-up 0.3s ease-out" }}>
+          <span>🎉</span><span>1크레딧 지급됐어요!</span>
+        </div>
+      )}
+
       {/* ── 헤더 ─────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100 h-[52px] flex items-center justify-between px-4">
         <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
-        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">AI 오디션 결과</span>
+        <div className="flex items-center gap-2">
+          {credits !== null && (
+            <span className="text-[11px] font-bold text-gray-500 bg-gray-100 rounded-full px-2.5 py-1">{credits}크레딧</span>
+          )}
+          <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">AI 오디션 결과</span>
+        </div>
       </header>
 
       <div className="max-w-sm mx-auto px-5 pb-40">
@@ -570,35 +589,68 @@ export default function AuditionResult() {
           </div>
         </section>
 
-        {/* ══ SECTION 2: AI 스틸컷 ═════════════════════════ */}
+        {/* ══ SECTION 2: AI 스틸컷 (선택 유료) ════════════ */}
         <section className="py-10 border-b border-gray-100">
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">AI Still Cut</p>
           <p className="text-[22px] font-black text-gray-900 mb-5">
             {GENRE_EMOJIS[bestScene.genre] ?? "🎬"} {bestScene.genre} 베스트 씬
           </p>
 
-          <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 mb-4">
-            {stillImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={stillImage} alt="AI 스틸컷" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-3">
-                <div className="w-8 h-8 rounded-full border-2 border-transparent border-t-[#C9571A]" style={{ animation: "spin 0.8s linear infinite" }} />
-                <p className="text-[12px] text-gray-400">AI 스틸컷 생성 중...</p>
-              </div>
-            )}
-            {/* PIP - 내 촬영컷 */}
-            {userPhotos[bestSceneIdx] && (
-              <div className="absolute bottom-3 left-3 w-[72px] h-[72px] rounded-xl overflow-hidden border-2 border-white shadow-lg">
+          {stillImage ? (
+            <>
+              <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 mb-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={userPhotos[bestSceneIdx]} alt="내 연기" className="w-full h-full object-cover" />
+                <img src={stillImage} alt="AI 스틸컷" className="w-full h-full object-cover" />
+                {userPhotos[bestSceneIdx] && (
+                  <div className="absolute bottom-3 left-3 w-[72px] h-[72px] rounded-xl overflow-hidden border-2 border-white shadow-lg">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={userPhotos[bestSceneIdx]} alt="내 연기" className="w-full h-full object-cover" />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-
-          <p className="text-[12px] text-gray-400 leading-relaxed">
-            AI가 베스트 씬 촬영 이미지를 기반으로 생성한 스틸컷입니다.
-          </p>
+              <p className="text-[12px] text-gray-400 leading-relaxed">AI가 베스트 씬 촬영 이미지를 기반으로 생성한 스틸컷입니다.</p>
+            </>
+          ) : (
+            <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 p-6 flex flex-col items-center gap-4 text-center">
+              {/* 내 촬영컷 미리보기 */}
+              {userPhotos[bestSceneIdx] && (
+                <div className="relative w-full aspect-square rounded-xl overflow-hidden max-w-[200px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={userPhotos[bestSceneIdx]} alt="내 연기" className="w-full h-full object-cover opacity-60" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl">
+                    <span className="text-white text-[28px]">🎬</span>
+                  </div>
+                </div>
+              )}
+              <div>
+                <p className="text-[15px] font-black text-gray-900 mb-1">AI 스틸컷 생성</p>
+                <p className="text-[12px] text-gray-500 leading-relaxed">
+                  내 얼굴을 기반으로 AI가<br />영화 스틸컷을 만들어줍니다
+                </p>
+              </div>
+              {isGeneratingStill ? (
+                <div className="flex items-center gap-2 py-3">
+                  <div className="w-5 h-5 rounded-full border-2 border-transparent border-t-[#C9571A]" style={{ animation: "spin 0.8s linear infinite" }} />
+                  <span className="text-[13px] text-gray-500">생성 중...</span>
+                </div>
+              ) : (credits ?? 0) >= 5 ? (
+                <button
+                  onClick={handleGenerateStill}
+                  className="w-full bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold py-3.5 rounded-2xl text-[15px] transition-colors flex items-center justify-center gap-2"
+                >
+                  <span className="text-[11px] bg-white/20 rounded-lg px-2 py-0.5 font-black">5크레딧</span>
+                  스틸컷 생성하기
+                </button>
+              ) : (
+                <div className="w-full flex flex-col gap-2">
+                  <p className="text-[12px] text-[#C9571A] font-bold">크레딧이 부족해요 (보유: {credits ?? 0})</p>
+                  <Link href="/shop" className="w-full bg-gray-900 text-white font-bold py-3 rounded-2xl text-[14px] text-center transition-colors hover:bg-gray-700">
+                    크레딧 충전하기
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* ══ SECTION 3: 씬별 연기 분석 ══════════════════════ */}
@@ -814,7 +866,8 @@ export default function AuditionResult() {
         {/* ══ SECTION 6: 공유 CTA ═══════════════════════════ */}
         <section className="pt-10 pb-4">
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Share</p>
-          <p className="text-[22px] font-black text-gray-900 mb-6">결과 공유하기</p>
+          <p className="text-[22px] font-black text-gray-900 mb-2">결과 공유하기</p>
+          <p className="text-[13px] text-[#C9571A] font-bold mb-6">📢 공유하면 1크레딧 지급! (최초 1회)</p>
 
           <div className="flex flex-col gap-3">
             <button
@@ -870,6 +923,35 @@ export default function AuditionResult() {
               </Link>
             </div>
           </div>
+
+          {/* 친구 초대 섹션 */}
+          {userId && (
+            <div className="mt-6 bg-gray-50 border border-gray-200 rounded-2xl px-5 py-5">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[18px]">🎁</span>
+                <p className="text-[15px] font-black text-gray-900">친구 초대하고 크레딧 받기</p>
+              </div>
+              <p className="text-[12px] text-gray-500 mb-4 leading-relaxed">
+                친구가 내 링크로 가입하면<br />
+                <span className="text-gray-900 font-bold">나 +2크레딧, 친구 +2크레딧</span> 동시 지급
+              </p>
+              <button
+                onClick={async () => {
+                  const refUrl = `${window.location.origin}/api/auth/kakao?ref=${userId}`;
+                  await navigator.clipboard.writeText(refUrl).catch(() => {});
+                  setReferralCopied(true);
+                  setTimeout(() => setReferralCopied(false), 2500);
+                }}
+                className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-[14px] transition-colors"
+              >
+                {referralCopied ? (
+                  <><span>✓</span><span>링크 복사됨!</span></>
+                ) : (
+                  <><span>🔗</span><span>초대 링크 복사</span></>
+                )}
+              </button>
+            </div>
+          )}
 
           {copyToast && (
             <div className="mt-3 text-center text-[12px] text-green-600 font-bold">링크가 복사됐어요!</div>

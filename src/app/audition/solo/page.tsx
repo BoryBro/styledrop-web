@@ -467,7 +467,7 @@ function AuditionSoloInner() {
 
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current); }, []);
 
-  // 인증 + 크레딧 체크
+  // 인증 + 크레딧 조회 (분석은 무료, 크레딧 부족해도 진행 가능)
   useEffect(() => {
     if (authLoading) return;
     if (!user) { setPhase("login_required"); return; }
@@ -476,11 +476,14 @@ function AuditionSoloInner() {
       .then(data => {
         const c = data.credits ?? 0;
         setCredits(c);
-        if (c < 5) setPhase("no_credits");
-        else if (fromIntro) setPhase("genre_select");
+        if (fromIntro) setPhase("genre_select");
         else setPhase("intro");
       })
-      .catch(() => setPhase("no_credits"));
+      .catch(() => {
+        setCredits(0);
+        if (fromIntro) setPhase("genre_select");
+        else setPhase("intro");
+      });
   }, [authLoading, user, fromIntro]);
 
   // 3장 모이면 바로 분석 시작
@@ -627,32 +630,6 @@ function AuditionSoloInner() {
     );
   }
 
-  // ── 크레딧 부족 ──────────────────────────────────────────────────
-  if (phase === "no_credits") {
-    return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <header className="h-[52px] bg-white border-b border-gray-100 flex items-center px-4">
-          <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
-        </header>
-        <main className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6 max-w-sm mx-auto w-full">
-          <div className="text-[52px]">💳</div>
-          <div>
-            <p className="text-[11px] font-bold text-[#C9571A] tracking-[0.2em] uppercase mb-2">AI 오디션</p>
-            <h2 className="text-[22px] font-extrabold text-gray-900 leading-tight">크레딧이 부족해요</h2>
-            <p className="text-[13px] text-gray-500 mt-2 leading-relaxed">
-              AI 오디션은 <span className="text-gray-900 font-bold">5크레딧</span>이 필요해요.<br />
-              현재 보유: <span className="text-[#C9571A] font-bold">{credits}크레딧</span>
-            </p>
-          </div>
-          <Link href="/shop" className="w-full h-[52px] bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold text-[15px] rounded-full transition-colors flex items-center justify-center">
-            크레딧 충전하기
-          </Link>
-          <Link href="/studio" className="text-[13px] text-gray-400 hover:text-gray-900 transition-colors">돌아가기</Link>
-        </main>
-      </div>
-    );
-  }
-
   // ── INTRO ────────────────────────────────────────────────────────
   if (phase === "intro") {
     return (
@@ -676,27 +653,32 @@ function AuditionSoloInner() {
             </p>
           </div>
 
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 w-full flex flex-col items-center gap-1.5 text-center">
-            <span className="text-[22px]">🎭</span>
-            <p className="text-[14px] text-gray-900 font-bold leading-snug">
-              미션 큐는 촬영 직전에 공개됩니다
-            </p>
+          {/* 무료/유료 구분 안내 */}
+          <div className="w-full flex gap-2">
+            <div className="flex-1 bg-green-50 border border-green-200 rounded-2xl px-4 py-3 text-center">
+              <p className="text-[10px] font-black text-green-600 tracking-widest uppercase mb-1">FREE</p>
+              <p className="text-[13px] font-bold text-gray-900 leading-snug">연기 분석<br/>관상 분석<br/>성향 결과</p>
+            </div>
+            <div className="flex-1 bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 text-center">
+              <p className="text-[10px] font-black text-[#C9571A] tracking-widest uppercase mb-1">5크레딧</p>
+              <p className="text-[13px] font-bold text-gray-900 leading-snug">AI 스틸컷<br/>3장 생성<br/>(선택)</p>
+            </div>
           </div>
 
           <div className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 flex flex-col gap-3">
             <p className="text-[11px] font-bold text-gray-400 tracking-widest uppercase">오디션 전 확인사항</p>
             <ul className="flex flex-col gap-2.5">
               <li className="flex items-start gap-2.5">
-                <span className="text-[14px] shrink-0 mt-0.5">🌶️</span>
-                <p className="text-[13px] text-gray-600 leading-snug">매운맛/순한맛에 따라 평가 강도가 달라집니다. 상처받지 말고 재미로 봐주세요</p>
+                <span className="text-[14px] shrink-0 mt-0.5">🎭</span>
+                <p className="text-[13px] text-gray-600 leading-snug">미션 큐는 촬영 직전에 공개됩니다. 상처받지 말고 재미로 봐주세요</p>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-[14px] shrink-0 mt-0.5">📸</span>
-                <p className="text-[13px] text-gray-600 leading-snug">한번 촬영한 컷은 다시 찍을 수 없으니 이점 유의해주세요</p>
+                <p className="text-[13px] text-gray-600 leading-snug">한번 촬영한 컷은 다시 찍을 수 없으니 유의해주세요</p>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-[14px] shrink-0 mt-0.5">💳</span>
-                <p className="text-[13px] text-gray-600 leading-snug">크레딧 5개가 소모되며, 이 서비스는 환불이 어렵습니다</p>
+                <p className="text-[13px] text-gray-600 leading-snug">AI 스틸컷 생성 시에만 5크레딧이 소모됩니다</p>
               </li>
             </ul>
             <label className="flex items-center gap-3 mt-1 cursor-pointer select-none" onClick={() => setAgreed(v => !v)}>
@@ -713,8 +695,8 @@ function AuditionSoloInner() {
               disabled={!agreed}
               className="w-full bg-black hover:bg-gray-900 disabled:bg-gray-100 disabled:text-gray-400 text-white font-bold py-4 rounded-2xl text-[16px] transition-colors flex items-center justify-center gap-2.5"
             >
-              <span className="text-[12px] font-extrabold bg-white/20 rounded-lg px-2 py-0.5">5크레딧</span>
-              시작하기
+              <span className="text-[12px] font-extrabold bg-green-500 rounded-lg px-2 py-0.5">무료</span>
+              분석 시작하기
             </button>
           </div>
 

@@ -29,7 +29,9 @@ export async function POST(request: NextRequest) {
     : await supabase.from("style_usage").select("style_id, style_name, user_id");
 
   const [eventsRes, usersRes, todayUsageRes, paymentsRes, todayPaymentsRes, userListRes,
-    marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marRevenueRes, aprRevenueRes] = await Promise.all([
+    marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marRevenueRes, aprRevenueRes,
+    aprShareKakaoRes, aprShareLinkRes, aprSaveRes, aprAuditionShareKakaoRes, aprAuditionShareLinkRes,
+  ] = await Promise.all([
     // metadata 포함해서 공유 이벤트의 style_id 집계 가능하도록
     supabase.from("user_events").select("event_type, metadata"),
     supabase.from("users").select("id", { count: "exact", head: true }),
@@ -46,6 +48,12 @@ export async function POST(request: NextRequest) {
     // 월별 매출
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    // 4월 공유/저장 이벤트 카운트
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "share_kakao").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "share_link_copy").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "save_image").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_share_kakao").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_share_link_copy").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
   ]);
 
   if (usageRes.error || eventsRes.error) {
@@ -155,6 +163,11 @@ export async function POST(request: NextRequest) {
         auditionCount: aprAuditionRes.count ?? 0,
         apiCost: Math.round((aprUsageRes.count ?? 0) * STYLE_UNIT_COST + (aprAuditionRes.count ?? 0) * AUDITION_UNIT_COST),
         revenue: (aprRevenueRes.data ?? []).reduce((s: number, p: { amount: number }) => s + (p.amount ?? 0), 0),
+        shareKakao: aprShareKakaoRes.count ?? 0,
+        shareLink: aprShareLinkRes.count ?? 0,
+        saveImage: aprSaveRes.count ?? 0,
+        auditionShareKakao: aprAuditionShareKakaoRes.count ?? 0,
+        auditionShareLink: aprAuditionShareLinkRes.count ?? 0,
       },
     },
   });

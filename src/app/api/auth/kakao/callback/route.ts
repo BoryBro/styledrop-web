@@ -5,6 +5,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const error = searchParams.get("error");
+  // state에서 추천인 ID 추출 (예: "ref_abc123")
+  const stateRaw = searchParams.get("state") ?? "";
+  const referrerId = stateRaw.startsWith("ref_") ? stateRaw.slice(4) : null;
 
   if (error || !code) {
     return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=kakao_denied`);
@@ -64,10 +67,21 @@ export async function GET(request: NextRequest) {
         userId = user.id;
         await supabase.from("user_events").insert({ user_id: user.id, event_type: "login" });
 
-        // 신규 가입 시 3크레딧 지급
+        // 신규 가입 시 5크레딧 지급
         if (isNewUser) {
-          await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 3 });
-          await supabase.from("user_events").insert({ user_id: user.id, event_type: "signup_bonus", metadata: { credits: 3 } });
+          await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 5 });
+          await supabase.from("user_events").insert({ user_id: user.id, event_type: "signup_bonus", metadata: { credits: 5 } });
+
+          // 추천인 보상 처리
+          const refUserId = referrerId && referrerId !== user.id ? referrerId : null;
+          if (refUserId) {
+            // 추천받은 신규 유저 +2크레딧 추가
+            await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 2 });
+            await supabase.from("user_events").insert({ user_id: user.id, event_type: "referral_reward_new", metadata: { ref_user_id: refUserId, credits: 2 } });
+            // 추천한 기존 유저 +2크레딧
+            await supabase.rpc("add_credits", { p_user_id: refUserId, p_credits: 2 });
+            await supabase.from("user_events").insert({ user_id: refUserId, event_type: "referral_reward_ref", metadata: { new_user_id: user.id, credits: 2 } });
+          }
         }
       } else {
         console.error("[kakao callback] upsert error:", upsertError);

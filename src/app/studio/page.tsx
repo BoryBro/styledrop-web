@@ -496,7 +496,7 @@ export default function Studio() {
         {!loading && !user && (
           <div className="max-w-2xl mx-auto w-full px-4 pb-4">
             <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl px-5 py-4 flex flex-col gap-3">
-              <p className="text-white/80 text-[14px] font-medium">✦ 카카오 로그인하면 3크레딧 무료 지급!</p>
+              <p className="text-white/80 text-[14px] font-medium">✦ 카카오 로그인하면 5크레딧 무료 지급!</p>
               <p className="text-[12px] text-[#666]">1크레딧 = AI 변환 1회 · 워터마크 없이 고화질 저장</p>
               <button
                 onClick={() => { setLoginLoading(true); login(); }}

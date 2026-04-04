@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const ALLOWED_EVENTS = ["share_kakao", "share_link_copy", "revisit"];
+const ALLOWED_EVENTS = [
+  "share_kakao",
+  "share_link_copy",
+  "save_image",
+  "audition_share_kakao",
+  "audition_share_link_copy",
+  "revisit",
+  "share_credit_reward",
+  "referral_reward_new",
+  "referral_reward_ref",
+];
 
 function parseSession(request: NextRequest): { id: string } | null {
   try {
