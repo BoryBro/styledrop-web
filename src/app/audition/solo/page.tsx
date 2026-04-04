@@ -460,8 +460,12 @@ function AuditionSoloInner() {
   const [credits, setCredits] = useState<number>(0);
   const [bubbleIdx, setBubbleIdx] = useState(0);
   const [physioCapture, setPhysioCapture] = useState<CaptureItem | null>(null);
+  const [physioCountdown, setPhysioCountdown] = useState<number | null>(null);
+  const [physioPreviewUrl, setPhysioPreviewUrl] = useState<string | null>(null);
+  const [pendingCapture, setPendingCapture] = useState<CaptureItem | null>(null);
   const webcamRef = useRef<{ getScreenshot: () => string | null }>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const physioCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
   const { user, loading: authLoading, login } = useAuth();
 
@@ -552,18 +556,39 @@ function AuditionSoloInner() {
     setPhase("capture_physio_guide");
   };
 
-  const doPhysioCapture = useCallback(() => {
-    const screenshot = webcamRef.current?.getScreenshot();
-    if (!screenshot) return;
-    setPhysioCapture({ base64: screenshot.split(",")[1], dataUrl: screenshot });
-    setPhase("capture");
-  }, []);
 
   const doCapture = useCallback(() => {
     const screenshot = webcamRef.current?.getScreenshot();
     if (!screenshot) return;
-    setCaptures(prev => [...prev, { base64: screenshot.split(",")[1], dataUrl: screenshot }]);
+    setPendingCapture({ base64: screenshot.split(",")[1], dataUrl: screenshot });
   }, []);
+
+  const confirmCapture = useCallback(() => {
+    if (!pendingCapture) return;
+    setCaptures(prev => [...prev, pendingCapture]);
+    setPendingCapture(null);
+  }, [pendingCapture]);
+
+  const retakePending = useCallback(() => {
+    setPendingCapture(null);
+  }, []);
+
+  const startPhysioCountdown = useCallback(() => {
+    if (physioCountdown !== null) return;
+    let count = 3;
+    setPhysioCountdown(count);
+    physioCountdownRef.current = setInterval(() => {
+      count--;
+      if (count === 0) {
+        clearInterval(physioCountdownRef.current!);
+        setPhysioCountdown(null);
+        const screenshot = webcamRef.current?.getScreenshot();
+        if (screenshot) setPhysioPreviewUrl(screenshot);
+      } else {
+        setPhysioCountdown(count);
+      }
+    }, 1000);
+  }, [physioCountdown]);
 
   const startCountdown = useCallback(() => {
     if (countdown !== null) return;
@@ -851,17 +876,17 @@ function AuditionSoloInner() {
           <div className="flex flex-col gap-3 flex-1">
             <button
               onClick={() => handleAnswer("A")}
-              className="flex-1 flex flex-col justify-end p-5 rounded-2xl border-2 border-gray-100 bg-gray-50 hover:border-[#C9571A] hover:bg-orange-50 active:scale-[0.98] transition-all text-left"
+              className="flex-1 flex items-center gap-4 px-5 py-5 rounded-2xl border-2 border-gray-100 bg-gray-50 hover:border-[#C9571A] hover:bg-orange-50 active:scale-[0.98] transition-all text-left"
             >
-              <span className="text-[10px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-2">A</span>
-              <span className="text-[18px] font-bold text-gray-900 leading-snug">{current.a}</span>
+              <span className="text-[13px] font-black text-[#C9571A] tracking-[0.2em] uppercase flex-shrink-0 w-5">A</span>
+              <span className="text-[22px] font-black text-gray-900 leading-tight">{current.a}</span>
             </button>
             <button
               onClick={() => handleAnswer("B")}
-              className="flex-1 flex flex-col justify-end p-5 rounded-2xl border-2 border-gray-100 bg-gray-50 hover:border-[#C9571A] hover:bg-orange-50 active:scale-[0.98] transition-all text-left"
+              className="flex-1 flex items-center gap-4 px-5 py-5 rounded-2xl border-2 border-gray-100 bg-gray-50 hover:border-[#C9571A] hover:bg-orange-50 active:scale-[0.98] transition-all text-left"
             >
-              <span className="text-[10px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-2">B</span>
-              <span className="text-[18px] font-bold text-gray-900 leading-snug">{current.b}</span>
+              <span className="text-[13px] font-black text-[#C9571A] tracking-[0.2em] uppercase flex-shrink-0 w-5">B</span>
+              <span className="text-[22px] font-black text-gray-900 leading-tight">{current.b}</span>
             </button>
           </div>
 
@@ -911,19 +936,25 @@ function AuditionSoloInner() {
             </div>
           </div>
 
+          {/* 1회 경고 */}
+          <div className="bg-[#FFF3EE] border border-[#C9571A]/30 rounded-2xl px-4 py-3 flex items-center gap-3">
+            <span className="text-[20px] flex-shrink-0">⚠️</span>
+            <p className="text-[13px] font-black text-[#C9571A] leading-snug">관상 사진은 1회만 촬영 가능합니다.<br /><span className="font-medium text-[#C9571A]/80">촬영 후 다시 찍을 수 없으니 조건을 꼭 확인하세요.</span></p>
+          </div>
+
           {/* 촬영 조건 */}
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col gap-3">
-            <p className="text-[11px] font-black text-gray-400 tracking-widest uppercase">촬영 조건</p>
+            <p className="text-[11px] font-black text-gray-400 tracking-widest uppercase">필수 촬영 조건</p>
             {[
-              { icon: "☀️", text: "밝은 조명 아래에서 찍어주세요" },
-              { icon: "👁️", text: "카메라를 정면으로 바라봐주세요" },
-              { icon: "😐", text: "자연스러운 무표정으로 찍어주세요" },
-              { icon: "🚫", text: "모자나 선글라스는 벗어주세요" },
-              { icon: "📐", text: "얼굴이 화면 중앙에 오도록 해주세요" },
-            ].map(({ icon, text }) => (
+              { icon: "☀️", text: "밝은 조명 아래에서 찍어주세요", bold: true },
+              { icon: "👁️", text: "카메라를 정면으로 바라봐주세요", bold: true },
+              { icon: "😐", text: "자연스러운 무표정으로 찍어주세요", bold: false },
+              { icon: "🚫", text: "모자나 선글라스는 반드시 벗어주세요", bold: true },
+              { icon: "📐", text: "얼굴이 화면 중앙에 오도록 해주세요", bold: false },
+            ].map(({ icon, text, bold }) => (
               <div key={text} className="flex items-center gap-3">
-                <span className="text-[16px] shrink-0">{icon}</span>
-                <p className="text-[13px] text-gray-700">{text}</p>
+                <span className="text-[18px] shrink-0">{icon}</span>
+                <p className={`text-[14px] leading-snug ${bold ? "font-bold text-gray-900" : "font-medium text-gray-600"}`}>{text}</p>
               </div>
             ))}
           </div>
@@ -946,12 +977,54 @@ function AuditionSoloInner() {
 
   // ── 관상용 셀카 촬영 ──────────────────────────────────────────────
   if (phase === "capture_physio") {
+    // 프리뷰 모드
+    if (physioPreviewUrl) {
+      return (
+        <div className="bg-[#0A0A0A] flex flex-col" style={{ height: "100dvh" }}>
+          <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 flex-shrink-0">
+            <span className="text-[13px] font-bold text-white/60">촬영 확인</span>
+            <span className="text-[11px] font-bold text-[#C9571A] bg-[#C9571A]/15 px-3 py-1 rounded-full">관상 사진</span>
+          </header>
+          <main className="flex-1 flex flex-col px-4 py-4 gap-4 min-h-0">
+            <p className="text-[14px] font-bold text-white text-center">이 사진으로 관상 분석을 진행할까요?</p>
+            <div className="relative flex-1 rounded-2xl overflow-hidden bg-[#111] border border-white/10 min-h-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={physioPreviewUrl} alt="관상 사진" className="absolute inset-0 w-full h-full object-cover" />
+              {/* 타원 오버레이 */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div style={{ width: "62%", aspectRatio: "3/4", borderRadius: "50%", border: "2px solid rgba(201,87,26,0.6)" }} />
+              </div>
+            </div>
+            <div className="flex gap-3 flex-shrink-0">
+              <button
+                onClick={() => setPhysioPreviewUrl(null)}
+                className="flex-1 bg-white/10 border border-white/20 text-white font-bold py-4 rounded-2xl text-[15px] transition-colors"
+              >
+                다시 찍기
+              </button>
+              <button
+                onClick={() => {
+                  setPhysioCapture({ base64: physioPreviewUrl.split(",")[1], dataUrl: physioPreviewUrl });
+                  setPhysioPreviewUrl(null);
+                  setPhase("capture");
+                }}
+                className="flex-1 bg-[#C9571A] text-white font-bold py-4 rounded-2xl text-[15px] transition-colors"
+              >
+                이대로 진행하기
+              </button>
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    // 카운트다운 + 웹캠
     return (
       <div className="bg-[#0A0A0A] flex flex-col" style={{ height: "100dvh" }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 flex-shrink-0 z-40">
           <span className="text-[13px] font-bold text-white/60">관상 분석용 정면 사진</span>
-          <span className="text-[11px] font-bold text-[#C9571A] bg-[#C9571A]/15 px-3 py-1 rounded-full">1 / 4</span>
+          <span className="text-[11px] font-bold text-[#C9571A] bg-[#C9571A]/15 px-3 py-1 rounded-full">1회만 촬영 가능</span>
         </header>
 
         <main className="flex-1 flex flex-col px-4 py-3 gap-3 min-h-0">
@@ -978,20 +1051,35 @@ function AuditionSoloInner() {
                 }}
               />
             </div>
+            {/* 카운트다운 오버레이 */}
+            {physioCountdown !== null && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
+                <span className="text-white font-extrabold leading-none" style={{ fontSize: "30vw", textShadow: "0 0 40px rgba(201,87,26,0.9)" }}>
+                  {physioCountdown}
+                </span>
+              </div>
+            )}
             {/* 안내 텍스트 */}
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center z-10">
-              <p className="text-white/80 text-[12px] font-bold bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                얼굴을 타원 안에 맞춰주세요
-              </p>
-            </div>
+            {physioCountdown === null && (
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center z-10">
+                <p className="text-white/80 text-[12px] font-bold bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                  얼굴을 타원 안에 맞춰주세요
+                </p>
+              </div>
+            )}
           </div>
 
           {/* 촬영 버튼 */}
           <button
-            onClick={doPhysioCapture}
-            className="w-full bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold py-4 rounded-2xl text-[16px] transition-colors flex items-center justify-center gap-2 flex-shrink-0"
+            onClick={startPhysioCountdown}
+            disabled={physioCountdown !== null}
+            className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-[#2A2A2A] disabled:text-white/30 text-white font-bold py-4 rounded-2xl text-[16px] transition-colors flex items-center justify-center gap-2 flex-shrink-0"
           >
-            <span>📸</span><span>관상용 정면 찍기</span>
+            {physioCountdown !== null ? (
+              <span className="text-[22px] font-extrabold tabular-nums">{physioCountdown}</span>
+            ) : (
+              <><span>📸</span><span>관상용 정면 찍기</span></>
+            )}
           </button>
         </main>
       </div>
@@ -1059,48 +1147,81 @@ function AuditionSoloInner() {
   }
 
   // ── CAPTURE ──────────────────────────────────────────────────────
+  const currentGenre = GENRES.find(g => g.id === selectedGenres[stepIdx]);
+
+  // pendingCapture 프리뷰 모드
+  if (pendingCapture) {
+    return (
+      <div className="bg-[#0A0A0A] flex flex-col" style={{ height: "100dvh" }}>
+        <header className="h-[44px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 flex-shrink-0">
+          <span className="text-[12px] font-bold text-white/50">씬 {stepIdx + 1} 확인</span>
+          <div className="flex items-center gap-1.5">
+            {selectedGenres.map((g, i) => (
+              <div key={g} className={`rounded-full ${i < captures.length ? "w-2 h-2 bg-[#C9571A]" : i === stepIdx ? "w-3 h-2 bg-white" : "w-2 h-2 bg-white/20"}`} />
+            ))}
+          </div>
+        </header>
+        <main className="flex-1 flex flex-col px-4 py-4 gap-4 min-h-0">
+          <p className="text-[14px] font-bold text-white text-center">이 표정으로 찍을까요?</p>
+          <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#111] border border-white/10">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={pendingCapture.dataUrl} alt="촬영 확인" className="absolute inset-0 w-full h-full object-cover" />
+            {/* 씬 지시문 오버레이 */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-4 pb-4 pt-8">
+              <span className="text-[10px] font-black text-[#C9571A] uppercase tracking-widest">{currentGenre?.emoji} {currentGenre?.label}</span>
+              <p className="text-[12px] font-bold text-white/90 leading-snug mt-1">{stepCues[stepIdx]}</p>
+            </div>
+          </div>
+          <div className="flex gap-3 flex-shrink-0">
+            <button
+              onClick={retakePending}
+              className="flex-1 bg-white/10 border border-white/20 text-white font-bold py-4 rounded-2xl text-[15px]"
+            >
+              다시 찍기
+            </button>
+            <button
+              onClick={confirmCapture}
+              className="flex-1 bg-[#C9571A] text-white font-bold py-4 rounded-2xl text-[15px]"
+            >
+              이대로 찍기
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#0A0A0A] flex flex-col" style={{ height: "100dvh" }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* 상단 바 — 현재 장르 + 지시문 */}
+      {/* 상단 바 */}
       <header className="bg-[#0A0A0A] border-b border-[#1a1a1a] flex-shrink-0 z-40">
         <div className="h-[44px] flex items-center justify-between px-4">
           <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-sm tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
           <div className="flex items-center gap-1.5">
             {selectedGenres.map((g, i) => (
-              <div
-                key={g}
-                className={`rounded-full transition-all ${
-                  i < captures.length
-                    ? "w-2 h-2 bg-[#C9571A]"
-                    : i === stepIdx
-                    ? "w-3 h-2 bg-white"
-                    : "w-2 h-2 bg-white/20"
-                }`}
-              />
+              <div key={g} className={`rounded-full transition-all ${i < captures.length ? "w-2 h-2 bg-[#C9571A]" : i === stepIdx ? "w-3 h-2 bg-white" : "w-2 h-2 bg-white/20"}`} />
             ))}
           </div>
         </div>
-        {/* 지시문 띠 */}
-        {stepCues[stepIdx] && countdown === null && (
-          <div className="px-4 pb-3">
-            <div className="bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-2.5 flex items-start gap-2">
-              <span className="text-[14px] shrink-0 mt-0.5">
-                {GENRES.find(g => g.id === selectedGenres[stepIdx])?.emoji}
-              </span>
-              <p className="text-[12px] font-bold text-white/90 leading-snug line-clamp-2">
-                {stepCues[stepIdx]}
-              </p>
-            </div>
+        {/* 씬 타이틀 + 장르 + 지시문 */}
+        <div className="px-4 pb-3">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[11px] font-black text-[#C9571A] tracking-widest uppercase">씬 {stepIdx + 1}</span>
+            <span className="text-[11px] font-bold text-white/40">·</span>
+            <span className="text-[11px] font-bold text-white/60">{currentGenre?.emoji} {currentGenre?.label}</span>
           </div>
-        )}
+          {stepCues[stepIdx] && (
+            <p className="text-[15px] font-black text-white leading-snug">{stepCues[stepIdx]}</p>
+          )}
+        </div>
       </header>
 
-      <main className="flex-1 flex flex-col px-4 py-3 gap-3 min-h-0">
+      <main className="flex-1 flex flex-col px-4 py-3 gap-3 min-h-0 overflow-hidden">
 
-        {/* 웹캠 */}
-        <div className="relative flex-1 rounded-2xl overflow-hidden bg-[#111] border border-white/10 min-h-0">
+        {/* 웹캠 1:1 */}
+        <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#111] border border-white/10 flex-shrink-0">
           <Webcam
             ref={webcamRef}
             audio={false}
@@ -1111,25 +1232,18 @@ function AuditionSoloInner() {
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
           />
 
-          {/* 장르 뱃지 (하단) */}
-          {countdown === null && (
-            <div className="absolute bottom-3 left-0 right-0 flex justify-center z-10">
-              <span className="text-[11px] font-bold text-white bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
-                {GENRES.find(g => g.id === selectedGenres[stepIdx])?.emoji}{" "}
-                {GENRES.find(g => g.id === selectedGenres[stepIdx])?.label}
-              </span>
-            </div>
-          )}
-
-          {/* 카운트다운 오버레이 */}
+          {/* 카운트다운 오버레이 — 씬 지시문 포함 */}
           {countdown !== null && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-              <span
-                className="text-white font-extrabold leading-none"
-                style={{ fontSize: "25vw", textShadow: "0 0 40px rgba(201,87,26,0.9)" }}
-              >
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 z-10">
+              <span className="text-white font-extrabold leading-none" style={{ fontSize: "28vw", textShadow: "0 0 40px rgba(201,87,26,0.9)" }}>
                 {countdown}
               </span>
+              {/* 씬 지시문 오버레이 */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-white text-[13px] font-bold text-center bg-black/70 px-3 py-2 rounded-xl backdrop-blur-sm leading-snug">
+                  {stepCues[stepIdx]}
+                </p>
+              </div>
             </div>
           )}
 
@@ -1147,7 +1261,7 @@ function AuditionSoloInner() {
             {captures.map((item, i) => (
               <div key={i} className="relative group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.dataUrl} alt={`컷 ${i + 1}`} className="w-14 h-14 rounded-xl object-cover border-2 border-[#C9571A]" />
+                <img src={item.dataUrl} alt={`컷 ${i + 1}`} className="w-12 h-12 rounded-xl object-cover border-2 border-[#C9571A]" />
                 <button
                   onClick={() => retake(i)}
                   className="absolute inset-0 bg-black/70 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"

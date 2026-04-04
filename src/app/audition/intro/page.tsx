@@ -41,7 +41,6 @@ const CARD_IMAGES = [
 ];
 
 function CardMarquee() {
-  // 두 벌 복사해서 끊김 없는 루프
   const doubled = [...CARD_IMAGES, ...CARD_IMAGES];
   return (
     <div className="overflow-hidden w-full relative">
@@ -61,8 +60,43 @@ function CardMarquee() {
             key={i}
             src={src}
             alt="audition card"
-            className="rounded-2xl shadow-lg flex-shrink-0 object-cover"
-            style={{ width: 160, height: 220 }}
+            className="rounded-2xl shadow-xl flex-shrink-0 object-cover"
+            style={{ width: 210, height: 290 }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CardCarousel() {
+  const [idx, setIdx] = useState(0);
+  const n = CARD_IMAGES.length;
+  useEffect(() => {
+    const t = setInterval(() => setIdx(i => (i + 1) % n), 2800);
+    return () => clearInterval(t);
+  }, [n]);
+  const prevIdx = (idx - 1 + n) % n;
+  const nextIdx = (idx + 1) % n;
+  return (
+    <div className="w-full overflow-hidden px-2">
+      <style>{`@keyframes card-pop { 0%{transform:scale(0.85)} 60%{transform:scale(1.08)} 100%{transform:scale(1.04)} }`}</style>
+      <div className="flex items-end justify-center gap-3 py-6">
+        {[prevIdx, idx, nextIdx].map((imgIdx, pos) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={imgIdx}
+            src={CARD_IMAGES[imgIdx]}
+            alt="audition card"
+            className="rounded-2xl object-cover flex-shrink-0"
+            style={{
+              width: pos === 1 ? 200 : 130,
+              height: pos === 1 ? 278 : 182,
+              opacity: pos === 1 ? 1 : 0.45,
+              boxShadow: pos === 1 ? '0 20px 48px rgba(0,0,0,0.28)' : '0 4px 12px rgba(0,0,0,0.1)',
+              transition: 'all 0.48s cubic-bezier(0.4,0,0.2,1)',
+              animation: pos === 1 ? 'card-pop 0.48s cubic-bezier(0.4,0,0.2,1)' : undefined,
+            }}
           />
         ))}
       </div>
@@ -172,56 +206,83 @@ export default function AuditionIntroPage() {
       <div className="mx-6 h-px bg-gray-100" />
 
       {/* ── 관상 분석 소개 ──────────────────────────────── */}
-      <section className="px-6 py-12 flex flex-col gap-6">
-        <div>
-          <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Physiognomy Analysis</p>
-          <p className="text-[26px] font-black text-gray-900 leading-tight">얼굴에는<br />숨겨진 배역이 있다.</p>
+      <section className="py-12 flex flex-col gap-6 bg-[#0C0C0C]">
+        <style>{`
+          @keyframes dot-pulse {
+            0%, 100% { opacity: 0.5; r: 3.5; }
+            50% { opacity: 1; r: 5.5; }
+          }
+          @keyframes scan-line {
+            0% { transform: translateY(-100px); opacity: 0; }
+            20% { opacity: 0.6; }
+            80% { opacity: 0.6; }
+            100% { transform: translateY(300px); opacity: 0; }
+          }
+          @keyframes physio-fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
+        <div className="px-6">
+          <p className="text-[11px] font-black text-[#C9571A] uppercase tracking-[0.3em] mb-2">Physiognomy Analysis</p>
+          <p className="text-[26px] font-black text-white leading-tight">얼굴에는<br />숨겨진 배역이 있다.</p>
         </div>
-        {/* 관상 오버레이 SVG */}
-        <div className="flex items-center justify-center py-4">
-          <svg width="200" height="240" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+        {/* 다크 SVG 얼굴 분석 시각화 */}
+        <div className="mx-6 rounded-3xl overflow-hidden bg-[#111] border border-white/10 flex items-center justify-center py-8 relative">
+          {/* 배경 글로우 */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div style={{ width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,87,26,0.12) 0%, transparent 70%)' }} />
+          </div>
+          <svg width="220" height="270" viewBox="0 0 220 270" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ position: 'relative', zIndex: 1 }}>
+            {/* 스캔 라인 */}
+            <rect x="38" y="0" width="144" height="2" rx="1" fill="url(#scanGrad)" style={{ animation: 'scan-line 3s ease-in-out infinite' }} />
+            <defs>
+              <linearGradient id="scanGrad" x1="0" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="transparent"/>
+                <stop offset="50%" stopColor="#C9571A" stopOpacity="0.8"/>
+                <stop offset="100%" stopColor="transparent"/>
+              </linearGradient>
+            </defs>
             {/* 얼굴 윤곽 */}
-            <ellipse cx="100" cy="118" rx="72" ry="90" stroke="#E5E7EB" strokeWidth="1.5" strokeDasharray="4 3"/>
-            {/* 이마 */}
-            <circle cx="100" cy="45" r="4" fill="#C9571A" opacity="0.7"/>
-            {/* 눈 좌 */}
-            <circle cx="72" cy="95" r="3.5" fill="#C9571A" opacity="0.8"/>
-            {/* 눈 우 */}
-            <circle cx="128" cy="95" r="3.5" fill="#C9571A" opacity="0.8"/>
-            {/* 코 */}
-            <circle cx="100" cy="130" r="3" fill="#C9571A" opacity="0.6"/>
-            {/* 입 좌 */}
-            <circle cx="84" cy="155" r="2.5" fill="#C9571A" opacity="0.5"/>
-            {/* 입 우 */}
-            <circle cx="116" cy="155" r="2.5" fill="#C9571A" opacity="0.5"/>
-            {/* 광대 좌 */}
-            <circle cx="52" cy="118" r="3" fill="#C9571A" opacity="0.4"/>
-            {/* 광대 우 */}
-            <circle cx="148" cy="118" r="3" fill="#C9571A" opacity="0.4"/>
-            {/* 턱 */}
-            <circle cx="100" cy="195" r="3" fill="#C9571A" opacity="0.5"/>
+            <ellipse cx="110" cy="128" rx="78" ry="98" stroke="#C9571A" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="5 4"/>
+            <ellipse cx="110" cy="128" rx="60" ry="78" stroke="white" strokeWidth="0.5" strokeOpacity="0.06"/>
             {/* 연결선 */}
-            <line x1="100" y1="45" x2="72" y2="95" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
-            <line x1="100" y1="45" x2="128" y2="95" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
-            <line x1="72" y1="95" x2="128" y2="95" stroke="#C9571A" strokeWidth="0.8" opacity="0.25"/>
-            <line x1="72" y1="95" x2="100" y2="130" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
-            <line x1="128" y1="95" x2="100" y2="130" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
-            <line x1="100" y1="130" x2="84" y2="155" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
-            <line x1="100" y1="130" x2="116" y2="155" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
-            <line x1="84" y1="155" x2="100" y2="195" stroke="#C9571A" strokeWidth="0.8" opacity="0.25"/>
-            <line x1="116" y1="155" x2="100" y2="195" stroke="#C9571A" strokeWidth="0.8" opacity="0.25"/>
-            <line x1="52" y1="118" x2="72" y2="95" stroke="#C9571A" strokeWidth="0.8" opacity="0.2"/>
-            <line x1="148" y1="118" x2="128" y2="95" stroke="#C9571A" strokeWidth="0.8" opacity="0.2"/>
+            <line x1="110" y1="50" x2="80" y2="103" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.35"/>
+            <line x1="110" y1="50" x2="140" y2="103" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.35"/>
+            <line x1="80" y1="103" x2="140" y2="103" stroke="#C9571A" strokeWidth="0.6" strokeOpacity="0.25"/>
+            <line x1="80" y1="103" x2="110" y2="142" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.35"/>
+            <line x1="140" y1="103" x2="110" y2="142" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.35"/>
+            <line x1="110" y1="142" x2="93" y2="168" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.3"/>
+            <line x1="110" y1="142" x2="127" y2="168" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.3"/>
+            <line x1="93" y1="168" x2="110" y2="212" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.25"/>
+            <line x1="127" y1="168" x2="110" y2="212" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.25"/>
+            <line x1="58" y1="128" x2="80" y2="103" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.2"/>
+            <line x1="162" y1="128" x2="140" y2="103" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.2"/>
+            {/* 핵심 포인트 점들 (애니메이션) */}
+            <circle cx="110" cy="50" r="4" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0s' }}/>
+            <circle cx="80" cy="103" r="4" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0.3s' }}/>
+            <circle cx="140" cy="103" r="4" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0.3s' }}/>
+            <circle cx="110" cy="142" r="3.5" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0.6s' }}/>
+            <circle cx="93" cy="168" r="3" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0.8s' }}/>
+            <circle cx="127" cy="168" r="3" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0.8s' }}/>
+            <circle cx="58" cy="128" r="3" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '1s' }}/>
+            <circle cx="162" cy="128" r="3" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '1s' }}/>
+            <circle cx="110" cy="212" r="3.5" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '1.2s' }}/>
             {/* 라벨 */}
-            <text x="108" y="43" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">이마</text>
-            <text x="38" y="93" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">눈</text>
-            <text x="136" y="93" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">눈</text>
-            <text x="106" y="128" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">코</text>
-            <text x="22" y="120" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">광대</text>
-            <text x="152" y="120" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">광대</text>
-            <text x="106" y="168" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">입</text>
-            <text x="106" y="198" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">턱</text>
+            <text x="118" y="48" fontSize="9" fill="#C9571A" fillOpacity="0.8" fontFamily="sans-serif" fontWeight="700">이마</text>
+            <text x="40" y="101" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">눈</text>
+            <text x="148" y="101" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">눈</text>
+            <text x="116" y="140" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">코</text>
+            <text x="18" y="130" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">광대</text>
+            <text x="166" y="130" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">광대</text>
+            <text x="116" y="182" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">입</text>
+            <text x="116" y="215" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">턱</text>
           </svg>
+          {/* AI SCANNING 라벨 */}
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+            <span className="text-[10px] font-black text-[#C9571A] tracking-[0.3em] uppercase opacity-70">AI SCANNING</span>
+          </div>
         </div>
 
         {[
@@ -229,11 +290,11 @@ export default function AuditionIntroPage() {
           { icon: "🦴", title: "얼굴형 판독", desc: "이마·광대·턱의 구조로 타고난 캐릭터 유형 분류" },
           { icon: "🎭", title: "배역 매칭", desc: "8가지 캐릭터 아키타입 중 당신의 얼굴에 가장 잘 맞는 배역 판정" },
         ].map(item => (
-          <div key={item.title} className="flex items-start gap-4 bg-gray-50 rounded-2xl px-5 py-4">
+          <div key={item.title} className="mx-6 flex items-start gap-4 bg-white/5 border border-white/10 rounded-2xl px-5 py-4">
             <span className="text-[24px] flex-shrink-0">{item.icon}</span>
             <div>
-              <p className="text-[15px] font-black text-gray-900 mb-0.5">{item.title}</p>
-              <p className="text-[13px] text-gray-500 leading-snug">{item.desc}</p>
+              <p className="text-[15px] font-black text-white mb-0.5">{item.title}</p>
+              <p className="text-[13px] text-white/50 leading-snug">{item.desc}</p>
             </div>
           </div>
         ))}
@@ -266,7 +327,7 @@ export default function AuditionIntroPage() {
         <div className="bg-white rounded-2xl px-5 py-4 border border-gray-100">
           <p className="text-[13px] font-bold text-gray-900 mb-1">왜 밸런스 게임을 하나요?</p>
           <p className="text-[13px] text-gray-500 leading-relaxed">
-            관상은 겉모습만 봅니다. 하지만 진짜 배역은 성격에서 나와요. 감독이 배우를 캐스팅할 때 외모만 보지 않는 것처럼, AI도 얼굴 + 성향을 함께 봐야 정확한 배역을 찾아낼 수 있습니다.
+            관상은 겉모습만 봅니다. 하지만 <strong className="text-gray-800 font-black">진짜 배역은 성격에서 나와요.</strong> 감독이 배우를 캐스팅할 때 외모만 보지 않는 것처럼, AI도 <strong className="text-gray-800 font-black">얼굴 + 성향을 함께</strong> 봐야 정확한 배역을 찾아낼 수 있습니다.
           </p>
         </div>
       </section>
@@ -277,29 +338,30 @@ export default function AuditionIntroPage() {
       <section className="py-12 flex flex-col gap-6">
         <div className="px-6">
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Result Cards</p>
-          <p className="text-[26px] font-black text-gray-900 leading-tight">당신만의 캐릭터<br />카드가 만들어집니다.</p>
+          <p className="text-[26px] font-black text-gray-900 leading-tight">당신만의 배역<br />캐릭터 카드가<br />만들어집니다.</p>
         </div>
-        <CardMarquee />
+        <CardCarousel />
         <p className="px-6 text-[12px] text-gray-400 font-medium">* 실제 결과는 본인 사진 기반으로 제작됩니다</p>
       </section>
 
       {/* ── 텍스트 마커 ─────────────────────────────────── */}
       <section className="px-6 py-12 flex flex-col gap-3">
         {[
-          { text: "LIGHTS · CAMERA · YOU",         fill: true  },
-          { text: "FACE READING × AI ANALYSIS",    fill: false },
-          { text: "REAL EMOTION · REAL RESULTS",   fill: true  },
-          { text: "YOUR CHARACTER · REVEALED",     fill: false },
-          { text: "ONE TAKE · ONE TRUTH",           fill: true  },
+          { text: "LIGHTS · CAMERA · YOU",         fill: true,  weight: 900 },
+          { text: "FACE READING × AI ANALYSIS",    fill: false, weight: 300 },
+          { text: "REAL EMOTION · REAL RESULTS",   fill: true,  weight: 900 },
+          { text: "YOUR CHARACTER · REVEALED",     fill: false, weight: 300 },
+          { text: "ONE TAKE · ONE TRUTH",           fill: true,  weight: 900 },
         ].map((item, i) => (
           <p
             key={i}
-            className="text-[21px] font-black leading-tight"
+            className="text-[21px] leading-tight"
             style={{
               color: item.fill ? '#111' : 'transparent',
               WebkitTextStroke: item.fill ? undefined : '1.5px #d1d5db',
               letterSpacing: '-0.5px',
               fontFamily: '"Unbounded", sans-serif',
+              fontWeight: item.weight,
             }}
           >
             {item.text}
@@ -328,7 +390,6 @@ export default function AuditionIntroPage() {
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.25em]">오디션 전 확인사항</p>
           <ul className="flex flex-col gap-4">
             {[
-              { icon: "🌶️", text: "매운맛/순한맛에 따라 평가 강도가 달라집니다. 상처받지 말고 재미로 봐주세요" },
               { icon: "📸", text: "한번 촬영한 컷은 다시 찍을 수 없으니 이점 유의해주세요" },
               { icon: "💳", text: "크레딧 5개가 소모되며, 이 서비스는 환불이 어렵습니다" },
             ].map(item => (

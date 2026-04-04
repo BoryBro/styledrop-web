@@ -397,7 +397,7 @@ export default function Studio() {
 
           {/* AI 오디션 카드 */}
           <Link href="/audition/intro" className="block mb-4 active:scale-[0.97] transition-transform">
-            <div className="relative rounded-2xl overflow-hidden bg-[#0A0A0A] border border-white/[0.07]" style={{ aspectRatio: '1/1' }}>
+            <div className="relative rounded-2xl overflow-hidden bg-[#0A0A0A] border border-white/[0.07]" style={{ aspectRatio: '4/3' }}>
 
               {/* ── 배경: 미묘한 오렌지 코너 글로우 ── */}
               <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 10% 100%, rgba(201,87,26,0.18) 0%, transparent 70%)' }} />
