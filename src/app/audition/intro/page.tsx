@@ -73,10 +73,10 @@ function CardMarquee() {
 export default function AuditionIntroPage() {
   const router = useRouter();
   const typed = useTypewriter([
-    "CAN YOU ACT?",
-    "PROVE IT.",
-    "ONE TAKE ONLY.",
-    "ARE YOU THE ONE?",
+    "AI 오디션",
+    "배역을 찾아드려요.",
+    "당신의 얼굴이 말해요.",
+    "감독이 심사합니다.",
   ], 65, 1800);
 
   const [agreed, setAgreed] = useState(false);
@@ -116,10 +116,10 @@ export default function AuditionIntroPage() {
       <section className="flex flex-col items-center justify-center px-6 pt-16 pb-12 text-center" style={{ minHeight: '85vh' }}>
         <p className="text-[11px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-5">관상 × 성향 × 연기 분석</p>
 
-        <div className="h-[130px] flex items-center justify-center">
-          <h1 className="text-[52px] font-black text-black leading-none tracking-tighter text-center">
+        <div className="h-[80px] flex items-center justify-center">
+          <h1 className="text-[31px] text-black leading-none text-center" style={{ fontFamily: '"BMKkubulim", sans-serif' }}>
             {typed}
-            <span className="inline-block w-[3px] h-[46px] bg-[#C9571A] ml-1.5 align-middle" style={{ animation: 'pulse 1s step-end infinite' }} />
+            <span className="inline-block w-[2px] h-[28px] bg-[#C9571A] ml-1 align-middle" style={{ animation: 'pulse 1s step-end infinite' }} />
           </h1>
         </div>
 
@@ -152,15 +152,16 @@ export default function AuditionIntroPage() {
       <section className="px-6 py-12 flex flex-col gap-8 bg-white">
         <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em]">How it works</p>
         {[
-          { num: "01", en: "CHOOSE YOUR GENRE",   ko: "장르를 선택하세요",  desc: "액션·로맨스·범죄·공포 등\n10개 장르 중 3개를 고르세요." },
-          { num: "02", en: "BALANCE GAME",         ko: "성향 밸런스 게임",   desc: "10가지 선택 질문으로 당신의\n배우 기질과 성향을 파악합니다.", highlight: true },
-          { num: "03", en: "PERFORM",              ko: "카메라 앞에 서세요", desc: "씬 지문에 맞게 셀카 3장으로\n연기 표정을 촬영합니다." },
-          { num: "04", en: "GET YOUR CHARACTER",   ko: "배역이 판정됩니다",  desc: "관상 분석 + 성향 + 연기력을 종합해\n당신만의 캐릭터 카드를 만들어냅니다." },
+          { num: "01", en: "CHOOSE YOUR GENRE",   ko: "장르를 선택하세요",       desc: "액션·로맨스·범죄·공포 등\n10개 장르 중 3개를 고르세요." },
+          { num: "02", en: "BALANCE GAME",         ko: "성향 밸런스 게임",        desc: "10가지 선택 질문으로 당신의\n배우 기질과 성향을 파악합니다." },
+          { num: "03", en: "FACE ANALYSIS",        ko: "관상 정밀 촬영",          desc: "정면 얼굴 사진을 촬영합니다.\nAI가 눈·코·입·얼굴형을 분석합니다." },
+          { num: "04", en: "PERFORM",              ko: "카메라 앞에 서세요",      desc: "씬 지문에 맞게 셀카 3장으로\n연기 표정을 촬영합니다." },
+          { num: "05", en: "GET YOUR CHARACTER",   ko: "배역이 판정됩니다",       desc: "관상 분석 + 성향 + 연기력을 종합해\n당신만의 캐릭터 카드를 만들어냅니다." },
         ].map(f => (
           <div key={f.num} className="flex gap-4 items-start">
             <span className="text-[28px] font-black text-gray-200 leading-none flex-shrink-0 w-10 text-right tabular-nums">{f.num}</span>
-            <div className={`flex-1 border-l-2 pl-4 ${f.highlight ? "border-[#C9571A]/30" : "border-gray-100"}`}>
-              <p className={`text-[10px] font-black uppercase tracking-widest mb-0.5 ${f.highlight ? "text-[#C9571A]" : "text-[#C9571A]"}`}>{f.en}</p>
+            <div className="flex-1 border-l-2 pl-4 border-gray-100">
+              <p className="text-[10px] font-black uppercase tracking-widest mb-0.5 text-[#C9571A]">{f.en}</p>
               <p className="text-[20px] font-black text-gray-900 leading-tight mb-1.5">{f.ko}</p>
               <p className="text-[14px] text-gray-500 leading-relaxed whitespace-pre-line">{f.desc}</p>
             </div>
@@ -176,6 +177,53 @@ export default function AuditionIntroPage() {
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Physiognomy Analysis</p>
           <p className="text-[26px] font-black text-gray-900 leading-tight">얼굴에는<br />숨겨진 배역이 있다.</p>
         </div>
+        {/* 관상 오버레이 SVG */}
+        <div className="flex items-center justify-center py-4">
+          <svg width="200" height="240" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* 얼굴 윤곽 */}
+            <ellipse cx="100" cy="118" rx="72" ry="90" stroke="#E5E7EB" strokeWidth="1.5" strokeDasharray="4 3"/>
+            {/* 이마 */}
+            <circle cx="100" cy="45" r="4" fill="#C9571A" opacity="0.7"/>
+            {/* 눈 좌 */}
+            <circle cx="72" cy="95" r="3.5" fill="#C9571A" opacity="0.8"/>
+            {/* 눈 우 */}
+            <circle cx="128" cy="95" r="3.5" fill="#C9571A" opacity="0.8"/>
+            {/* 코 */}
+            <circle cx="100" cy="130" r="3" fill="#C9571A" opacity="0.6"/>
+            {/* 입 좌 */}
+            <circle cx="84" cy="155" r="2.5" fill="#C9571A" opacity="0.5"/>
+            {/* 입 우 */}
+            <circle cx="116" cy="155" r="2.5" fill="#C9571A" opacity="0.5"/>
+            {/* 광대 좌 */}
+            <circle cx="52" cy="118" r="3" fill="#C9571A" opacity="0.4"/>
+            {/* 광대 우 */}
+            <circle cx="148" cy="118" r="3" fill="#C9571A" opacity="0.4"/>
+            {/* 턱 */}
+            <circle cx="100" cy="195" r="3" fill="#C9571A" opacity="0.5"/>
+            {/* 연결선 */}
+            <line x1="100" y1="45" x2="72" y2="95" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
+            <line x1="100" y1="45" x2="128" y2="95" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
+            <line x1="72" y1="95" x2="128" y2="95" stroke="#C9571A" strokeWidth="0.8" opacity="0.25"/>
+            <line x1="72" y1="95" x2="100" y2="130" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
+            <line x1="128" y1="95" x2="100" y2="130" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
+            <line x1="100" y1="130" x2="84" y2="155" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
+            <line x1="100" y1="130" x2="116" y2="155" stroke="#C9571A" strokeWidth="0.8" opacity="0.3"/>
+            <line x1="84" y1="155" x2="100" y2="195" stroke="#C9571A" strokeWidth="0.8" opacity="0.25"/>
+            <line x1="116" y1="155" x2="100" y2="195" stroke="#C9571A" strokeWidth="0.8" opacity="0.25"/>
+            <line x1="52" y1="118" x2="72" y2="95" stroke="#C9571A" strokeWidth="0.8" opacity="0.2"/>
+            <line x1="148" y1="118" x2="128" y2="95" stroke="#C9571A" strokeWidth="0.8" opacity="0.2"/>
+            {/* 라벨 */}
+            <text x="108" y="43" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">이마</text>
+            <text x="38" y="93" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">눈</text>
+            <text x="136" y="93" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">눈</text>
+            <text x="106" y="128" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">코</text>
+            <text x="22" y="120" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">광대</text>
+            <text x="152" y="120" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">광대</text>
+            <text x="106" y="168" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">입</text>
+            <text x="106" y="198" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">턱</text>
+          </svg>
+        </div>
+
         {[
           { icon: "👁️", title: "눈빛 분석", desc: "눈꼬리 방향·눈빛 강도로 카리스마형인지 감성형인지 판별" },
           { icon: "🦴", title: "얼굴형 판독", desc: "이마·광대·턱의 구조로 타고난 캐릭터 유형 분류" },
@@ -214,7 +262,6 @@ export default function AuditionIntroPage() {
               <p className="text-[13px] text-gray-600 font-medium leading-snug">{item.q}</p>
             </div>
           ))}
-          <p className="text-[12px] text-gray-400 text-center pt-1">+ 7가지 더</p>
         </div>
         <div className="bg-white rounded-2xl px-5 py-4 border border-gray-100">
           <p className="text-[13px] font-bold text-gray-900 mb-1">왜 밸런스 게임을 하나요?</p>
@@ -252,6 +299,7 @@ export default function AuditionIntroPage() {
               color: item.fill ? '#111' : 'transparent',
               WebkitTextStroke: item.fill ? undefined : '1.5px #d1d5db',
               letterSpacing: '-0.5px',
+              fontFamily: '"Unbounded", sans-serif',
             }}
           >
             {item.text}
@@ -282,7 +330,7 @@ export default function AuditionIntroPage() {
             {[
               { icon: "🌶️", text: "매운맛/순한맛에 따라 평가 강도가 달라집니다. 상처받지 말고 재미로 봐주세요" },
               { icon: "📸", text: "한번 촬영한 컷은 다시 찍을 수 없으니 이점 유의해주세요" },
-              { icon: "💳", text: "크레딧 3개가 소모되며, 이 서비스는 환불이 어렵습니다" },
+              { icon: "💳", text: "크레딧 5개가 소모되며, 이 서비스는 환불이 어렵습니다" },
             ].map(item => (
               <li key={item.icon} className="flex items-start gap-3">
                 <span className="text-[18px] flex-shrink-0 mt-0.5">{item.icon}</span>

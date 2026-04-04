@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, Suspense } from "react";
+import { useState, useRef, useCallback, useEffect, Suspense, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -465,6 +465,15 @@ function AuditionSoloInner() {
   const router = useRouter();
   const { user, loading: authLoading, login } = useAuth();
 
+  // 카테고리별 1문제씩 랜덤 추출 (총 10개)
+  const quizQuestions = useMemo(() => {
+    const categories = [...new Set(QUIZ_QUESTIONS.map(q => q.category))];
+    return categories.map(cat => {
+      const pool = QUIZ_QUESTIONS.filter(q => q.category === cat);
+      return pool[Math.floor(Math.random() * pool.length)];
+    });
+  }, []);
+
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current); }, []);
 
   // 인증 + 크레딧 체크
@@ -787,8 +796,8 @@ function AuditionSoloInner() {
 
   // ── 성향 퀴즈 ────────────────────────────────────────────────────
   if (phase === "personality_quiz") {
-    const current = QUIZ_QUESTIONS[quizStep];
-    const progress = ((quizStep + 1) / QUIZ_QUESTIONS.length) * 100;
+    const current = quizQuestions[quizStep];
+    const progress = ((quizStep + 1) / quizQuestions.length) * 100;
 
     const handleAnswer = (answer: string) => {
       const next = [...personalityAnswers, answer];
@@ -796,7 +805,7 @@ function AuditionSoloInner() {
       setQuizAnim(true);
       setTimeout(() => {
         setQuizAnim(false);
-        if (quizStep + 1 >= QUIZ_QUESTIONS.length) {
+        if (quizStep + 1 >= quizQuestions.length) {
           startCapture();
         } else {
           setQuizStep(s => s + 1);
@@ -819,7 +828,7 @@ function AuditionSoloInner() {
               <path d="M13 16l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          <span className="text-[13px] font-bold text-gray-900">{quizStep + 1} / {QUIZ_QUESTIONS.length}</span>
+          <span className="text-[13px] font-bold text-gray-900">{quizStep + 1} / {quizQuestions.length}</span>
           <div className="w-5" />
         </header>
 

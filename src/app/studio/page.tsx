@@ -442,7 +442,7 @@ export default function Studio() {
                     fontSize: 'clamp(46px, 14vw, 76px)',
                     letterSpacing: '-1px',
                   }}
-                >오디션</span>
+                >AI 오디션</span>
               </div>
 
               {/* ── 설명 텍스트 ── */}
