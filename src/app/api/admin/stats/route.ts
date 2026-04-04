@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
 
   const [eventsRes, usersRes, todayUsageRes, paymentsRes, todayPaymentsRes, userListRes,
     marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marRevenueRes, aprRevenueRes] = await Promise.all([
-    supabase.from("user_events").select("event_type"),
+    // metadata 포함해서 공유 이벤트의 style_id 집계 가능하도록
+    supabase.from("user_events").select("event_type, metadata"),
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
     supabase.from("payments").select("id, amount, credits, user_id, status, created_at").order("created_at", { ascending: false }),
@@ -39,9 +40,9 @@ export async function POST(request: NextRequest) {
     // 월별 스타일 변환
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
-    // 월별 오디션
-    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_complete").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
-    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_complete").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    // 월별 오디션 — audition_history 테이블 사용 (처음부터 기록됨)
+    supabase.from("audition_history").select("id", { count: "exact", head: true }).gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
+    supabase.from("audition_history").select("id", { count: "exact", head: true }).gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
     // 월별 매출
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
@@ -58,7 +59,6 @@ export async function POST(request: NextRequest) {
   const totalPaymentCount = paidPayments.length;
   const todayRevenue = (todayPaymentsRes.data ?? []).reduce((sum, p) => sum + (p.amount ?? 0), 0);
 
-
   const usage = usageRes.data ?? [];
   const events = eventsRes.data ?? [];
 
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
   const validStyleIds = new Set(ALL_STYLES.map(s => s.id));
   const counts: Record<string, { style_name: string; count: number }> = {};
   for (const row of usage) {
-    if (!validStyleIds.has(row.style_id)) continue; // 삭제된 테스트 스타일 제외
+    if (!validStyleIds.has(row.style_id)) continue;
     if (!counts[row.style_id]) counts[row.style_id] = { style_name: STYLE_LABELS[row.style_id] ?? row.style_name, count: 0 };
     counts[row.style_id].count++;
   }
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     count: v.count,
   })).sort((a, b) => b.count - a.count);
 
-  // 스타일별 베리에이션 집계 (variant 컬럼이 없으면 전부 "default"로 처리)
+  // 스타일별 베리에이션 집계
   const byStyleVariants: Record<string, Record<string, number>> = {};
   if (hasVariantCol) {
     for (const row of usage) {
@@ -93,11 +93,32 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 이벤트 집계
+  // 이벤트 집계 + 스타일별 공유 집계
   const eventCounts: Record<string, number> = {};
+  const shareByStyle: Record<string, { kakao: number; link: number }> = {};
+
   for (const e of events) {
     eventCounts[e.event_type] = (eventCounts[e.event_type] ?? 0) + 1;
+
+    // 스타일별 공유 집계 (metadata.style_id 있는 경우)
+    if (e.event_type === "share_kakao" || e.event_type === "share_link_copy") {
+      const styleId = (e.metadata as { style_id?: string } | null)?.style_id;
+      if (styleId && validStyleIds.has(styleId)) {
+        if (!shareByStyle[styleId]) shareByStyle[styleId] = { kakao: 0, link: 0 };
+        if (e.event_type === "share_kakao") shareByStyle[styleId].kakao++;
+        else shareByStyle[styleId].link++;
+      }
+    }
   }
+
+  // 스타일 이름 붙여서 배열로 변환 (공유 많은 순)
+  const shareByStyleList = Object.entries(shareByStyle).map(([style_id, v]) => ({
+    style_id,
+    style_name: STYLE_LABELS[style_id] ?? style_id,
+    kakao: v.kakao,
+    link: v.link,
+    total: v.kakao + v.link,
+  })).sort((a, b) => b.total - a.total);
 
   return NextResponse.json({
     userList: userListRes.data ?? [],
@@ -114,6 +135,7 @@ export async function POST(request: NextRequest) {
     uniqueLoggedInUsers,
     shareKakao: eventCounts["share_kakao"] ?? 0,
     shareLinkCopy: eventCounts["share_link_copy"] ?? 0,
+    shareByStyleList,
     transformEvents: eventCounts["transform"] ?? 0,
     auditionShareKakao: eventCounts["audition_share_kakao"] ?? 0,
     auditionShareLinkCopy: eventCounts["audition_share_link_copy"] ?? 0,

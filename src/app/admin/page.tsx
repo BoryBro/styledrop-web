@@ -25,6 +25,7 @@ type Stats = {
   transformEvents: number;
   auditionShareKakao: number;
   auditionShareLinkCopy: number;
+  shareByStyleList: { style_id: string; style_name: string; kakao: number; link: number; total: number }[];
   totalRevenue: number;
   totalPaymentCount: number;
   todayRevenue: number;
@@ -426,6 +427,33 @@ export default function AdminPage() {
               ratio={`${shareTotal}회`} highlight
             />
           </div>
+          {/* 스타일별 공유 스프레드시트 */}
+          {(stats.shareByStyleList?.length ?? 0) > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mt-1">
+              {/* 헤더 */}
+              <div className="flex items-center px-4 py-2 bg-gray-50 border-b border-gray-200">
+                <span className="flex-1 text-[11px] font-bold text-gray-400 uppercase tracking-widest">스타일</span>
+                <div className="flex items-center gap-1 w-8 justify-center">
+                  <div className="w-4 h-4 rounded bg-[#FEE500] flex items-center justify-center flex-shrink-0">
+                    <KakaoIcon />
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 w-8 justify-center">
+                  <LinkIcon />
+                </div>
+                <span className="w-10 text-right text-[11px] font-bold text-gray-400 uppercase tracking-widest">합계</span>
+              </div>
+              {/* 행 */}
+              {stats.shareByStyleList.map((s) => (
+                <div key={s.style_id} className="flex items-center px-4 py-2.5 border-b border-gray-100 last:border-0">
+                  <span className="flex-1 text-[13px] text-gray-700 font-medium truncate pr-2">{s.style_name}</span>
+                  <span className="w-8 text-center text-[13px] tabular-nums text-gray-700">{s.kakao}</span>
+                  <span className="w-8 text-center text-[13px] tabular-nums text-gray-700">{s.link}</span>
+                  <span className="w-10 text-right text-[14px] font-bold tabular-nums text-[#C9571A]">{s.total}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* AI 오디션 */}
