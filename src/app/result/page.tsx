@@ -171,6 +171,8 @@ export default function Result() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }
+      fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "save_image", metadata: { style_id: selectedStyle } }) }).catch(() => {});
     } catch (e) {
       console.error("Save failed:", e);
     }

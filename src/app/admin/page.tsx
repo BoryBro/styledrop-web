@@ -22,6 +22,7 @@ type Stats = {
   uniqueLoggedInUsers: number;
   shareKakao: number;
   shareLinkCopy: number;
+  saveImage: number;
   transformEvents: number;
   auditionShareKakao: number;
   auditionShareLinkCopy: number;
@@ -134,7 +135,7 @@ function Row({ label, value, note, highlight }: { label: string; value: string |
     <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
       <span className="text-gray-500 text-[15px]">{label}</span>
       <div className="flex items-center gap-2">
-        {note && <span className="text-gray-400 text-[13px]">{note}</span>}
+        {note && <span className="text-gray-500 text-[13px] font-medium">{note}</span>}
         <span className={`text-[17px] font-bold tabular-nums ${highlight ? "text-[#C9571A]" : "text-gray-900"}`}>{value}</span>
       </div>
     </div>
@@ -160,26 +161,36 @@ function Bar({ ratio, color = "#C9571A" }: { ratio: number; color?: string }) {
   );
 }
 
-function KakaoIcon() {
+function KakaoIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="#3C1E1E">
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="#3C1E1E">
       <path d="M12 3C6.477 3 2 6.58 2 11.1c0 2.9 1.6 5.45 4.05 7.02l-.97 3.63a.25.25 0 00.38.28l4.2-2.74c.75.1 1.53.15 2.34.15 5.523 0 10-3.58 10-8.1S17.523 3 12 3z"/>
     </svg>
   );
 }
 
-function LinkIcon() {
+function LinkIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="#374151" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
       <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
     </svg>
   );
 }
 
-function RatioIcon() {
+function SaveIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="#374151" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+  );
+}
+
+function RatioIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round">
       <circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/>
       <path d="M6 18L18 6"/>
     </svg>
@@ -196,7 +207,7 @@ function ShareRow({ icon, iconBg, label, count, ratio, highlight }: {
         {icon}
       </div>
       <span className="flex-1 text-gray-600 text-[15px]">{label}</span>
-      {ratio !== undefined && <span className="text-gray-400 text-[13px] tabular-nums">{ratio}</span>}
+      {ratio !== undefined && <span className="text-gray-600 text-[13px] font-semibold tabular-nums">{ratio}</span>}
       <span className={`font-bold text-[17px] tabular-nums ${highlight ? "text-[#C9571A]" : "text-gray-900"}`}>{count}</span>
     </div>
   );
@@ -412,17 +423,22 @@ export default function AdminPage() {
           <p className="text-[12px] text-gray-400 px-1 font-medium">스타일 카드</p>
           <div className="bg-white rounded-2xl px-4 border border-gray-200">
             <ShareRow
-              icon={<KakaoIcon />} iconBg="bg-[#FEE500]"
+              icon={<KakaoIcon size={15} />} iconBg="bg-[#FEE500]"
               label="카카오 공유" count={`${stats.shareKakao}회`}
               ratio={`${stats.total > 0 ? Math.round((stats.shareKakao / stats.total) * 100) : 0}%`}
             />
             <ShareRow
-              icon={<LinkIcon />} iconBg="bg-gray-100"
+              icon={<LinkIcon size={15} />} iconBg="bg-gray-200"
               label="링크 복사" count={`${stats.shareLinkCopy}회`}
               ratio={`${stats.total > 0 ? Math.round((stats.shareLinkCopy / stats.total) * 100) : 0}%`}
             />
             <ShareRow
-              icon={<RatioIcon />} iconBg="bg-orange-50"
+              icon={<SaveIcon size={15} />} iconBg="bg-gray-200"
+              label="사진 저장" count={`${stats.saveImage ?? 0}회`}
+              ratio={`${stats.total > 0 ? Math.round(((stats.saveImage ?? 0) / stats.total) * 100) : 0}%`}
+            />
+            <ShareRow
+              icon={<RatioIcon size={15} />} iconBg="bg-orange-100"
               label="공유 전환율" count={`${shareRatio}%`}
               ratio={`${shareTotal}회`} highlight
             />
@@ -433,13 +449,13 @@ export default function AdminPage() {
               {/* 헤더 */}
               <div className="flex items-center px-4 py-2 bg-gray-50 border-b border-gray-200">
                 <span className="flex-1 text-[11px] font-bold text-gray-400 uppercase tracking-widest">스타일</span>
-                <div className="flex items-center gap-1 w-8 justify-center">
-                  <div className="w-4 h-4 rounded bg-[#FEE500] flex items-center justify-center flex-shrink-0">
-                    <KakaoIcon />
+                <div className="w-8 flex justify-center">
+                  <div className="w-[18px] h-[18px] rounded bg-[#FEE500] flex items-center justify-center flex-shrink-0">
+                    <KakaoIcon size={12} />
                   </div>
                 </div>
-                <div className="flex items-center gap-1 w-8 justify-center">
-                  <LinkIcon />
+                <div className="w-8 flex justify-center">
+                  <LinkIcon size={13} />
                 </div>
                 <span className="w-10 text-right text-[11px] font-bold text-gray-400 uppercase tracking-widest">합계</span>
               </div>
@@ -690,7 +706,7 @@ export default function AdminPage() {
               <div key={s.style_id} className="py-3 border-b border-gray-100 last:border-0">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-800 text-[15px] font-bold">{s.style_name}</span>
-                  <span className="text-gray-900 font-bold text-[15px]">{s.count}회 <span className="text-gray-400 font-normal text-[13px]">{ratio}%</span></span>
+                  <span className="text-gray-900 font-bold text-[15px]">{s.count}회 <span className="text-gray-600 font-semibold text-[13px]">{ratio}%</span></span>
                 </div>
                 <Bar ratio={ratio} />
                 {variants && variants.length > 1 && (

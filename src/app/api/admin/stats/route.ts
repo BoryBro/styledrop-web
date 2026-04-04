@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
     uniqueLoggedInUsers,
     shareKakao: eventCounts["share_kakao"] ?? 0,
     shareLinkCopy: eventCounts["share_link_copy"] ?? 0,
+    saveImage: eventCounts["save_image"] ?? 0,
     shareByStyleList,
     transformEvents: eventCounts["transform"] ?? 0,
     auditionShareKakao: eventCounts["audition_share_kakao"] ?? 0,
