@@ -89,6 +89,8 @@ export default function AuditionIntroPage() {
     "ARE YOU THE ONE?",
   ], 65, 1800);
 
+  const [agreed, setAgreed] = useState(false);
+
   // 스크롤 끝에 도달하면 버튼 표시
   const [showCta, setShowCta] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -206,6 +208,49 @@ export default function AuditionIntroPage() {
         ))}
       </section>
 
+      {/* ── 구분선 ── */}
+      <div className="mx-6 h-px bg-gray-100" />
+
+      {/* ── 오디션 전 확인사항 ──────────────────────────── */}
+      <section className="px-6 py-12 flex flex-col gap-5">
+        <div>
+          <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-1">Before You Start</p>
+          <p className="text-[24px] font-black text-black leading-tight">시작 전에<br />꼭 확인하세요.</p>
+        </div>
+
+        {/* 미션 큐 카드 */}
+        <div className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 flex items-center gap-4">
+          <span className="text-[28px] flex-shrink-0">🎭</span>
+          <p className="text-[15px] font-bold text-gray-900 leading-snug">미션 큐는 촬영 직전에<br />공개됩니다</p>
+        </div>
+
+        {/* 확인사항 리스트 */}
+        <div className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 flex flex-col gap-4">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em]">오디션 전 확인사항</p>
+          <ul className="flex flex-col gap-3">
+            <li className="flex items-start gap-3">
+              <span className="text-[16px] flex-shrink-0 mt-0.5">🌶️</span>
+              <p className="text-[13px] text-gray-500 leading-snug">매운맛/순한맛에 따라 평가 강도가 달라집니다. 상처받지 말고 재미로 봐주세요</p>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-[16px] flex-shrink-0 mt-0.5">📸</span>
+              <p className="text-[13px] text-gray-500 leading-snug">한번 촬영한 컷은 다시 찍을 수 없으니 이점 유의해주세요</p>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-[16px] flex-shrink-0 mt-0.5">💳</span>
+              <p className="text-[13px] text-gray-500 leading-snug">크레딧 3개가 소모되며, 이 서비스는 환불이 어렵습니다</p>
+            </li>
+          </ul>
+          {/* 체크박스 */}
+          <label className="flex items-center gap-3 mt-1 cursor-pointer select-none" onClick={() => setAgreed(v => !v)}>
+            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${agreed ? "bg-black border-black" : "border-gray-300 bg-white"}`}>
+              {agreed && <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            </div>
+            <p className="text-[14px] font-bold text-gray-900">위 내용을 모두 확인했습니다</p>
+          </label>
+        </div>
+      </section>
+
       {/* ── IntersectionObserver 트리거 ── */}
       <div ref={bottomRef} className="h-1" />
 
@@ -215,15 +260,18 @@ export default function AuditionIntroPage() {
         style={{ opacity: showCta ? 1 : 0, transform: showCta ? 'translateY(0)' : 'translateY(24px)', pointerEvents: showCta ? 'auto' : 'none' }}
       >
         <button
-          onClick={() => router.push("/audition/solo")}
-          className="w-full bg-black text-white font-black text-[16px] py-4 rounded-2xl tracking-wide flex items-center justify-center gap-3 active:scale-[0.97] transition-transform"
+          onClick={() => router.push("/audition/solo?from_intro=1")}
+          disabled={!agreed}
+          className="w-full font-black text-[16px] py-4 rounded-2xl tracking-wide flex items-center justify-center gap-3 active:scale-[0.97] transition-all disabled:opacity-30"
+          style={{ background: agreed ? '#000' : '#e5e5e5', color: agreed ? '#fff' : '#999' }}
         >
+          <span className="text-[12px] font-extrabold px-2 py-0.5 rounded-lg" style={{ background: agreed ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.08)' }}>3크레딧</span>
           <span>시작하기</span>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <p className="text-center text-[11px] text-gray-400 mt-2 font-medium">3크레딧 소모 · 약 2분 소요</p>
+        <p className="text-center text-[11px] text-gray-400 mt-2 font-medium">약 2분 소요</p>
       </div>
 
     </main>

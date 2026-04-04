@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -362,6 +362,8 @@ type Flavor = "spicy" | "mild";
 
 // ── 컴포넌트 ──────────────────────────────────────────────────────────
 export default function AuditionSolo() {
+  const searchParams = useSearchParams();
+  const fromIntro = searchParams?.get("from_intro") === "1";
   const [phase, setPhase] = useState<Phase>("loading");
   const [selectedGenres, setSelectedGenres] = useState<GenreId[]>([]);
   const [stepCues, setStepCues] = useState<string[]>([]);
@@ -389,10 +391,12 @@ export default function AuditionSolo() {
       .then(data => {
         const c = data.credits ?? 0;
         setCredits(c);
-        setPhase(c < 3 ? "no_credits" : "intro");
+        if (c < 3) setPhase("no_credits");
+        else if (fromIntro) setPhase("genre_select");
+        else setPhase("intro");
       })
       .catch(() => setPhase("no_credits"));
-  }, [authLoading, user]);
+  }, [authLoading, user, fromIntro]);
 
   // 3장 모이면 바로 분석 시작
   useEffect(() => {
