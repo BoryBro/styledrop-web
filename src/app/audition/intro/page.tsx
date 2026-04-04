@@ -43,7 +43,14 @@ const CARD_IMAGES = [
 function CardMarquee() {
   const doubled = [...CARD_IMAGES, ...CARD_IMAGES];
   return (
-    <div className="overflow-hidden w-full relative">
+    <div
+      className="w-full relative"
+      style={{
+        maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+        overflowX: 'hidden',
+      }}
+    >
       <style>{`
         @keyframes marquee {
           0%   { transform: translateX(0); }
@@ -51,7 +58,7 @@ function CardMarquee() {
         }
       `}</style>
       <div
-        className="flex gap-4 py-4"
+        className="flex gap-4 py-6"
         style={{ animation: "marquee 14s linear infinite", width: "max-content" }}
       >
         {doubled.map((src, i) => (
@@ -99,7 +106,15 @@ function CardCarousel() {
   const tx = `calc(50vw - ${pos * UNIT + CARD_W / 2}px)`;
 
   return (
-    <div className="w-full overflow-hidden relative" style={{ height: 296 }}>
+    <div
+      className="w-full relative"
+      style={{
+        height: 310,
+        maskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
+        overflowX: 'hidden',
+      }}
+    >
       <div
         style={{
           display: 'flex',
