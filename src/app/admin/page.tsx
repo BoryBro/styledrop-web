@@ -38,7 +38,11 @@ type Stats = {
   }>;
 };
 
-type MonthlyCost = { styleCount: number; auditionCount: number; apiCost: number; revenue: number };
+type MonthlyCost = {
+  styleCount: number; auditionCount: number; apiCost: number; revenue: number;
+  shareKakao?: number; shareLink?: number; saveImage?: number;
+  auditionShareKakao?: number; auditionShareLink?: number;
+};
 
 function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, MonthlyCost> }) {
   const [activeMonth, setActiveMonth] = useState("2026-04");
@@ -218,6 +222,104 @@ function MiniCard({ label, value, accent }: { label: string; value: string | num
     <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
       <span className="text-gray-500 text-[13px]">{label}</span>
       <span className={`text-[20px] font-extrabold tabular-nums leading-tight ${accent ? "text-[#C9571A]" : "text-gray-900"}`}>{value}</span>
+    </div>
+  );
+}
+
+function ShareViralSection({ stats, shareTotal, shareRatio }: {
+  stats: Stats; shareTotal: number; shareRatio: number;
+}) {
+  const [tab, setTab] = useState<"style" | "audition">("style");
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">공유 & 바이럴</p>
+      {/* 탭 버튼 */}
+      <div className="flex gap-1.5 bg-gray-100 p-1 rounded-xl">
+        <button
+          onClick={() => setTab("style")}
+          className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${tab === "style" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+        >
+          스타일 카드
+        </button>
+        <button
+          onClick={() => setTab("audition")}
+          className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${tab === "audition" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+        >
+          AI 오디션
+        </button>
+      </div>
+
+      {/* 스타일 카드 탭 */}
+      {tab === "style" && (
+        <div className="flex flex-col gap-1">
+          <div className="bg-white rounded-2xl px-4 border border-gray-200">
+            <ShareRow
+              icon={<KakaoIcon size={15} />} iconBg="bg-[#FEE500]"
+              label="카카오 공유" count={`${stats.shareKakao}회`}
+              ratio={`${stats.total > 0 ? Math.round((stats.shareKakao / stats.total) * 100) : 0}%`}
+            />
+            <ShareRow
+              icon={<LinkIcon size={15} />} iconBg="bg-gray-200"
+              label="링크 복사" count={`${stats.shareLinkCopy}회`}
+              ratio={`${stats.total > 0 ? Math.round((stats.shareLinkCopy / stats.total) * 100) : 0}%`}
+            />
+            <ShareRow
+              icon={<SaveIcon size={15} />} iconBg="bg-gray-200"
+              label="사진 저장" count={`${stats.saveImage ?? 0}회`}
+              ratio={`${stats.total > 0 ? Math.round(((stats.saveImage ?? 0) / stats.total) * 100) : 0}%`}
+            />
+            <ShareRow
+              icon={<RatioIcon size={15} />} iconBg="bg-orange-100"
+              label="공유 전환율" count={`${shareRatio}%`}
+              ratio={`${shareTotal}회`} highlight
+            />
+          </div>
+          {/* 스타일별 공유 스프레드시트 */}
+          {(stats.shareByStyleList?.length ?? 0) > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mt-1">
+              <div className="flex items-center px-4 py-2 bg-gray-50 border-b border-gray-200">
+                <span className="flex-1 text-[11px] font-bold text-gray-400 uppercase tracking-widest">스타일</span>
+                <div className="w-8 flex justify-center">
+                  <div className="w-[18px] h-[18px] rounded bg-[#FEE500] flex items-center justify-center flex-shrink-0">
+                    <KakaoIcon size={12} />
+                  </div>
+                </div>
+                <div className="w-8 flex justify-center">
+                  <LinkIcon size={13} />
+                </div>
+                <span className="w-10 text-right text-[11px] font-bold text-gray-400 uppercase tracking-widest">합계</span>
+              </div>
+              {stats.shareByStyleList.map((s) => (
+                <div key={s.style_id} className="flex items-center px-4 py-2.5 border-b border-gray-100 last:border-0">
+                  <span className="flex-1 text-[13px] text-gray-700 font-medium truncate pr-2">{s.style_name}</span>
+                  <span className="w-8 text-center text-[13px] tabular-nums text-gray-700">{s.kakao}</span>
+                  <span className="w-8 text-center text-[13px] tabular-nums text-gray-700">{s.link}</span>
+                  <span className="w-10 text-right text-[14px] font-bold tabular-nums text-[#C9571A]">{s.total}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* AI 오디션 탭 */}
+      {tab === "audition" && (
+        <div className="bg-white rounded-2xl px-4 border border-gray-200">
+          <ShareRow
+            icon={<KakaoIcon />} iconBg="bg-[#FEE500]"
+            label="카카오 공유" count={`${stats.auditionShareKakao}회`}
+          />
+          <ShareRow
+            icon={<LinkIcon />} iconBg="bg-gray-100"
+            label="링크 복사" count={`${stats.auditionShareLinkCopy}회`}
+          />
+          <ShareRow
+            icon={<RatioIcon />} iconBg="bg-orange-50"
+            label="합계" count={`${stats.auditionShareKakao + stats.auditionShareLinkCopy}회`}
+            highlight
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -415,83 +517,7 @@ export default function AdminPage() {
       </div>
 
       {/* 공유 & 바이럴 */}
-      <div className="flex flex-col gap-3">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">공유 & 바이럴</p>
-
-        {/* 스타일 카드 */}
-        <div className="flex flex-col gap-1">
-          <p className="text-[12px] text-gray-400 px-1 font-medium">스타일 카드</p>
-          <div className="bg-white rounded-2xl px-4 border border-gray-200">
-            <ShareRow
-              icon={<KakaoIcon size={15} />} iconBg="bg-[#FEE500]"
-              label="카카오 공유" count={`${stats.shareKakao}회`}
-              ratio={`${stats.total > 0 ? Math.round((stats.shareKakao / stats.total) * 100) : 0}%`}
-            />
-            <ShareRow
-              icon={<LinkIcon size={15} />} iconBg="bg-gray-200"
-              label="링크 복사" count={`${stats.shareLinkCopy}회`}
-              ratio={`${stats.total > 0 ? Math.round((stats.shareLinkCopy / stats.total) * 100) : 0}%`}
-            />
-            <ShareRow
-              icon={<SaveIcon size={15} />} iconBg="bg-gray-200"
-              label="사진 저장" count={`${stats.saveImage ?? 0}회`}
-              ratio={`${stats.total > 0 ? Math.round(((stats.saveImage ?? 0) / stats.total) * 100) : 0}%`}
-            />
-            <ShareRow
-              icon={<RatioIcon size={15} />} iconBg="bg-orange-100"
-              label="공유 전환율" count={`${shareRatio}%`}
-              ratio={`${shareTotal}회`} highlight
-            />
-          </div>
-          {/* 스타일별 공유 스프레드시트 */}
-          {(stats.shareByStyleList?.length ?? 0) > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mt-1">
-              {/* 헤더 */}
-              <div className="flex items-center px-4 py-2 bg-gray-50 border-b border-gray-200">
-                <span className="flex-1 text-[11px] font-bold text-gray-400 uppercase tracking-widest">스타일</span>
-                <div className="w-8 flex justify-center">
-                  <div className="w-[18px] h-[18px] rounded bg-[#FEE500] flex items-center justify-center flex-shrink-0">
-                    <KakaoIcon size={12} />
-                  </div>
-                </div>
-                <div className="w-8 flex justify-center">
-                  <LinkIcon size={13} />
-                </div>
-                <span className="w-10 text-right text-[11px] font-bold text-gray-400 uppercase tracking-widest">합계</span>
-              </div>
-              {/* 행 */}
-              {stats.shareByStyleList.map((s) => (
-                <div key={s.style_id} className="flex items-center px-4 py-2.5 border-b border-gray-100 last:border-0">
-                  <span className="flex-1 text-[13px] text-gray-700 font-medium truncate pr-2">{s.style_name}</span>
-                  <span className="w-8 text-center text-[13px] tabular-nums text-gray-700">{s.kakao}</span>
-                  <span className="w-8 text-center text-[13px] tabular-nums text-gray-700">{s.link}</span>
-                  <span className="w-10 text-right text-[14px] font-bold tabular-nums text-[#C9571A]">{s.total}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* AI 오디션 */}
-        <div className="flex flex-col gap-1">
-          <p className="text-[12px] text-gray-400 px-1 font-medium">AI 오디션</p>
-          <div className="bg-white rounded-2xl px-4 border border-gray-200">
-            <ShareRow
-              icon={<KakaoIcon />} iconBg="bg-[#FEE500]"
-              label="카카오 공유" count={`${stats.auditionShareKakao}회`}
-            />
-            <ShareRow
-              icon={<LinkIcon />} iconBg="bg-gray-100"
-              label="링크 복사" count={`${stats.auditionShareLinkCopy}회`}
-            />
-            <ShareRow
-              icon={<RatioIcon />} iconBg="bg-orange-50"
-              label="합계" count={`${stats.auditionShareKakao + stats.auditionShareLinkCopy}회`}
-              highlight
-            />
-          </div>
-        </div>
-      </div>
+      <ShareViralSection stats={stats} shareTotal={shareTotal} shareRatio={shareRatio} />
 
       {/* API 비용 & 손익 */}
       <MonthlyCostSection monthlyCosts={stats.monthlyCosts ?? {}} />
