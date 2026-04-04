@@ -415,7 +415,7 @@ export default function AuditionIntroPage() {
           <ul className="flex flex-col gap-4">
             {[
               { icon: "📸", text: "한번 촬영한 컷은 다시 찍을 수 없으니 이점 유의해주세요" },
-              { icon: "💳", text: "크레딧 5개가 소모되며, 이 서비스는 환불이 어렵습니다" },
+              { icon: "💳", text: "크레딧 2개가 소모되며, 이 서비스는 환불이 어렵습니다" },
             ].map(item => (
               <li key={item.icon} className="flex items-start gap-3">
                 <span className="text-[18px] flex-shrink-0 mt-0.5">{item.icon}</span>
@@ -453,7 +453,7 @@ export default function AuditionIntroPage() {
             className="text-[12px] font-extrabold px-2.5 py-1 rounded-lg"
             style={{ background: agreed ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)' }}
           >
-            5크레딧
+            2크레딧
           </span>
           시작하기
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

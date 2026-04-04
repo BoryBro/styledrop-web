@@ -309,6 +309,7 @@ export default function AuditionResult() {
   const [bestSceneIdx, setBestSceneIdx] = useState<number>(0);
   const [genres, setGenres] = useState<GenreMeta[]>([]);
   const [phase, setPhase] = useState<Phase>("generating");
+  const [activeSceneTab, setActiveSceneTab] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -382,7 +383,7 @@ export default function AuditionResult() {
       const dataUrl = `data:image/jpeg;base64,${data.image}`;
       stillImageRef.current = dataUrl;
       setStillImage(dataUrl);
-      setCredits(c => (c !== null ? Math.max(0, c - 5) : 0));
+      setCredits(c => (c !== null ? Math.max(0, c - 3) : 0));
       fetch("/api/audition/history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -557,44 +558,48 @@ export default function AuditionResult() {
         <section className="pt-10 pb-10 border-b border-gray-100">
           <p className="text-[11px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-4">Casting Result</p>
 
-          {/* 배역명 */}
-          <h1 className="text-[32px] font-black text-gray-900 leading-tight mb-1" style={{ fontStyle: "italic" }}>
+          {/* 배역명 — 이탤릭 없음 */}
+          <h1 className="text-[34px] font-black text-gray-900 leading-tight mb-1">
             {bestScene.assigned_role}
           </h1>
-          <p className="text-[13px] text-gray-500 mb-6">{GENRE_EMOJIS[bestScene.genre] ?? "🎬"} {bestScene.genre} 베스트 씬 기준</p>
+          <p className="text-[13px] text-gray-400 mb-6">{GENRE_EMOJIS[bestScene.genre] ?? "🎬"} {bestScene.genre} 베스트 씬 기준</p>
 
-          {/* 종합 점수 */}
-          <div className="flex items-end gap-4 mb-6">
-            <div>
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">종합 점수</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-[64px] font-black leading-none tabular-nums" style={{ color: grade.color }}>{overallAvg}</span>
-                <span className="text-[18px] font-bold text-gray-400 mb-1">/ 100</span>
+          {/* 종합점수 + 등급 + 아키타입 */}
+          <div className="bg-gray-50 rounded-2xl px-5 py-5 mb-5 flex items-center gap-4">
+            <div className="flex-1">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">종합 점수</p>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[60px] font-black leading-none tabular-nums" style={{ color: grade.color }}>{overallAvg}</span>
+                <span className="text-[15px] font-bold text-gray-400">/ 100</span>
               </div>
             </div>
-            <div className="mb-3 flex flex-col items-end gap-1">
-              <span className="text-[13px] font-black px-3 py-1 rounded-full border-2" style={{ color: grade.color, borderColor: grade.color }}>
+            <div className="flex flex-col items-end gap-2">
+              <span className="text-[15px] font-black px-3.5 py-1.5 rounded-full border-2" style={{ color: grade.color, borderColor: grade.color }}>
                 {grade.label}
               </span>
               {physio && (
-                <span className="text-[11px] font-bold text-gray-500 bg-gray-100 rounded-full px-2.5 py-0.5">{physio.archetype}</span>
+                <span className="text-[12px] font-black text-gray-900 bg-gray-200 rounded-full px-3 py-1">{physio.archetype}</span>
               )}
             </div>
           </div>
 
-          {/* 감독 한마디 */}
-          <div className="bg-gray-50 rounded-2xl px-4 py-4 border-l-4 border-[#C9571A]">
-            <p className="text-[10px] font-black text-[#C9571A] tracking-widest uppercase mb-2">감독 한마디</p>
-            <p className="text-[16px] font-bold text-gray-900 leading-snug">{result.overall_one_liner}</p>
+          {/* 감독 한마디 — 세로 막대 구분 */}
+          <div className="flex gap-4">
+            <div className="w-[4px] rounded-full bg-[#C9571A] flex-shrink-0 self-stretch min-h-[40px]" />
+            <div>
+              <p className="text-[10px] font-black text-[#C9571A] tracking-widest uppercase mb-2">감독 한마디</p>
+              <p className="text-[18px] font-black text-gray-900 leading-snug">{result.overall_one_liner}</p>
+            </div>
           </div>
         </section>
 
         {/* ══ SECTION 2: AI 스틸컷 (선택 유료) ════════════ */}
         <section className="py-10 border-b border-gray-100">
-          <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">AI Still Cut</p>
-          <p className="text-[22px] font-black text-gray-900 mb-5">
+          <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-1">AI Still Cut</p>
+          <p className="text-[22px] font-black text-gray-900 mb-1">
             {GENRE_EMOJIS[bestScene.genre] ?? "🎬"} {bestScene.genre} 베스트 씬
           </p>
+          <p className="text-[13px] text-gray-400 mb-5">내 얼굴 기반으로 AI가 영화 스틸컷 장면을 생성합니다</p>
 
           {stillImage ? (
             <>
@@ -611,44 +616,59 @@ export default function AuditionResult() {
               <p className="text-[12px] text-gray-400 leading-relaxed">AI가 베스트 씬 촬영 이미지를 기반으로 생성한 스틸컷입니다.</p>
             </>
           ) : (
-            <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 p-6 flex flex-col items-center gap-4 text-center">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden">
               {/* 내 촬영컷 미리보기 */}
               {userPhotos[bestSceneIdx] && (
-                <div className="relative w-full aspect-square rounded-xl overflow-hidden max-w-[200px]">
+                <div className="relative w-full aspect-square">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={userPhotos[bestSceneIdx]} alt="내 연기" className="w-full h-full object-cover opacity-60" />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl">
-                    <span className="text-white text-[28px]">🎬</span>
+                  <img src={userPhotos[bestSceneIdx]} alt="내 연기" className="w-full h-full object-cover opacity-50" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 gap-3">
+                    <span className="text-white text-[40px]">✦</span>
+                    <p className="text-white font-black text-[16px]">AI 스틸컷으로 변환</p>
+                    <p className="text-white/70 text-[12px] text-center px-8">이 장면을 영화 스틸컷 분위기로<br />AI가 다시 그려드립니다</p>
                   </div>
                 </div>
               )}
-              <div>
-                <p className="text-[15px] font-black text-gray-900 mb-1">AI 스틸컷 생성</p>
-                <p className="text-[12px] text-gray-500 leading-relaxed">
-                  내 얼굴을 기반으로 AI가<br />영화 스틸컷을 만들어줍니다
-                </p>
+              <div className="px-5 py-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex-1 h-px bg-gray-200" />
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">생성 방식</span>
+                  <div className="flex-1 h-px bg-gray-200" />
+                </div>
+                <div className="flex flex-col gap-2.5 mb-5">
+                  {[
+                    { icon: "🎞️", text: "베스트 씬 촬영본 기반 생성" },
+                    { icon: "🎨", text: "장르 분위기에 맞는 영화적 색감" },
+                    { icon: "🪄", text: "AI가 얼굴 특징 보존 후 씬 합성" },
+                  ].map(item => (
+                    <div key={item.text} className="flex items-center gap-3">
+                      <span className="text-[15px]">{item.icon}</span>
+                      <p className="text-[13px] text-gray-700 font-medium">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+                {isGeneratingStill ? (
+                  <div className="flex items-center justify-center gap-2 py-4">
+                    <div className="w-5 h-5 rounded-full border-2 border-transparent border-t-[#C9571A]" style={{ animation: "spin 0.8s linear infinite" }} />
+                    <span className="text-[13px] text-gray-500 font-medium">스틸컷 생성 중...</span>
+                  </div>
+                ) : (credits ?? 0) >= 3 ? (
+                  <button
+                    onClick={handleGenerateStill}
+                    className="w-full bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold py-4 rounded-2xl text-[16px] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span className="text-[11px] bg-white/20 rounded-lg px-2 py-0.5 font-black">3크레딧</span>
+                    스틸컷 생성하기
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-[12px] text-[#C9571A] font-bold text-center">크레딧이 부족해요 (보유: {credits ?? 0}크레딧)</p>
+                    <Link href="/shop" className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-2xl text-[15px] text-center transition-colors hover:bg-gray-700">
+                      크레딧 충전하기
+                    </Link>
+                  </div>
+                )}
               </div>
-              {isGeneratingStill ? (
-                <div className="flex items-center gap-2 py-3">
-                  <div className="w-5 h-5 rounded-full border-2 border-transparent border-t-[#C9571A]" style={{ animation: "spin 0.8s linear infinite" }} />
-                  <span className="text-[13px] text-gray-500">생성 중...</span>
-                </div>
-              ) : (credits ?? 0) >= 5 ? (
-                <button
-                  onClick={handleGenerateStill}
-                  className="w-full bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold py-3.5 rounded-2xl text-[15px] transition-colors flex items-center justify-center gap-2"
-                >
-                  <span className="text-[11px] bg-white/20 rounded-lg px-2 py-0.5 font-black">5크레딧</span>
-                  스틸컷 생성하기
-                </button>
-              ) : (
-                <div className="w-full flex flex-col gap-2">
-                  <p className="text-[12px] text-[#C9571A] font-bold">크레딧이 부족해요 (보유: {credits ?? 0})</p>
-                  <Link href="/shop" className="w-full bg-gray-900 text-white font-bold py-3 rounded-2xl text-[14px] text-center transition-colors hover:bg-gray-700">
-                    크레딧 충전하기
-                  </Link>
-                </div>
-              )}
             </div>
           )}
         </section>
@@ -656,60 +676,80 @@ export default function AuditionResult() {
         {/* ══ SECTION 3: 씬별 연기 분석 ══════════════════════ */}
         <section className="py-10 border-b border-gray-100">
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Scene Analysis</p>
-          <p className="text-[22px] font-black text-gray-900 mb-6">씬별 연기 분석</p>
+          <p className="text-[22px] font-black text-gray-900 mb-5">씬별 연기 분석</p>
 
-          <div className="flex flex-col gap-8">
-            {result.scenes.map((scene, i) => {
-              const sa = avgScore(scene.scores);
-              return (
-                <div key={i} className="flex flex-col gap-4">
-                  {/* 씬 헤더 */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
-                      <span className="text-white text-[11px] font-black">{i + 1}</span>
-                    </div>
-                    <div>
-                      <p className="text-[15px] font-black text-gray-900">{GENRE_EMOJIS[scene.genre] ?? "🎬"} {scene.genre}</p>
-                      <p className="text-[11px] text-gray-400">{genres[i]?.cue}</p>
-                    </div>
-                    <div className="ml-auto text-right">
-                      <span className="text-[20px] font-black tabular-nums" style={{ color: scoreColor(sa) }}>{sa}</span>
-                      <span className="text-[11px] text-gray-400 ml-0.5">점</span>
+          {/* 씬 탭 */}
+          <div className="flex gap-2 mb-6">
+            {result.scenes.map((scene, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveSceneTab(i)}
+                className={`flex-1 py-2.5 rounded-xl text-[13px] font-black transition-all flex flex-col items-center gap-0.5 ${
+                  activeSceneTab === i ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                <span>씬 {i + 1}</span>
+                <span className={`text-[10px] font-medium ${activeSceneTab === i ? "text-[#C9571A]" : "text-gray-400"}`}>
+                  {GENRE_EMOJIS[scene.genre] ?? "🎬"} {scene.genre}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* 활성 씬 콘텐츠 */}
+          {(() => {
+            const scene = result.scenes[activeSceneTab];
+            const sa = avgScore(scene.scores);
+            return (
+              <div className="flex flex-col gap-4">
+                {/* 씬 헤더 — 장르 + 큐 + 점수 */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-[13px] font-black text-[#C9571A] uppercase tracking-widest mb-1">
+                      씬 {activeSceneTab + 1} · {GENRE_EMOJIS[scene.genre] ?? "🎬"} {scene.genre}
+                    </p>
+                    <p className="text-[15px] font-bold text-gray-900 leading-snug" style={{ wordBreak: 'keep-all' }}>
+                      {genres[activeSceneTab]?.cue}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end flex-shrink-0">
+                    <span className="text-[36px] font-black leading-none tabular-nums" style={{ color: scoreColor(sa) }}>{sa}</span>
+                    <span className="text-[11px] text-gray-400">/ 100</span>
+                  </div>
+                </div>
+
+                {/* 사진 + 배정역할 오버레이 (하단 풀) */}
+                {userPhotos[activeSceneTab] && (
+                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={userPhotos[activeSceneTab]} alt={`씬 ${activeSceneTab + 1}`} className="w-full h-full object-cover" />
+                    {/* 배정역할 — 하단 전체 영역 */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent px-5 pb-5 pt-10">
+                      <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.3em] mb-1.5">배정 역할</p>
+                      <p className="text-[26px] font-black text-white leading-tight">{scene.assigned_role}</p>
                     </div>
                   </div>
+                )}
 
-                  {/* 내 사진 */}
-                  {userPhotos[i] && (
-                    <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={userPhotos[i]} alt={`씬 ${i + 1}`} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-
-                  {/* 감독 평가 */}
-                  <div className="bg-gray-50 rounded-xl px-4 py-4">
-                    <p className="text-[10px] font-black text-[#C9571A] tracking-widest uppercase mb-2">감독 평가</p>
+                {/* 감독 평가 */}
+                <div className="flex gap-3">
+                  <div className="w-[3px] rounded-full bg-gray-200 flex-shrink-0 self-stretch" />
+                  <div>
+                    <p className="text-[10px] font-black text-[#C9571A] tracking-widest uppercase mb-1.5">감독 평가</p>
                     <p className="text-[14px] text-gray-800 leading-relaxed">{scene.critique}</p>
                   </div>
-
-                  {/* 배역 */}
-                  <div className="flex items-center gap-3 bg-gray-900 rounded-xl px-4 py-3">
-                    <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">배정 역할</span>
-                    <span className="text-[14px] font-black text-white ml-auto" style={{ fontStyle: "italic" }}>{scene.assigned_role}</span>
-                  </div>
-
-                  {/* 점수 바 */}
-                  <div className="flex flex-col gap-2.5 px-1">
-                    {SCORE_LABELS.map(label => (
-                      <ScoreBar key={label} label={label} value={scene.scores[label] ?? 0} />
-                    ))}
-                  </div>
-
-                  {i < result.scenes.length - 1 && <div className="border-b border-dashed border-gray-100 mt-2" />}
                 </div>
-              );
-            })}
-          </div>
+
+                {/* 점수 바 */}
+                <div className="bg-gray-50 rounded-2xl px-4 py-4 flex flex-col gap-3">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">세부 점수</p>
+                  {SCORE_LABELS.map(label => (
+                    <ScoreBar key={label} label={label} value={scene.scores[label] ?? 0} />
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </section>
 
         {/* ══ SECTION 4: 관상학 정밀 분석 ═══════════════════ */}
