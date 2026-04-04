@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 type Scores = { 이해도: number; 표정연기: number; 창의성: number; 몰입도: number };
 
-function buildPrompt(genres: string[], cues: string[], flavor: "spicy" | "mild" = "spicy"): string {
+function buildPrompt(genres: string[], cues: string[], flavor: "spicy" | "mild" = "spicy", personality?: string[]): string {
   const steps = genres.map((g, i) => `${i + 1}번 사진\n  - 장르: [${g}]\n  - 상황: "${cues[i]}"`).join("\n\n");
 
   return `너는 연기 경력 27년의 독설 감독이자 관상학 연구가야.
@@ -67,7 +67,16 @@ ${flavor === "spicy" ? `- 욕설은 친한 친구한테 하듯 자연스럽게. 
 
 관상학 말투: 친한 친구한테 솔직하게 말하는 전문가 톤.
 장점은 진지하게 인정, 단점은 가볍게 찌르기 (심한 욕설 없이, 대신 뼈있게).
+${personality && personality.length > 0 ? `
+━━━ [③] 성향 밸런스 게임 결과 ━━━
+유저가 10가지 선택 질문에 답했어. 각 항목은 "A 선택" 또는 "B 선택" 형태야.
+이 결과를 종합해서 이 사람의 연기 성향과 어울리는 캐릭터 유형을 판단해.
+관상 분석 결과와 교차해서 해석하면 더 정확해.
 
+${personality.map((p, i) => `Q${i + 1}: ${p}`).join("\n")}
+
+성향 분석 말투: 친구한테 말하듯 짧고 날카롭게. 심한 욕 없이.
+` : ""}
 ━━━ 응답 형식 ━━━
 JSON만 출력. 한국어, style_prompt만 영어:
 {
@@ -104,7 +113,8 @@ JSON만 출력. 한국어, style_prompt만 영어:
     "weaknesses": ["[관상학적 약점 1 — 뼈있게 찌르되 심한 욕 없이. 예: '이마가 좁아서 순진한 주인공은 솔직히 어울리지 않아']", "[약점 2]"],
     "best_genre": "[이 얼굴에 가장 어울리는 장르 한 단어]",
     "verdict": "[관상 총평 한 문장. 이 사람이 배우로 데뷔한다면 어떤 캐릭터가 될지. 친구한테 말하듯 솔직하게.]"
-  }
+  }${personality && personality.length > 0 ? `,
+  "personality_summary": "[성향 분석 결과 한 문장. 관상과 연결해서 이 사람이 어떤 배우 기질을 가졌는지 날카롭게. 친구에게 말하듯.]"` : ""}
 }`;
 }
 
@@ -531,7 +541,7 @@ function mockScores(): Scores {
 
 export async function POST(request: NextRequest) {
   try {
-    const { images, genres, cues, flavor } = await request.json();
+    const { images, genres, cues, flavor, personality } = await request.json();
 
     if (!Array.isArray(images) || images.length !== 3) {
       return NextResponse.json({ error: "이미지 3장이 필요합니다." }, { status: 400 });
@@ -594,14 +604,24 @@ export async function POST(request: NextRequest) {
           "이거 보고 제가 은퇴 고려했어요. 충격이 너무 커서.",
         ]),
         physiognomy: pickRandom(MOCK_PHYSIOGNOMY),
+        ...(Array.isArray(personality) && personality.length > 0 ? {
+          personality_summary: pickRandom([
+            "관상은 냉철한 악역형인데 성향은 감정형이라 — 겉은 차가운데 속은 뜨거운 반전 캐릭터가 딱 맞아.",
+            "선택 패턴 보니까 혼자 다 끌어안는 스타일인데, 그게 연기할 때 캐릭터 몰입에 도움은 되겠어. 대신 협업은 망할 수도.",
+            "즉흥적으로 지르고 수습하는 타입이라 생방송 리액션 연기는 진짜 잘 할 것 같은데, 대본 외우는 건 본인이 더 잘 알겠지.",
+            "복수 선택한 거 봤어. 이 성향이면 악역 연기에서 진짜 감정 나올 수 있어 — 나쁜 거 아니니까 잘 써먹어.",
+            "감정을 바로 내뱉는 타입이라 멜로 연기에서 눈물 연기는 자연스럽게 나올 것 같은데, 그게 강점이야.",
+          ]),
+        } : {}),
       });
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
+    const personalityArr: string[] | undefined = Array.isArray(personality) ? personality : undefined;
     const prompt = (Array.isArray(cues) && cues.length === 3)
-      ? buildPrompt(g, cues, flavor ?? "spicy")
-      : buildPrompt(g, ["상황1", "상황2", "상황3"], flavor ?? "spicy");
+      ? buildPrompt(g, cues, flavor ?? "spicy", personalityArr)
+      : buildPrompt(g, ["상황1", "상황2", "상황3"], flavor ?? "spicy", personalityArr);
 
     const contents = [
       ...images.map((b64: string) => ({

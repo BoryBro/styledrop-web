@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -349,6 +349,26 @@ const CUES: Record<GenreId, string[]> = {
   ],
 };
 
+function AnalyzeStepItem({ label, delay }: { label: string; delay: number }) {
+  const [active, setActive] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setActive(true), delay);
+    return () => clearTimeout(t);
+  }, [delay]);
+  return (
+    <div className={`flex items-center gap-3 transition-all duration-500 ${active ? "opacity-100" : "opacity-20"}`}>
+      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${active ? "border-[#C9571A] bg-[#C9571A]" : "border-white/20"}`}>
+        {active && (
+          <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+            <path d="M1 3l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </div>
+      <span className={`text-[14px] font-bold ${active ? "text-white" : "text-white/30"}`}>{label}</span>
+    </div>
+  );
+}
+
 function pickRandomCue(genreId: GenreId): string {
   const pool = CUES[genreId];
   return pool[Math.floor(Math.random() * pool.length)];
@@ -357,11 +377,73 @@ function pickRandomCue(genreId: GenreId): string {
 const VIDEO_CONSTRAINTS = { width: 720, height: 720, facingMode: "user" };
 
 type CaptureItem = { base64: string; dataUrl: string };
-type Phase = "loading" | "login_required" | "no_credits" | "intro" | "genre_select" | "capture" | "flavor_select" | "analyzing" | "error";
-type Flavor = "spicy" | "mild";
+type Phase = "loading" | "login_required" | "no_credits" | "intro" | "genre_select" | "personality_quiz" | "capture_physio_guide" | "capture_physio" | "capture" | "analyzing" | "error";
+
+const QUIZ_QUESTIONS = [
+  // 🎭 존재감
+  { category: "🎭 존재감", q: "어떤 방식으로 기억되고 싶어?", a: "욕 먹어도 주목받기", b: "칭찬 못 받아도 조용히" },
+  { category: "🎭 존재감", q: "낯선 사람들 앞에서 발표할 때", a: "떨어도 당당하게", b: "완벽히 준비될 때까지 미루기" },
+  { category: "🎭 존재감", q: "내가 자리 뜬 후 사람들 반응이?", a: "어떤 얘기든 기억에 남기", b: "언급 없어도 괜찮아" },
+  { category: "🎭 존재감", q: "파티에서 가장 먼저 하는 건?", a: "분위기 장악하기", b: "조용히 아는 사람 찾기" },
+  { category: "🎭 존재감", q: "SNS에서 나는?", a: "반응이 신경 쓰임", b: "그냥 기록용으로만" },
+  // 💬 소통
+  { category: "💬 소통", q: "감정이 올라왔을 때", a: "그 자리에서 바로 말하기", b: "혼자 삭이다가 나중에 말하기" },
+  { category: "💬 소통", q: "상대가 내 말을 오해했을 때", a: "바로 정정하고 설명함", b: "됐다, 나중에 이해하겠지" },
+  { category: "💬 소통", q: "중요한 얘기는?", a: "직접 만나서 말하기", b: "메시지로 정리해서 보내기" },
+  { category: "💬 소통", q: "갈등이 생겼을 때 나는?", a: "바로 대면해서 해결하기", b: "시간이 해결해주길 기다리기" },
+  { category: "💬 소통", q: "칭찬을 받으면?", a: "솔직하게 기뻐하며 받아들임", b: "쑥스러워서 부정함" },
+  // 👑 리더십
+  { category: "👑 리더십", q: "파티에서 나의 포지션은?", a: "기획하고 이끄는 쪽", b: "초대받아 즐기는 쪽" },
+  { category: "👑 리더십", q: "모임에서 누군가 결정을 못 내릴 때", a: "내가 먼저 나서서 결정함", b: "누군가 결정하길 기다림" },
+  { category: "👑 리더십", q: "내 결정에 반대 의견이 나오면?", a: "설득해서 내 방향으로 가기", b: "다수 의견으로 수정하기" },
+  { category: "👑 리더십", q: "팀 프로젝트에서 나는?", a: "기획하고 이끄는 쪽", b: "맡은 것만 잘 해내는 쪽" },
+  { category: "👑 리더십", q: "리더 역할을 맡으면?", a: "짜릿하고 해보고 싶음", b: "부담스럽고 피하고 싶음" },
+  // 🧠 사고방식
+  { category: "🧠 사고", q: "뭔가 할 때 나의 방식은?", a: "계획 세우고 실행", b: "일단 저지르고 수습" },
+  { category: "🧠 사고", q: "직관 vs 데이터, 뭘 더 믿어?", a: "이 느낌이 맞아, 직관", b: "수치와 근거 보고 판단" },
+  { category: "🧠 사고", q: "선택지가 너무 많을 때", a: "맘에 드는 거 바로 고르기", b: "모든 경우의 수 따져보기" },
+  { category: "🧠 사고", q: "실패했을 때 나는", a: "원인 분석하고 전략 수정", b: "털고 새 시작" },
+  { category: "🧠 사고", q: "모호한 상황에서는?", a: "내가 기준 만들어서 정리", b: "흘러가는 대로 보기" },
+  // ❤️ 관계
+  { category: "❤️ 관계", q: "사람을 어떻게 믿어?", a: "첫인상 그냥 믿기", b: "시간 지나야 믿기" },
+  { category: "❤️ 관계", q: "관계 방식은?", a: "소수 깊은 관계", b: "다양한 넓은 인맥" },
+  { category: "❤️ 관계", q: "오래된 친구 vs 새 친구?", a: "오래된 친구, 말 안 해도 통함", b: "새 친구, 새로운 자극 있음" },
+  { category: "❤️ 관계", q: "누군가 나를 이용했다는 걸 알았을 때?", a: "바로 끊어냄", b: "이유 들어보고 판단" },
+  { category: "❤️ 관계", q: "아끼는 사람이 잘못된 길을 갈 때?", a: "직접적으로 말해줌", b: "스스로 깨달을 때까지 기다림" },
+  // ⚡ 행동력
+  { category: "⚡ 행동", q: "하고 싶은 것 생기면?", a: "당장 실행", b: "충분히 고민 후 실행" },
+  { category: "⚡ 행동", q: "마감이 빠듯할 때?", a: "압박감에 오히려 집중됨", b: "미리 다 끝내야 불안 없음" },
+  { category: "⚡ 행동", q: "낯선 도전 앞에서?", a: "일단 뛰어들고 배움", b: "준비 다 되면 뛰어듦" },
+  { category: "⚡ 행동", q: "계획이 틀어졌을 때?", a: "즉흥적으로 대처함", b: "원래 계획으로 되돌리려 함" },
+  { category: "⚡ 행동", q: "결과가 불확실한 기회가 생기면?", a: "일단 잡고 봄", b: "리스크 계산 후 결정" },
+  // 🌙 감정 처리
+  { category: "🌙 감정", q: "힘들 때 주로?", a: "혼자 조용히 해결", b: "누군가에게 털어놓기" },
+  { category: "🌙 감정", q: "화가 머리끝까지 났을 때?", a: "그 자리서 표현함", b: "혼자 삭이고 넘어감" },
+  { category: "🌙 감정", q: "실수했을 때 나는?", a: "금방 털고 앞으로 가기", b: "죄책감에 오래 괴로워하기" },
+  { category: "🌙 감정", q: "기쁜 일이 생겼을 때?", a: "주변에 바로 공유함", b: "혼자 조용히 즐김" },
+  { category: "🌙 감정", q: "감정을 숨기는 편 vs 드러내는 편?", a: "감정 드러내는 편", b: "감정 숨기는 편" },
+  // 🎯 목표 의식
+  { category: "🎯 목표", q: "목표를 세울 때?", a: "크게 잡고 달려감", b: "현실적으로 단계별로 잡음" },
+  { category: "🎯 목표", q: "꿈이 아직 불확실할 때?", a: "일단 움직이며 찾아감", b: "확실해질 때까지 탐색" },
+  { category: "🎯 목표", q: "목표 달성이 멀게 느껴질 때?", a: "더 세게 밀어붙임", b: "목표를 현실적으로 조정함" },
+  { category: "🎯 목표", q: "성공보다 중요한 게 있다면?", a: "과정이 더 중요해", b: "결과가 다 말해줘" },
+  { category: "🎯 목표", q: "나에게 경쟁은?", a: "성장의 자극", b: "스트레스의 원인" },
+  // 🔥 야망
+  { category: "🔥 야망", q: "나한테 상처 준 사람한테", a: "언젠가 복수할 기회 잡기", b: "무시하고 내 길 가기" },
+  { category: "🔥 야망", q: "인정받는 것 vs 실력 있는 것?", a: "인정받는 게 더 중요", b: "실력이 있으면 언젠간 인정받음" },
+  { category: "🔥 야망", q: "1등 vs 오래 가는 것?", a: "잠깐이라도 1등 해보기", b: "꾸준히 오래 가기" },
+  { category: "🔥 야망", q: "원하는 걸 얻기 위해?", a: "수단 방법 안 가리는 편", b: "방식도 중요함" },
+  { category: "🔥 야망", q: "내 재능을 인정 못 받을 때?", a: "더 증명해 보임", b: "이 환경이 안 맞는 거라 생각함" },
+  // 🛡️ 자기보호
+  { category: "🛡️ 자기보호", q: "말하면 안 될 걸 알면?", a: "비밀 지키다 속으로 터지기", b: "말해버리고 나중에 후회하기" },
+  { category: "🛡️ 자기보호", q: "속마음과 겉모습 중 선택해야 한다면?", a: "속 착해도 나쁜 사람인 척", b: "속 복잡해도 좋은 사람인 척" },
+  { category: "🛡️ 자기보호", q: "어려운 일이 생기면?", a: "혼자서 다 해결하기", b: "주변에 도움 요청하기" },
+  { category: "🛡️ 자기보호", q: "내 약점을 누군가 건드렸을 때?", a: "바로 반응하고 표현함", b: "아무렇지 않은 척 넘김" },
+  { category: "🛡️ 자기보호", q: "지금 나에게 가장 필요한 건?", a: "한 번쯤 제대로 폭발하기", b: "조용히 쉬면서 충전하기" },
+];
 
 // ── 컴포넌트 ──────────────────────────────────────────────────────────
-export default function AuditionSolo() {
+function AuditionSoloInner() {
   const searchParams = useSearchParams();
   const fromIntro = searchParams?.get("from_intro") === "1";
   const [phase, setPhase] = useState<Phase>("loading");
@@ -371,10 +453,13 @@ export default function AuditionSolo() {
   const [captures, setCaptures] = useState<CaptureItem[]>([]);
   const [agreed, setAgreed] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [personalityAnswers, setPersonalityAnswers] = useState<string[]>([]);
+  const [quizStep, setQuizStep] = useState(0);
+  const [quizAnim, setQuizAnim] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credits, setCredits] = useState<number>(0);
-  const [flavor, setFlavor] = useState<Flavor>("spicy");
   const [bubbleIdx, setBubbleIdx] = useState(0);
+  const [physioCapture, setPhysioCapture] = useState<CaptureItem | null>(null);
   const webcamRef = useRef<{ getScreenshot: () => string | null }>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
@@ -417,7 +502,13 @@ export default function AuditionSolo() {
     fetch("/api/audition/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ images, genres: genreLabels, cues: stepCues, flavor }),
+      body: JSON.stringify({
+        images,
+        physioImage: physioCapture?.base64 ?? images[0],
+        genres: genreLabels,
+        cues: stepCues,
+        personality: personalityAnswers,
+      }),
     })
       .then(async res => {
         const data = await res.json();
@@ -426,6 +517,7 @@ export default function AuditionSolo() {
         sessionStorage.setItem("sd_au_preview", previewDataUrl);
         sessionStorage.setItem("sd_au_genres", JSON.stringify(genreMeta));
         sessionStorage.setItem("sd_au_images", JSON.stringify(captures.map(c => c.dataUrl)));
+        if (physioCapture) sessionStorage.setItem("sd_au_physio", physioCapture.dataUrl);
         router.push("/audition/result");
       })
       .catch(err => {
@@ -442,14 +534,21 @@ export default function AuditionSolo() {
     return () => clearInterval(timer);
   }, [phase]);
 
-  const handleFlavorAndCapture = (f: Flavor) => {
-    setFlavor(f);
+  const startCapture = () => {
     const cues = selectedGenres.map(g => pickRandomCue(g));
     setStepCues(cues);
     setCaptures([]);
     setStepIdx(0);
-    setPhase("capture");
+    setPhysioCapture(null);
+    setPhase("capture_physio_guide");
   };
+
+  const doPhysioCapture = useCallback(() => {
+    const screenshot = webcamRef.current?.getScreenshot();
+    if (!screenshot) return;
+    setPhysioCapture({ base64: screenshot.split(",")[1], dataUrl: screenshot });
+    setPhase("capture");
+  }, []);
 
   const doCapture = useCallback(() => {
     const screenshot = webcamRef.current?.getScreenshot();
@@ -490,7 +589,7 @@ export default function AuditionSolo() {
   // ── LOADING ──────────────────────────────────────────────────────
   if (phase === "loading") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         <div className="w-8 h-8 rounded-full border-2 border-transparent border-t-[#C9571A]" style={{ animation: "spin 0.8s linear infinite" }} />
       </div>
@@ -500,16 +599,16 @@ export default function AuditionSolo() {
   // ── 로그인 필요 ──────────────────────────────────────────────────
   if (phase === "login_required") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
-        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center px-4">
+      <div className="min-h-screen bg-white flex flex-col">
+        <header className="h-[52px] bg-white border-b border-gray-100 flex items-center px-4">
           <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
         </header>
         <main className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6 max-w-sm mx-auto w-full">
           <div className="text-[52px]">🎬</div>
           <div>
             <p className="text-[11px] font-bold text-[#C9571A] tracking-[0.2em] uppercase mb-2">AI 오디션</p>
-            <h2 className="text-[22px] font-extrabold text-white leading-tight">로그인이 필요한 기능이에요</h2>
-            <p className="text-[13px] text-[#555] mt-2 leading-relaxed">
+            <h2 className="text-[22px] font-extrabold text-gray-900 leading-tight">로그인이 필요한 기능이에요</h2>
+            <p className="text-[13px] text-gray-500 mt-2 leading-relaxed">
               카카오 로그인 후 무료 크레딧으로<br />오디션에 도전해보세요
             </p>
           </div>
@@ -522,7 +621,7 @@ export default function AuditionSolo() {
             </svg>
             카카오로 시작하기
           </button>
-          <Link href="/studio" className="text-[13px] text-[#444] hover:text-white transition-colors">돌아가기</Link>
+          <Link href="/studio" className="text-[13px] text-gray-400 hover:text-gray-900 transition-colors">돌아가기</Link>
         </main>
       </div>
     );
@@ -531,24 +630,24 @@ export default function AuditionSolo() {
   // ── 크레딧 부족 ──────────────────────────────────────────────────
   if (phase === "no_credits") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
-        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center px-4">
+      <div className="min-h-screen bg-white flex flex-col">
+        <header className="h-[52px] bg-white border-b border-gray-100 flex items-center px-4">
           <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
         </header>
         <main className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6 max-w-sm mx-auto w-full">
           <div className="text-[52px]">💳</div>
           <div>
             <p className="text-[11px] font-bold text-[#C9571A] tracking-[0.2em] uppercase mb-2">AI 오디션</p>
-            <h2 className="text-[22px] font-extrabold text-white leading-tight">크레딧이 부족해요</h2>
-            <p className="text-[13px] text-[#555] mt-2 leading-relaxed">
-              AI 오디션은 <span className="text-white font-bold">3크레딧</span>이 필요해요.<br />
+            <h2 className="text-[22px] font-extrabold text-gray-900 leading-tight">크레딧이 부족해요</h2>
+            <p className="text-[13px] text-gray-500 mt-2 leading-relaxed">
+              AI 오디션은 <span className="text-gray-900 font-bold">3크레딧</span>이 필요해요.<br />
               현재 보유: <span className="text-[#C9571A] font-bold">{credits}크레딧</span>
             </p>
           </div>
           <Link href="/shop" className="w-full h-[52px] bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold text-[15px] rounded-full transition-colors flex items-center justify-center">
             크레딧 충전하기
           </Link>
-          <Link href="/studio" className="text-[13px] text-[#444] hover:text-white transition-colors">돌아가기</Link>
+          <Link href="/studio" className="text-[13px] text-gray-400 hover:text-gray-900 transition-colors">돌아가기</Link>
         </main>
       </div>
     );
@@ -557,55 +656,54 @@ export default function AuditionSolo() {
   // ── INTRO ────────────────────────────────────────────────────────
   if (phase === "intro") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
-        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
+      <div className="min-h-screen bg-white flex flex-col">
+        <header className="h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 sticky top-0 z-40">
           <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
-          <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-3 py-1">
-            <span className="text-[11px] text-[#666]">보유</span>
-            <span className="text-[15px] font-extrabold text-white">{credits}</span>
-            <span className="text-[11px] text-[#666]">크레딧</span>
+          <div className="flex items-center gap-1.5 bg-gray-100 rounded-full px-3 py-1">
+            <span className="text-[11px] text-gray-500">보유</span>
+            <span className="text-[15px] font-extrabold text-gray-900">{credits}</span>
+            <span className="text-[11px] text-gray-500">크레딧</span>
           </div>
         </header>
         <main className="flex-1 flex flex-col items-center justify-center px-5 text-center gap-6 max-w-sm mx-auto w-full py-10">
           <div className="text-[52px]">🎬</div>
           <div>
             <p className="text-[11px] font-bold text-[#C9571A] tracking-[0.2em] uppercase mb-2">AI 오디션</p>
-            <h1 className="text-[28px] font-extrabold text-white leading-tight">AI 오디션</h1>
-            <p className="text-[13px] text-[#555] mt-2 leading-relaxed">
+            <h1 className="text-[28px] font-extrabold text-gray-900 leading-tight">AI 오디션</h1>
+            <p className="text-[13px] text-gray-500 mt-2 leading-relaxed">
               장르 3개를 고르고 표정 연기를 해봐요.<br />
               AI 감독이 냉혹하게 심사합니다.
             </p>
           </div>
 
-          <div className="bg-[#111] border border-white/8 rounded-2xl px-5 py-4 w-full flex flex-col items-center gap-1.5 text-center">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 w-full flex flex-col items-center gap-1.5 text-center">
             <span className="text-[22px]">🎭</span>
-            <p className="text-[14px] text-white font-bold leading-snug">
+            <p className="text-[14px] text-gray-900 font-bold leading-snug">
               미션 큐는 촬영 직전에 공개됩니다
             </p>
           </div>
 
-          {/* 동의 사항 */}
-          <div className="w-full bg-[#111] border border-white/8 rounded-2xl px-5 py-4 flex flex-col gap-3">
-            <p className="text-[11px] font-bold text-[#555] tracking-widest uppercase">오디션 전 확인사항</p>
+          <div className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 flex flex-col gap-3">
+            <p className="text-[11px] font-bold text-gray-400 tracking-widest uppercase">오디션 전 확인사항</p>
             <ul className="flex flex-col gap-2.5">
               <li className="flex items-start gap-2.5">
-                <span className="text-[#C9571A] text-[14px] shrink-0 mt-0.5">🌶️</span>
-                <p className="text-[12px] text-[#888] leading-snug">매운맛/순한맛에 따라 평가 강도가 달라집니다. 상처받지 말고 재미로 봐주세요</p>
+                <span className="text-[14px] shrink-0 mt-0.5">🌶️</span>
+                <p className="text-[13px] text-gray-600 leading-snug">매운맛/순한맛에 따라 평가 강도가 달라집니다. 상처받지 말고 재미로 봐주세요</p>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-[#C9571A] text-[14px] shrink-0 mt-0.5">📸</span>
-                <p className="text-[12px] text-[#888] leading-snug">한번 촬영한 컷은 다시 찍을 수 없으니 이점 유의해주세요</p>
+                <span className="text-[14px] shrink-0 mt-0.5">📸</span>
+                <p className="text-[13px] text-gray-600 leading-snug">한번 촬영한 컷은 다시 찍을 수 없으니 이점 유의해주세요</p>
               </li>
               <li className="flex items-start gap-2.5">
-                <span className="text-[#C9571A] text-[14px] shrink-0 mt-0.5">💳</span>
-                <p className="text-[12px] text-[#888] leading-snug">크레딧 3개가 소모되며, 이 서비스는 환불이 어렵습니다</p>
+                <span className="text-[14px] shrink-0 mt-0.5">💳</span>
+                <p className="text-[13px] text-gray-600 leading-snug">크레딧 3개가 소모되며, 이 서비스는 환불이 어렵습니다</p>
               </li>
             </ul>
             <label className="flex items-center gap-3 mt-1 cursor-pointer select-none" onClick={() => setAgreed(v => !v)}>
-              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${agreed ? "bg-[#C9571A] border-[#C9571A]" : "border-white/20 bg-transparent"}`}>
+              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${agreed ? "bg-black border-black" : "border-gray-300 bg-white"}`}>
                 {agreed && <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
-              <p className="text-[13px] text-white font-bold">위 내용을 모두 확인했습니다</p>
+              <p className="text-[14px] text-gray-900 font-bold">위 내용을 모두 확인했습니다</p>
             </label>
           </div>
 
@@ -613,14 +711,14 @@ export default function AuditionSolo() {
             <button
               onClick={() => setPhase("genre_select")}
               disabled={!agreed}
-              className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-[#2A2A2A] disabled:text-white/30 text-white font-bold py-4 rounded-2xl text-[16px] transition-colors flex items-center justify-center gap-2.5"
+              className="w-full bg-black hover:bg-gray-900 disabled:bg-gray-100 disabled:text-gray-400 text-white font-bold py-4 rounded-2xl text-[16px] transition-colors flex items-center justify-center gap-2.5"
             >
               <span className="text-[12px] font-extrabold bg-white/20 rounded-lg px-2 py-0.5">3크레딧</span>
               시작하기
             </button>
           </div>
 
-          <Link href="/studio" className="text-[13px] text-[#444] hover:text-white transition-colors">돌아가기</Link>
+          <Link href="/studio" className="text-[13px] text-gray-400 hover:text-gray-900 transition-colors">돌아가기</Link>
         </main>
       </div>
     );
@@ -629,16 +727,16 @@ export default function AuditionSolo() {
   // ── 장르 선택 ────────────────────────────────────────────────────
   if (phase === "genre_select") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
-        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
+      <div className="min-h-screen bg-white flex flex-col">
+        <header className="h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 sticky top-0 z-40">
           <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
-          <span className="text-[12px] text-[#555]">{selectedGenres.length} / 3 선택</span>
+          <span className="text-[12px] font-bold text-gray-500">{selectedGenres.length} / 3 선택</span>
         </header>
         <main className="flex-1 flex flex-col px-5 py-8 gap-6 max-w-sm mx-auto w-full">
           <div className="text-center">
             <p className="text-[11px] font-bold text-[#C9571A] tracking-[0.2em] uppercase mb-2">STEP 1</p>
-            <h2 className="text-[22px] font-extrabold text-white leading-tight">연기할 장르를 골라요</h2>
-            <p className="text-[13px] text-[#555] mt-1.5">3가지를 선택하면 시작됩니다</p>
+            <h2 className="text-[24px] font-black text-gray-900 leading-tight">연기할 장르를 골라요</h2>
+            <p className="text-[14px] text-gray-500 mt-1.5">3가지를 선택하면 시작됩니다</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -652,10 +750,10 @@ export default function AuditionSolo() {
                   disabled={disabled}
                   className={`relative flex flex-col items-center justify-center gap-2 py-6 rounded-2xl border-2 transition-all ${
                     selected
-                      ? "bg-[#C9571A]/15 border-[#C9571A] text-white"
+                      ? "bg-[#C9571A]/10 border-[#C9571A] text-gray-900"
                       : disabled
-                      ? "bg-[#111] border-white/5 text-white/20 cursor-not-allowed"
-                      : "bg-[#111] border-white/10 text-white/70 hover:border-white/30"
+                      ? "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
+                      : "bg-gray-50 border-gray-100 text-gray-700 hover:border-[#C9571A]/40"
                   }`}
                 >
                   {selected && (
@@ -672,16 +770,93 @@ export default function AuditionSolo() {
 
           <div className="flex flex-col gap-2 mt-auto">
             <button
-              onClick={() => setPhase("flavor_select")}
+              onClick={() => { setQuizStep(0); setPersonalityAnswers([]); setPhase("personality_quiz"); }}
               disabled={selectedGenres.length < 3}
-              className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-[#2A2A2A] disabled:text-white/30 text-white font-bold py-4 rounded-2xl text-[16px] transition-colors"
+              className="w-full bg-black hover:bg-gray-900 disabled:bg-gray-100 disabled:text-gray-400 text-white font-bold py-4 rounded-2xl text-[16px] transition-colors"
             >
               {selectedGenres.length < 3 ? `${3 - selectedGenres.length}개 더 선택해요` : "다음 →"}
             </button>
-            <button onClick={() => setPhase("intro")} className="text-[13px] text-[#444] hover:text-white transition-colors py-1">
+            <button onClick={() => setPhase("intro")} className="text-[13px] text-gray-400 hover:text-gray-900 transition-colors py-1">
               이전으로
             </button>
           </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ── 성향 퀴즈 ────────────────────────────────────────────────────
+  if (phase === "personality_quiz") {
+    const current = QUIZ_QUESTIONS[quizStep];
+    const progress = ((quizStep + 1) / QUIZ_QUESTIONS.length) * 100;
+
+    const handleAnswer = (answer: string) => {
+      const next = [...personalityAnswers, answer];
+      setPersonalityAnswers(next);
+      setQuizAnim(true);
+      setTimeout(() => {
+        setQuizAnim(false);
+        if (quizStep + 1 >= QUIZ_QUESTIONS.length) {
+          startCapture();
+        } else {
+          setQuizStep(s => s + 1);
+        }
+      }, 180);
+    };
+
+    return (
+      <div className="min-h-screen bg-white flex flex-col" style={{ height: "100dvh" }}>
+        <style>{`
+          @keyframes quiz-in { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+          @keyframes quiz-out { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(-10px)} }
+        `}</style>
+
+        {/* 헤더 */}
+        <header className="h-[52px] flex items-center justify-between px-5 border-b border-gray-100 flex-shrink-0">
+          <button onClick={() => quizStep === 0 ? setPhase("genre_select") : setQuizStep(s => s - 1)}
+            className="text-gray-400 hover:text-gray-900 transition-colors">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M13 16l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <span className="text-[13px] font-bold text-gray-900">{quizStep + 1} / {QUIZ_QUESTIONS.length}</span>
+          <div className="w-5" />
+        </header>
+
+        {/* 진행 바 */}
+        <div className="h-1.5 bg-gray-100 flex-shrink-0">
+          <div className="h-full bg-[#C9571A] transition-all duration-500 rounded-r-full" style={{ width: `${progress}%` }} />
+        </div>
+
+        <main
+          className="flex-1 flex flex-col px-5 pt-7 pb-8 gap-6 max-w-sm mx-auto w-full overflow-hidden"
+          style={{ animation: quizAnim ? "quiz-out 0.18s ease-in forwards" : "quiz-in 0.25s ease-out" }}
+        >
+          {/* 카테고리 + 질문 */}
+          <div>
+            <p className="text-[11px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-2">{current.category}</p>
+            <p className="text-[22px] font-black text-gray-900 leading-snug">{current.q}</p>
+          </div>
+
+          {/* 세로형 선택 카드 */}
+          <div className="flex flex-col gap-3 flex-1">
+            <button
+              onClick={() => handleAnswer("A")}
+              className="flex-1 flex flex-col justify-end p-5 rounded-2xl border-2 border-gray-100 bg-gray-50 hover:border-[#C9571A] hover:bg-orange-50 active:scale-[0.98] transition-all text-left"
+            >
+              <span className="text-[10px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-2">A</span>
+              <span className="text-[18px] font-bold text-gray-900 leading-snug">{current.a}</span>
+            </button>
+            <button
+              onClick={() => handleAnswer("B")}
+              className="flex-1 flex flex-col justify-end p-5 rounded-2xl border-2 border-gray-100 bg-gray-50 hover:border-[#C9571A] hover:bg-orange-50 active:scale-[0.98] transition-all text-left"
+            >
+              <span className="text-[10px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-2">B</span>
+              <span className="text-[18px] font-bold text-gray-900 leading-snug">{current.b}</span>
+            </button>
+          </div>
+
+          <p className="text-center text-[12px] text-gray-400">직관적으로 선택하세요 — 정답은 없어요</p>
         </main>
       </div>
     );
@@ -696,41 +871,118 @@ export default function AuditionSolo() {
   const PIXEL_ANIMALS = ["🐶", "🐱", "🐸", "🦊", "🐨", "🐯", "🐻", "🦁", "🐼"];
   const lastPhoto = captures[2]?.dataUrl ?? captures[captures.length - 1]?.dataUrl;
 
-  if (phase === "flavor_select") {
+  // ── 관상 촬영 가이드 ──────────────────────────────────────────────
+  if (phase === "capture_physio_guide") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
-        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
+      <div className="min-h-screen bg-white flex flex-col">
+        <header className="h-[52px] bg-white border-b border-gray-100 flex items-center justify-between px-4 sticky top-0 z-40">
           <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
-          <span className="text-[12px] text-[#555]">STEP 2</span>
+          <span className="text-[12px] font-bold text-gray-500">STEP 3</span>
         </header>
-        <main className="flex-1 flex flex-col items-center justify-center px-5 text-center gap-8 max-w-sm mx-auto w-full py-10">
-          <div>
-            <p className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest mb-3">평가 강도 선택</p>
-            <h2 className="text-[28px] font-extrabold text-white leading-tight mb-2">
-              어떤 맛으로<br />드릴까요?
-            </h2>
-            <p className="text-[13px] text-[#555] leading-snug">촬영 전에 미리 선택해두세요<br />선택 후엔 변경이 안 됩니다</p>
+        <main className="flex-1 flex flex-col px-5 py-8 gap-6 max-w-sm mx-auto w-full">
+          <div className="text-center">
+            <p className="text-[11px] font-bold text-[#C9571A] tracking-[0.2em] uppercase mb-2">관상 분석용 사진</p>
+            <h2 className="text-[24px] font-black text-gray-900 leading-tight">얼굴 정면 사진을<br />찍어주세요</h2>
+            <p className="text-[13px] text-gray-500 mt-2">AI가 관상을 분석합니다. 아래 조건을 지켜주세요.</p>
           </div>
-          <div className="flex flex-col gap-3 w-full">
+
+          {/* 타원 가이드 일러스트 */}
+          <div className="flex items-center justify-center">
+            <div className="relative w-[180px] h-[220px]">
+              <div className="absolute inset-0 rounded-[50%] border-[3px] border-dashed border-[#C9571A]/60" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[64px]">🙂</span>
+              </div>
+              {/* 가이드 점 */}
+              <div className="absolute top-[18%] left-[50%] -translate-x-1/2 w-2 h-2 rounded-full bg-[#C9571A]/70" />
+              <div className="absolute top-[40%] left-[22%] w-1.5 h-1.5 rounded-full bg-[#C9571A]/50" />
+              <div className="absolute top-[40%] right-[22%] w-1.5 h-1.5 rounded-full bg-[#C9571A]/50" />
+              <div className="absolute top-[58%] left-[50%] -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#C9571A]/50" />
+              <div className="absolute top-[72%] left-[50%] -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#C9571A]/50" />
+            </div>
+          </div>
+
+          {/* 촬영 조건 */}
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col gap-3">
+            <p className="text-[11px] font-black text-gray-400 tracking-widest uppercase">촬영 조건</p>
+            {[
+              { icon: "☀️", text: "밝은 조명 아래에서 찍어주세요" },
+              { icon: "👁️", text: "카메라를 정면으로 바라봐주세요" },
+              { icon: "😐", text: "자연스러운 무표정으로 찍어주세요" },
+              { icon: "🚫", text: "모자나 선글라스는 벗어주세요" },
+              { icon: "📐", text: "얼굴이 화면 중앙에 오도록 해주세요" },
+            ].map(({ icon, text }) => (
+              <div key={text} className="flex items-center gap-3">
+                <span className="text-[16px] shrink-0">{icon}</span>
+                <p className="text-[13px] text-gray-700">{text}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-2 mt-auto">
             <button
-              onClick={() => handleFlavorAndCapture("spicy")}
-              className="w-full py-5 rounded-2xl relative overflow-hidden"
-              style={{ background: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)" }}
+              onClick={() => setPhase("capture_physio")}
+              className="w-full bg-black hover:bg-gray-900 text-white font-bold py-4 rounded-2xl text-[16px] transition-colors"
             >
-              <p className="text-white font-extrabold text-[22px]">🌶️ 매운맛</p>
-              <p className="text-white/60 text-[12px] mt-0.5">욕 포함 진짜 독설 · 뒤통수 맞을 각오</p>
+              촬영 시작 →
             </button>
-            <button
-              onClick={() => handleFlavorAndCapture("mild")}
-              className="w-full py-5 rounded-2xl border border-white/15"
-              style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #252540 100%)" }}
-            >
-              <p className="text-white font-extrabold text-[22px]">🥛 순한맛</p>
-              <p className="text-white/50 text-[12px] mt-0.5">욕 없는 독설 · 그래도 뼈는 때림</p>
+            <button onClick={() => setPhase("personality_quiz")} className="text-[13px] text-gray-400 hover:text-gray-900 transition-colors py-1">
+              이전으로
             </button>
           </div>
-          <button onClick={() => setPhase("genre_select")} className="text-[13px] text-[#444] hover:text-white transition-colors">
-            이전으로
+        </main>
+      </div>
+    );
+  }
+
+  // ── 관상용 셀카 촬영 ──────────────────────────────────────────────
+  if (phase === "capture_physio") {
+    return (
+      <div className="bg-[#0A0A0A] flex flex-col" style={{ height: "100dvh" }}>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 flex-shrink-0 z-40">
+          <span className="text-[13px] font-bold text-white/60">관상 분석용 정면 사진</span>
+          <span className="text-[11px] font-bold text-[#C9571A] bg-[#C9571A]/15 px-3 py-1 rounded-full">1 / 4</span>
+        </header>
+
+        <main className="flex-1 flex flex-col px-4 py-3 gap-3 min-h-0">
+          {/* 웹캠 + 타원 오버레이 */}
+          <div className="relative flex-1 rounded-2xl overflow-hidden bg-[#111] border border-white/10 min-h-0">
+            <Webcam
+              ref={webcamRef}
+              audio={false}
+              screenshotFormat="image/jpeg"
+              screenshotQuality={0.9}
+              videoConstraints={VIDEO_CONSTRAINTS}
+              mirrored
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            />
+            {/* 타원 가이드 오버레이 */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <div
+                style={{
+                  width: "62%",
+                  aspectRatio: "3/4",
+                  borderRadius: "50%",
+                  border: "2.5px dashed rgba(201,87,26,0.75)",
+                  boxShadow: "0 0 0 9999px rgba(0,0,0,0.45)",
+                }}
+              />
+            </div>
+            {/* 안내 텍스트 */}
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center z-10">
+              <p className="text-white/80 text-[12px] font-bold bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                얼굴을 타원 안에 맞춰주세요
+              </p>
+            </div>
+          </div>
+
+          {/* 촬영 버튼 */}
+          <button
+            onClick={doPhysioCapture}
+            className="w-full bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold py-4 rounded-2xl text-[16px] transition-colors flex items-center justify-center gap-2 flex-shrink-0"
+          >
+            <span>📸</span><span>관상용 정면 찍기</span>
           </button>
         </main>
       </div>
@@ -738,49 +990,45 @@ export default function AuditionSolo() {
   }
 
   if (phase === "analyzing") {
+    const ANALYZE_STEPS = [
+      { label: `씬 1 (${selectedGenres[0] ? GENRES.find(g => g.id === selectedGenres[0])?.label : ""}) 분석 중`, delay: 0 },
+      { label: `씬 2 (${selectedGenres[1] ? GENRES.find(g => g.id === selectedGenres[1])?.label : ""}) 분석 중`, delay: 1600 },
+      { label: `씬 3 (${selectedGenres[2] ? GENRES.find(g => g.id === selectedGenres[2])?.label : ""}) 분석 중`, delay: 3200 },
+      { label: "관상 분석 중", delay: 5000 },
+      { label: "성향 분석 중", delay: 6800 },
+      { label: "스틸컷 제작 준비 중", delay: 8500 },
+    ];
     return (
       <div className="min-h-screen bg-[#0A0A0A] relative overflow-hidden flex flex-col items-center justify-center">
         <style>{`
           @keyframes spin { to { transform: rotate(360deg); } }
-          @keyframes dot-bounce { 0%,80%,100%{opacity:0.3;transform:scale(0.8)} 40%{opacity:1;transform:scale(1.2)} }
-          @keyframes bubble-fade { 0%{opacity:0;transform:scale(0.8) translateY(6px)} 15%{opacity:1;transform:scale(1) translateY(0)} 75%{opacity:1} 100%{opacity:0} }
+          @keyframes step-in { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
         `}</style>
         {lastPhoto && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={lastPhoto} alt="" className="absolute inset-0 w-full h-full object-cover opacity-35" />
+          <img src={lastPhoto} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/50 to-black/85" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/90" />
 
-        <div className="relative z-10 flex flex-col items-center gap-7 text-center px-6">
-          {/* 픽셀 동물 + 스피너 + 말풍선 */}
-          <div className="relative flex items-center justify-center w-44 h-44">
-            {/* 말풍선 */}
-            <div key={bubbleIdx} className="absolute -top-14 bg-white text-[#111] text-[13px] font-extrabold px-3.5 py-2 rounded-2xl whitespace-nowrap shadow-lg"
-              style={{ animation: "bubble-fade 2.2s ease-in-out forwards" }}>
-              {BUBBLE_MESSAGES[bubbleIdx]}
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0"
-                style={{ borderLeft: "8px solid transparent", borderRight: "8px solid transparent", borderTop: "8px solid white" }} />
-            </div>
-            {/* 동물 이모지 */}
-            <span className="text-[72px] select-none">{PIXEL_ANIMALS[bubbleIdx % PIXEL_ANIMALS.length]}</span>
-            {/* 스피너 링 */}
-            <div className="absolute inset-0 rounded-full border-[5px] border-transparent border-t-[#C9571A] border-r-[#C9571A]/40"
-              style={{ animation: "spin 1.2s linear infinite" }} />
+        <div className="relative z-10 flex flex-col items-center gap-10 px-8 w-full max-w-sm">
+          {/* 스피너 */}
+          <div className="relative w-20 h-20 flex items-center justify-center">
+            {lastPhoto && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={lastPhoto} alt="" className="w-14 h-14 rounded-xl object-cover opacity-70" />
+            )}
+            <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[#C9571A] border-r-[#C9571A]/30"
+              style={{ animation: "spin 1s linear infinite" }} />
           </div>
 
-          <div>
-            <p className="text-[#C9571A] text-[12px] font-bold tracking-widest uppercase mb-2">
-              {flavor === "spicy" ? "🌶️ 매운맛 심사 중" : "🥛 순한맛 심사 중"}
+          {/* 단계별 체크리스트 */}
+          <div className="w-full flex flex-col gap-3">
+            <p className="text-[10px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-1">
+              🎬 AI 감독 심사 중
             </p>
-            <p className="text-white font-bold text-[20px] leading-snug">
-              감독이 심사 중입니다...
-            </p>
-            <div className="flex items-center justify-center gap-2 mt-3">
-              {[0, 1, 2].map(i => (
-                <div key={i} className="w-2 h-2 rounded-full bg-[#C9571A]"
-                  style={{ animation: `dot-bounce 1.4s ease-in-out ${i * 0.2}s infinite` }} />
-              ))}
-            </div>
+            {ANALYZE_STEPS.map((step, i) => (
+              <AnalyzeStepItem key={i} label={step.label} delay={step.delay} />
+            ))}
           </div>
         </div>
       </div>
@@ -790,11 +1038,11 @@ export default function AuditionSolo() {
   // ── ERROR ────────────────────────────────────────────────────────
   if (phase === "error") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center gap-5 px-6 text-center">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-5 px-6 text-center">
         <p className="text-[40px]">😵</p>
-        <p className="text-white font-bold text-[18px]">오디션이 중단됐습니다</p>
-        <p className="text-[#888] text-[14px]">{errorMsg}</p>
-        <Link href="/studio" className="text-[13px] text-[#444] hover:text-white transition-colors">
+        <p className="text-gray-900 font-bold text-[18px]">오디션이 중단됐습니다</p>
+        <p className="text-gray-500 text-[14px]">{errorMsg}</p>
+        <Link href="/studio" className="text-[13px] text-gray-400 hover:text-gray-900 transition-colors">
           밖으로 나가기
         </Link>
       </div>
@@ -806,22 +1054,38 @@ export default function AuditionSolo() {
     <div className="bg-[#0A0A0A] flex flex-col" style={{ height: "100dvh" }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 flex-shrink-0 z-40">
-        <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
-        <div className="flex items-center gap-1.5">
-          {selectedGenres.map((g, i) => (
-            <div
-              key={g}
-              className={`rounded-full transition-all ${
-                i < captures.length
-                  ? "w-2 h-2 bg-[#C9571A]"
-                  : i === stepIdx
-                  ? "w-3 h-2 bg-white"
-                  : "w-2 h-2 bg-white/20"
-              }`}
-            />
-          ))}
+      {/* 상단 바 — 현재 장르 + 지시문 */}
+      <header className="bg-[#0A0A0A] border-b border-[#1a1a1a] flex-shrink-0 z-40">
+        <div className="h-[44px] flex items-center justify-between px-4">
+          <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-sm tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
+          <div className="flex items-center gap-1.5">
+            {selectedGenres.map((g, i) => (
+              <div
+                key={g}
+                className={`rounded-full transition-all ${
+                  i < captures.length
+                    ? "w-2 h-2 bg-[#C9571A]"
+                    : i === stepIdx
+                    ? "w-3 h-2 bg-white"
+                    : "w-2 h-2 bg-white/20"
+                }`}
+              />
+            ))}
+          </div>
         </div>
+        {/* 지시문 띠 */}
+        {stepCues[stepIdx] && countdown === null && (
+          <div className="px-4 pb-3">
+            <div className="bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-2.5 flex items-start gap-2">
+              <span className="text-[14px] shrink-0 mt-0.5">
+                {GENRES.find(g => g.id === selectedGenres[stepIdx])?.emoji}
+              </span>
+              <p className="text-[12px] font-bold text-white/90 leading-snug line-clamp-2">
+                {stepCues[stepIdx]}
+              </p>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="flex-1 flex flex-col px-4 py-3 gap-3 min-h-0">
@@ -838,22 +1102,13 @@ export default function AuditionSolo() {
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
           />
 
-          {/* 미션 큐 오버레이 — 카운트다운 중엔 숨김 */}
+          {/* 장르 뱃지 (하단) */}
           {countdown === null && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-10 px-5"
-              style={{ background: "rgba(0,0,0,0.45)" }}
-            >
-              <div className="text-center px-4">
-                <p className="text-[11px] font-bold text-[#C9571A] tracking-[0.2em] uppercase mb-3">
-                  {GENRES.find(g => g.id === selectedGenres[stepIdx])?.emoji}{" "}
-                  {GENRES.find(g => g.id === selectedGenres[stepIdx])?.label} · STEP {stepIdx + 1} / 3
-                </p>
-                <p className="text-white font-extrabold leading-snug"
-                  style={{ fontSize: "clamp(18px, 6vw, 26px)", textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}
-                >
-                  &quot;{stepCues[stepIdx]}&quot;
-                </p>
-              </div>
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center z-10">
+              <span className="text-[11px] font-bold text-white bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
+                {GENRES.find(g => g.id === selectedGenres[stepIdx])?.emoji}{" "}
+                {GENRES.find(g => g.id === selectedGenres[stepIdx])?.label}
+              </span>
             </div>
           )}
 
@@ -912,5 +1167,13 @@ export default function AuditionSolo() {
         </button>
       </main>
     </div>
+  );
+}
+
+export default function AuditionSolo() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0A0A0A]" />}>
+      <AuditionSoloInner />
+    </Suspense>
   );
 }

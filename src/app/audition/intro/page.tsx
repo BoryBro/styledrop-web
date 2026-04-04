@@ -31,34 +31,39 @@ function useTypewriter(lines: string[], speed = 60, pause = 1800) {
   return display;
 }
 
-// ── 카드 데이터 ─────────────────────────────────────────────────
-const CARDS = [
-  { genre: "THE METHOD\nACTOR",  color: "#C84B31", accent: "#E8614A", rot: -7,  x: -8 },
-  { genre: "BORN\nVILLAIN",      color: "#1B4332", accent: "#2D6A4F", rot:  5,  x:  12 },
-  { genre: "ROMANTIC\nLEAD",     color: "#B5882A", accent: "#D4A734", rot: -2,  x: -4 },
-  { genre: "DARK\nHORSE",        color: "#2C2C54", accent: "#3D3D7A", rot:  8,  x:  16 },
-  { genre: "SCENE\nSTEALER",     color: "#7B2D00", accent: "#C9571A", rot: -5,  x: -14 },
+// ── 실제 카드 이미지 마르퀴 ─────────────────────────────────────
+const CARD_IMAGES = [
+  "/audition/cards/card-1.png",
+  "/audition/cards/card-2.png",
+  "/audition/cards/card-3.png",
+  "/audition/cards/card-4.png",
+  "/audition/cards/card-5.png",
 ];
-const STATS = ["ACTING SCORE", "SCREEN PRESENCE", "AUDIENCE RATING"];
 
-function AuditionCard({ genre, color, accent, rot, x }: typeof CARDS[0]) {
+function CardMarquee() {
+  // 두 벌 복사해서 끊김 없는 루프
+  const doubled = [...CARD_IMAGES, ...CARD_IMAGES];
   return (
-    <div
-      className="relative rounded-[18px] overflow-hidden flex-shrink-0 shadow-2xl"
-      style={{ width: 160, height: 230, transform: `rotate(${rot}deg) translateX(${x}px)`, background: color }}
-    >
-      <div className="px-3 pt-3 pb-2.5" style={{ background: accent }}>
-        <p className="text-white font-black text-[12px] leading-tight uppercase whitespace-pre-line tracking-wide">{genre}</p>
-      </div>
-      <div className="mx-2 mt-2 rounded-lg flex items-center justify-center" style={{ height: 112, background: 'rgba(0,0,0,0.3)' }}>
-        <span className="text-[36px]">🎬</span>
-      </div>
-      <div className="px-2.5 pt-2 flex flex-col gap-1">
-        {STATS.map(s => (
-          <div key={s} className="flex items-center justify-between border-b border-white/10 pb-0.5">
-            <span className="text-[6.5px] font-bold text-white/50 uppercase tracking-wide">{s}</span>
-            <span className="text-[8px] font-black text-white/30">——</span>
-          </div>
+    <div className="overflow-hidden w-full relative">
+      <style>{`
+        @keyframes marquee {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+      <div
+        className="flex gap-4 py-4"
+        style={{ animation: "marquee 14s linear infinite", width: "max-content" }}
+      >
+        {doubled.map((src, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={i}
+            src={src}
+            alt="audition card"
+            className="rounded-2xl shadow-lg flex-shrink-0 object-cover"
+            style={{ width: 160, height: 220 }}
+          />
         ))}
       </div>
     </div>
@@ -108,8 +113,8 @@ export default function AuditionIntroPage() {
       </header>
 
       {/* ── HERO ────────────────────────────────────────── */}
-      <section className="flex flex-col items-center justify-center px-6 pt-16 pb-20 text-center" style={{ minHeight: '85vh' }}>
-        <p className="text-[11px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-5">관상 × 연기 분석</p>
+      <section className="flex flex-col items-center justify-center px-6 pt-16 pb-12 text-center" style={{ minHeight: '85vh' }}>
+        <p className="text-[11px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-5">관상 × 성향 × 연기 분석</p>
 
         <h1 className="text-[52px] font-black text-black leading-none tracking-tighter min-h-[62px]">
           {typed}
@@ -117,17 +122,22 @@ export default function AuditionIntroPage() {
         </h1>
 
         <p className="text-[17px] text-gray-600 font-medium mt-6 leading-relaxed max-w-[280px]">
-          AI가 당신의 얼굴을 관상학으로 분석하고,<br />
+          AI가 당신의 얼굴과 성향을 분석해<br />
           타고난 배역을 찾아드립니다.
         </p>
 
         <div className="mt-4 flex flex-wrap justify-center gap-2">
-          {["관상 분석", "배역 판정", "연기 채점", "캐릭터 카드"].map(tag => (
+          {["관상 분석", "성향 밸런스 게임", "배역 판정", "캐릭터 카드"].map(tag => (
             <span key={tag} className="text-[12px] font-bold text-gray-500 bg-gray-100 rounded-full px-3 py-1">{tag}</span>
           ))}
         </div>
 
-        <div className="mt-16 flex flex-col items-center gap-2">
+        {/* 카드 마르퀴 */}
+        <div className="mt-12 w-screen -mx-6">
+          <CardMarquee />
+        </div>
+
+        <div className="mt-8 flex flex-col items-center gap-2">
           <span className="text-[11px] font-bold text-gray-300 uppercase tracking-widest">scroll</span>
           <svg width="14" height="22" viewBox="0 0 14 22" fill="none">
             <rect x="5.5" y="1" width="3" height="5" rx="1.5" fill="#d1d5db"/>
@@ -141,14 +151,14 @@ export default function AuditionIntroPage() {
         <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em]">How it works</p>
         {[
           { num: "01", en: "CHOOSE YOUR GENRE",   ko: "장르를 선택하세요",  desc: "액션·로맨스·범죄·공포 등\n10개 장르 중 3개를 고르세요." },
-          { num: "02", en: "GET YOUR CUE",         ko: "씬 지문을 받아요",   desc: "AI가 장르에 맞는 연기 상황을\n촬영 직전에 공개합니다." },
-          { num: "03", en: "PERFORM",              ko: "카메라 앞에 서세요", desc: "셀카 3장으로 당신의 연기와\n표정을 표현하세요." },
-          { num: "04", en: "GET YOUR CHARACTER",   ko: "배역이 판정됩니다",  desc: "AI가 관상 분석 + 연기력을 종합해\n당신만의 캐릭터 카드를 만들어냅니다." },
+          { num: "02", en: "BALANCE GAME",         ko: "성향 밸런스 게임",   desc: "10가지 선택 질문으로 당신의\n배우 기질과 성향을 파악합니다.", highlight: true },
+          { num: "03", en: "PERFORM",              ko: "카메라 앞에 서세요", desc: "씬 지문에 맞게 셀카 3장으로\n연기 표정을 촬영합니다." },
+          { num: "04", en: "GET YOUR CHARACTER",   ko: "배역이 판정됩니다",  desc: "관상 분석 + 성향 + 연기력을 종합해\n당신만의 캐릭터 카드를 만들어냅니다." },
         ].map(f => (
           <div key={f.num} className="flex gap-4 items-start">
             <span className="text-[28px] font-black text-gray-200 leading-none flex-shrink-0 w-10 text-right tabular-nums">{f.num}</span>
-            <div className="flex-1 border-l-2 border-gray-100 pl-4">
-              <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-widest mb-0.5">{f.en}</p>
+            <div className={`flex-1 border-l-2 pl-4 ${f.highlight ? "border-[#C9571A]/30" : "border-gray-100"}`}>
+              <p className={`text-[10px] font-black uppercase tracking-widest mb-0.5 ${f.highlight ? "text-[#C9571A]" : "text-[#C9571A]"}`}>{f.en}</p>
               <p className="text-[20px] font-black text-gray-900 leading-tight mb-1.5">{f.ko}</p>
               <p className="text-[14px] text-gray-500 leading-relaxed whitespace-pre-line">{f.desc}</p>
             </div>
@@ -181,18 +191,47 @@ export default function AuditionIntroPage() {
 
       <div className="mx-6 h-px bg-gray-100" />
 
+      {/* ── 밸런스 게임 섹션 ────────────────────────────── */}
+      <section className="px-6 py-12 flex flex-col gap-6 bg-gray-50">
+        <div>
+          <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Balance Game</p>
+          <p className="text-[26px] font-black text-gray-900 leading-tight">당신의 성향이<br />배역을 바꿉니다.</p>
+          <p className="text-[14px] text-gray-500 mt-3 leading-relaxed">
+            얼굴만으로는 알 수 없는 것들이 있어요.<br />
+            10가지 선택 질문으로 당신이 주인공형인지, 빌런형인지, 그 사이 어딘가인지 파악합니다.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3">
+          {[
+            { cat: "존재감", q: "욕 먹어도 주목받기 vs 칭찬 못 받아도 조용히" },
+            { cat: "감정 표현", q: "감정대로 바로 말하기 vs 생각 정리 후 말하기" },
+            { cat: "실행", q: "계획 세우고 실행 vs 일단 저지르고 수습" },
+          ].map(item => (
+            <div key={item.cat} className="bg-white rounded-2xl px-4 py-3.5 border border-gray-100 flex items-center gap-3">
+              <span className="text-[10px] font-black text-[#C9571A] tracking-widest uppercase bg-orange-50 rounded-full px-2.5 py-1 flex-shrink-0">{item.cat}</span>
+              <p className="text-[13px] text-gray-600 font-medium leading-snug">{item.q}</p>
+            </div>
+          ))}
+          <p className="text-[12px] text-gray-400 text-center pt-1">+ 7가지 더</p>
+        </div>
+        <div className="bg-white rounded-2xl px-5 py-4 border border-gray-100">
+          <p className="text-[13px] font-bold text-gray-900 mb-1">왜 밸런스 게임을 하나요?</p>
+          <p className="text-[13px] text-gray-500 leading-relaxed">
+            관상은 겉모습만 봅니다. 하지만 진짜 배역은 성격에서 나와요. 감독이 배우를 캐스팅할 때 외모만 보지 않는 것처럼, AI도 얼굴 + 성향을 함께 봐야 정확한 배역을 찾아낼 수 있습니다.
+          </p>
+        </div>
+      </section>
+
+      <div className="mx-6 h-px bg-gray-100" />
+
       {/* ── 카드 쇼케이스 ───────────────────────────────── */}
       <section className="py-12 flex flex-col gap-6">
         <div className="px-6">
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Result Cards</p>
           <p className="text-[26px] font-black text-gray-900 leading-tight">당신만의 캐릭터<br />카드가 만들어집니다.</p>
         </div>
-        <div className="overflow-x-auto px-6 pb-4" style={{ scrollbarWidth: 'none' }}>
-          <div className="flex gap-3 items-end" style={{ width: 'max-content' }}>
-            {CARDS.map((card, i) => <AuditionCard key={i} {...card} />)}
-          </div>
-        </div>
-        <p className="px-6 text-[12px] text-gray-400 font-medium">* 카드 디자인은 실제 결과와 다를 수 있습니다</p>
+        <CardMarquee />
+        <p className="px-6 text-[12px] text-gray-400 font-medium">* 실제 결과는 본인 사진 기반으로 제작됩니다</p>
       </section>
 
       {/* ── 텍스트 마커 ─────────────────────────────────── */}

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+// ── 타입 ──────────────────────────────────────────────────────────
 type Scores = { 이해도: number; 표정연기: number; 창의성: number; 몰입도: number };
 
 type SceneResult = {
@@ -14,15 +15,28 @@ type SceneResult = {
   scores: Scores;
 };
 
+type Physiognomy = {
+  face_type: string;
+  archetype: string;
+  archetype_reason: string;
+  strengths: string[];
+  weaknesses: string[];
+  best_genre: string;
+  verdict: string;
+};
+
 type AuditionResult = {
   scenes: SceneResult[];
   overall_critique: string;
   overall_one_liner: string;
+  physiognomy?: Physiognomy;
+  personality_summary?: string;
 };
 
 type GenreMeta = { genre: string; cue: string };
 type Phase = "generating" | "ready" | "error";
 
+// ── 상수 ──────────────────────────────────────────────────────────
 const GENRE_EMOJIS: Record<string, string> = {
   멜로: "💔", 스릴러: "🔪", 일상: "😐", 공포: "👻", 코미디: "😂", 액션: "💥",
   판타지: "✨", 범죄: "🕵️", 로맨스: "🌹", 심리: "🧠",
@@ -30,23 +44,111 @@ const GENRE_EMOJIS: Record<string, string> = {
 
 const SCORE_LABELS = ["이해도", "표정연기", "창의성", "몰입도"] as const;
 
+// ── 관상학 실제 지식 DB ───────────────────────────────────────────
+const FACE_TYPE_GUIDE: Record<string, { desc: string; acting: string; caution: string; tip: string }> = {
+  "둥근형": {
+    desc: "광대뼈가 낮고 턱선이 부드러운 곡선형. 얼굴에서 친근함과 포용력이 자연스럽게 풍긴다. 한국 관상학에서는 재복이 있고 대인관계가 좋다고 본다.",
+    acting: "감성 연기, 순수한 주인공, 코미디, 따뜻한 조연. 공감 능력이 얼굴에서 그냥 나온다.",
+    caution: "카리스마 있는 악역이나 냉철한 캐릭터에서 설득력이 약할 수 있다. 너무 착해 보여서 갈등 씬에서 밀리기 쉽다.",
+    tip: "눈썹을 이용해 강약을 조절하라. 입꼬리를 내리는 연습, 눈빛에 무게를 싣는 훈련이 약점을 보완해준다.",
+  },
+  "각진형": {
+    desc: "턱선이 뚜렷하고 얼굴 윤곽이 직선적. 의지력과 결단력이 얼굴에서 자연스럽게 나온다. 관상학에서는 강한 자아와 성취욕이 있다고 본다.",
+    acting: "형사, 군인, 리더, 강인한 주인공, 카리스마 있는 악당. 화면에서 존재감이 강하게 잡힌다.",
+    caution: "코미디나 순수한 멜로에서 너무 딱딱하게 보일 수 있다. 긴장을 풀지 못하면 표정 연기 폭이 좁아진다.",
+    tip: "눈 주변 근육을 이완시키는 훈련이 핵심. 뺨과 입꼬리를 의식적으로 부드럽게 만드는 연습으로 감성 표현 폭을 늘려라.",
+  },
+  "달걀형": {
+    desc: "얼굴의 황금비율. 이마부터 턱까지 자연스러운 곡선이 균형잡혀 있다. 어떤 장르에도 무리 없이 어울리는 범용성이 있다.",
+    acting: "장르를 가리지 않는 올라운더. 주인공부터 악역까지 어느 쪽이든 가능하다.",
+    caution: "너무 평범해 보여서 기억에 남기 어려울 수 있다. 강한 첫인상이 없어서 캐릭터를 스스로 만들어야 한다.",
+    tip: "목소리 톤, 걸음걸이, 제스처 등 얼굴 외 요소로 강한 개성을 만들어라. 얼굴이 캐릭터를 대신해주지 않으니 연기력으로 채워야 한다.",
+  },
+  "역삼각형": {
+    desc: "넓은 이마에 좁은 턱으로 뾰족하게 내려오는 형태. 날카롭고 분석적인 인상이다. 관상학에서는 지성과 판단력이 뛰어나다고 본다.",
+    acting: "냉철한 악역, 천재 캐릭터, 형사, 스파이, 분석가. 설명 없이도 '뭔가 있어 보이는' 얼굴이다.",
+    caution: "너무 차갑게 보여서 대중적인 주인공 역할에서 거리감이 생길 수 있다. 첫인상이 강하다 보니 캐릭터 반전이 어렵다.",
+    tip: "웃는 연습과 눈꼬리를 아래로 향하게 하는 표정 훈련으로 따뜻한 면을 보여줘라. 강점은 이미 있으니 약점인 부드러움을 키워라.",
+  },
+};
+
+const ARCHETYPE_GUIDE: Record<string, { summary: string; strength: string; blind_spot: string; advice: string }> = {
+  "카리스마 주인공형": {
+    summary: "화면에 등장하는 순간 시선이 집중되는 얼굴 구조. 넓은 이마, 강한 눈빛, 뚜렷한 코의 조합이다.",
+    strength: "리더십이 얼굴에서 그냥 나온다. 억지로 포스를 만들 필요가 없다.",
+    blind_spot: "자칫 이미지가 획일적이 될 수 있다. 캐릭터마다 다른 면을 보여주지 않으면 매너리즘 위험.",
+    advice: "이미 있는 카리스마보다 내면의 취약점을 표현하는 연습에 집중해라. 그게 주인공을 입체적으로 만든다.",
+  },
+  "냉철한 악역형": {
+    summary: "날카로운 눈빛, 높은 광대, 각진 턱. 자연스럽게 긴장감을 주는 얼굴이다.",
+    strength: "악역 연기에서 별도의 노력 없이 분위기가 살아난다. 존재 자체가 위협적이다.",
+    blind_spot: "악역이 너무 자연스러워서 평범한 역할에서 오히려 어색할 수 있다. 착한 역할 시 어색함 주의.",
+    advice: "눈빛의 온도를 조절하는 연습이 핵심. 차가움과 따뜻함 사이를 자유자재로 오가는 눈빛 훈련을 해라.",
+  },
+  "순수 서브주인공형": {
+    summary: "크고 맑은 눈, 온화한 전체 인상, 둥근 턱. 공감 능력이 얼굴에서 그대로 느껴진다.",
+    strength: "감정 이입이 자연스럽고 관객이 보호본능을 느낀다. 주인공 곁에서 빛나는 타입.",
+    blind_spot: "주연을 맡았을 때 존재감이 약해질 수 있다. 강한 의지를 표현하기가 상대적으로 어렵다.",
+    advice: "조연에서 최대 임팩트를 내는 전략이 맞다. 대신 특정 장면에서 감정을 폭발시키는 연기 훈련으로 기억에 남아라.",
+  },
+  "반전 매력형": {
+    summary: "선해 보이는데 날카로운 부분이 공존하는 얼굴. 보는 사람에 따라 다르게 읽힌다.",
+    strength: "캐릭터에 반전을 넣으면 임팩트가 배가 된다. 예상을 벗어나는 연기가 자연스럽게 설득력을 가진다.",
+    blind_spot: "첫인상이 일정하지 않아서 캐릭터가 흔들려 보일 수 있다. 감독 입장에서 어디에 쓸지 헷갈릴 수 있음.",
+    advice: "첫 씬에서 캐릭터 인상을 강하게 각인해라. 반전은 그 다음에 나와야 효과가 있다. 순서가 중요하다.",
+  },
+  "멜로 감성형": {
+    summary: "눈꼬리가 내려가고 눈빛이 감성적이며 전체적으로 부드러운 선. 감정 표현이 얼굴 구조에서 나온다.",
+    strength: "멜로 연기에서 억지로 슬퍼 보일 필요가 없다. 얼굴이 이미 감정을 전달하고 있다.",
+    blind_spot: "강한 대립 씬이나 액션에서 힘이 밀릴 수 있다. 지나치게 감성적으로만 보여 캐릭터 폭이 좁아질 위험.",
+    advice: "눈썹 각도를 올리는 연습으로 강인함을 표현하는 법을 익혀라. 감성이 무기이지만 강인함도 보여줄 수 있어야 한다.",
+  },
+  "독립영화 감성형": {
+    summary: "독특하고 개성 있는 얼굴 조합. 틀에 박히지 않은 인상이다.",
+    strength: "개성 있는 캐릭터를 표현할 때 아무도 흉내 낼 수 없는 자기만의 색이 나온다.",
+    blind_spot: "대중적인 상업 영화에서는 오히려 튈 수 있다. 감독에 따라 호불호가 갈린다.",
+    advice: "자기만의 강점을 극대화하는 쪽으로 가라. 평범해지려 하지 말고 독특함을 더 선명하게 만들어라.",
+  },
+  "인생 조연형": {
+    summary: "균형잡혀 있지만 주인공 아우라가 없는 얼굴. 어디에도 무리 없이 어울리는 타입.",
+    strength: "어떤 작품에도 자연스럽게 녹아든다. 캐릭터를 방해하지 않는 안정적인 존재감.",
+    blind_spot: "기억에 남기 어렵다. 균형이 오히려 임팩트를 줄인다.",
+    advice: "특별한 quirk(습관, 버릇, 말투)를 캐릭터에 심어라. 얼굴이 기억해주지 않으니 행동으로 기억에 남아야 한다.",
+  },
+  "카리스마 조연형": {
+    summary: "강한 인상이지만 주인공 아우라보다는 조연 느낌이 강한 얼굴.",
+    strength: "주인공보다 더 기억에 남을 수 있는 얼굴. 씬 도둑질에 특화돼 있다.",
+    blind_spot: "주연을 맡으면 부담스럽게 보일 수 있다. 조연에서 더 자연스럽다는 걸 받아들여야 한다.",
+    advice: "조연임에도 불구하고 모든 등장 씬에서 최대 임팩트를 내는 전략을 써라. 세컨드 리드가 주인공을 압도하는 게 이 얼굴의 최고 시나리오다.",
+  },
+};
+
+// ── 유틸 함수 ─────────────────────────────────────────────────────
 function scoreColor(v: number) {
-  if (v >= 70) return "#4ade80";
+  if (v >= 70) return "#22c55e";
   if (v >= 45) return "#f97316";
   return "#ef4444";
 }
 
+function avgScore(scores: Scores) {
+  return Math.round(SCORE_LABELS.reduce((s, l) => s + (scores[l] ?? 0), 0) / 4);
+}
+
+function gradeLabel(score: number) {
+  if (score >= 80) return { label: "합격", color: "#22c55e" };
+  if (score >= 60) return { label: "보류", color: "#f97316" };
+  return { label: "불합격", color: "#ef4444" };
+}
+
+// ── ScoreBar ──────────────────────────────────────────────────────
 function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="text-[12px] text-[#999] w-16 shrink-0">{label}</span>
-      <div className="flex-1 h-2 bg-white/8 rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${value}%`, backgroundColor: scoreColor(value) }}
-        />
+      <span className="text-[12px] text-gray-500 w-14 shrink-0">{label}</span>
+      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-full rounded-full" style={{ width: `${value}%`, backgroundColor: scoreColor(value) }} />
       </div>
-      <span className="text-[13px] font-bold w-10 text-right" style={{ color: scoreColor(value) }}>{value}점</span>
+      <span className="text-[13px] font-bold w-10 text-right tabular-nums" style={{ color: scoreColor(value) }}>{value}</span>
     </div>
   );
 }
@@ -80,19 +182,19 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-// 단일 씬 저장 (탭별)
-async function buildSceneSaveCanvas(
-  scene: SceneResult,
-  sceneIdx: number,
+async function buildSaveCanvas(
+  result: AuditionResult,
+  bestScene: SceneResult,
+  bestSceneIdx: number,
   userPhoto: string | null,
   stillImage: string | null,
   genreMeta: GenreMeta | null
 ): Promise<Blob> {
   const W = 640;
   const PAD = 24;
-  const PHOTO_SIZE = (W - PAD * 3) / 2; // 정사각형
+  const PHOTO_SIZE = (W - PAD * 3) / 2;
   const HEADER_H = 80;
-  const PHOTOS_H = PHOTO_SIZE + 20; // 라벨 포함
+  const PHOTOS_H = PHOTO_SIZE + 20;
   const ROLE_H = 70;
   const CRITIQUE_H = 100;
   const SCORES_H = 120;
@@ -107,25 +209,18 @@ async function buildSceneSaveCanvas(
   ctx.fillStyle = "#0A0A0A";
   ctx.fillRect(0, 0, W, H);
 
-  const emoji = GENRE_EMOJIS[scene.genre] ?? "🎬";
-
-  // 장르 헤더
+  const emoji = GENRE_EMOJIS[bestScene.genre] ?? "🎬";
   ctx.fillStyle = "#C9571A";
   ctx.font = "bold 16px -apple-system, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(`${emoji} ${scene.genre} · SCENE ${sceneIdx + 1}`, W / 2, 38);
+  ctx.fillText(`${emoji} ${bestScene.genre} · SCENE ${bestSceneIdx + 1}`, W / 2, 38);
 
-  // 큐 텍스트
   ctx.fillStyle = "#666";
   ctx.font = "12px -apple-system, sans-serif";
   const cueText = genreMeta ? `"${genreMeta.cue}"` : "";
-  if (cueText.length > 50) {
-    ctx.fillText(cueText.slice(0, 50) + "...", W / 2, 60);
-  } else {
-    ctx.fillText(cueText, W / 2, 60);
-  }
+  if (cueText.length > 50) ctx.fillText(cueText.slice(0, 50) + "...", W / 2, 60);
+  else ctx.fillText(cueText, W / 2, 60);
 
-  // 사진 라벨
   const PHOTO_Y = HEADER_H;
   ctx.font = "bold 10px -apple-system, sans-serif";
   ctx.fillStyle = "#444";
@@ -135,8 +230,6 @@ async function buildSceneSaveCanvas(
   ctx.fillText("AI 스틸컷", PAD * 2 + PHOTO_SIZE + PHOTO_SIZE / 2, PHOTO_Y);
 
   const IMG_Y = PHOTO_Y + 14;
-
-  // 사진 배경
   ctx.fillStyle = "#111";
   ctx.beginPath(); ctx.roundRect(PAD, IMG_Y, PHOTO_SIZE, PHOTO_SIZE, 12); ctx.fill();
   ctx.beginPath(); ctx.roundRect(PAD * 2 + PHOTO_SIZE, IMG_Y, PHOTO_SIZE, PHOTO_SIZE, 12); ctx.fill();
@@ -161,201 +254,51 @@ async function buildSceneSaveCanvas(
     }
   } catch { /* skip */ }
 
-  // 배정 단역
-  const ROLE_Y = IMG_Y + PHOTO_SIZE + 20;
+  const ROLE_Y = HEADER_H + PHOTOS_H;
+  ctx.font = "bold 28px -apple-system, sans-serif";
   ctx.fillStyle = "#C9571A";
+  ctx.textAlign = "center";
+  ctx.fillText(bestScene.assigned_role, W / 2, ROLE_Y + 40);
+
+  const CRIT_Y = ROLE_Y + ROLE_H;
+  ctx.font = "14px -apple-system, sans-serif";
+  ctx.fillStyle = "#aaa";
+  ctx.textAlign = "left";
+  wrapText(ctx, bestScene.critique, PAD, CRIT_Y + 20, W - PAD * 2, 22);
+
+  const SCORE_Y = CRIT_Y + CRITIQUE_H;
+  ctx.fillStyle = "#555";
   ctx.font = "bold 10px -apple-system, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText("배정 단역", PAD, ROLE_Y);
-  ctx.fillStyle = "#fff";
-  ctx.font = "bold 17px -apple-system, sans-serif";
-  wrapText(ctx, scene.assigned_role, PAD, ROLE_Y + 18, W - PAD * 2, 22);
+  ctx.fillText("SCORE", PAD, SCORE_Y + 16);
 
-  // 감독 한마디
-  const CRIT_Y = ROLE_Y + ROLE_H;
-  ctx.fillStyle = "#C9571A";
-  ctx.font = "bold 10px -apple-system, sans-serif";
-  ctx.fillText("🎬 감독의 한마디", PAD, CRIT_Y);
-  ctx.fillStyle = "#aaa";
-  ctx.font = "12px -apple-system, sans-serif";
-  wrapText(ctx, scene.critique, PAD, CRIT_Y + 18, W - PAD * 2, 18);
-
-  // 점수
-  const SCORE_Y = CRIT_Y + CRITIQUE_H;
-  ctx.fillStyle = "#444";
-  ctx.font = "bold 10px -apple-system, sans-serif";
-  ctx.fillText("연기 점수", PAD, SCORE_Y);
-  SCORE_LABELS.forEach((label, si) => {
-    const val = scene.scores?.[label] ?? 0;
-    const sy = SCORE_Y + 16 + si * 22;
-    ctx.fillStyle = "#555";
-    ctx.font = "10px -apple-system, sans-serif";
-    ctx.fillText(label, PAD, sy + 8);
-    ctx.fillStyle = "#1a1a1a";
-    ctx.fillRect(PAD + 40, sy, W - PAD * 2 - 70, 7);
-    ctx.fillStyle = scoreColor(val);
-    ctx.fillRect(PAD + 40, sy, (W - PAD * 2 - 70) * (val / 100), 7);
-    ctx.font = "bold 10px -apple-system, sans-serif";
-    ctx.fillText(String(val), W - PAD - 20, sy + 8);
+  SCORE_LABELS.forEach((label, i) => {
+    const val = bestScene.scores[label] ?? 0;
+    const BY = SCORE_Y + 30 + i * 22;
+    ctx.font = "11px -apple-system, sans-serif";
+    ctx.fillStyle = "#666";
+    ctx.textAlign = "left";
+    ctx.fillText(label, PAD, BY);
+    ctx.fillStyle = "#333";
+    ctx.fillRect(PAD + 56, BY - 9, W - PAD * 2 - 100, 8);
+    ctx.fillStyle = val >= 70 ? "#4ade80" : val >= 45 ? "#f97316" : "#ef4444";
+    ctx.fillRect(PAD + 56, BY - 9, (W - PAD * 2 - 100) * val / 100, 8);
+    ctx.fillStyle = "#aaa";
+    ctx.textAlign = "right";
+    ctx.fillText(String(val), W - PAD, BY);
   });
 
-  // 푸터
-  ctx.fillStyle = "#111";
+  ctx.fillStyle = "#222";
   ctx.fillRect(0, H - FOOTER_H, W, FOOTER_H);
+  ctx.font = "bold 12px -apple-system, sans-serif";
   ctx.fillStyle = "#C9571A";
-  ctx.font = "bold 14px -apple-system, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("StyleDrop AI 오디션", W / 2, H - FOOTER_H / 2 + 5);
+  ctx.fillText("StyleDrop AI Audition", W / 2, H - FOOTER_H + 22);
+  ctx.font = "11px -apple-system, sans-serif";
+  ctx.fillStyle = "#555";
+  ctx.fillText(result.overall_one_liner.slice(0, 60), W / 2, H - FOOTER_H + 40);
 
-  return new Promise(res => canvas.toBlob(b => res(b!), "image/jpeg", 0.93));
-}
-
-// ── 총평 탭 컴포넌트 ──────────────────────────────────────────────
-function OverallTab({
-  result,
-  userPhotos,
-  stillImage,
-  bestSceneIdx,
-}: {
-  result: AuditionResult;
-  userPhotos: string[];
-  stillImage: string | null;
-  bestSceneIdx: number;
-}) {
-  const [stamped, setStamped] = useState(false);
-
-  useEffect(() => {
-    setStamped(false);
-    const t = setTimeout(() => setStamped(true), 900);
-    return () => clearTimeout(t);
-  }, []);
-
-  const avgScore = Math.round(
-    result.scenes.reduce((sum, s) => {
-      const vals = SCORE_LABELS.map(l => s.scores?.[l] ?? 0);
-      return sum + vals.reduce((a, b) => a + b, 0) / vals.length;
-    }, 0) / result.scenes.length
-  );
-
-  const bestScene = result.scenes[bestSceneIdx];
-
-  return (
-    <div className="flex flex-col gap-4">
-      {/* 오디션 지원서 카드 */}
-      <div
-        className="relative rounded-2xl overflow-hidden border border-white/10"
-        style={{
-          background: "linear-gradient(135deg, #1a1410 0%, #0f0d0a 50%, #1a1410 100%)",
-          boxShadow: "inset 0 0 40px rgba(0,0,0,0.6)",
-        }}
-      >
-        <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E\")" }} />
-
-        <div className="relative px-5 py-6">
-          {/* 헤더 */}
-          <div className="mb-5">
-            <p className="text-[10px] text-[#555] font-bold tracking-[0.25em] uppercase mb-1">CASTING DOCUMENT · 2026</p>
-            <h2 className="text-[22px] font-extrabold text-white leading-tight">오디션 지원서</h2>
-          </div>
-
-          {/* 배정 단역 (좌) + 종합점수 (우) */}
-          <div className="flex items-center bg-black/40 border border-white/8 rounded-xl px-4 py-4 mb-4 gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="text-[9px] font-bold text-[#555] uppercase tracking-widest mb-1.5">당신에게 어울리는 역할</p>
-              <p className="font-black text-[#ef4444] leading-tight"
-                style={{ fontSize: "clamp(16px, 5.5vw, 24px)", fontStyle: "italic",
-                  textShadow: "0 0 20px rgba(239,68,68,0.4)", letterSpacing: "-0.02em" }}>
-                {bestScene?.assigned_role}
-              </p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="text-[9px] text-[#555] font-bold uppercase tracking-widest mb-0.5">종합점수</p>
-              <p className="font-black leading-none" style={{ fontSize: "52px", color: scoreColor(avgScore), textShadow: `0 0 20px ${scoreColor(avgScore)}66` }}>
-                {avgScore}
-              </p>
-              <p className="text-[10px] font-bold" style={{ color: avgScore >= 70 ? "#4ade80" : avgScore >= 45 ? "#f97316" : "#ef4444" }}>
-                {avgScore >= 70 ? "✓ 합격권" : avgScore >= 45 ? "△ 보류" : "✗ 불합격"}
-              </p>
-            </div>
-          </div>
-
-          {/* 장르별 점수 바 */}
-          <div className="bg-black/30 rounded-xl px-4 py-4 border border-white/8 mb-5">
-            <p className="text-[11px] text-[#777] font-bold tracking-widest uppercase mb-3">장르별 점수</p>
-            <div className="flex flex-col gap-3">
-              {result.scenes.map((s, i) => {
-                const avg = Math.round(SCORE_LABELS.reduce((sum, l) => sum + (s.scores?.[l] ?? 0), 0) / 4);
-                return (
-                  <div key={i} className="flex items-center gap-2.5">
-                    <span className="text-[14px] w-5 text-center">{GENRE_EMOJIS[s.genre] ?? "🎬"}</span>
-                    <span className="text-[12px] text-[#888] w-12 shrink-0">{s.genre}</span>
-                    <div className="flex-1 h-2 bg-white/8 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${avg}%`, backgroundColor: scoreColor(avg) }} />
-                    </div>
-                    <span className="text-[13px] font-bold w-11 text-right" style={{ color: scoreColor(avg) }}>{avg}점</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* BEST SCENE — 스틸컷 full + 촬영컷 PIP 좌측하단 */}
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-3">
-              <p className="text-[9px] font-bold text-[#C9571A] uppercase tracking-widest">🏆 BEST SCENE</p>
-              <span className="text-[9px] text-[#555]">{GENRE_EMOJIS[bestScene?.genre] ?? "🎬"} {bestScene?.genre}</span>
-            </div>
-            <div className="relative w-full aspect-square rounded-xl overflow-hidden border border-[#C9571A]/30 bg-[#0f0f0f]">
-              {stillImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={stillImage} alt="AI 스틸컷" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                  <div className="w-8 h-8 rounded-full border-2 border-transparent border-t-[#C9571A]" style={{ animation: "spin 0.8s linear infinite" }} />
-                  <p className="text-[10px] text-[#444]">AI 스틸컷 생성 중...</p>
-                </div>
-              )}
-              {/* 촬영컷 PIP */}
-              {userPhotos[bestSceneIdx] && (
-                <div className="absolute bottom-3 left-3 w-[80px] h-[80px] rounded-xl overflow-hidden border-2 border-white/50 shadow-2xl">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={userPhotos[bestSceneIdx]} alt="내 연기" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                    style={{
-                      opacity: stamped ? 1 : 0,
-                      transform: stamped ? "scale(1) rotate(-15deg)" : "scale(3) rotate(-15deg)",
-                      transition: stamped ? "opacity 0.08s ease-out, transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275)" : "none",
-                    }}>
-                    <div className="px-1.5 py-0.5 border-[2px] border-[#dc2626] rounded"
-                      style={{ color: "#dc2626", fontWeight: 900, fontSize: "10px", letterSpacing: "0.06em",
-                        textShadow: "0 0 6px rgba(220,38,38,0.6)", opacity: 0.95 }}>불합격</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 감독 총평 (one-liner + 상세 총평 병합) */}
-          <div className="border border-[#C9571A]/30 rounded-xl px-4 py-5 mb-5 bg-[#C9571A]/5">
-            <p className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest mb-3">🎬 감독 총평</p>
-            <p className="text-white font-extrabold leading-snug mb-4"
-              style={{ fontSize: "clamp(17px, 5vw, 22px)" }}>
-              {result.overall_one_liner}
-            </p>
-            <div className="border-t border-white/10 pt-4">
-              <p className="text-white/80 text-[15px] leading-[1.9]">{result.overall_critique}</p>
-            </div>
-          </div>
-
-          <div className="border-t border-white/5 pt-3 flex items-center justify-between">
-            <p className="text-[9px] text-[#333] font-mono">STYLEDROP CASTING DEPT.</p>
-            <p className="text-[9px] text-[#333] font-mono">2026. 04.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return new Promise(res => canvas.toBlob(b => res(b!), "image/jpeg", 0.92));
 }
 
 // ── 메인 컴포넌트 ──────────────────────────────────────────────────
@@ -367,7 +310,6 @@ export default function AuditionResult() {
   const [genres, setGenres] = useState<GenreMeta[]>([]);
   const [phase, setPhase] = useState<Phase>("generating");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState(0); // 0~2 = 씬, 3 = 총평
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
@@ -397,11 +339,10 @@ export default function AuditionResult() {
         return;
       }
 
-      // 베스트 씬 계산 (평균 점수 가장 높은 씬)
       const bestIdx = parsed.scenes.reduce((best, scene, i) => {
-        const avg = SCORE_LABELS.reduce((s, l) => s + (scene.scores?.[l] ?? 0), 0) / 4;
-        const bestAvg = SCORE_LABELS.reduce((s, l) => s + (parsed.scenes[best].scores?.[l] ?? 0), 0) / 4;
-        return avg > bestAvg ? i : best;
+        const a = SCORE_LABELS.reduce((s, l) => s + (scene.scores?.[l] ?? 0), 0) / 4;
+        const b = SCORE_LABELS.reduce((s, l) => s + (parsed.scenes[best].scores?.[l] ?? 0), 0) / 4;
+        return a > b ? i : best;
       }, 0);
       setBestSceneIdx(bestIdx);
 
@@ -421,7 +362,6 @@ export default function AuditionResult() {
           stillImageRef.current = dataUrl;
           setStillImage(dataUrl);
           setPhase("ready");
-          // 로그인 유저 히스토리 저장 (fire and forget)
           fetch("/api/audition/history", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -443,62 +383,40 @@ export default function AuditionResult() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const isOverall = activeTab === 3;
-
   const handleSave = useCallback(async () => {
     if (!result || isSaving) return;
     setIsSaving(true);
     try {
-      let blob: Blob;
-      let filename: string;
-      if (isOverall) {
-        blob = await buildSceneSaveCanvas(
-          result.scenes[bestSceneIdx],
-          bestSceneIdx,
-          userPhotos[bestSceneIdx] ?? null,
-          stillImageRef.current,
-          genres[bestSceneIdx] ?? null
-        );
-        filename = "styledrop_audition_best.jpg";
-      } else {
-        const sceneIdx = activeTab;
-        blob = await buildSceneSaveCanvas(
-          result.scenes[sceneIdx],
-          sceneIdx,
-          userPhotos[sceneIdx] ?? null,
-          null,
-          genres[sceneIdx] ?? null
-        );
-        filename = `styledrop_${result.scenes[sceneIdx].genre}_scene${sceneIdx + 1}.jpg`;
-      }
+      const blob = await buildSaveCanvas(
+        result,
+        result.scenes[bestSceneIdx],
+        bestSceneIdx,
+        userPhotos[bestSceneIdx] ?? null,
+        stillImageRef.current,
+        genres[bestSceneIdx] ?? null
+      );
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = filename;
+      a.download = "styledrop_audition.jpg";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error("save error", e);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [result, isSaving, userPhotos, genres, activeTab, isOverall]);
+    } catch (e) { console.error(e); }
+    finally { setIsSaving(false); }
+  }, [result, isSaving, userPhotos, genres, bestSceneIdx]);
 
   const handleKakaoShare = async () => {
     if (isSharing || !result) return;
     setIsSharing(true);
     try {
-      // 1) 결과를 서버에 저장해서 공개 URL 생성
       const bestPhoto = userPhotos[bestSceneIdx] ?? null;
       const res = await fetch("/api/audition/share", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          result,
-          genres,
-          bestSceneIdx,
+          result, genres, bestSceneIdx,
           userPhotoBase64: bestPhoto ? bestPhoto.split(",")[1] : null,
           userPhotosBase64: userPhotos.map(p => p ? p.split(",")[1] : null),
           stillImageBase64: stillImageRef.current ? stillImageRef.current.split(",")[1] : null,
@@ -508,27 +426,16 @@ export default function AuditionResult() {
       if (!res.ok || !json.id) throw new Error(json.error ?? "공유 링크 생성 실패");
       cachedShareId.current = json.id;
       const shareUrl = window.location.origin + "/audition/share/" + json.id;
-
-      // 2) 카카오 공유
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const Kakao = (window as any).Kakao;
-      if (!Kakao?.isInitialized()) {
-        Kakao?.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
-      }
+      if (!Kakao?.isInitialized()) Kakao?.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
       const bestScene = result.scenes[bestSceneIdx];
       Kakao?.Share?.sendDefault({
         objectType: "text",
         text: `AI 감독이 나한테 "${bestScene?.assigned_role}" 역할을 줬어 😂\n내 오디션 결과 보러와`,
-        link: {
-          mobileWebUrl: shareUrl,
-          webUrl: shareUrl,
-        },
+        link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       });
-      fetch("/api/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event_type: "audition_share_kakao" }),
-      }).catch(() => {});
+      fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event_type: "audition_share_kakao" }) }).catch(() => {});
     } catch {
       navigator.clipboard?.writeText(window.location.origin + "/audition/solo");
     } finally {
@@ -547,9 +454,7 @@ export default function AuditionResult() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            result,
-            genres,
-            bestSceneIdx,
+            result, genres, bestSceneIdx,
             userPhotoBase64: bestPhoto ? bestPhoto.split(",")[1] : null,
             userPhotosBase64: userPhotos.map(p => p ? p.split(",")[1] : null),
             stillImageBase64: stillImageRef.current ? stillImageRef.current.split(",")[1] : null,
@@ -560,44 +465,33 @@ export default function AuditionResult() {
         id = json.id;
         cachedShareId.current = id;
       }
-      const link = window.location.origin + "/audition/share/" + id;
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(window.location.origin + "/audition/share/" + id);
       setCopyToast(true);
       setTimeout(() => setCopyToast(false), 2500);
-      fetch("/api/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event_type: "audition_share_link_copy" }),
-      }).catch(() => {});
-    } catch {
-      // silent
-    } finally {
-      setIsCopying(false);
-    }
+      fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event_type: "audition_share_link_copy" }) }).catch(() => {});
+    } catch { /* silent */ }
+    finally { setIsCopying(false); }
   };
 
   if (!result) return null;
 
-  // ── GENERATING ──────────────────────────────────────────────────────
+  // ── GENERATING ───────────────────────────────────────────────────
   if (phase === "generating") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center gap-8 px-6 text-center">
-        <style>{`
-          @keyframes spin { to { transform: rotate(360deg); } }
-          @keyframes dot-bounce { 0%,80%,100%{opacity:0.3;transform:scale(0.8)} 40%{opacity:1;transform:scale(1.2)} }
-        `}</style>
-        <div className="relative w-[134px] h-[134px]">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-8 px-6 text-center">
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes dot-bounce { 0%,80%,100%{opacity:0.3;transform:scale(0.8)} 40%{opacity:1;transform:scale(1.2)} }`}</style>
+        <div className="relative w-[120px] h-[120px]">
           {userPhotos[0] && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={userPhotos[0]} alt="" className="w-[134px] h-[134px] rounded-2xl object-cover border border-white/10 opacity-40" />
+            <img src={userPhotos[0]} alt="" className="w-[120px] h-[120px] rounded-2xl object-cover border border-gray-100" />
           )}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-[67px] h-[67px] rounded-full border-[5px] border-transparent border-t-[#C9571A] border-r-[#C9571A]/30" style={{ animation: "spin 1s linear infinite" }} />
+            <div className="w-[60px] h-[60px] rounded-full border-[4px] border-transparent border-t-[#C9571A] border-r-[#C9571A]/30" style={{ animation: "spin 1s linear infinite" }} />
           </div>
         </div>
         <div>
-          <p className="text-[#C9571A] text-[13px] font-bold tracking-[0.2em] uppercase mb-3">🎬 베스트 스틸컷 제작 중</p>
-          <p className="text-white font-bold text-[22px] leading-snug">감독님이 배역을<br />결정하고 있습니다...</p>
+          <p className="text-[#C9571A] text-[12px] font-black tracking-[0.25em] uppercase mb-3">AI 스틸컷 제작 중</p>
+          <p className="text-gray-900 font-black text-[22px] leading-snug">감독님이 배역을<br />결정하고 있습니다...</p>
           <div className="flex items-center justify-center gap-2 mt-5">
             {[0, 1, 2].map(i => (
               <div key={i} className="w-2 h-2 rounded-full bg-[#C9571A]" style={{ animation: `dot-bounce 1.4s ease-in-out ${i * 0.2}s infinite` }} />
@@ -608,177 +502,380 @@ export default function AuditionResult() {
     );
   }
 
-  // ── ERROR ────────────────────────────────────────────────────────────
+  // ── ERROR ─────────────────────────────────────────────────────────
   if (phase === "error") {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center gap-5 px-6 text-center">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-5 px-6 text-center">
         <p className="text-[40px]">😵</p>
-        <p className="text-white font-bold text-[18px]">오디션이 중단됐습니다</p>
-        <p className="text-[#888] text-[14px]">{errorMsg}</p>
-        <Link href="/studio" className="text-[13px] text-[#444] hover:text-white transition-colors">밖으로 나가기</Link>
+        <p className="text-gray-900 font-bold text-[18px]">오디션이 중단됐습니다</p>
+        <p className="text-gray-500 text-[14px]">{errorMsg}</p>
+        <Link href="/studio" className="text-[13px] text-gray-400 hover:text-gray-900 transition-colors">밖으로 나가기</Link>
       </div>
     );
   }
 
-  // ── READY ────────────────────────────────────────────────────────────
-  const scene = !isOverall ? result.scenes[activeTab] : null;
-  const userPhoto = !isOverall ? (userPhotos[activeTab] ?? null) : null;
+  // ── READY — 단일 스크롤 ──────────────────────────────────────────
+  const physio = result.physiognomy;
+  const bestScene = result.scenes[bestSceneIdx];
+  const overallAvg = Math.round(result.scenes.reduce((s, sc) => s + avgScore(sc.scores), 0) / result.scenes.length);
+  const grade = gradeLabel(overallAvg);
+  const faceGuide = physio ? FACE_TYPE_GUIDE[physio.face_type] : null;
+  const archetypeGuide = physio ? ARCHETYPE_GUIDE[physio.archetype] : null;
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes flicker { 0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.6} 94%{opacity:1} 97%{opacity:0.8} 98%{opacity:1} }
-        @keyframes slide-in { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
-        .scene-content { animation: slide-in 0.2s ease-out; }
-      `}</style>
+    <div className="min-h-screen bg-white">
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }`}</style>
 
-      <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center px-4 sticky top-0 z-40">
+      {/* ── 헤더 ─────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100 h-[52px] flex items-center justify-between px-4">
         <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
-        <span className="ml-3 text-[11px] text-[#444] font-bold uppercase tracking-widest">AI 오디션 결과</span>
+        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">AI 오디션 결과</span>
       </header>
 
-      {/* 탭 — 장르 3개 + 총평 */}
-      <div className="flex border-b border-[#1a1a1a] sticky top-[52px] z-30 bg-[#0A0A0A]">
-        {result.scenes.map((s, i) => (
-          <button
-            key={i}
-            onClick={() => setActiveTab(i)}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-colors border-b-2 ${
-              activeTab === i ? "border-[#C9571A] text-white" : "border-transparent text-[#444] hover:text-[#777]"
-            }`}
-          >
-            <span className="text-[18px]">{GENRE_EMOJIS[s.genre] ?? "🎬"}</span>
-            <span className="text-[10px] font-bold">{s.genre}</span>
-          </button>
-        ))}
-        <button
-          onClick={() => setActiveTab(3)}
-          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-colors border-b-2 ${
-            activeTab === 3 ? "border-[#C9571A] text-white" : "border-transparent text-[#444] hover:text-[#777]"
-          }`}
-        >
-          <span className="text-[18px]">📋</span>
-          <span className="text-[10px] font-bold">총평</span>
-        </button>
-      </div>
+      <div className="max-w-sm mx-auto px-5 pb-40">
 
-      <main className={`w-full py-5 flex flex-col gap-4 pb-36 ${isOverall ? "px-3" : "max-w-sm mx-auto px-4"}`}>
-        <div className="scene-content" key={activeTab}>
+        {/* ══ SECTION 1: 배역 판정 HERO ════════════════════ */}
+        <section className="pt-10 pb-10 border-b border-gray-100">
+          <p className="text-[11px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-4">Casting Result</p>
 
-          {isOverall ? (
-            <OverallTab result={result} userPhotos={userPhotos} stillImage={stillImageRef.current} bestSceneIdx={bestSceneIdx} />
-          ) : scene ? (
-            <>
-              {/* 내 연기 사진 — 최상단 */}
-              <div className="mb-4 relative rounded-xl overflow-hidden border border-white/8 aspect-square bg-[#111]">
-                {userPhoto ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={userPhoto} alt="내 사진" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[#333] text-[11px]">없음</div>
-                )}
-                <div className="absolute bottom-2.5 left-2.5 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full">
-                  <span className="text-[11px] font-bold text-[#C9571A] tracking-wide">{GENRE_EMOJIS[scene.genre] ?? "🎬"} {scene.genre} · SCENE {activeTab + 1}</span>
-                </div>
+          {/* 배역명 */}
+          <h1 className="text-[32px] font-black text-gray-900 leading-tight mb-1" style={{ fontStyle: "italic" }}>
+            {bestScene.assigned_role}
+          </h1>
+          <p className="text-[13px] text-gray-500 mb-6">{GENRE_EMOJIS[bestScene.genre] ?? "🎬"} {bestScene.genre} 베스트 씬 기준</p>
+
+          {/* 종합 점수 */}
+          <div className="flex items-end gap-4 mb-6">
+            <div>
+              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1">종합 점수</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[64px] font-black leading-none tabular-nums" style={{ color: grade.color }}>{overallAvg}</span>
+                <span className="text-[18px] font-bold text-gray-400 mb-1">/ 100</span>
               </div>
-
-              {/* 지시 상황 */}
-              {genres[activeTab] && (
-                <div className="bg-[#111] border-l-[3px] border-[#C9571A] rounded-r-xl px-4 py-3 mb-4">
-                  <p className="text-[9px] font-bold text-[#555] uppercase tracking-widest mb-1.5">📋 지시 상황</p>
-                  <p className="text-white text-[15px] font-bold leading-snug">{genres[activeTab].cue}</p>
-                </div>
+            </div>
+            <div className="mb-3 flex flex-col items-end gap-1">
+              <span className="text-[13px] font-black px-3 py-1 rounded-full border-2" style={{ color: grade.color, borderColor: grade.color }}>
+                {grade.label}
+              </span>
+              {physio && (
+                <span className="text-[11px] font-bold text-gray-500 bg-gray-100 rounded-full px-2.5 py-0.5">{physio.archetype}</span>
               )}
+            </div>
+          </div>
 
-              {/* 감독의 한마디 */}
-              <div className="bg-[#111] border border-white/10 rounded-2xl px-4 py-5 mb-3">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-[16px]">🎬</span>
-                  <span className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest">감독의 한마디</span>
-                </div>
-                <p className="text-white/90 text-[15px] leading-[1.9] tracking-tight">{scene.critique}</p>
+          {/* 감독 한마디 */}
+          <div className="bg-gray-50 rounded-2xl px-4 py-4 border-l-4 border-[#C9571A]">
+            <p className="text-[10px] font-black text-[#C9571A] tracking-widest uppercase mb-2">감독 한마디</p>
+            <p className="text-[16px] font-bold text-gray-900 leading-snug">{result.overall_one_liner}</p>
+          </div>
+        </section>
+
+        {/* ══ SECTION 2: AI 스틸컷 ═════════════════════════ */}
+        <section className="py-10 border-b border-gray-100">
+          <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">AI Still Cut</p>
+          <p className="text-[22px] font-black text-gray-900 mb-5">
+            {GENRE_EMOJIS[bestScene.genre] ?? "🎬"} {bestScene.genre} 베스트 씬
+          </p>
+
+          <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 mb-4">
+            {stillImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={stillImage} alt="AI 스틸컷" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                <div className="w-8 h-8 rounded-full border-2 border-transparent border-t-[#C9571A]" style={{ animation: "spin 0.8s linear infinite" }} />
+                <p className="text-[12px] text-gray-400">AI 스틸컷 생성 중...</p>
               </div>
+            )}
+            {/* PIP - 내 촬영컷 */}
+            {userPhotos[bestSceneIdx] && (
+              <div className="absolute bottom-3 left-3 w-[72px] h-[72px] rounded-xl overflow-hidden border-2 border-white shadow-lg">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={userPhotos[bestSceneIdx]} alt="내 연기" className="w-full h-full object-cover" />
+              </div>
+            )}
+          </div>
 
-              {/* 점수 */}
-              {scene.scores && (
-                <div className="bg-[#0D0D0D] border border-white/8 rounded-2xl px-4 py-5 mb-3">
-                  <p className="text-[11px] font-bold text-[#666] uppercase tracking-widest mb-4">연기 점수</p>
-                  <div className="flex flex-col gap-3">
+          <p className="text-[12px] text-gray-400 leading-relaxed">
+            AI가 베스트 씬 촬영 이미지를 기반으로 생성한 스틸컷입니다.
+          </p>
+        </section>
+
+        {/* ══ SECTION 3: 씬별 연기 분석 ══════════════════════ */}
+        <section className="py-10 border-b border-gray-100">
+          <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Scene Analysis</p>
+          <p className="text-[22px] font-black text-gray-900 mb-6">씬별 연기 분석</p>
+
+          <div className="flex flex-col gap-8">
+            {result.scenes.map((scene, i) => {
+              const sa = avgScore(scene.scores);
+              return (
+                <div key={i} className="flex flex-col gap-4">
+                  {/* 씬 헤더 */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-[11px] font-black">{i + 1}</span>
+                    </div>
+                    <div>
+                      <p className="text-[15px] font-black text-gray-900">{GENRE_EMOJIS[scene.genre] ?? "🎬"} {scene.genre}</p>
+                      <p className="text-[11px] text-gray-400">{genres[i]?.cue}</p>
+                    </div>
+                    <div className="ml-auto text-right">
+                      <span className="text-[20px] font-black tabular-nums" style={{ color: scoreColor(sa) }}>{sa}</span>
+                      <span className="text-[11px] text-gray-400 ml-0.5">점</span>
+                    </div>
+                  </div>
+
+                  {/* 내 사진 */}
+                  {userPhotos[i] && (
+                    <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={userPhotos[i]} alt={`씬 ${i + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+
+                  {/* 감독 평가 */}
+                  <div className="bg-gray-50 rounded-xl px-4 py-4">
+                    <p className="text-[10px] font-black text-[#C9571A] tracking-widest uppercase mb-2">감독 평가</p>
+                    <p className="text-[14px] text-gray-800 leading-relaxed">{scene.critique}</p>
+                  </div>
+
+                  {/* 배역 */}
+                  <div className="flex items-center gap-3 bg-gray-900 rounded-xl px-4 py-3">
+                    <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">배정 역할</span>
+                    <span className="text-[14px] font-black text-white ml-auto" style={{ fontStyle: "italic" }}>{scene.assigned_role}</span>
+                  </div>
+
+                  {/* 점수 바 */}
+                  <div className="flex flex-col gap-2.5 px-1">
                     {SCORE_LABELS.map(label => (
                       <ScoreBar key={label} label={label} value={scene.scores[label] ?? 0} />
                     ))}
                   </div>
-                  <div className="mt-4 pt-3 border-t border-white/8 flex items-center justify-between">
-                    <span className="text-[12px] text-[#666]">평균</span>
-                    <span className="text-[22px] font-extrabold" style={{ color: scoreColor(Math.round(SCORE_LABELS.reduce((s, l) => s + (scene.scores[l] ?? 0), 0) / 4)) }}>
-                      {Math.round(SCORE_LABELS.reduce((s, l) => s + (scene.scores[l] ?? 0), 0) / 4)}
-                      <span className="text-[13px] ml-0.5">점</span>
-                    </span>
+
+                  {i < result.scenes.length - 1 && <div className="border-b border-dashed border-gray-100 mt-2" />}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ══ SECTION 4: 관상학 정밀 분석 ═══════════════════ */}
+        {physio && (
+          <section className="py-10 border-b border-gray-100">
+            <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Physiognomy Analysis</p>
+            <p className="text-[22px] font-black text-gray-900 mb-1">관상학 정밀 분석</p>
+            <p className="text-[13px] text-gray-500 mb-8">얼굴 특징을 기반으로 배우로서의 가능성과 주의점을 분석합니다.</p>
+
+            {/* 얼굴형 + 아키타입 */}
+            <div className="bg-gray-900 rounded-2xl px-5 py-5 mb-5 text-white">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">얼굴형</p>
+                  <p className="text-[22px] font-black">{physio.face_type}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">캐릭터 아키타입</p>
+                  <p className="text-[14px] font-black text-[#C9571A]">{physio.archetype}</p>
+                </div>
+              </div>
+              <p className="text-[13px] text-gray-300 leading-relaxed">{physio.archetype_reason}</p>
+            </div>
+
+            {/* 얼굴형 관상학 해설 */}
+            {faceGuide && (
+              <div className="mb-5">
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">얼굴형 관상 해설</p>
+                <div className="bg-gray-50 rounded-2xl px-5 py-5 border border-gray-100">
+                  <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{faceGuide.desc}</p>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-start gap-3">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] mt-1.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-0.5">적합 배역</p>
+                        <p className="text-[13px] text-gray-700">{faceGuide.acting}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] mt-1.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-0.5">주의할 점</p>
+                        <p className="text-[13px] text-gray-700">{faceGuide.caution}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#C9571A] mt-1.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-0.5">개선 방법</p>
+                        <p className="text-[13px] text-gray-700">{faceGuide.tip}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              )}
-            </>
-          ) : null}
-
-        </div>
-      </main>
-
-      {/* 하단 고정 버튼 */}
-      <div className="fixed bottom-0 inset-x-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/95 to-transparent pt-6 pb-6 px-4">
-        <div className="max-w-sm mx-auto flex gap-2.5">
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="flex-1 flex items-center justify-center gap-1.5 bg-[#1A1A1A] hover:bg-[#222] border border-white/10 text-white font-bold py-3.5 rounded-2xl text-[13px] transition-colors disabled:opacity-40"
-          >
-            {isSaving ? (
-              <div className="w-4 h-4 rounded-full border-2 border-transparent border-t-white" style={{ animation: "spin 0.8s linear infinite" }} />
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <path d="M8 2v8M5 7l3 3 3-3M2 12h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              </div>
             )}
-            전체저장
-          </button>
-          <button
-            onClick={handleKakaoShare}
-            disabled={isSharing}
-            className="flex-1 flex items-center justify-center gap-1.5 bg-[#FEE500] hover:bg-[#F0D900] disabled:opacity-60 text-[#191919] font-bold py-3.5 rounded-2xl text-[13px] transition-colors"
-          >
-            {isSharing ? (
-              <div className="w-4 h-4 rounded-full border-2 border-[#191919]/30 border-t-[#191919]" style={{ animation: "spin 0.8s linear infinite" }} />
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 18 18" fill="none">
-                <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/>
-              </svg>
+
+            {/* 강점 */}
+            <div className="mb-5">
+              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">관상학적 강점</p>
+              <div className="flex flex-col gap-2.5">
+                {physio.strengths.map((s, i) => (
+                  <div key={i} className="flex items-start gap-3 bg-green-50 rounded-xl px-4 py-3.5 border border-green-100">
+                    <span className="text-[16px] mt-0.5">✦</span>
+                    <p className="text-[13px] text-gray-800 leading-snug">{s}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 약점 + 개선 */}
+            <div className="mb-5">
+              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">주의할 점 & 개선 방법</p>
+              <div className="flex flex-col gap-2.5">
+                {physio.weaknesses.map((w, i) => (
+                  <div key={i} className="bg-orange-50 rounded-xl px-4 py-4 border border-orange-100">
+                    <div className="flex items-start gap-2 mb-2">
+                      <span className="text-[14px] mt-0.5">⚠</span>
+                      <p className="text-[13px] text-gray-800 leading-snug font-medium">{w}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 아키타입 가이드 */}
+            {archetypeGuide && (
+              <div className="mb-5">
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">아키타입 심층 분석</p>
+                <div className="border border-gray-200 rounded-2xl overflow-hidden">
+                  <div className="bg-gray-900 px-5 py-4">
+                    <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1">{physio.archetype}</p>
+                    <p className="text-[13px] text-gray-300 leading-relaxed">{archetypeGuide.summary}</p>
+                  </div>
+                  <div className="flex flex-col divide-y divide-gray-100">
+                    {[
+                      { icon: "💪", label: "핵심 강점", content: archetypeGuide.strength },
+                      { icon: "🎯", label: "사각지대", content: archetypeGuide.blind_spot },
+                      { icon: "📌", label: "감독의 조언", content: archetypeGuide.advice },
+                    ].map(item => (
+                      <div key={item.label} className="flex gap-3 px-5 py-4">
+                        <span className="text-[16px] flex-shrink-0 mt-0.5">{item.icon}</span>
+                        <div>
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">{item.label}</p>
+                          <p className="text-[13px] text-gray-700 leading-snug">{item.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
-            {isSharing ? "링크 생성 중..." : "공유"}
-          </button>
-          <Link
-            href="/studio"
-            className="flex-1 flex items-center justify-center bg-[#1A1A1A] hover:bg-[#222] border border-white/10 text-[#888] hover:text-white font-bold py-3.5 rounded-2xl text-[13px] transition-colors"
-          >
-            나가기
-          </Link>
-        </div>
-        <button
-          onClick={handleCopyLink}
-          disabled={isCopying}
-          className="max-w-sm mx-auto w-full mt-2.5 flex items-center justify-center gap-2 py-3 rounded-2xl border border-white/10 bg-transparent text-[#888] hover:text-white hover:border-white/20 transition-colors text-[13px] font-bold disabled:opacity-50"
-        >
-          {isCopying ? (
-            <div className="w-3.5 h-3.5 rounded-full border-2 border-white/20 border-t-white" style={{ animation: "spin 0.8s linear infinite" }} />
-          ) : (
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-              <path d="M6.5 3.5H3.5a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V9.5M9.5 1.5h5m0 0v5m0-5L7 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
-          {isCopying ? "링크 생성 중..." : "링크 복사"}
-        </button>
-        {copyToast && (
-          <div className="max-w-sm mx-auto w-full mt-2 text-center text-[12px] text-[#4ade80] font-bold">링크가 복사됐어요!</div>
+
+            {/* 최적 장르 + 관상 총평 */}
+            <div className="bg-gray-50 rounded-2xl px-5 py-5 border border-gray-100">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[11px] font-black text-[#C9571A] tracking-widest uppercase">최적 장르</span>
+                <span className="text-[13px] font-black text-gray-900">{GENRE_EMOJIS[physio.best_genre] ?? "🎬"} {physio.best_genre}</span>
+              </div>
+              <p className="text-[14px] text-gray-700 leading-relaxed">{physio.verdict}</p>
+            </div>
+          </section>
         )}
+
+        {/* ══ SECTION 5: 감독 총평 ═══════════════════════════ */}
+        <section className="py-10 border-b border-gray-100">
+          <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Director&apos;s Note</p>
+          <p className="text-[22px] font-black text-gray-900 mb-5">감독 총평</p>
+
+          <div className="bg-gray-900 rounded-2xl px-5 py-6 text-white mb-4">
+            <p className="text-[18px] font-black leading-snug mb-4 text-[#C9571A]">{result.overall_one_liner}</p>
+            <p className="text-[14px] text-gray-300 leading-[1.9]">{result.overall_critique}</p>
+          </div>
+
+          {/* 장르별 점수 요약 */}
+          <div className="flex flex-col gap-3">
+            {result.scenes.map((scene, i) => {
+              const sa = avgScore(scene.scores);
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-[16px] w-6">{GENRE_EMOJIS[scene.genre] ?? "🎬"}</span>
+                  <span className="text-[13px] text-gray-600 w-12">{scene.genre}</span>
+                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${sa}%`, backgroundColor: scoreColor(sa) }} />
+                  </div>
+                  <span className="text-[13px] font-black w-10 text-right tabular-nums" style={{ color: scoreColor(sa) }}>{sa}점</span>
+                  {i === bestSceneIdx && <span className="text-[9px] font-black text-[#C9571A] bg-orange-50 rounded-full px-1.5 py-0.5">BEST</span>}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ══ SECTION 6: 공유 CTA ═══════════════════════════ */}
+        <section className="pt-10 pb-4">
+          <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Share</p>
+          <p className="text-[22px] font-black text-gray-900 mb-6">결과 공유하기</p>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleKakaoShare}
+              disabled={isSharing}
+              className="w-full flex items-center justify-center gap-2 bg-[#FEE500] hover:bg-[#F0D900] disabled:opacity-60 text-[#191919] font-bold py-4 rounded-2xl text-[15px] transition-colors"
+            >
+              {isSharing ? (
+                <div className="w-4 h-4 rounded-full border-2 border-[#191919]/30 border-t-[#191919]" style={{ animation: "spin 0.8s linear infinite" }} />
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/>
+                </svg>
+              )}
+              {isSharing ? "링크 생성 중..." : "카카오로 공유하기"}
+            </button>
+
+            <button
+              onClick={handleCopyLink}
+              disabled={isCopying}
+              className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 text-white font-bold py-4 rounded-2xl text-[15px] transition-colors"
+            >
+              {isCopying ? (
+                <div className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white" style={{ animation: "spin 0.8s linear infinite" }} />
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M6.5 3.5H3.5a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V9.5M9.5 1.5h5m0 0v5m0-5L7 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+              {isCopying ? "링크 생성 중..." : "링크 복사"}
+            </button>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex-1 flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 rounded-2xl text-[14px] transition-colors disabled:opacity-40"
+              >
+                {isSaving ? (
+                  <div className="w-4 h-4 rounded-full border-2 border-gray-400 border-t-gray-700" style={{ animation: "spin 0.8s linear infinite" }} />
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 2v8M5 7l3 3 3-3M2 12h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+                저장
+              </button>
+              <Link
+                href="/studio"
+                className="flex-1 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 rounded-2xl text-[14px] transition-colors"
+              >
+                나가기
+              </Link>
+            </div>
+          </div>
+
+          {copyToast && (
+            <div className="mt-3 text-center text-[12px] text-green-600 font-bold">링크가 복사됐어요!</div>
+          )}
+        </section>
+
       </div>
     </div>
   );
