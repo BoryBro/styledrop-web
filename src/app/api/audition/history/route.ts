@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ ok: true }); // 비로그인은 무시
 
   try {
-    const { result, genres, bestSceneIdx, stillImageBase64 } = await request.json();
+    const { result, genres, bestSceneIdx, stillImageBase64, userPhotoBase64, userPhotosBase64 } = await request.json();
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,19 +44,26 @@ export async function POST(request: NextRequest) {
     );
 
     const shareId = `au_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    let stillImageUrl: string | null = null;
 
-    // 스틸컷 업로드
-    if (stillImageBase64) {
-      const buf = Buffer.from(stillImageBase64, "base64");
+    // 스틸컷 + 사용자 사진 3장 병렬 업로드
+    const uploadJpeg = async (b64: string, path: string): Promise<string | null> => {
+      const buf = Buffer.from(b64, "base64");
       const { error } = await supabase.storage
         .from("shared-images")
-        .upload(`audition/${shareId}-still.jpg`, buf, { contentType: "image/jpeg", upsert: false });
-      if (!error) {
-        const { data } = supabase.storage.from("shared-images").getPublicUrl(`audition/${shareId}-still.jpg`);
-        stillImageUrl = data.publicUrl;
-      }
-    }
+        .upload(path, buf, { contentType: "image/jpeg", upsert: false });
+      if (error) return null;
+      return supabase.storage.from("shared-images").getPublicUrl(path).data.publicUrl;
+    };
+
+    const [stillImageUrl, userPhotoUrl, ...userPhotoUrls] = await Promise.all([
+      stillImageBase64 ? uploadJpeg(stillImageBase64, `audition/${shareId}-still.jpg`) : Promise.resolve(null),
+      userPhotoBase64 ? uploadJpeg(userPhotoBase64, `audition/${shareId}-user.jpg`) : Promise.resolve(null),
+      ...(Array.isArray(userPhotosBase64) ? userPhotosBase64.map((b64: string | null, i: number) =>
+        b64 ? uploadJpeg(b64, `audition/${shareId}-photo-${i}.jpg`) : Promise.resolve(null)
+      ) : []),
+    ]);
+
+    const userPhotosJson = userPhotoUrls.length > 0 ? userPhotoUrls : null;
 
     // audition_shares 저장 (공유 URL 생성용)
     await supabase.from("audition_shares").insert({
@@ -64,8 +71,9 @@ export async function POST(request: NextRequest) {
       result_json: result,
       genres_json: genres,
       best_scene_idx: bestSceneIdx ?? 0,
-      user_photo_url: null,
-      still_image_url: stillImageUrl,
+      user_photo_url: userPhotoUrl ?? null,
+      still_image_url: stillImageUrl ?? null,
+      user_photos_json: userPhotosJson,
     });
 
     // 종합 점수 계산
