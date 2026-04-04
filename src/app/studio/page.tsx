@@ -190,7 +190,10 @@ export default function Studio() {
         </header>
 
         <main className="flex-1 max-w-2xl mx-auto w-full px-4 pt-6 pb-4">
-          <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
+          <style>{`
+            @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+            main * { letter-spacing: -1.5%; }
+          `}</style>
 
           {/* 터미널 공지 — 최상단 */}
           {notices.length > 0 && (
@@ -229,8 +232,8 @@ export default function Studio() {
 
           {/* 스타일 선택 섹션 헤더 */}
           <div className="mb-4">
-            <h2 className="text-[20px] font-bold text-white">스타일 선택</h2>
-            <p className="text-[13px] text-[#666] mt-1">원하는 스타일의 카드를 선택해봐요</p>
+            <h2 className="text-[20px] font-bold text-[#C9571A]">스타일 선택</h2>
+            <p className="text-[18px] font-bold text-white mt-1">원하는 스타일의 카드를 선택해봐요</p>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -314,19 +317,16 @@ export default function Studio() {
 
           {/* 실험실 섹션 헤더 */}
           <div className="mt-8 mb-4">
-            <h2 className="text-[20px] font-bold text-white">실험실</h2>
-            <p className="text-[13px] text-[#666] mt-1">색다른 AI 기능을 체험해봐요</p>
+            <h2 className="text-[20px] font-bold text-[#C9571A]">실험실</h2>
+            <p className="text-[18px] font-bold text-white mt-1">색다른 AI 기능을 체험해봐요</p>
           </div>
 
           {/* AI 오디션 배너 */}
           <Link href="/audition/solo" className="block mb-4">
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e0900] to-[#111] border border-[#C9571A]/40 px-4 py-4 flex items-center gap-3 hover:border-[#C9571A]/70 transition-colors">
-              <div className="text-[36px] flex-shrink-0">🎬</div>
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e0900] to-[#111] border border-[#C9571A]/40 px-6 py-6 flex items-center gap-4 hover:border-[#C9571A]/70 transition-colors">
+              <div className="text-[48px] flex-shrink-0">🎬</div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[9px] font-extrabold text-white bg-[#C9571A] px-1.5 py-0.5 rounded uppercase tracking-wide">🔥 신규</span>
-                </div>
-                <p className="text-white font-extrabold text-[15px] leading-snug">AI 오디션 — 내 연기력 테스트</p>
+                <p className="text-white font-extrabold text-[24px] leading-snug mb-3">AI 오디션 — 내 연기력 테스트</p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="flex items-center gap-1.5 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 border border-white/10">
                     <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
@@ -395,7 +395,7 @@ export default function Studio() {
             onClick={() => { setVariantSelectStyle(null); setSelectedStyle(null); }}
           >
             <div
-              className="bg-[#111] border border-white/10 rounded-t-3xl w-full max-w-2xl px-5 pt-5 pb-8"
+              className="bg-[#111] border border-white/10 rounded-t-3xl w-full max-w-2xl px-5 pt-5 pb-8 max-h-[85vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}
             >
               <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5" />
