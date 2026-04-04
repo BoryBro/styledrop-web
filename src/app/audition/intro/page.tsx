@@ -116,10 +116,12 @@ export default function AuditionIntroPage() {
       <section className="flex flex-col items-center justify-center px-6 pt-16 pb-12 text-center" style={{ minHeight: '85vh' }}>
         <p className="text-[11px] font-black text-[#C9571A] tracking-[0.3em] uppercase mb-5">관상 × 성향 × 연기 분석</p>
 
-        <h1 className="text-[52px] font-black text-black leading-none tracking-tighter min-h-[62px]">
-          {typed}
-          <span className="inline-block w-[3px] h-[46px] bg-[#C9571A] ml-1.5 align-middle" style={{ animation: 'pulse 1s step-end infinite' }} />
-        </h1>
+        <div className="h-[130px] flex items-center justify-center">
+          <h1 className="text-[52px] font-black text-black leading-none tracking-tighter text-center">
+            {typed}
+            <span className="inline-block w-[3px] h-[46px] bg-[#C9571A] ml-1.5 align-middle" style={{ animation: 'pulse 1s step-end infinite' }} />
+          </h1>
+        </div>
 
         <p className="text-[17px] text-gray-600 font-medium mt-6 leading-relaxed max-w-[280px]">
           AI가 당신의 얼굴과 성향을 분석해<br />

@@ -67,10 +67,10 @@ export async function GET(request: NextRequest) {
         userId = user.id;
         await supabase.from("user_events").insert({ user_id: user.id, event_type: "login" });
 
-        // 신규 가입 시 5크레딧 지급
+        // 신규 가입 시 3크레딧 지급
         if (isNewUser) {
-          await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 5 });
-          await supabase.from("user_events").insert({ user_id: user.id, event_type: "signup_bonus", metadata: { credits: 5 } });
+          await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 3 });
+          await supabase.from("user_events").insert({ user_id: user.id, event_type: "signup_bonus", metadata: { credits: 3 } });
 
           // 추천인 보상 처리
           const refUserId = referrerId && referrerId !== user.id ? referrerId : null;
