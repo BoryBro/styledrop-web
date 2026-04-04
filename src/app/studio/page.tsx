@@ -53,6 +53,9 @@ export default function Studio() {
   const [showNoCreditModal, setShowNoCreditModal] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [variantSelectStyle, setVariantSelectStyle] = useState<typeof STYLES[0] | null>(null);
+  const [showCameraGuide, setShowCameraGuide] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [notices, setNotices] = useState<{ id: number; text: string }[]>([]);
   const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
 
@@ -107,6 +110,77 @@ export default function Studio() {
       sessionStorage.setItem("sd_variant", "default");
       fileInputRef.current?.click();
     }
+  };
+
+  // 카메라 가이드 — 스트림 시작/정리
+  useEffect(() => {
+    if (!showCameraGuide) return;
+    let active = true;
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+      .then(stream => {
+        if (!active) { stream.getTracks().forEach(t => t.stop()); return; }
+        streamRef.current = stream;
+        if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
+      })
+      .catch(() => {
+        if (!active) return;
+        setShowCameraGuide(false);
+        fileInputRef.current?.click();
+      });
+    return () => {
+      active = false;
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    };
+  }, [showCameraGuide]);
+
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    setShowCameraGuide(false);
+  };
+
+  const processImageDataUrl = (dataUrl: string) => {
+    const styleId = selectedStyleRef.current;
+    if (!styleId) return;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let width = img.width; let height = img.height;
+      const MAX_SIZE = 1024;
+      if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } }
+      else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
+      canvas.width = Math.floor(width); canvas.height = Math.floor(height);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const resized = canvas.toDataURL("image/jpeg", 0.85);
+      sessionStorage.setItem("sd_styleId", styleId);
+      sessionStorage.setItem("sd_imageBase64", resized.split(",")[1]);
+      sessionStorage.setItem("sd_previewDataUrl", resized);
+      sessionStorage.removeItem("sd_resultDataUrl");
+      sessionStorage.removeItem("sd_shareUrl");
+      sessionStorage.removeItem("sd_shareLink");
+      sessionStorage.setItem("sd_fromStudio", "1");
+      router.push("/result");
+    };
+    img.src = dataUrl;
+  };
+
+  const captureFromCamera = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    // 셀카이므로 좌우 반전 해제
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0);
+    stopCamera();
+    processImageDataUrl(canvas.toDataURL("image/jpeg", 0.85));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -408,7 +482,11 @@ export default function Studio() {
                     onClick={() => {
                       sessionStorage.setItem("sd_variant", v.id);
                       setVariantSelectStyle(null);
-                      fileInputRef.current?.click();
+                      if (variantSelectStyle?.id === "joseon-farmer") {
+                        setShowCameraGuide(true);
+                      } else {
+                        fileInputRef.current?.click();
+                      }
                     }}
                     className="group bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-[#C9571A]/50 rounded-2xl overflow-hidden transition-all text-left flex flex-col"
                   >
@@ -441,6 +519,61 @@ export default function Studio() {
           </div>
         );
       })()}
+
+      {/* 카메라 가이드 모달 */}
+      {showCameraGuide && (
+        <div className="fixed inset-0 bg-black z-[60] flex flex-col">
+          {/* 상단 */}
+          <div className="flex items-center justify-between px-5 pt-12 pb-4">
+            <button onClick={stopCamera} className="text-white/60 text-[14px]">취소</button>
+            <p className="text-white font-bold text-[15px]">셀카 찍기</p>
+            <div className="w-12" />
+          </div>
+
+          {/* 카메라 뷰 + 오버레이 */}
+          <div className="flex-1 relative overflow-hidden">
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ transform: "scaleX(-1)" }}
+            />
+            {/* 얼굴 가이드 오버레이 */}
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+              <defs>
+                <mask id="face-mask">
+                  <rect width="100" height="100" fill="white"/>
+                  <ellipse cx="50" cy="44" rx="28" ry="36" fill="black"/>
+                </mask>
+              </defs>
+              <rect width="100" height="100" fill="rgba(0,0,0,0.45)" mask="url(#face-mask)"/>
+              <ellipse cx="50" cy="44" rx="28" ry="36" fill="none" stroke="white" strokeWidth="0.5" strokeDasharray="3 2" opacity="0.9"/>
+            </svg>
+            {/* 안내 문구 */}
+            <div className="absolute bottom-6 left-0 right-0 text-center">
+              <p className="text-white/80 text-[13px] font-medium drop-shadow-lg">얼굴을 타원 안에 맞춰주세요</p>
+            </div>
+          </div>
+
+          {/* 하단 버튼 */}
+          <div className="pb-14 pt-6 flex flex-col items-center gap-4 bg-black">
+            {/* 촬영 버튼 */}
+            <button
+              onClick={captureFromCamera}
+              className="w-20 h-20 rounded-full bg-white border-4 border-white/30 active:scale-95 transition-transform shadow-2xl"
+            />
+            {/* 앨범에서 선택 */}
+            <button
+              onClick={() => { stopCamera(); fileInputRef.current?.click(); }}
+              className="text-white/50 text-[13px]"
+            >
+              앨범에서 선택
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 로그인 유도 모달 */}
       {showLoginModal && (
