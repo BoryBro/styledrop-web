@@ -395,28 +395,64 @@ export default function Studio() {
             <p className="text-[18px] font-bold text-white mt-1">색다른 AI 기능을 체험해봐요</p>
           </div>
 
-          {/* AI 오디션 배너 */}
-          <Link href="/audition/solo" className="block mb-4">
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#1e0900] to-[#111] border border-[#C9571A]/40 px-6 py-6 flex items-center gap-4 hover:border-[#C9571A]/70 transition-colors">
-              <div className="text-[48px] flex-shrink-0">🎬</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-extrabold text-[24px] leading-snug mb-3">AI 오디션 — 내 연기력 테스트</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="flex items-center gap-1.5 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 border border-white/10">
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.85"/>
-                      <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round"/>
-                    </svg>
-                    {usageCounts === null ? "..." : formatCount(usageCounts["audition"] ?? 0)}
-                  </span>
-                  <div className="flex items-center px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg">
-                    <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">3크레딧</span>
-                  </div>
+          {/* AI 오디션 배너 — 포스터 카드 */}
+          <Link href="/audition/solo" className="block mb-4 active:scale-[0.97] transition-transform">
+            <div className="relative rounded-2xl overflow-hidden aspect-square bg-[#0D0806]">
+
+              {/* ── 오렌지 탑바 ── */}
+              <div className="absolute top-0 left-0 right-0 h-10 bg-[#C9571A] flex items-center justify-center z-20">
+                <span className="text-[10px] font-black text-white tracking-[0.3em] uppercase">AI Audition</span>
+              </div>
+
+              {/* ── 배경 그라데이션 ── */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#1a0700] via-[#0D0806] to-[#0a0a0a]" />
+
+              {/* ── 초록 타원 — 텍스트 레이어 아래 ── */}
+              <div className="absolute z-10" style={{ top: '22%', left: '-6%', width: '62%', height: '22%', background: '#4ADE80', borderRadius: '50%', transform: 'rotate(-7deg)' }} />
+
+              {/* ── 오디션 대형 텍스트 — 타원 위 ── */}
+              <div className="absolute z-20" style={{ top: '19%', left: '4%' }}>
+                <span className="text-white font-black block" style={{ fontSize: 'clamp(44px, 13vw, 72px)', lineHeight: 1, letterSpacing: '-3px' }}>오디션</span>
+              </div>
+
+              {/* ── 부제목 ── */}
+              <div className="absolute z-20" style={{ top: '45%', left: '5%' }}>
+                <span className="text-white/60 font-bold tracking-wide" style={{ fontSize: 'clamp(13px, 3.5vw, 18px)' }}>내 연기력 테스트</span>
+              </div>
+
+              {/* ── 반투명 AI 대형 레이어 — 배경 깊이 ── */}
+              <span className="absolute font-black select-none z-[1]" style={{ bottom: '-4%', right: '-3%', fontSize: 'clamp(90px, 26vw, 140px)', lineHeight: 1, letterSpacing: '-6px', color: 'rgba(255,255,255,0.04)' }}>AI</span>
+
+              {/* ── 클랩보드 이모지 ── */}
+              <div className="absolute z-20" style={{ bottom: '18%', left: '5%', fontSize: 'clamp(30px, 8vw, 44px)' }}>🎬</div>
+
+              {/* ── 기울어진 3크레딧 배지 ── */}
+              <div className="absolute z-30" style={{ bottom: '20%', right: '7%', background: '#C9571A', borderRadius: 5, padding: '5px 14px', transform: 'rotate(-5deg)', boxShadow: '3px 3px 0 rgba(0,0,0,0.5)' }}>
+                <span className="font-black text-white italic" style={{ fontSize: 'clamp(12px, 3vw, 16px)', letterSpacing: '0.03em' }}>3크레딧</span>
+              </div>
+
+              {/* ── 유저 수 + 화살표 바텀 ── */}
+              <div className="absolute z-20 flex items-center justify-between" style={{ bottom: '6%', left: '5%', right: '5%' }}>
+                <span className="flex items-center gap-1.5 text-white/50 px-3 py-1.5 rounded-full bg-white/8 border border-white/10" style={{ fontSize: 'clamp(11px, 2.8vw, 14px)' }}>
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.85"/>
+                    <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round"/>
+                  </svg>
+                  {usageCounts === null ? "..." : formatCount(usageCounts["audition"] ?? 0)}
+                </span>
+                {/* 화살표 원형 버튼 */}
+                <div className="rounded-full border-2 border-[#C9571A]/60 flex items-center justify-center" style={{ width: 'clamp(32px, 8vw, 42px)', height: 'clamp(32px, 8vw, 42px)' }}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8h10M9 4l4 4-4 4" stroke="#C9571A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
               </div>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-[#C9571A]">
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+
+              {/* ── 탑바 아래 타원 oval 배지 (포스터 코너 느낌) ── */}
+              <div className="absolute z-20 border-2 border-white/20 rounded-full flex items-center justify-center" style={{ top: 48, right: 14, width: 44, height: 26 }}>
+                <span className="text-[8px] font-black text-white/50 uppercase tracking-widest">NEW</span>
+              </div>
+
             </div>
           </Link>
         </main>
