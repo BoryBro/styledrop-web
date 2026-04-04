@@ -70,35 +70,69 @@ function CardMarquee() {
 }
 
 function CardCarousel() {
-  const [idx, setIdx] = useState(0);
   const n = CARD_IMAGES.length;
+  const CARD_W = 162;
+  const GAP = 14;
+  const UNIT = CARD_W + GAP;
+  // 3벌 복사 → 가운데 벌(n~2n-1)에서 시작, 끝에 다다르면 조용히 리셋
+  const all = [...CARD_IMAGES, ...CARD_IMAGES, ...CARD_IMAGES];
+  const [pos, setPos] = useState(n);
+  const [instant, setInstant] = useState(false);
+
   useEffect(() => {
-    const t = setInterval(() => setIdx(i => (i + 1) % n), 2800);
+    const t = setInterval(() => setPos(p => p + 1), 3200);
     return () => clearInterval(t);
-  }, [n]);
-  const prevIdx = (idx - 1 + n) % n;
-  const nextIdx = (idx + 1) % n;
+  }, []);
+
+  // 마지막 복사본 끝에 도달하면 중간 복사본으로 순간이동 (사용자에게 안 보임)
+  useEffect(() => {
+    if (pos >= 2 * n) {
+      const t = setTimeout(() => {
+        setInstant(true);
+        setPos(n);
+        setTimeout(() => setInstant(false), 32);
+      }, 750);
+      return () => clearTimeout(t);
+    }
+  }, [pos, n]);
+
+  const tx = `calc(50vw - ${pos * UNIT + CARD_W / 2}px)`;
+
   return (
-    <div className="w-full overflow-hidden px-2">
-      <style>{`@keyframes card-pop { 0%{transform:scale(0.85)} 60%{transform:scale(1.08)} 100%{transform:scale(1.04)} }`}</style>
-      <div className="flex items-end justify-center gap-3 py-6">
-        {[prevIdx, idx, nextIdx].map((imgIdx, pos) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={imgIdx}
-            src={CARD_IMAGES[imgIdx]}
-            alt="audition card"
-            className="rounded-2xl object-cover flex-shrink-0"
-            style={{
-              width: pos === 1 ? 200 : 130,
-              height: pos === 1 ? 278 : 182,
-              opacity: pos === 1 ? 1 : 0.45,
-              boxShadow: pos === 1 ? '0 20px 48px rgba(0,0,0,0.28)' : '0 4px 12px rgba(0,0,0,0.1)',
-              transition: 'all 0.48s cubic-bezier(0.4,0,0.2,1)',
-              animation: pos === 1 ? 'card-pop 0.48s cubic-bezier(0.4,0,0.2,1)' : undefined,
-            }}
-          />
-        ))}
+    <div className="w-full overflow-hidden relative" style={{ height: 296 }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: GAP,
+          alignItems: 'center',
+          position: 'absolute',
+          top: 0, bottom: 0,
+          transition: instant ? 'none' : 'transform 0.72s cubic-bezier(0.33,1,0.68,1)',
+          transform: `translateX(${tx})`,
+          willChange: 'transform',
+        }}
+      >
+        {all.map((src, i) => {
+          const dist = Math.abs(i - pos);
+          const isCenter = dist === 0;
+          return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={i}
+              src={src}
+              alt="audition card"
+              className="rounded-2xl object-cover flex-shrink-0"
+              style={{
+                width: CARD_W,
+                height: 228,
+                opacity: isCenter ? 1 : dist === 1 ? 0.46 : 0.15,
+                transform: isCenter ? 'scale(1.12)' : 'scale(0.86)',
+                boxShadow: isCenter ? '0 20px 48px rgba(0,0,0,0.3)' : 'none',
+                transition: instant ? 'none' : 'opacity 0.6s ease, transform 0.72s cubic-bezier(0.33,1,0.68,1), box-shadow 0.6s ease',
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -342,31 +376,6 @@ export default function AuditionIntroPage() {
         </div>
         <CardCarousel />
         <p className="px-6 text-[12px] text-gray-400 font-medium">* 실제 결과는 본인 사진 기반으로 제작됩니다</p>
-      </section>
-
-      {/* ── 텍스트 마커 ─────────────────────────────────── */}
-      <section className="px-6 py-12 flex flex-col gap-3">
-        {[
-          { text: "LIGHTS · CAMERA · YOU",         fill: true,  weight: 900 },
-          { text: "FACE READING × AI ANALYSIS",    fill: false, weight: 300 },
-          { text: "REAL EMOTION · REAL RESULTS",   fill: true,  weight: 900 },
-          { text: "YOUR CHARACTER · REVEALED",     fill: false, weight: 300 },
-          { text: "ONE TAKE · ONE TRUTH",           fill: true,  weight: 900 },
-        ].map((item, i) => (
-          <p
-            key={i}
-            className="text-[21px] leading-tight"
-            style={{
-              color: item.fill ? '#111' : 'transparent',
-              WebkitTextStroke: item.fill ? undefined : '1.5px #d1d5db',
-              letterSpacing: '-0.5px',
-              fontFamily: '"Unbounded", sans-serif',
-              fontWeight: item.weight,
-            }}
-          >
-            {item.text}
-          </p>
-        ))}
       </section>
 
       <div className="mx-6 h-px bg-gray-100" />

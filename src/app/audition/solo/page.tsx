@@ -876,14 +876,14 @@ function AuditionSoloInner() {
           <div className="flex flex-col gap-3 flex-1">
             <button
               onClick={() => handleAnswer("A")}
-              className="flex-1 flex items-center gap-4 px-5 py-5 rounded-2xl border-2 border-gray-100 bg-gray-50 hover:border-[#C9571A] hover:bg-orange-50 active:scale-[0.98] transition-all text-left"
+              className="flex items-center gap-4 px-5 py-4 rounded-2xl border-2 border-gray-100 bg-gray-50 hover:border-[#C9571A] hover:bg-orange-50 active:scale-[0.98] transition-all text-left"
             >
               <span className="text-[13px] font-black text-[#C9571A] tracking-[0.2em] uppercase flex-shrink-0 w-5">A</span>
               <span className="text-[22px] font-black text-gray-900 leading-tight">{current.a}</span>
             </button>
             <button
               onClick={() => handleAnswer("B")}
-              className="flex-1 flex items-center gap-4 px-5 py-5 rounded-2xl border-2 border-gray-100 bg-gray-50 hover:border-[#C9571A] hover:bg-orange-50 active:scale-[0.98] transition-all text-left"
+              className="flex items-center gap-4 px-5 py-4 rounded-2xl border-2 border-gray-100 bg-gray-50 hover:border-[#C9571A] hover:bg-orange-50 active:scale-[0.98] transition-all text-left"
             >
               <span className="text-[13px] font-black text-[#C9571A] tracking-[0.2em] uppercase flex-shrink-0 w-5">B</span>
               <span className="text-[22px] font-black text-gray-900 leading-tight">{current.b}</span>
@@ -1089,11 +1089,11 @@ function AuditionSoloInner() {
   if (phase === "analyzing") {
     const ANALYZE_STEPS = [
       { label: `씬 1 (${selectedGenres[0] ? GENRES.find(g => g.id === selectedGenres[0])?.label : ""}) 분석 중`, delay: 0 },
-      { label: `씬 2 (${selectedGenres[1] ? GENRES.find(g => g.id === selectedGenres[1])?.label : ""}) 분석 중`, delay: 1600 },
-      { label: `씬 3 (${selectedGenres[2] ? GENRES.find(g => g.id === selectedGenres[2])?.label : ""}) 분석 중`, delay: 3200 },
-      { label: "관상 분석 중", delay: 5000 },
-      { label: "성향 분석 중", delay: 6800 },
-      { label: "스틸컷 제작 준비 중", delay: 8500 },
+      { label: `씬 2 (${selectedGenres[1] ? GENRES.find(g => g.id === selectedGenres[1])?.label : ""}) 분석 중`, delay: 1700 },
+      { label: `씬 3 (${selectedGenres[2] ? GENRES.find(g => g.id === selectedGenres[2])?.label : ""}) 분석 중`, delay: 3400 },
+      { label: "관상 분석 중", delay: 5200 },
+      { label: "성향 분석 중", delay: 7000 },
+      { label: "결과 생성 중", delay: 8800 },
     ];
     return (
       <div className="min-h-screen bg-[#0A0A0A] relative overflow-hidden flex flex-col items-center justify-center">
