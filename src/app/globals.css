@@ -12,9 +12,20 @@
 /* ── BMKkubulim ──────────────────────────────────────────────── */
 @font-face { font-family: "BMKkubulim"; src: url("/fonts/BMKkubulim.otf") format("opentype"); font-weight: 400; font-display: swap; }
 
-/* ── audition 페이지 전용 ────────────────────────────────────── */
+/* ── Unbounded ───────────────────────────────────────────────── */
+@font-face { font-family: "Unbounded"; src: url("/fonts/Unbounded-ExtraLight.ttf") format("truetype"); font-weight: 200; font-display: swap; }
+@font-face { font-family: "Unbounded"; src: url("/fonts/Unbounded-Light.ttf") format("truetype"); font-weight: 300; font-display: swap; }
+@font-face { font-family: "Unbounded"; src: url("/fonts/Unbounded-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Unbounded"; src: url("/fonts/Unbounded-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Unbounded"; src: url("/fonts/Unbounded-SemiBold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Unbounded"; src: url("/fonts/Unbounded-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Unbounded"; src: url("/fonts/Unbounded-ExtraBold.ttf") format("truetype"); font-weight: 800; font-display: swap; }
+@font-face { font-family: "Unbounded"; src: url("/fonts/Unbounded-Black.ttf") format("truetype"); font-weight: 900; font-display: swap; }
+
+/* ── 유틸리티 ────────────────────────────────────────────────── */
 .audition-page { font-family: "Pretendard", "SUIT Variable", sans-serif; }
 .role-title { font-family: "BMKkubulim", sans-serif; }
+.font-unbounded { font-family: "Unbounded", sans-serif; }
 
 :root {
   --background: #0A0A0A;
