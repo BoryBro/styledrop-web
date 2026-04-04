@@ -132,6 +132,48 @@ function Bar({ ratio, color = "#C9571A" }: { ratio: number; color?: string }) {
   );
 }
 
+function KakaoIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="#3C1E1E">
+      <path d="M12 3C6.477 3 2 6.58 2 11.1c0 2.9 1.6 5.45 4.05 7.02l-.97 3.63a.25.25 0 00.38.28l4.2-2.74c.75.1 1.53.15 2.34.15 5.523 0 10-3.58 10-8.1S17.523 3 12 3z"/>
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+    </svg>
+  );
+}
+
+function RatioIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/>
+      <path d="M6 18L18 6"/>
+    </svg>
+  );
+}
+
+function ShareRow({ icon, iconBg, label, count, ratio, highlight }: {
+  icon: React.ReactNode; iconBg: string; label: string;
+  count: string | number; ratio?: string; highlight?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0">
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+        {icon}
+      </div>
+      <span className="flex-1 text-gray-600 text-[15px]">{label}</span>
+      {ratio !== undefined && <span className="text-gray-400 text-[13px] tabular-nums">{ratio}</span>}
+      <span className={`font-bold text-[17px] tabular-nums ${highlight ? "text-[#C9571A]" : "text-gray-900"}`}>{count}</span>
+    </div>
+  );
+}
+
 function MiniCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
@@ -333,43 +375,49 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* 공유 & 바이럴 — 스타일 */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">공유 & 바이럴 · 스타일</p>
-        <div className="grid grid-cols-3 gap-2 mb-2">
-          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-gray-500 text-[12px]">카카오 공유</span>
-            <span className="text-gray-900 text-[18px] font-extrabold tabular-nums">{stats.shareKakao}회</span>
-            <span className="text-gray-400 text-[12px]">{stats.total > 0 ? Math.round((stats.shareKakao / stats.total) * 100) : 0}%</span>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-gray-500 text-[12px]">링크 복사</span>
-            <span className="text-gray-900 text-[18px] font-extrabold tabular-nums">{stats.shareLinkCopy}회</span>
-            <span className="text-gray-400 text-[12px]">{stats.total > 0 ? Math.round((stats.shareLinkCopy / stats.total) * 100) : 0}%</span>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-gray-500 text-[12px]">공유 전환율</span>
-            <span className="text-[#C9571A] text-[18px] font-extrabold tabular-nums">{shareRatio}%</span>
-            <span className="text-gray-400 text-[12px]">{shareTotal}회</span>
+      {/* 공유 & 바이럴 */}
+      <div className="flex flex-col gap-3">
+        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">공유 & 바이럴</p>
+
+        {/* 스타일 카드 */}
+        <div className="flex flex-col gap-1">
+          <p className="text-[12px] text-gray-400 px-1 font-medium">스타일 카드</p>
+          <div className="bg-white rounded-2xl px-4 border border-gray-200">
+            <ShareRow
+              icon={<KakaoIcon />} iconBg="bg-[#FEE500]"
+              label="카카오 공유" count={`${stats.shareKakao}회`}
+              ratio={`${stats.total > 0 ? Math.round((stats.shareKakao / stats.total) * 100) : 0}%`}
+            />
+            <ShareRow
+              icon={<LinkIcon />} iconBg="bg-gray-100"
+              label="링크 복사" count={`${stats.shareLinkCopy}회`}
+              ratio={`${stats.total > 0 ? Math.round((stats.shareLinkCopy / stats.total) * 100) : 0}%`}
+            />
+            <ShareRow
+              icon={<RatioIcon />} iconBg="bg-orange-50"
+              label="공유 전환율" count={`${shareRatio}%`}
+              ratio={`${shareTotal}회`} highlight
+            />
           </div>
         </div>
-      </div>
 
-      {/* 공유 & 바이럴 — 실험실 (AI 오디션) */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">공유 & 바이럴 · 실험실</p>
-        <div className="grid grid-cols-3 gap-2 mb-2">
-          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-gray-500 text-[12px]">카카오 공유</span>
-            <span className="text-gray-900 text-[18px] font-extrabold tabular-nums">{stats.auditionShareKakao}회</span>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-gray-500 text-[12px]">링크 복사</span>
-            <span className="text-gray-900 text-[18px] font-extrabold tabular-nums">{stats.auditionShareLinkCopy}회</span>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-gray-500 text-[12px]">합계</span>
-            <span className="text-[#C9571A] text-[18px] font-extrabold tabular-nums">{stats.auditionShareKakao + stats.auditionShareLinkCopy}회</span>
+        {/* AI 오디션 */}
+        <div className="flex flex-col gap-1">
+          <p className="text-[12px] text-gray-400 px-1 font-medium">AI 오디션</p>
+          <div className="bg-white rounded-2xl px-4 border border-gray-200">
+            <ShareRow
+              icon={<KakaoIcon />} iconBg="bg-[#FEE500]"
+              label="카카오 공유" count={`${stats.auditionShareKakao}회`}
+            />
+            <ShareRow
+              icon={<LinkIcon />} iconBg="bg-gray-100"
+              label="링크 복사" count={`${stats.auditionShareLinkCopy}회`}
+            />
+            <ShareRow
+              icon={<RatioIcon />} iconBg="bg-orange-50"
+              label="합계" count={`${stats.auditionShareKakao + stats.auditionShareLinkCopy}회`}
+              highlight
+            />
           </div>
         </div>
       </div>
