@@ -318,7 +318,7 @@ export default function AuditionIntroPage() {
             className="text-[12px] font-extrabold px-2.5 py-1 rounded-lg"
             style={{ background: agreed ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)' }}
           >
-            3크레딧
+            5크레딧
           </span>
           시작하기
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

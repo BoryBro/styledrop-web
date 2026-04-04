@@ -476,7 +476,7 @@ function AuditionSoloInner() {
       .then(data => {
         const c = data.credits ?? 0;
         setCredits(c);
-        if (c < 3) setPhase("no_credits");
+        if (c < 5) setPhase("no_credits");
         else if (fromIntro) setPhase("genre_select");
         else setPhase("intro");
       })
@@ -640,7 +640,7 @@ function AuditionSoloInner() {
             <p className="text-[11px] font-bold text-[#C9571A] tracking-[0.2em] uppercase mb-2">AI 오디션</p>
             <h2 className="text-[22px] font-extrabold text-gray-900 leading-tight">크레딧이 부족해요</h2>
             <p className="text-[13px] text-gray-500 mt-2 leading-relaxed">
-              AI 오디션은 <span className="text-gray-900 font-bold">3크레딧</span>이 필요해요.<br />
+              AI 오디션은 <span className="text-gray-900 font-bold">5크레딧</span>이 필요해요.<br />
               현재 보유: <span className="text-[#C9571A] font-bold">{credits}크레딧</span>
             </p>
           </div>
@@ -696,7 +696,7 @@ function AuditionSoloInner() {
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-[14px] shrink-0 mt-0.5">💳</span>
-                <p className="text-[13px] text-gray-600 leading-snug">크레딧 3개가 소모되며, 이 서비스는 환불이 어렵습니다</p>
+                <p className="text-[13px] text-gray-600 leading-snug">크레딧 5개가 소모되며, 이 서비스는 환불이 어렵습니다</p>
               </li>
             </ul>
             <label className="flex items-center gap-3 mt-1 cursor-pointer select-none" onClick={() => setAgreed(v => !v)}>
@@ -713,7 +713,7 @@ function AuditionSoloInner() {
               disabled={!agreed}
               className="w-full bg-black hover:bg-gray-900 disabled:bg-gray-100 disabled:text-gray-400 text-white font-bold py-4 rounded-2xl text-[16px] transition-colors flex items-center justify-center gap-2.5"
             >
-              <span className="text-[12px] font-extrabold bg-white/20 rounded-lg px-2 py-0.5">3크레딧</span>
+              <span className="text-[12px] font-extrabold bg-white/20 rounded-lg px-2 py-0.5">5크레딧</span>
               시작하기
             </button>
           </div>

@@ -472,7 +472,7 @@ export default function Studio() {
                   <span
                     className="text-[#C9571A] border border-[#C9571A]/40 rounded-full px-2.5 py-1 font-bold"
                     style={{ fontFamily: '"Unbounded", sans-serif', fontSize: 'clamp(9px, 2.2vw, 11px)' }}
-                  >3 Credits</span>
+                  >5 Credits</span>
                 </div>
 
                 {/* 화살표 */}

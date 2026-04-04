@@ -31,16 +31,18 @@ export async function POST(request: NextRequest) {
       .select("credits")
       .eq("user_id", session.id)
       .single();
-    if (!creditRow || creditRow.credits < 3) {
+    if (!creditRow || creditRow.credits < 5) {
       return NextResponse.json(
-        { error: "크레딧이 부족해요. AI 오디션은 3크레딧이 필요합니다!" },
+        { error: "크레딧이 부족해요. AI 오디션은 5크레딧이 필요합니다!" },
         { status: 429 }
       );
     }
     const { error: e1 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
     const { error: e2 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
     const { error: e3 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
-    if (e1 || e2 || e3) {
+    const { error: e4 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
+    const { error: e5 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
+    if (e1 || e2 || e3 || e4 || e5) {
       return NextResponse.json(
         { error: "크레딧 차감에 실패했어요. 다시 시도해주세요." },
         { status: 500 }
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest) {
   }
   if (!session && guestCount >= GUEST_LIMIT) {
     return NextResponse.json(
-      { error: "무료 체험이 끝났어요. 카카오 로그인하면 3크레딧을 무료로 받을 수 있어요!" },
+      { error: "무료 체험이 끝났어요. 카카오 로그인하면 5크레딧을 무료로 받을 수 있어요!" },
       { status: 429 }
     );
   }
