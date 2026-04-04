@@ -512,7 +512,10 @@ function AuditionSoloInner() {
       cue: stepCues[i],
     }));
 
-    fetch("/api/audition/analyze", {
+    const MIN_LOADING_MS = 10000;
+    const minWait = new Promise<void>(r => setTimeout(r, MIN_LOADING_MS));
+
+    const fetchResult = fetch("/api/audition/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -522,10 +525,14 @@ function AuditionSoloInner() {
         cues: stepCues,
         personality: personalityAnswers,
       }),
-    })
-      .then(async res => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "분석 실패");
+    }).then(async res => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "분석 실패");
+      return data;
+    });
+
+    Promise.all([fetchResult, minWait])
+      .then(([data]) => {
         sessionStorage.setItem("sd_au_result", JSON.stringify(data));
         sessionStorage.setItem("sd_au_preview", previewDataUrl);
         sessionStorage.setItem("sd_au_genres", JSON.stringify(genreMeta));
@@ -1022,14 +1029,13 @@ function AuditionSoloInner() {
     return (
       <div className="bg-[#0A0A0A] flex flex-col" style={{ height: "100dvh" }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 flex-shrink-0 z-40">
+        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center px-4 flex-shrink-0 z-40">
           <span className="text-[13px] font-bold text-white/60">관상 분석용 정면 사진</span>
-          <span className="text-[11px] font-bold text-[#C9571A] bg-[#C9571A]/15 px-3 py-1 rounded-full">1회만 촬영 가능</span>
         </header>
 
         <main className="flex-1 flex flex-col px-4 py-3 gap-3 min-h-0">
-          {/* 웹캠 + 타원 오버레이 */}
-          <div className="relative flex-1 rounded-2xl overflow-hidden bg-[#111] border border-white/10 min-h-0">
+          {/* 웹캠 1:1 + 타원 오버레이 */}
+          <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#111] border border-white/10 flex-shrink-0">
             <Webcam
               ref={webcamRef}
               audio={false}
@@ -1207,13 +1213,13 @@ function AuditionSoloInner() {
         </div>
         {/* 씬 타이틀 + 장르 + 지시문 */}
         <div className="px-4 pb-3">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[11px] font-black text-[#C9571A] tracking-widest uppercase">씬 {stepIdx + 1}</span>
-            <span className="text-[11px] font-bold text-white/40">·</span>
-            <span className="text-[11px] font-bold text-white/60">{currentGenre?.emoji} {currentGenre?.label}</span>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[13px] font-black text-[#C9571A] tracking-widest uppercase">씬 {stepIdx + 1}</span>
+            <span className="text-[13px] font-bold text-white/40">·</span>
+            <span className="text-[13px] font-bold text-white/70">{currentGenre?.emoji} {currentGenre?.label}</span>
           </div>
           {stepCues[stepIdx] && (
-            <p className="text-[15px] font-black text-white leading-snug">{stepCues[stepIdx]}</p>
+            <p className="text-[17px] font-black text-white leading-snug" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{stepCues[stepIdx]}</p>
           )}
         </div>
       </header>
