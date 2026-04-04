@@ -86,14 +86,20 @@ export async function POST(request: NextRequest) {
     );
     const bestScene = result.scenes[bestSceneIdx ?? 0];
 
-    // audition_history 저장
-    await supabase.from("audition_history").insert({
-      user_id: session.id,
-      share_id: shareId,
-      avg_score: avgScore,
-      assigned_role: bestScene?.assigned_role ?? null,
-      still_image_url: stillImageUrl,
-    });
+    // audition_history 저장 + audition_complete 이벤트 기록 (병렬)
+    await Promise.all([
+      supabase.from("audition_history").insert({
+        user_id: session.id,
+        share_id: shareId,
+        avg_score: avgScore,
+        assigned_role: bestScene?.assigned_role ?? null,
+        still_image_url: stillImageUrl,
+      }),
+      supabase.from("user_events").insert({
+        user_id: session.id,
+        event_type: "audition_complete",
+      }),
+    ]);
 
     return NextResponse.json({ ok: true, shareId });
   } catch (err) {
