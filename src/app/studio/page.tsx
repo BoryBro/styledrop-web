@@ -396,7 +396,7 @@ export default function Studio() {
           </div>
 
           {/* AI 오디션 배너 — 포스터 카드 */}
-          <Link href="/audition/solo" className="block mb-4 active:scale-[0.97] transition-transform">
+          <Link href="/audition/intro" className="block mb-4 active:scale-[0.97] transition-transform">
             <div className="relative rounded-2xl overflow-hidden aspect-square bg-[#0D0806]">
 
               {/* ── 오렌지 탑바 ── */}
