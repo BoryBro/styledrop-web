@@ -233,66 +233,20 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">공유 & 바이럴</p>
-      {/* 탭 버튼 — 그래픽 포스터 스타일 */}
-      <div className="flex gap-2">
-
-        {/* ── 스타일 카드 탭 ── */}
+      {/* 탭 버튼 */}
+      <div className="flex gap-1.5 bg-gray-100 p-1 rounded-xl">
         <button
           onClick={() => setTab("style")}
-          className="relative flex-1 rounded-2xl overflow-hidden transition-all active:scale-[0.97]"
-          style={{ height: 88, opacity: tab === "style" ? 1 : 0.5 }}
+          className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${tab === "style" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
         >
-          {/* bg */}
-          <div className="absolute inset-0 bg-[#F2EDE5]" />
-          {/* top bar */}
-          <div className="absolute top-0 left-0 right-0 h-7 bg-gray-900 flex items-center px-3">
-            <span className="text-[8px] font-black text-gray-400 tracking-[0.22em] uppercase">STYLE CARD</span>
-          </div>
-          {/* oval badge top-right */}
-          <div className="absolute top-[6px] right-2.5 border border-gray-500 rounded-full px-2 py-0.5">
-            <span className="text-[7px] font-black text-gray-300 tracking-wide uppercase">share</span>
-          </div>
-          {/* decorative ring bottom-right */}
-          <div className="absolute rounded-full border-[3px] border-gray-300/30" style={{ bottom: -14, right: -14, width: 52, height: 52 }} />
-          {/* label */}
-          <div className="absolute bottom-2.5 left-3 leading-none">
-            <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">스타일</span>
-            <span className="block text-[26px] font-black text-gray-900" style={{ letterSpacing: '-1.5px' }}>카드</span>
-          </div>
-          {/* active underline */}
-          {tab === "style" && <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gray-900" />}
+          스타일 카드
         </button>
-
-        {/* ── AI 오디션 탭 — POSTER ── */}
         <button
           onClick={() => setTab("audition")}
-          className="relative flex-1 rounded-2xl overflow-hidden transition-all active:scale-[0.97]"
-          style={{ height: 88, opacity: tab === "audition" ? 1 : 0.5 }}
+          className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${tab === "audition" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
         >
-          {/* purple bg */}
-          <div className="absolute inset-0 bg-[#5C3D99]" />
-          {/* orange top bar */}
-          <div className="absolute top-0 left-0 right-0 h-7 bg-[#C9571A] flex items-center justify-center">
-            <span className="text-[8px] font-black text-white tracking-[0.25em] uppercase">AI AUDITION</span>
-          </div>
-          {/* green oval — behind 오디션 text */}
-          <div className="absolute" style={{ top: 26, left: 4, width: 76, height: 28, background: '#4ADE80', borderRadius: '50%', transform: 'rotate(-7deg)' }} />
-          {/* 오디션 text — over oval */}
-          <span className="absolute font-black text-white" style={{ top: 27, left: 9, fontSize: 18, lineHeight: 1, letterSpacing: '-0.5px', zIndex: 10 }}>오디션</span>
-          {/* giant AI — bottom-left, semi-transparent layer */}
-          <span className="absolute font-black" style={{ bottom: 0, left: 1, fontSize: 46, lineHeight: 1, letterSpacing: '-3px', color: 'rgba(0,0,0,0.45)', zIndex: 5 }}>AI</span>
-          {/* tilted badge bottom-right */}
-          <div className="absolute" style={{ bottom: 14, right: 7, background: '#FF9500', borderRadius: 3, padding: '2px 8px', transform: 'rotate(-5deg)', zIndex: 20, boxShadow: '2px 2px 0 rgba(0,0,0,0.25)' }}>
-            <span className="text-[9px] font-black text-white italic" style={{ letterSpacing: '0.04em' }}>공유현황</span>
-          </div>
-          {/* oval date badge bottom-left — like reference poster corners */}
-          <div className="absolute border-2 border-[rgba(255,255,255,0.3)] rounded-full flex items-center justify-center" style={{ bottom: 6, left: 6, width: 28, height: 18, zIndex: 20 }}>
-            <span className="text-[7px] font-black text-white/60">AI</span>
-          </div>
-          {/* active underline */}
-          {tab === "audition" && <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#C9571A]" />}
+          AI 오디션
         </button>
-
       </div>
 
       {/* 스타일 카드 탭 */}
