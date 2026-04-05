@@ -325,6 +325,7 @@ export default function AuditionResult() {
   const [copyToast, setCopyToast] = useState(false);
   const [isGeneratingStill, setIsGeneratingStill] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
+  const [showStillConfirm, setShowStillConfirm] = useState(false);
   const [shareRewardToast, setShareRewardToast] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [referralCopied, setReferralCopied] = useState(false);
@@ -413,6 +414,11 @@ export default function AuditionResult() {
     } finally {
       setIsGeneratingStill(false);
     }
+  };
+
+  const handleConfirmGenerateStill = async () => {
+    setShowStillConfirm(false);
+    await handleGenerateStill();
   };
 
   // 공유 후 1크레딧 보상
@@ -545,13 +551,53 @@ export default function AuditionResult() {
 
   return (
     <div className="min-h-screen bg-white">
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} } @keyframes dot-pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.18);opacity:.75} } @keyframes scan-line { 0%{transform:translateY(24px)} 50%{transform:translateY(216px)} 100%{transform:translateY(24px)} }`}</style>
 
       {/* ── 공유 크레딧 보상 토스트 ──────────────────────── */}
       {shareRewardToast && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-[13px] font-bold px-5 py-3 rounded-full shadow-xl flex items-center gap-2"
           style={{ animation: "fade-up 0.3s ease-out" }}>
           <span>🎉</span><span>1크레딧 지급됐어요!</span>
+        </div>
+      )}
+
+      {showStillConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px] flex items-end sm:items-center justify-center px-4">
+          <div className="w-full max-w-sm rounded-[28px] bg-white shadow-2xl border border-black/5 p-5 mb-4 sm:mb-0">
+            <p className="text-[11px] font-black text-[#C9571A] uppercase tracking-[0.28em] mb-3">Still Cut Confirm</p>
+            <p className="text-[22px] font-black text-gray-900 leading-tight mb-2">AI 스틸컷을 생성할까요?</p>
+            <p className="text-[14px] text-gray-600 leading-relaxed mb-5">
+              생성 즉시 <span className="font-black text-gray-900">3크레딧</span>이 차감됩니다.
+              <br />
+              버튼을 누르면 바로 생성이 시작돼요.
+            </p>
+            <div className="rounded-2xl bg-[#FFF7F2] border border-[#C9571A]/15 px-4 py-3 mb-5">
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="font-bold text-gray-500">현재 보유</span>
+                <span className="font-black text-gray-900">{credits ?? 0}크레딧</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-[13px]">
+                <span className="font-bold text-gray-500">이번 생성 차감</span>
+                <span className="font-black text-[#C9571A]">-3크레딧</span>
+              </div>
+            </div>
+            <div className="flex gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowStillConfirm(false)}
+                className="flex-1 rounded-2xl bg-gray-100 text-gray-700 font-bold py-3.5 text-[15px]"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmGenerateStill}
+                className="flex-1 rounded-2xl bg-[#C9571A] text-white font-bold py-3.5 text-[15px]"
+              >
+                동의하고 생성
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -664,13 +710,39 @@ export default function AuditionResult() {
             <div className="rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden">
               {/* 내 촬영컷 미리보기 */}
               {userPhotos[bestSceneIdx] && (
-                <div className="relative w-full aspect-square">
+                <div className="relative w-full aspect-square overflow-hidden bg-[#171717]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={userPhotos[bestSceneIdx]} alt="내 연기" className="w-full h-full object-cover opacity-50" />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 gap-3">
-                    <span className="text-white text-[40px]">✦</span>
-                    <p className="text-white font-black text-[16px]">AI 스틸컷으로 변환</p>
-                    <p className="text-white/70 text-[12px] text-center px-8">이 장면을 영화 스틸컷 분위기로<br />AI가 다시 그려드립니다</p>
+                  <img src={userPhotos[bestSceneIdx]} alt="내 연기" className="w-full h-full object-cover opacity-18 scale-[1.01]" />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage:
+                        `url(${userPhotos[bestSceneIdx]})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      filter: "blur(14px) saturate(0.72) brightness(0.68)",
+                      transform: "scale(1.03)",
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 12px, rgba(0,0,0,0.12) 12px 24px), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 12px, rgba(0,0,0,0.12) 12px 24px)",
+                      opacity: 0.72,
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,8,8,0.2)_0%,rgba(8,8,8,0.44)_42%,rgba(8,8,8,0.62)_100%)]" />
+                  <div className="absolute left-4 right-4 top-4 flex items-center justify-between text-white/55 text-[10px] font-black tracking-[0.26em] uppercase">
+                    <span>Preview Locked</span>
+                    <span>AI Still Cut</span>
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center px-6">
+                    <div className="w-full rounded-[28px] border border-white/12 bg-black/26 backdrop-blur-[1px] px-6 py-8 flex flex-col items-center gap-3 shadow-[0_20px_50px_rgba(0,0,0,0.18)]">
+                      <span className="text-white text-[40px]">✦</span>
+                      <p className="text-white font-black text-[16px]">AI 스틸컷으로 변환</p>
+                      <p className="text-white/72 text-[12px] text-center leading-relaxed">이 장면을 영화 스틸컷 분위기로<br />AI가 다시 그려드립니다</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -699,7 +771,7 @@ export default function AuditionResult() {
                   </div>
                 ) : (credits ?? 0) >= 3 ? (
                   <button
-                    onClick={handleGenerateStill}
+                    onClick={() => setShowStillConfirm(true)}
                     className="w-full bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold py-4 rounded-2xl text-[16px] transition-colors flex items-center justify-center gap-2"
                   >
                     <span className="text-[11px] bg-white/20 rounded-lg px-2 py-0.5 font-black">3크레딧</span>
@@ -803,17 +875,77 @@ export default function AuditionResult() {
             <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Physiognomy Analysis</p>
             <p className="text-[22px] font-black text-gray-900 mb-5">관상학 정밀 분석</p>
 
-            {/* 관상 사진 + 얼굴형/아키타입 오버레이 */}
+            {/* 관상 사진 + 포인트 오버레이 */}
             {physioPhoto && (
-              <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 mb-6">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={physioPhoto} alt="관상 사진" className="w-full h-full object-cover" />
-                {/* 하단 오버레이 */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-5 pb-5 pt-10">
-                  <div className="flex items-end justify-between">
+              <div className="mb-6">
+                <div className="rounded-[28px] overflow-hidden bg-[#111] border border-black/10 flex items-center justify-center py-8 relative">
+                  <div className="relative z-[1] h-[270px] w-[220px]">
+                    <div className="absolute inset-0 rounded-[32px] overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={physioPhoto}
+                        alt="관상 사진"
+                        className="w-full h-full object-cover scale-[1.12] brightness-[0.88] contrast-[1.08] saturate-[0.9]"
+                        style={{ objectPosition: "center 28%" }}
+                      />
+                    </div>
+                    <div
+                      className="absolute inset-0 rounded-[32px]"
+                      style={{
+                        background:
+                          "radial-gradient(circle at 50% 42%, rgba(255,255,255,0.14) 0%, rgba(201,87,26,0.1) 24%, rgba(0,0,0,0) 58%), linear-gradient(180deg, rgba(17,17,17,0.08) 0%, rgba(17,17,17,0.36) 100%)",
+                      }}
+                    />
+                    <svg width="220" height="270" viewBox="0 0 220 270" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0">
+                      <rect x="38" y="0" width="144" height="2" rx="1" fill="url(#resultScanGrad)" style={{ animation: "scan-line 3s ease-in-out infinite" }} />
+                      <defs>
+                        <linearGradient id="resultScanGrad" x1="0" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="transparent" />
+                          <stop offset="50%" stopColor="white" stopOpacity="0.95" />
+                          <stop offset="100%" stopColor="transparent" />
+                        </linearGradient>
+                      </defs>
+                      <ellipse cx="110" cy="128" rx="78" ry="98" stroke="white" strokeWidth="1.15" strokeOpacity="0.52" strokeDasharray="5 4" />
+                      <ellipse cx="110" cy="128" rx="60" ry="78" stroke="white" strokeWidth="0.75" strokeOpacity="0.18" />
+                      <line x1="110" y1="50" x2="80" y2="103" stroke="white" strokeWidth="0.95" strokeOpacity="0.48" />
+                      <line x1="110" y1="50" x2="140" y2="103" stroke="white" strokeWidth="0.95" strokeOpacity="0.48" />
+                      <line x1="80" y1="103" x2="140" y2="103" stroke="white" strokeWidth="0.75" strokeOpacity="0.34" />
+                      <line x1="80" y1="103" x2="110" y2="142" stroke="white" strokeWidth="0.95" strokeOpacity="0.48" />
+                      <line x1="140" y1="103" x2="110" y2="142" stroke="white" strokeWidth="0.95" strokeOpacity="0.48" />
+                      <line x1="110" y1="142" x2="93" y2="168" stroke="white" strokeWidth="0.9" strokeOpacity="0.42" />
+                      <line x1="110" y1="142" x2="127" y2="168" stroke="white" strokeWidth="0.9" strokeOpacity="0.42" />
+                      <line x1="93" y1="168" x2="110" y2="212" stroke="white" strokeWidth="0.85" strokeOpacity="0.34" />
+                      <line x1="127" y1="168" x2="110" y2="212" stroke="white" strokeWidth="0.85" strokeOpacity="0.34" />
+                      <line x1="58" y1="128" x2="80" y2="103" stroke="white" strokeWidth="0.8" strokeOpacity="0.3" />
+                      <line x1="162" y1="128" x2="140" y2="103" stroke="white" strokeWidth="0.8" strokeOpacity="0.3" />
+                      <circle cx="110" cy="50" r="4.2" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.4" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0s" }} />
+                      <circle cx="80" cy="103" r="4.2" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.4" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.3s" }} />
+                      <circle cx="140" cy="103" r="4.2" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.4" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.3s" }} />
+                      <circle cx="110" cy="142" r="3.8" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.3" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.6s" }} />
+                      <circle cx="93" cy="168" r="3.4" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.2" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.8s" }} />
+                      <circle cx="127" cy="168" r="3.4" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.2" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.8s" }} />
+                      <circle cx="58" cy="128" r="3.4" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.2" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "1s" }} />
+                      <circle cx="162" cy="128" r="3.4" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.2" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "1s" }} />
+                      <circle cx="110" cy="212" r="3.8" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.3" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "1.2s" }} />
+                      <text x="118" y="48" fontSize="9" fill="white" fillOpacity="0.98" fontFamily="sans-serif" fontWeight="700" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">이마</text>
+                      <text x="40" y="101" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">눈</text>
+                      <text x="148" y="101" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">눈</text>
+                      <text x="116" y="140" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">코</text>
+                      <text x="18" y="130" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">광대</text>
+                      <text x="166" y="130" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">광대</text>
+                      <text x="116" y="182" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">입</text>
+                      <text x="116" y="215" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">턱</text>
+                    </svg>
+                  </div>
+                  <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+                    <span className="text-[10px] font-black text-[#C9571A] tracking-[0.3em] uppercase opacity-70">AI SCANNING</span>
+                  </div>
+                </div>
+                <div className="mt-4 rounded-2xl bg-gray-50 border border-gray-200 px-4 py-4">
+                  <div className="flex items-end justify-between gap-4">
                     <div>
                       <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-widest mb-1">얼굴형</p>
-                      <p className="text-[28px] font-black text-white leading-tight">{physio.face_type}</p>
+                      <p className="text-[26px] font-black text-gray-900 leading-tight">{physio.face_type}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">캐릭터</p>
@@ -900,7 +1032,7 @@ export default function AuditionResult() {
               <div className="flex flex-col gap-2.5">
                 {physio.strengths.map((s, i) => (
                   <div key={i} className="flex items-start gap-3 bg-green-50 rounded-xl px-4 py-3.5 border border-green-100">
-                    <span className="text-[16px] mt-0.5 flex-shrink-0">✦</span>
+                    <span className="w-8 h-8 rounded-full bg-[#22c55e] text-white flex items-center justify-center text-[15px] font-black shadow-[0_6px_16px_rgba(34,197,94,0.28)] flex-shrink-0">✦</span>
                     <p className="text-[13px] text-gray-800 leading-snug">{s}</p>
                   </div>
                 ))}
@@ -911,7 +1043,7 @@ export default function AuditionResult() {
               <div className="flex flex-col gap-2.5">
                 {physio.weaknesses.map((w, i) => (
                   <div key={i} className="flex items-start gap-3 bg-orange-50 rounded-xl px-4 py-3.5 border border-orange-100">
-                    <span className="text-[14px] mt-0.5 flex-shrink-0">⚠</span>
+                    <span className="w-8 h-8 rounded-full bg-[#f97316] text-white flex items-center justify-center text-[15px] font-black shadow-[0_6px_16px_rgba(249,115,22,0.28)] flex-shrink-0">!</span>
                     <p className="text-[13px] text-gray-800 leading-snug">{w}</p>
                   </div>
                 ))}

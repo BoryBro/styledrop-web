@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 // ── 타이핑 훅 ──────────────────────────────────────────────────
 function useTypewriter(lines: string[], speed = 60, pause = 1800) {
@@ -277,57 +278,68 @@ export default function AuditionIntroPage() {
           <p className="text-[26px] font-black text-white leading-tight">얼굴에는<br />숨겨진 배역이 있다.</p>
         </div>
 
-        {/* 다크 SVG 얼굴 분석 시각화 */}
+        {/* 다크 얼굴 분석 시각화 */}
         <div className="mx-6 rounded-3xl overflow-hidden bg-[#111] border border-white/10 flex items-center justify-center py-8 relative">
-          {/* 배경 글로우 */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div style={{ width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,87,26,0.12) 0%, transparent 70%)' }} />
+          <div className="relative z-[1] h-[270px] w-[220px]">
+            <div className="absolute inset-0 rounded-[32px] overflow-hidden">
+              <Image
+                src="/images/audition/physio-face.jpg"
+                alt="관상 분석용 얼굴 오버레이"
+                fill
+                sizes="220px"
+                className="object-cover scale-[1.12] brightness-[0.88] contrast-[1.08] saturate-[0.9]"
+                style={{ objectPosition: "center 28%" }}
+                priority
+              />
+            </div>
+            <div
+              className="absolute inset-0 rounded-[32px]"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 42%, rgba(255,255,255,0.14) 0%, rgba(201,87,26,0.1) 24%, rgba(0,0,0,0) 58%), linear-gradient(180deg, rgba(17,17,17,0.08) 0%, rgba(17,17,17,0.36) 100%)",
+              }}
+            />
+            <svg width="220" height="270" viewBox="0 0 220 270" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0">
+              <rect x="38" y="0" width="144" height="2" rx="1" fill="url(#scanGrad)" style={{ animation: "scan-line 3s ease-in-out infinite" }} />
+              <defs>
+                <linearGradient id="scanGrad" x1="0" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="transparent" />
+                  <stop offset="50%" stopColor="white" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="transparent" />
+                </linearGradient>
+              </defs>
+              <ellipse cx="110" cy="128" rx="78" ry="98" stroke="white" strokeWidth="1.15" strokeOpacity="0.52" strokeDasharray="5 4" />
+              <ellipse cx="110" cy="128" rx="60" ry="78" stroke="white" strokeWidth="0.75" strokeOpacity="0.18" />
+              <line x1="110" y1="50" x2="80" y2="103" stroke="white" strokeWidth="0.95" strokeOpacity="0.48" />
+              <line x1="110" y1="50" x2="140" y2="103" stroke="white" strokeWidth="0.95" strokeOpacity="0.48" />
+              <line x1="80" y1="103" x2="140" y2="103" stroke="white" strokeWidth="0.75" strokeOpacity="0.34" />
+              <line x1="80" y1="103" x2="110" y2="142" stroke="white" strokeWidth="0.95" strokeOpacity="0.48" />
+              <line x1="140" y1="103" x2="110" y2="142" stroke="white" strokeWidth="0.95" strokeOpacity="0.48" />
+              <line x1="110" y1="142" x2="93" y2="168" stroke="white" strokeWidth="0.9" strokeOpacity="0.42" />
+              <line x1="110" y1="142" x2="127" y2="168" stroke="white" strokeWidth="0.9" strokeOpacity="0.42" />
+              <line x1="93" y1="168" x2="110" y2="212" stroke="white" strokeWidth="0.85" strokeOpacity="0.34" />
+              <line x1="127" y1="168" x2="110" y2="212" stroke="white" strokeWidth="0.85" strokeOpacity="0.34" />
+              <line x1="58" y1="128" x2="80" y2="103" stroke="white" strokeWidth="0.8" strokeOpacity="0.3" />
+              <line x1="162" y1="128" x2="140" y2="103" stroke="white" strokeWidth="0.8" strokeOpacity="0.3" />
+              <circle cx="110" cy="50" r="4.2" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.4" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0s" }} />
+              <circle cx="80" cy="103" r="4.2" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.4" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.3s" }} />
+              <circle cx="140" cy="103" r="4.2" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.4" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.3s" }} />
+              <circle cx="110" cy="142" r="3.8" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.3" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.6s" }} />
+              <circle cx="93" cy="168" r="3.4" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.2" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.8s" }} />
+              <circle cx="127" cy="168" r="3.4" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.2" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.8s" }} />
+              <circle cx="58" cy="128" r="3.4" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.2" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "1s" }} />
+              <circle cx="162" cy="128" r="3.4" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.2" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "1s" }} />
+              <circle cx="110" cy="212" r="3.8" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.3" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "1.2s" }} />
+              <text x="118" y="48" fontSize="9" fill="white" fillOpacity="0.98" fontFamily="sans-serif" fontWeight="700" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">이마</text>
+              <text x="40" y="101" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">눈</text>
+              <text x="148" y="101" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">눈</text>
+              <text x="116" y="140" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">코</text>
+              <text x="18" y="130" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">광대</text>
+              <text x="166" y="130" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">광대</text>
+              <text x="116" y="182" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">입</text>
+              <text x="116" y="215" fontSize="9" fill="white" fillOpacity="0.9" fontFamily="sans-serif" fontWeight="600" stroke="rgba(0,0,0,0.35)" strokeWidth="0.35">턱</text>
+            </svg>
           </div>
-          <svg width="220" height="270" viewBox="0 0 220 270" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ position: 'relative', zIndex: 1 }}>
-            {/* 스캔 라인 */}
-            <rect x="38" y="0" width="144" height="2" rx="1" fill="url(#scanGrad)" style={{ animation: 'scan-line 3s ease-in-out infinite' }} />
-            <defs>
-              <linearGradient id="scanGrad" x1="0" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="transparent"/>
-                <stop offset="50%" stopColor="#C9571A" stopOpacity="0.8"/>
-                <stop offset="100%" stopColor="transparent"/>
-              </linearGradient>
-            </defs>
-            {/* 얼굴 윤곽 */}
-            <ellipse cx="110" cy="128" rx="78" ry="98" stroke="#C9571A" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="5 4"/>
-            <ellipse cx="110" cy="128" rx="60" ry="78" stroke="white" strokeWidth="0.5" strokeOpacity="0.06"/>
-            {/* 연결선 */}
-            <line x1="110" y1="50" x2="80" y2="103" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.35"/>
-            <line x1="110" y1="50" x2="140" y2="103" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.35"/>
-            <line x1="80" y1="103" x2="140" y2="103" stroke="#C9571A" strokeWidth="0.6" strokeOpacity="0.25"/>
-            <line x1="80" y1="103" x2="110" y2="142" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.35"/>
-            <line x1="140" y1="103" x2="110" y2="142" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.35"/>
-            <line x1="110" y1="142" x2="93" y2="168" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.3"/>
-            <line x1="110" y1="142" x2="127" y2="168" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.3"/>
-            <line x1="93" y1="168" x2="110" y2="212" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.25"/>
-            <line x1="127" y1="168" x2="110" y2="212" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.25"/>
-            <line x1="58" y1="128" x2="80" y2="103" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.2"/>
-            <line x1="162" y1="128" x2="140" y2="103" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.2"/>
-            {/* 핵심 포인트 점들 (애니메이션) */}
-            <circle cx="110" cy="50" r="4" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0s' }}/>
-            <circle cx="80" cy="103" r="4" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0.3s' }}/>
-            <circle cx="140" cy="103" r="4" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0.3s' }}/>
-            <circle cx="110" cy="142" r="3.5" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0.6s' }}/>
-            <circle cx="93" cy="168" r="3" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0.8s' }}/>
-            <circle cx="127" cy="168" r="3" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '0.8s' }}/>
-            <circle cx="58" cy="128" r="3" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '1s' }}/>
-            <circle cx="162" cy="128" r="3" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '1s' }}/>
-            <circle cx="110" cy="212" r="3.5" fill="#C9571A" style={{ animation: 'dot-pulse 2.2s ease-in-out infinite', animationDelay: '1.2s' }}/>
-            {/* 라벨 */}
-            <text x="118" y="48" fontSize="9" fill="#C9571A" fillOpacity="0.8" fontFamily="sans-serif" fontWeight="700">이마</text>
-            <text x="40" y="101" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">눈</text>
-            <text x="148" y="101" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">눈</text>
-            <text x="116" y="140" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">코</text>
-            <text x="18" y="130" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">광대</text>
-            <text x="166" y="130" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">광대</text>
-            <text x="116" y="182" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">입</text>
-            <text x="116" y="215" fontSize="9" fill="#9CA3AF" fontFamily="sans-serif">턱</text>
-          </svg>
           {/* AI SCANNING 라벨 */}
           <div className="absolute bottom-4 left-0 right-0 flex justify-center">
             <span className="text-[10px] font-black text-[#C9571A] tracking-[0.3em] uppercase opacity-70">AI SCANNING</span>
