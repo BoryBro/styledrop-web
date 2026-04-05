@@ -1,14 +1,29 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, Suspense, useMemo } from "react";
+import { useState, useRef, useCallback, useEffect, Suspense, useMemo, type ComponentClass } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import type ReactWebcam from "react-webcam";
+import type { WebcamProps } from "react-webcam";
 import { useAuth } from "@/hooks/useAuth";
 
 // SSR 비활성화 — react-webcam은 브라우저 전용
+// react-webcam의 타입 선언이 next/dynamic ref 타입과 맞지 않아 loader 반환만 느슨하게 맞춘다.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const Webcam = dynamic(() => import("react-webcam") as any, { ssr: false }) as React.ComponentType<any>;
+const Webcam = dynamic(() => import("react-webcam") as any, {
+  ssr: false,
+  loading: () => <div style={{ position: "absolute", inset: 0, background: "#111" }} />,
+}) as unknown as ComponentClass<WebcamProps>;
+
+const PHYSIO_FRAME_CLASS = "relative w-full aspect-square rounded-2xl overflow-hidden bg-[#111] border border-white/10";
+const PHYSIO_OVAL_STYLE = {
+  width: "62%",
+  aspectRatio: "3/4",
+  borderRadius: "50%",
+} as const;
+const HANDLE_WEBCAM_READY: WebcamProps["onUserMedia"] = () => undefined;
+const HANDLE_WEBCAM_ERROR: WebcamProps["onUserMediaError"] = () => undefined;
 
 // ── 장르 & 큐 데이터 ────────────────────────────────────────────────
 const GENRES = [
@@ -458,12 +473,11 @@ function AuditionSoloInner() {
   const [quizAnim, setQuizAnim] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [credits, setCredits] = useState<number>(0);
-  const [bubbleIdx, setBubbleIdx] = useState(0);
   const [physioCapture, setPhysioCapture] = useState<CaptureItem | null>(null);
   const [physioCountdown, setPhysioCountdown] = useState<number | null>(null);
   const [physioPreviewUrl, setPhysioPreviewUrl] = useState<string | null>(null);
   const [pendingCapture, setPendingCapture] = useState<CaptureItem | null>(null);
-  const webcamRef = useRef<{ getScreenshot: () => string | null }>(null);
+  const webcamRef = useRef<ReactWebcam | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const physioCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
@@ -479,6 +493,7 @@ function AuditionSoloInner() {
   }, []);
 
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current); }, []);
+  useEffect(() => () => { if (physioCountdownRef.current) clearInterval(physioCountdownRef.current); }, []);
 
   // 인증 + 크레딧 체크
   useEffect(() => {
@@ -502,7 +517,6 @@ function AuditionSoloInner() {
     if (captures.length < 3) { setStepIdx(captures.length); return; }
 
     setPhase("analyzing");
-    setBubbleIdx(0);
 
     const images = captures.map(c => c.base64);
     const previewDataUrl = captures[2].dataUrl;
@@ -547,21 +561,14 @@ function AuditionSoloInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [captures]);
 
-  // 말풍선 메시지 순환
-  useEffect(() => {
-    if (phase !== "analyzing") return;
-    const timer = setInterval(() => setBubbleIdx(i => (i + 1) % 9), 2200);
-    return () => clearInterval(timer);
-  }, [phase]);
-
-  const startCapture = () => {
+  const startCapture = useCallback(() => {
     const cues = selectedGenres.map(g => pickRandomCue(g));
     setStepCues(cues);
     setCaptures([]);
     setStepIdx(0);
     setPhysioCapture(null);
     setPhase("capture_physio_guide");
-  };
+  }, [selectedGenres]);
 
 
   const doCapture = useCallback(() => {
@@ -904,12 +911,6 @@ function AuditionSoloInner() {
   }
 
   // ── ANALYZING ────────────────────────────────────────────────────
-  const BUBBLE_MESSAGES = [
-    "뭘봐 이자식아 👁️", "좀만 기다려라 ☕", "너 표정 다보여 😏",
-    "기다려! 🐾", "왜냐고? 난 감독이니까 🎬", "심사 중이거든? 📋",
-    "눈치채지 마라 🤫", "조금만 더... 😤", "내 시간도 소중해 ⏰",
-  ];
-  const PIXEL_ANIMALS = ["🐶", "🐱", "🐸", "🦊", "🐨", "🐯", "🐻", "🦁", "🐼"];
   const lastPhoto = captures[2]?.dataUrl ?? captures[captures.length - 1]?.dataUrl;
 
   // ── 관상 촬영 가이드 ──────────────────────────────────────────────
@@ -941,12 +942,6 @@ function AuditionSoloInner() {
               <div className="absolute top-[58%] left-[50%] -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#C9571A]/50" />
               <div className="absolute top-[72%] left-[50%] -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#C9571A]/50" />
             </div>
-          </div>
-
-          {/* 1회 경고 */}
-          <div className="bg-[#FFF3EE] border border-[#C9571A]/30 rounded-2xl px-4 py-3 flex items-center gap-3">
-            <span className="text-[20px] flex-shrink-0">⚠️</span>
-            <p className="text-[13px] font-black text-[#C9571A] leading-snug">관상 사진은 1회만 촬영 가능합니다.<br /><span className="font-medium text-[#C9571A]/80">촬영 후 다시 찍을 수 없으니 조건을 꼭 확인하세요.</span></p>
           </div>
 
           {/* 촬영 조건 */}
@@ -992,17 +987,17 @@ function AuditionSoloInner() {
             <span className="text-[13px] font-bold text-white/60">촬영 확인</span>
             <span className="text-[11px] font-bold text-[#C9571A] bg-[#C9571A]/15 px-3 py-1 rounded-full">관상 사진</span>
           </header>
-          <main className="flex-1 flex flex-col px-4 py-4 gap-4 min-h-0">
+          <main className="flex-1 flex flex-col px-4 py-4 gap-4">
             <p className="text-[14px] font-bold text-white text-center">이 사진으로 관상 분석을 진행할까요?</p>
-            <div className="relative flex-1 rounded-2xl overflow-hidden bg-[#111] border border-white/10 min-h-0">
+            <div className={PHYSIO_FRAME_CLASS}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={physioPreviewUrl} alt="관상 사진" className="absolute inset-0 w-full h-full object-cover" />
               {/* 타원 오버레이 */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div style={{ width: "62%", aspectRatio: "3/4", borderRadius: "50%", border: "2px solid rgba(201,87,26,0.6)" }} />
+                <div style={{ ...PHYSIO_OVAL_STYLE, border: "2px solid rgba(201,87,26,0.6)" }} />
               </div>
             </div>
-            <div className="flex gap-3 flex-shrink-0">
+            <div className="mt-auto flex gap-3">
               <button
                 onClick={() => setPhysioPreviewUrl(null)}
                 className="flex-1 bg-white/10 border border-white/20 text-white font-bold py-4 rounded-2xl text-[15px] transition-colors"
@@ -1035,10 +1030,15 @@ function AuditionSoloInner() {
 
         <main className="flex-1 flex flex-col px-4 py-3 gap-3 min-h-0">
           {/* 웹캠 1:1 + 타원 오버레이 */}
-          <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#111] border border-white/10 flex-shrink-0">
+          <div className={PHYSIO_FRAME_CLASS}>
             <Webcam
               ref={webcamRef}
               audio={false}
+              disablePictureInPicture={true}
+              forceScreenshotSourceSize={false}
+              imageSmoothing={true}
+              onUserMedia={HANDLE_WEBCAM_READY}
+              onUserMediaError={HANDLE_WEBCAM_ERROR}
               screenshotFormat="image/jpeg"
               screenshotQuality={0.9}
               videoConstraints={VIDEO_CONSTRAINTS}
@@ -1049,9 +1049,7 @@ function AuditionSoloInner() {
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
               <div
                 style={{
-                  width: "62%",
-                  aspectRatio: "3/4",
-                  borderRadius: "50%",
+                  ...PHYSIO_OVAL_STYLE,
                   border: "2.5px dashed rgba(201,87,26,0.75)",
                   boxShadow: "0 0 0 9999px rgba(0,0,0,0.45)",
                 }}
@@ -1231,6 +1229,11 @@ function AuditionSoloInner() {
           <Webcam
             ref={webcamRef}
             audio={false}
+            disablePictureInPicture={true}
+            forceScreenshotSourceSize={false}
+            imageSmoothing={true}
+            onUserMedia={HANDLE_WEBCAM_READY}
+            onUserMediaError={HANDLE_WEBCAM_ERROR}
             screenshotFormat="image/jpeg"
             screenshotQuality={0.85}
             videoConstraints={VIDEO_CONSTRAINTS}

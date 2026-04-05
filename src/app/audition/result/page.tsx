@@ -43,6 +43,14 @@ const GENRE_EMOJIS: Record<string, string> = {
 };
 
 const SCORE_LABELS = ["이해도", "표정연기", "창의성", "몰입도"] as const;
+const IS_LOCAL_PREVIEW = process.env.NODE_ENV !== "production";
+const LOCAL_PHYSIO_FALLBACK = "/images/audition/physio-face.jpg";
+const LOCAL_PREVIEW_CHANGELOG = [
+  "관상 분석 결과에 관상 사진 오버레이 레이아웃을 추가했습니다.",
+  "얼굴형, 강점, 주의점, 캐릭터, 최적 장르를 탭으로 나눠서 확인할 수 있게 바꿨습니다.",
+  "아키타입 설명은 사진 아래 한 줄 브리프로 분리해 가독성을 높였습니다.",
+  "사진이 없을 때는 기존 카드형 요약 UI가 자연스럽게 fallback 되도록 유지했습니다.",
+] as const;
 
 // ── 관상학 실제 지식 DB ───────────────────────────────────────────
 const FACE_TYPE_GUIDE: Record<string, { desc: string; acting: string; caution: string; tip: string }> = {
@@ -310,7 +318,7 @@ export default function AuditionResult() {
   const [genres, setGenres] = useState<GenreMeta[]>([]);
   const [phase, setPhase] = useState<Phase>("generating");
   const [activeSceneTab, setActiveSceneTab] = useState(0);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMsg] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
@@ -320,6 +328,9 @@ export default function AuditionResult() {
   const [shareRewardToast, setShareRewardToast] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [referralCopied, setReferralCopied] = useState(false);
+  const [physioPhoto, setPhysioPhoto] = useState<string | null>(null);
+  const [activePhysioTab, setActivePhysioTab] = useState(0);
+  const [showLocalChangelog, setShowLocalChangelog] = useState(IS_LOCAL_PREVIEW);
   const cachedShareId = useRef<string | null>(null);
   const stillImageRef = useRef<string | null>(null);
   const router = useRouter();
@@ -329,12 +340,15 @@ export default function AuditionResult() {
     const raw = sessionStorage.getItem("sd_au_result");
     const imagesRaw = sessionStorage.getItem("sd_au_images");
     const genreRaw = sessionStorage.getItem("sd_au_genres");
+    const physioRaw = sessionStorage.getItem("sd_au_physio");
 
     if (!raw) { router.replace("/audition/solo"); return; }
     try {
       const parsed: AuditionResult = JSON.parse(raw);
       setResult(parsed);
       if (genreRaw) setGenres(JSON.parse(genreRaw));
+      if (physioRaw) setPhysioPhoto(physioRaw);
+      else if (IS_LOCAL_PREVIEW) setPhysioPhoto(LOCAL_PHYSIO_FALLBACK);
 
       const photos: string[] = imagesRaw ? JSON.parse(imagesRaw) : [];
       setUserPhotos(photos);
@@ -553,6 +567,37 @@ export default function AuditionResult() {
       </header>
 
       <div className="max-w-sm mx-auto px-5 pb-40">
+        {IS_LOCAL_PREVIEW && (
+          <section className="pt-5">
+            <div className="rounded-2xl border border-[#C9571A]/20 bg-[#FFF7F2] px-4 py-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.25em] mb-1">Local Preview</p>
+                  <p className="text-[16px] font-black text-gray-900">이 페이지 수정 내역</p>
+                  <p className="text-[12px] text-gray-500 mt-1">로컬 테스트에서만 보이는 개발용 안내입니다.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowLocalChangelog(v => !v)}
+                  className="flex-shrink-0 rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-gray-600 border border-gray-200"
+                >
+                  {showLocalChangelog ? "접기" : "펼치기"}
+                </button>
+              </div>
+
+              {showLocalChangelog && (
+                <div className="mt-4 flex flex-col gap-2.5">
+                  {LOCAL_PREVIEW_CHANGELOG.map((item) => (
+                    <div key={item} className="flex items-start gap-2.5 rounded-xl bg-white px-3.5 py-3 border border-white/80">
+                      <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#C9571A]" />
+                      <p className="text-[13px] leading-relaxed text-gray-700">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* ══ SECTION 1: 배역 판정 HERO ════════════════════ */}
         <section className="pt-10 pb-10 border-b border-gray-100">
@@ -756,121 +801,159 @@ export default function AuditionResult() {
         {physio && (
           <section className="py-10 border-b border-gray-100">
             <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Physiognomy Analysis</p>
-            <p className="text-[22px] font-black text-gray-900 mb-1">관상학 정밀 분석</p>
-            <p className="text-[13px] text-gray-500 mb-8">얼굴 특징을 기반으로 배우로서의 가능성과 주의점을 분석합니다.</p>
+            <p className="text-[22px] font-black text-gray-900 mb-5">관상학 정밀 분석</p>
 
-            {/* 얼굴형 + 아키타입 */}
-            <div className="bg-gray-900 rounded-2xl px-5 py-5 mb-5 text-white">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">얼굴형</p>
-                  <p className="text-[22px] font-black">{physio.face_type}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">캐릭터 아키타입</p>
-                  <p className="text-[14px] font-black text-[#C9571A]">{physio.archetype}</p>
-                </div>
-              </div>
-              <p className="text-[13px] text-gray-300 leading-relaxed">{physio.archetype_reason}</p>
-            </div>
-
-            {/* 얼굴형 관상학 해설 */}
-            {faceGuide && (
-              <div className="mb-5">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">얼굴형 관상 해설</p>
-                <div className="bg-gray-50 rounded-2xl px-5 py-5 border border-gray-100">
-                  <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{faceGuide.desc}</p>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] mt-1.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-0.5">적합 배역</p>
-                        <p className="text-[13px] text-gray-700">{faceGuide.acting}</p>
-                      </div>
+            {/* 관상 사진 + 얼굴형/아키타입 오버레이 */}
+            {physioPhoto && (
+              <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 mb-6">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={physioPhoto} alt="관상 사진" className="w-full h-full object-cover" />
+                {/* 하단 오버레이 */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-5 pb-5 pt-10">
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-widest mb-1">얼굴형</p>
+                      <p className="text-[28px] font-black text-white leading-tight">{physio.face_type}</p>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] mt-1.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-0.5">주의할 점</p>
-                        <p className="text-[13px] text-gray-700">{faceGuide.caution}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#C9571A] mt-1.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-0.5">개선 방법</p>
-                        <p className="text-[13px] text-gray-700">{faceGuide.tip}</p>
-                      </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">캐릭터</p>
+                      <p className="text-[13px] font-black text-[#C9571A] leading-tight">{physio.archetype}</p>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* 강점 */}
-            <div className="mb-5">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">관상학적 강점</p>
+            {/* 얼굴형 + 아키타입 — 사진 없을 때만 */}
+            {!physioPhoto && (
+              <div className="bg-gray-900 rounded-2xl px-5 py-5 mb-5 text-white">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">얼굴형</p>
+                    <p className="text-[22px] font-black">{physio.face_type}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">캐릭터</p>
+                    <p className="text-[14px] font-black text-[#C9571A]">{physio.archetype}</p>
+                  </div>
+                </div>
+                <p className="text-[13px] text-gray-300 leading-relaxed">{physio.archetype_reason}</p>
+              </div>
+            )}
+
+            {/* 아키타입 한줄 설명 (사진 있을 때) */}
+            {physioPhoto && (
+              <div className="flex gap-3 mb-5">
+                <div className="w-[3px] rounded-full bg-[#C9571A] flex-shrink-0 self-stretch" />
+                <p className="text-[14px] text-gray-700 leading-relaxed">{physio.archetype_reason}</p>
+              </div>
+            )}
+
+            {/* 탭 네비게이션 */}
+            <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+              {["얼굴형 해설", "강점", "주의점", "캐릭터", "최적 장르"].map((tab, i) => (
+                <button
+                  key={tab}
+                  onClick={() => setActivePhysioTab(i)}
+                  className={`flex-shrink-0 px-3.5 py-2 rounded-xl text-[12px] font-black transition-all ${
+                    activePhysioTab === i
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* 탭 콘텐츠 */}
+            {activePhysioTab === 0 && faceGuide && (
+              <div className="flex flex-col gap-4">
+                <p className="text-[14px] text-gray-700 leading-relaxed">{faceGuide.desc}</p>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-start gap-3 bg-green-50 rounded-xl px-4 py-3.5 border border-green-100">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] mt-1.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-0.5">적합 배역</p>
+                      <p className="text-[13px] text-gray-700">{faceGuide.acting}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 bg-orange-50 rounded-xl px-4 py-3.5 border border-orange-100">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] mt-1.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-0.5">주의할 점</p>
+                      <p className="text-[13px] text-gray-700">{faceGuide.caution}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 bg-gray-50 rounded-xl px-4 py-3.5 border border-gray-100">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C9571A] mt-1.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-0.5">개선 방법</p>
+                      <p className="text-[13px] text-gray-700">{faceGuide.tip}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activePhysioTab === 1 && (
               <div className="flex flex-col gap-2.5">
                 {physio.strengths.map((s, i) => (
                   <div key={i} className="flex items-start gap-3 bg-green-50 rounded-xl px-4 py-3.5 border border-green-100">
-                    <span className="text-[16px] mt-0.5">✦</span>
+                    <span className="text-[16px] mt-0.5 flex-shrink-0">✦</span>
                     <p className="text-[13px] text-gray-800 leading-snug">{s}</p>
                   </div>
                 ))}
               </div>
-            </div>
+            )}
 
-            {/* 약점 + 개선 */}
-            <div className="mb-5">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">주의할 점 & 개선 방법</p>
+            {activePhysioTab === 2 && (
               <div className="flex flex-col gap-2.5">
                 {physio.weaknesses.map((w, i) => (
-                  <div key={i} className="bg-orange-50 rounded-xl px-4 py-4 border border-orange-100">
-                    <div className="flex items-start gap-2 mb-2">
-                      <span className="text-[14px] mt-0.5">⚠</span>
-                      <p className="text-[13px] text-gray-800 leading-snug font-medium">{w}</p>
-                    </div>
+                  <div key={i} className="flex items-start gap-3 bg-orange-50 rounded-xl px-4 py-3.5 border border-orange-100">
+                    <span className="text-[14px] mt-0.5 flex-shrink-0">⚠</span>
+                    <p className="text-[13px] text-gray-800 leading-snug">{w}</p>
                   </div>
                 ))}
               </div>
-            </div>
+            )}
 
-            {/* 아키타입 가이드 */}
-            {archetypeGuide && (
-              <div className="mb-5">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">아키타입 심층 분석</p>
-                <div className="border border-gray-200 rounded-2xl overflow-hidden">
-                  <div className="bg-gray-900 px-5 py-4">
-                    <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1">{physio.archetype}</p>
-                    <p className="text-[13px] text-gray-300 leading-relaxed">{archetypeGuide.summary}</p>
-                  </div>
-                  <div className="flex flex-col divide-y divide-gray-100">
-                    {[
-                      { icon: "💪", label: "핵심 강점", content: archetypeGuide.strength },
-                      { icon: "🎯", label: "사각지대", content: archetypeGuide.blind_spot },
-                      { icon: "📌", label: "감독의 조언", content: archetypeGuide.advice },
-                    ].map(item => (
-                      <div key={item.label} className="flex gap-3 px-5 py-4">
-                        <span className="text-[16px] flex-shrink-0 mt-0.5">{item.icon}</span>
-                        <div>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">{item.label}</p>
-                          <p className="text-[13px] text-gray-700 leading-snug">{item.content}</p>
-                        </div>
+            {activePhysioTab === 3 && archetypeGuide && (
+              <div className="border border-gray-200 rounded-2xl overflow-hidden">
+                <div className="bg-gray-900 px-5 py-4">
+                  <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1">{physio.archetype}</p>
+                  <p className="text-[13px] text-gray-300 leading-relaxed">{archetypeGuide.summary}</p>
+                </div>
+                <div className="flex flex-col divide-y divide-gray-100">
+                  {[
+                    { icon: "💪", label: "핵심 강점", content: archetypeGuide.strength },
+                    { icon: "🎯", label: "사각지대", content: archetypeGuide.blind_spot },
+                    { icon: "📌", label: "감독의 조언", content: archetypeGuide.advice },
+                  ].map(item => (
+                    <div key={item.label} className="flex gap-3 px-5 py-4">
+                      <span className="text-[16px] flex-shrink-0 mt-0.5">{item.icon}</span>
+                      <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">{item.label}</p>
+                        <p className="text-[13px] text-gray-700 leading-snug">{item.content}</p>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* 최적 장르 + 관상 총평 */}
-            <div className="bg-gray-50 rounded-2xl px-5 py-5 border border-gray-100">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-[11px] font-black text-[#C9571A] tracking-widest uppercase">최적 장르</span>
-                <span className="text-[13px] font-black text-gray-900">{GENRE_EMOJIS[physio.best_genre] ?? "🎬"} {physio.best_genre}</span>
+            {activePhysioTab === 4 && (
+              <div className="bg-gray-50 rounded-2xl px-5 py-5 border border-gray-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[22px]">{GENRE_EMOJIS[physio.best_genre] ?? "🎬"}</span>
+                  <div>
+                    <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-widest mb-0.5">최적 장르</p>
+                    <p className="text-[18px] font-black text-gray-900">{physio.best_genre}</p>
+                  </div>
+                </div>
+                <p className="text-[14px] text-gray-700 leading-relaxed">{physio.verdict}</p>
               </div>
-              <p className="text-[14px] text-gray-700 leading-relaxed">{physio.verdict}</p>
-            </div>
+            )}
           </section>
         )}
 
