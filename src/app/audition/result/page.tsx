@@ -348,7 +348,7 @@ export default function AuditionResult() {
       setResult(parsed);
       if (genreRaw) setGenres(JSON.parse(genreRaw));
       if (physioRaw) setPhysioPhoto(physioRaw);
-      else if (IS_LOCAL_PREVIEW) setPhysioPhoto(LOCAL_PHYSIO_FALLBACK);
+      else setPhysioPhoto(LOCAL_PHYSIO_FALLBACK);
 
       const photos: string[] = imagesRaw ? JSON.parse(imagesRaw) : [];
       setUserPhotos(photos);
