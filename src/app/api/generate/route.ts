@@ -34,6 +34,13 @@ const SELFIE_REALISM_LOCK = `FACE & CAMERA:
 - Maintain a natural selfie or portrait feel, not an over-generated fantasy face
 - Do not over-smooth the face or erase unique facial details`;
 
+const HUMOR_REALISM_LOCK = `REAL-WORLD HUMOR LOCK:
+- The image should be funny because of the situation, outfit, prop, or setting, not because the face is distorted
+- Keep the subject as the same recognizable person
+- Make it feel like a real candid or documentary photo someone accidentally took
+- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
+- One person only, clear focus, believable Korean everyday setting`;
+
 // 2D 구조: STYLE_PROMPTS[styleId][variant]
 // 서브 옵션이 없는 스타일은 "default" 키만 가짐
 const STYLE_PROMPTS: Record<string, Record<string, string>> = {
@@ -616,6 +623,395 @@ STRICT RULES:
 - Do not turn it into a cartoon filter
 - Keep the user recognizable and flattering`
   },
+  "jjimjilbang-master": {
+    "egg": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a classic Korean jjimjilbang candid photo.
+
+SCENE:
+- Warm indoor Korean sauna lounge or resting hall
+- Yellow-brown heated floor mats, wooden walls, casual lounge area
+- The subject wears a jjimjilbang outfit and the iconic sheep-head towel
+- Holding two baked eggs and a cup of sikhye
+
+MOOD:
+- Slightly over-serious expression inside an obviously mundane, funny situation
+- Feels like a real phone photo taken by a friend
+
+PHOTO STYLE:
+- Flat indoor lighting, slight phone-camera noise, realistic candid framing
+- Keep the face natural and recognizable`,
+    "nap": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean jjimjilbang resting-area snapshot.
+
+SCENE:
+- Spacious heated floor room with blankets, mats, and a casual sauna atmosphere
+- The subject lies or reclines lazily in jjimjilbang clothes with a sheep-head towel
+- One arm as a pillow, relaxed exhausted vibe, maybe a folded blanket nearby
+
+MOOD:
+- Unfiltered human-life comedy, comfy and slightly embarrassing
+
+PHOTO STYLE:
+- Realistic overhead or side-angle candid phone photo
+- Slightly dim indoor light, no glamorization, believable face preservation`
+  },
+  "pcbang-legend": {
+    "ramen": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a late-night Korean PC bang candid scene.
+
+SCENE:
+- Neon-lit PC bang with RGB keyboards and gaming monitors
+- The subject sits in a gaming chair wearing a headset
+- Cup ramen, energy drink, and casual clutter on the desk
+- Tired but committed expression, as if still queueing for another game
+
+PHOTO STYLE:
+- Flash or monitor-lit candid photo
+- Realistic digital noise and slightly cool lighting
+- Funny because it feels too real, not because it is exaggerated`,
+    "ranked": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean PC bang ranked-game meltdown moment.
+
+SCENE:
+- Subject in a gaming headset at a PC station, intense keyboard and mouse posture
+- Bright game monitor glow on the face
+- Slightly messy desk, keyboard, mousepad, convenience-store drink
+
+MOOD:
+- Spiritually exhausted but refusing to log off
+- Candid, painfully relatable, very realistic
+
+PHOTO STYLE:
+- Screen glow plus weak flash, sharp face focus, documentary gamer snapshot`
+  },
+  "hiking-club": {
+    "summit": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean hiking-club summit photo.
+
+SCENE:
+- Mountain summit with a stone summit marker
+- The subject wears realistic hiking gear: windbreaker, hiking pants, cap or visor, backpack
+- Slightly awkward proud pose holding trekking poles or a small towel
+
+MOOD:
+- Honest middle-of-the-hike triumph, unintentionally funny and charming
+
+PHOTO STYLE:
+- Bright outdoor daylight, slightly harsh phone-camera realism
+- Real mountain air, no glamour, recognizable face preserved`,
+    "break": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean hiking rest-stop candid.
+
+SCENE:
+- Wooden deck, bench, or mountain rest area
+- Subject in hiking clothes with a small backpack
+- Holding kimbap, hot coffee, or an energy jelly during a break
+
+MOOD:
+- Sweaty, realistic, living their best awkward mountain life
+
+PHOTO STYLE:
+- Casual natural-light snapshot
+- Slightly flushed cheeks and real-world hiking texture, no beautified fantasy`
+  },
+  "karaoke-queen": {
+    "ballad": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean karaoke-room ballad moment.
+
+SCENE:
+- Small noraebang room with colored lights, sofa bench, screen, and mic
+- The subject holds a microphone seriously with overcommitted emotion
+- Tambourine on the table, half-finished drinks nearby
+
+MOOD:
+- Deeply sincere in a slightly ridiculous setting
+- Funny because the subject is taking it too seriously
+
+PHOTO STYLE:
+- Flashy but realistic room lighting, candid friend-photo feeling`,
+    "dance": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a chaotic Korean karaoke dance-song snapshot.
+
+SCENE:
+- Noraebang room with party lights and a standing mic
+- Subject waving a tambourine or dancing with exaggerated energy
+- Dynamic but still believable pose, one-person focus
+
+MOOD:
+- High-energy, goofy, lovable, the kind of photo friends save forever
+
+PHOTO STYLE:
+- Direct flash, vivid room lights, slight motion blur in limbs but face still recognizable`
+  },
+  "mart-flyer": {
+    "produce": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a hyper-local Korean grocery flyer model shot.
+
+SCENE:
+- Local supermarket produce corner
+- Subject poses too earnestly holding napa cabbage, green onions, or a basket of vegetables
+- Apron or simple market vest allowed, no brand logos or readable text
+
+MOOD:
+- Cheerful but slightly awkward, funny because it feels like a real neighborhood ad
+
+PHOTO STYLE:
+- Flat retail lighting, realistic storefront photography, very local and sincere`,
+    "promo": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a neighborhood supermarket promotion photo.
+
+SCENE:
+- Entry area of a small Korean mart
+- Subject in casual promo styling, pointing toward stacks of discounted goods
+- Bright sale atmosphere, but avoid readable numbers or text signs
+
+MOOD:
+- Enthusiastic local-ad energy, slightly chaotic and very funny
+
+PHOTO STYLE:
+- Practical commercial snapshot, not polished fashion photography`
+  },
+  "service-area-snack": {
+    "hotdog": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean highway rest-stop food snapshot.
+
+SCENE:
+- Service area outdoor table or snack stand
+- Subject holding a huge corndog or hot bar snack with travel-weary styling
+- Windbreaker, tote, or backpack for road-trip realism
+
+MOOD:
+- Funny because it feels extremely real and unglamorous in a lovable way
+
+PHOTO STYLE:
+- Natural daylight or evening service-area light
+- Real smartphone snapshot, lightly unposed`,
+    "rest": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean service-area rest moment.
+
+SCENE:
+- Rest-stop bench, parking lot, buses and cars in the background
+- Subject looks slightly tired, holding coffee, chestnut snack, or bottled drink
+- Casual travel outfit, believable road-trip styling
+
+MOOD:
+- Long-distance drive fatigue but still somehow iconic
+
+PHOTO STYLE:
+- Documentary road-trip candid, realistic colors, no fantasy polish`
+  },
+  "retreat-staff": {
+    "whistle": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean school retreat staff snapshot.
+
+SCENE:
+- School gym or indoor hall
+- Subject wears a printed staff T-shirt, whistle, and practical training-pants outfit
+- Holding a mic, clipboard, or whistle while looking overly serious
+
+MOOD:
+- Camp authority energy that is unintentionally funny
+
+PHOTO STYLE:
+- Indoor fluorescent light, slightly flat documentary photo, very believable`,
+    "campfire": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean overnight retreat campfire scene.
+
+SCENE:
+- Night outdoor training ground or campfire setup
+- Subject leading games or announcements with a microphone
+- Hoodie or event staff jacket, practical and slightly chaotic
+
+MOOD:
+- Earnest youth-retreat energy, endearingly awkward
+
+PHOTO STYLE:
+- Flash-lit night snapshot with dark background and warm fire or stage light accents`
+  },
+  "wedding-guest-chaos": {
+    "buffet": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean wedding guest candid at the buffet line.
+
+SCENE:
+- Wedding hall buffet area with elegant but busy atmosphere
+- Subject dressed up as a wedding guest, holding a plate or waiting in line
+- Nice outfit, but the timing and angle are hilariously ordinary
+
+MOOD:
+- Dressed beautifully, photographed at the least glamorous moment
+
+PHOTO STYLE:
+- Candid event photography with realistic indoor wedding lighting`,
+    "photo": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean wedding hall photo-table candid.
+
+SCENE:
+- Floral wedding photo wall or guest table area
+- Subject in polished guest styling, standing awkwardly for a quick photo
+- Formal but unintentionally funny posture
+
+MOOD:
+- Pretty but slightly uncomfortable, extremely real wedding-guest energy
+
+PHOTO STYLE:
+- Event flash snapshot, believable wedding-hall ambiance, no luxury editorial finish`
+  },
+  "baseball-date": {
+    "beer": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean baseball stadium candid photo.
+
+SCENE:
+- Stadium seats, field in the distance, crowd blurred behind
+- Subject holding a beer cup or snack tray in casual baseball-date styling
+- Cap or team-color scarf allowed, but no logos or readable text
+
+MOOD:
+- Relaxed, noisy, slightly messy, very real stadium-life comedy
+
+PHOTO STYLE:
+- Flash or stadium-light candid with lively background atmosphere`,
+    "cheer": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean baseball cheering snapshot.
+
+SCENE:
+- Subject mid-cheer with inflatable cheering stick or clapping pose
+- Stadium seating and crowd context visible
+- High-energy game moment, one-person focus
+
+MOOD:
+- Enthusiastic and slightly ridiculous in the best way
+
+PHOTO STYLE:
+- Action candid under stadium lights, face still clear and recognizable`
+  },
+  "pojangmacha-night": {
+    "soju": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a late-night Korean pojangmacha snapshot.
+
+SCENE:
+- Plastic tent bar, foldable table, orange street light, green bottles and side dishes
+- Subject seated on a small plastic chair with a tiny soju glass
+- Slightly tired but emotionally rich nighttime expression
+
+MOOD:
+- Human, funny, a little sentimental, accidentally iconic
+
+PHOTO STYLE:
+- Flash-lit night phone photo, warm-orange street tones, realistic candid framing`,
+    "fishcake": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+${HUMOR_REALISM_LOCK}
+
+Transform the uploaded photo into a Korean street pojangmacha fishcake-stand photo.
+
+SCENE:
+- Small street stall with steam, skewered fishcake, and night traffic nearby
+- Subject holding a paper cup of hot broth or fishcake skewer
+- Casual coat or hoodie, no polished styling
+
+MOOD:
+- End-of-day comfort food energy, quietly hilarious because it feels too real
+
+PHOTO STYLE:
+- Documentary night snapshot, slight steam haze, authentic Korean street mood`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -642,6 +1038,46 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "datecam-film":    { "default": [] },
   "city-pop-neon":   { "default": [] },
   "ulzzang-cam":     { "default": [] },
+  "jjimjilbang-master": {
+    "egg": [],
+    "nap": [],
+  },
+  "pcbang-legend": {
+    "ramen": [],
+    "ranked": [],
+  },
+  "hiking-club": {
+    "summit": [],
+    "break": [],
+  },
+  "karaoke-queen": {
+    "ballad": [],
+    "dance": [],
+  },
+  "mart-flyer": {
+    "produce": [],
+    "promo": [],
+  },
+  "service-area-snack": {
+    "hotdog": [],
+    "rest": [],
+  },
+  "retreat-staff": {
+    "whistle": [],
+    "campfire": [],
+  },
+  "wedding-guest-chaos": {
+    "buffet": [],
+    "photo": [],
+  },
+  "baseball-date": {
+    "beer": [],
+    "cheer": [],
+  },
+  "pojangmacha-night": {
+    "soju": [],
+    "fishcake": [],
+  },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
