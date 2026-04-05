@@ -332,7 +332,7 @@ export default function MyPage() {
                   <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {VISIBLE_STYLE_IDS.filter(styleId => (grouped[styleId] ?? []).length > 0).map((styleId) => {
                     const items = grouped[styleId] ?? [];
                     const latest = items[0];
@@ -341,10 +341,9 @@ export default function MyPage() {
                       <button
                         key={styleId}
                         onClick={() => setSelectedStyle(styleId)}
-                        className="flex items-center gap-4 bg-[#111] border border-white/5 rounded-2xl px-4 py-3.5 hover:border-white/15 transition-colors text-left"
+                        className="flex flex-col gap-3 bg-[#111] border border-white/5 rounded-2xl p-3 hover:border-white/15 transition-colors text-left min-w-0"
                       >
-                        {/* 썸네일 */}
-                        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-[#1A1A1A]">
+                        <div className="relative w-full aspect-square rounded-xl overflow-hidden flex-shrink-0 bg-[#1A1A1A]">
                           {latest ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={latest.result_image_url} alt="" className="w-full h-full object-cover" />
@@ -354,27 +353,22 @@ export default function MyPage() {
                             </div>
                           )}
                         </div>
-                        {/* 텍스트 */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-bold text-[15px]">{STYLE_LABELS[styleId] ?? styleId}</p>
-                          <p className="text-[#555] text-[13px] mt-0.5">
+                        <div className="min-w-0">
+                          <p className="text-white font-bold text-[14px] leading-snug break-keep">{STYLE_LABELS[styleId] ?? styleId}</p>
+                          <p className="text-[#555] text-[12px] mt-1">
                             {`${items.length}장`}{latest && ` · ${relativeTime(latest.created_at)}`}
                           </p>
                           {expiry && (
-                            <span className={`inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full ${expiry.className}`}>
+                            <span className={`inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full ${expiry.className}`}>
                               {expiry.label}
                             </span>
                           )}
                         </div>
-                        {/* 화살표 */}
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#444] flex-shrink-0">
-                          <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
                       </button>
                     );
                   })}
                   {VISIBLE_STYLE_IDS.every(id => (grouped[id] ?? []).length === 0) && (
-                    <div className="flex flex-col items-center gap-3 py-12 text-center">
+                    <div className="col-span-2 flex flex-col items-center gap-3 py-12 text-center">
                       <p className="text-white/40 text-[15px]">아직 변환 기록이 없어요.</p>
                     </div>
                   )}
@@ -389,7 +383,7 @@ export default function MyPage() {
                   <h2 className="text-[16px] font-bold text-white">AI 오디션 기록</h2>
                   <span className="text-[12px] text-[#555]">24시간 보관</span>
                 </div>
-                <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {auditionHistory.map(item => {
                     const expiry = expiryBadge(item.created_at);
                     const scoreColor = item.avg_score >= 70 ? "#4ade80" : item.avg_score >= 45 ? "#f97316" : "#ef4444";
@@ -397,10 +391,9 @@ export default function MyPage() {
                       <a
                         key={item.id}
                         href={`/audition/share/${item.share_id}`}
-                        className="flex items-center gap-4 bg-[#111] border border-white/5 rounded-2xl px-4 py-3.5 hover:border-white/15 transition-colors"
+                        className="flex flex-col gap-3 bg-[#111] border border-white/5 rounded-2xl p-3 hover:border-white/15 transition-colors min-w-0"
                       >
-                        {/* 스틸컷 썸네일 */}
-                        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-[#1A1A1A]">
+                        <div className="w-full aspect-square rounded-xl overflow-hidden flex-shrink-0 bg-[#1A1A1A]">
                           {item.still_image_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={item.still_image_url} alt="" className="w-full h-full object-cover" />
@@ -408,23 +401,19 @@ export default function MyPage() {
                             <div className="w-full h-full flex items-center justify-center text-[#333] text-[22px]">🎬</div>
                           )}
                         </div>
-                        {/* 정보 */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-[11px] font-bold text-[#C9571A] uppercase tracking-widest">AI 오디션</span>
-                            <span className="text-[15px] font-extrabold" style={{ color: scoreColor }}>{item.avg_score}점</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-[10px] font-bold text-[#C9571A] uppercase tracking-widest">AI 오디션</span>
+                            <span className="text-[14px] font-extrabold tabular-nums" style={{ color: scoreColor }}>{item.avg_score}점</span>
                           </div>
-                          <p className="text-white/80 text-[13px] font-bold leading-snug truncate" style={{ fontStyle: "italic" }}>
+                          <p className="text-white/80 text-[13px] font-bold leading-snug break-keep">
                             {item.assigned_role}
                           </p>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex flex-col items-start gap-1.5 mt-2">
                             <span className="text-[11px] text-[#555]">{relativeTime(item.created_at)}</span>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${expiry.className}`}>{expiry.label}</span>
                           </div>
                         </div>
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#444] flex-shrink-0">
-                          <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
                       </a>
                     );
                   })}
@@ -544,35 +533,16 @@ export default function MyPage() {
 
         {!loading && !selectedStyle && (
           <section className="pt-2">
-            <div className="rounded-[28px] border border-[#C9571A]/20 bg-[linear-gradient(180deg,#17110E_0%,#0F0F0F_100%)] px-5 py-5">
-              <p className="text-[11px] font-black text-[#C9571A] uppercase tracking-[0.28em] mb-2">Home Screen</p>
-              <p className="text-[20px] font-black text-white leading-tight mb-2">StyleDrop을 앱처럼 꺼내 쓰기</p>
-              <p className="text-[13px] text-white/60 leading-relaxed mb-4">
-                아이폰과 안드로이드에서 홈 화면에 추가해두면 브라우저를 열지 않고도 더 빠르게 들어올 수 있습니다.
-              </p>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {[
-                  "빠른 실행",
-                  deferredInstallPrompt ? "안드로이드 즉시 설치" : "안드로이드 안내",
-                  "아이폰 안내",
-                ].map((item) => (
-                  <span key={item} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold text-white/70">
-                    {item}
-                  </span>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={handleInstallApp}
-                className="flex w-full items-center justify-center rounded-2xl bg-[#C9571A] px-4 py-3.5 text-[15px] font-bold text-white transition-colors hover:bg-[#B34A12]"
-              >
-                {isStandalone
-                  ? "이미 홈 화면에서 실행 중"
-                  : deferredInstallPrompt
-                    ? "홈 화면에 바로 추가"
-                    : "홈 화면 추가 방법 보기"}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleInstallApp}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#C9571A] px-4 py-3.5 text-[15px] font-bold text-white transition-colors hover:bg-[#B34A12]"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M9 2.5v7.5M9 10l-3-3M9 10l3-3M3 12.5v1a1.5 1.5 0 001.5 1.5h9A1.5 1.5 0 0015 13.5v-1" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              {isStandalone ? "이미 홈 화면에서 실행 중" : "StyleDrop 홈 화면에 바로가기 추가"}
+            </button>
           </section>
         )}
       </main>
