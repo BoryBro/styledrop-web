@@ -334,6 +334,57 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+function parseStoredValue<T>(value: unknown, fallback: T): T {
+  if (value == null) return fallback;
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return fallback;
+    }
+  }
+  return value as T;
+}
+
+function dataUrlPayload(src: string) {
+  return src.startsWith("data:") ? src.split(",")[1] ?? null : null;
+}
+
+async function blobToBase64Payload(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result !== "string") {
+        reject(new Error("이미지 인코딩 실패"));
+        return;
+      }
+      const payload = reader.result.split(",")[1];
+      if (!payload) {
+        reject(new Error("이미지 인코딩 실패"));
+        return;
+      }
+      resolve(payload);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("이미지 인코딩 실패"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function srcToBase64Payload(src: string | null | undefined): Promise<string | null> {
+  if (!src) return null;
+  const inlinePayload = dataUrlPayload(src);
+  if (inlinePayload) return inlinePayload;
+
+  try {
+    const response = await fetch(src);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return await blobToBase64Payload(blob);
+  } catch {
+    return null;
+  }
+}
+
 async function buildSaveCanvas(
   result: AuditionResult,
   bestScene: SceneResult,
@@ -462,7 +513,7 @@ export default function AuditionResult() {
   const [genres, setGenres] = useState<GenreMeta[]>([]);
   const [phase, setPhase] = useState<Phase>("generating");
   const [activeSceneTab, setActiveSceneTab] = useState(0);
-  const [errorMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
@@ -478,6 +529,7 @@ export default function AuditionResult() {
   const [selectedCardThemeId, setSelectedCardThemeId] = useState<CardTheme["id"]>("card-1");
   const [cardStickers, setCardStickers] = useState<CardSticker[]>([]);
   const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
+  const [historyShareId, setHistoryShareId] = useState<string | null | undefined>(undefined);
   const cachedShareId = useRef<string | null>(null);
   const stillImageRef = useRef<string | null>(null);
   const cardStageRef = useRef<HTMLDivElement | null>(null);
@@ -490,18 +542,104 @@ export default function AuditionResult() {
   });
   const router = useRouter();
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setHistoryShareId(params.get("history_share"));
+  }, []);
+
   // 분석 결과 로드 (무료 — 스틸컷 자동 생성 안 함)
   useEffect(() => {
+    let cancelled = false;
+
+    if (historyShareId === undefined) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const loadHistoryResult = async (shareId: string) => {
+      try {
+        const response = await fetch(`/api/audition/share?id=${encodeURIComponent(shareId)}`, { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? "기록 로드 실패");
+
+        const parsedResult = parseStoredValue<AuditionResult | null>(data.result_json, null);
+        if (!parsedResult || !Array.isArray(parsedResult.scenes) || parsedResult.scenes.length === 0) {
+          throw new Error("결과 데이터가 비어 있습니다.");
+        }
+
+        const parsedGenres = parseStoredValue<GenreMeta[]>(data.genres_json, []);
+        const rawBestSceneIdx = Number(data.best_scene_idx ?? 0);
+        const nextBestSceneIdx = clamp(
+          Number.isFinite(rawBestSceneIdx) ? rawBestSceneIdx : 0,
+          0,
+          parsedResult.scenes.length - 1
+        );
+
+        const storedUserPhotos = parseStoredValue<unknown[]>(data.user_photos_json, []);
+        let nextUserPhotos = (Array.isArray(storedUserPhotos) ? storedUserPhotos : []).map((photo) => (
+          typeof photo === "string" ? photo : ""
+        ));
+        if (
+          nextUserPhotos.every((photo) => !photo) &&
+          typeof data.user_photo_url === "string" &&
+          data.user_photo_url
+        ) {
+          nextUserPhotos = Array.from({ length: parsedResult.scenes.length }, (_, index) => (
+            index === nextBestSceneIdx ? data.user_photo_url : ""
+          ));
+        }
+
+        const nextStillImage = typeof data.still_image_url === "string" && data.still_image_url
+          ? data.still_image_url
+          : null;
+
+        if (cancelled) return;
+        cachedShareId.current = shareId;
+        stillImageRef.current = nextStillImage;
+        setResult(parsedResult);
+        setGenres(parsedGenres);
+        setUserPhotos(nextUserPhotos);
+        setStillImage(nextStillImage);
+        setBestSceneIdx(nextBestSceneIdx);
+        setPhysioPhoto(null);
+        setErrorMsg(null);
+        setPhase("ready");
+        return;
+      } catch {
+        if (cancelled) return;
+        setErrorMsg("결과 기록을 불러오지 못했어요.");
+        setPhase("error");
+      }
+    };
+
+    if (historyShareId) {
+      void loadHistoryResult(historyShareId);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     const raw = sessionStorage.getItem("sd_au_result");
     const imagesRaw = sessionStorage.getItem("sd_au_images");
     const genreRaw = sessionStorage.getItem("sd_au_genres");
     const physioRaw = sessionStorage.getItem("sd_au_physio");
 
-    if (!raw) { router.replace("/audition/solo"); return; }
+    if (!raw) {
+      router.replace("/audition/solo");
+      return () => {
+        cancelled = true;
+      };
+    }
+
     try {
       const parsed: AuditionResult = JSON.parse(raw);
+      cachedShareId.current = null;
+      stillImageRef.current = null;
+      setStillImage(null);
       setResult(parsed);
       if (genreRaw) setGenres(JSON.parse(genreRaw));
+      else setGenres([]);
       if (physioRaw) setPhysioPhoto(physioRaw);
       else setPhysioPhoto(LOCAL_PHYSIO_FALLBACK);
 
@@ -514,12 +652,16 @@ export default function AuditionResult() {
         return a > b ? i : best;
       }, 0);
       setBestSceneIdx(bestIdx);
+      setErrorMsg(null);
       setPhase("ready");
     } catch {
       router.replace("/audition/solo");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [historyShareId, router]);
 
   // 크레딧 + 유저 ID 조회
   useEffect(() => {
@@ -617,13 +759,49 @@ export default function AuditionResult() {
     setSelectedStickerId(null);
   }, []);
 
+  const buildShareRequestPayload = useCallback(async () => {
+    if (!result) throw new Error("결과가 없습니다.");
+    const bestPhoto = userPhotos[bestSceneIdx] ?? null;
+    const [userPhotoBase64, stillImageBase64, userPhotosBase64] = await Promise.all([
+      srcToBase64Payload(bestPhoto),
+      srcToBase64Payload(stillImageRef.current),
+      Promise.all(userPhotos.map((photo) => srcToBase64Payload(photo))),
+    ]);
+
+    return {
+      result,
+      genres,
+      bestSceneIdx,
+      userPhotoBase64,
+      userPhotosBase64,
+      stillImageBase64,
+    };
+  }, [bestSceneIdx, genres, result, userPhotos]);
+
+  const ensureShareId = useCallback(async () => {
+    if (cachedShareId.current) return cachedShareId.current;
+    const payload = await buildShareRequestPayload();
+    const response = await fetch("/api/audition/share", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.id) {
+      throw new Error(data.error ?? "공유 링크 생성 실패");
+    }
+    cachedShareId.current = data.id;
+    return data.id as string;
+  }, [buildShareRequestPayload]);
+
   // 스틸컷 생성 (5크레딧 소모)
   const handleGenerateStill = async () => {
     if (isGeneratingStill || !result) return;
     const photos: string[] = sessionStorage.getItem("sd_au_images")
       ? JSON.parse(sessionStorage.getItem("sd_au_images")!)
       : userPhotos;
-    const base64List = photos.map(p => p.split(",")[1]).filter(Boolean);
+    const photoPayloads = await Promise.all(photos.map((photo) => srcToBase64Payload(photo)));
+    const base64List = photoPayloads.filter((payload): payload is string => Boolean(payload));
     if (base64List.length === 0) return;
     setIsGeneratingStill(true);
     try {
@@ -648,9 +826,11 @@ export default function AuditionResult() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           result,
-          genres: genreRaw ? JSON.parse(genreRaw) : [],
+          genres: genreRaw ? JSON.parse(genreRaw) : genres,
           bestSceneIdx,
           stillImageBase64: data.image,
+          userPhotoBase64: photoPayloads[bestSceneIdx] ?? base64List[0] ?? null,
+          userPhotosBase64: photoPayloads,
         }),
       }).catch(() => {});
     } catch (err) {
@@ -702,21 +882,8 @@ export default function AuditionResult() {
     if (isSharing || !result) return;
     setIsSharing(true);
     try {
-      const bestPhoto = userPhotos[bestSceneIdx] ?? null;
-      const res = await fetch("/api/audition/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          result, genres, bestSceneIdx,
-          userPhotoBase64: bestPhoto ? bestPhoto.split(",")[1] : null,
-          userPhotosBase64: userPhotos.map(p => p ? p.split(",")[1] : null),
-          stillImageBase64: stillImageRef.current ? stillImageRef.current.split(",")[1] : null,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.id) throw new Error(json.error ?? "공유 링크 생성 실패");
-      cachedShareId.current = json.id;
-      const shareUrl = window.location.origin + "/audition/share/" + json.id;
+      const shareId = await ensureShareId();
+      const shareUrl = window.location.origin + "/audition/share/" + shareId;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const Kakao = (window as any).Kakao;
       if (!Kakao?.isInitialized()) Kakao?.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
@@ -739,24 +906,7 @@ export default function AuditionResult() {
     if (isCopying || !result) return;
     setIsCopying(true);
     try {
-      let id = cachedShareId.current;
-      if (!id) {
-        const bestPhoto = userPhotos[bestSceneIdx] ?? null;
-        const res = await fetch("/api/audition/share", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            result, genres, bestSceneIdx,
-            userPhotoBase64: bestPhoto ? bestPhoto.split(",")[1] : null,
-            userPhotosBase64: userPhotos.map(p => p ? p.split(",")[1] : null),
-            stillImageBase64: stillImageRef.current ? stillImageRef.current.split(",")[1] : null,
-          }),
-        });
-        const json = await res.json();
-        if (!res.ok || !json.id) throw new Error("링크 생성 실패");
-        id = json.id;
-        cachedShareId.current = id;
-      }
+      const id = await ensureShareId();
       await navigator.clipboard.writeText(window.location.origin + "/audition/share/" + id);
       setCopyToast(true);
       setTimeout(() => setCopyToast(false), 2500);
@@ -1429,8 +1579,7 @@ export default function AuditionResult() {
         {/* ══ SECTION 6: 공유 CTA ═══════════════════════════ */}
         <section className="pt-10 pb-4">
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Share</p>
-          <p className="text-[22px] font-black text-gray-900 mb-2">결과 공유하기</p>
-          <p className="text-[13px] text-[#C9571A] font-bold mb-6">📢 공유하면 1크레딧 지급! (최초 1회)</p>
+          <p className="text-[22px] font-black text-gray-900 mb-6">결과 공유하기</p>
 
           <div className="flex flex-col gap-3">
             <button
@@ -1447,6 +1596,8 @@ export default function AuditionResult() {
               )}
               {isSharing ? "링크 생성 중..." : "카카오로 공유하기"}
             </button>
+
+            <p className="px-1 text-[13px] font-bold text-[#C9571A]">📢 카카오로 공유하면 1크레딧 지급! (최초 1회)</p>
 
             <button
               onClick={handleCopyLink}

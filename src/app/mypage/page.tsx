@@ -388,9 +388,9 @@ export default function MyPage() {
                     const expiry = expiryBadge(item.created_at);
                     const scoreColor = item.avg_score >= 70 ? "#4ade80" : item.avg_score >= 45 ? "#f97316" : "#ef4444";
                     return (
-                      <a
+                      <Link
                         key={item.id}
-                        href={`/audition/share/${item.share_id}`}
+                        href={`/audition/result?history_share=${item.share_id}`}
                         className="flex flex-col gap-3 bg-[#111] border border-white/5 rounded-2xl p-3 hover:border-white/15 transition-colors min-w-0"
                       >
                         <div className="w-full aspect-square rounded-xl overflow-hidden flex-shrink-0 bg-[#1A1A1A]">
@@ -414,7 +414,7 @@ export default function MyPage() {
                             <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${expiry.className}`}>{expiry.label}</span>
                           </div>
                         </div>
-                      </a>
+                      </Link>
                     );
                   })}
                 </div>
