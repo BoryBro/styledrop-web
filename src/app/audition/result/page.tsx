@@ -1066,13 +1066,48 @@ export default function AuditionResult() {
             <div className="rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden">
               {/* 내 촬영컷 미리보기 */}
               {userPhotos[bestSceneIdx] && (
-                <div className="relative w-full aspect-square">
+                <div className="relative w-full aspect-square overflow-hidden bg-[#111]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={userPhotos[bestSceneIdx]} alt="내 연기" className="w-full h-full object-cover opacity-50" />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 gap-3">
-                    <span className="text-white text-[40px]">✦</span>
-                    <p className="text-white font-black text-[16px]">AI 스틸컷으로 변환</p>
-                    <p className="text-white/70 text-[12px] text-center px-8">이 장면을 영화 스틸컷 분위기로<br />AI가 다시 그려드립니다</p>
+                  <img
+                    src={userPhotos[bestSceneIdx]}
+                    alt="내 연기"
+                    className="w-full h-full object-cover opacity-20 scale-[1.06]"
+                  />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${userPhotos[bestSceneIdx]})`,
+                      backgroundPosition: "center",
+                      backgroundSize: "cover",
+                      filter: "blur(18px) saturate(0.65) brightness(0.58)",
+                      transform: "scale(1.08)",
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,8,8,0.34)_0%,rgba(8,8,8,0.52)_44%,rgba(8,8,8,0.68)_100%)]" />
+                  <div
+                    className="absolute inset-0 opacity-70"
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0 10px, rgba(0,0,0,0.14) 10px 20px), repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 10px, rgba(0,0,0,0.14) 10px 20px)",
+                    }}
+                  />
+                  <div className="absolute left-0 right-0 top-0 h-[72px] bg-gradient-to-b from-black/32 to-transparent" />
+                  <div className="absolute left-5 right-5 top-5 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.28em] text-white/55">
+                    <span>Locked Preview</span>
+                    <span>AI Still Cut</span>
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center p-7">
+                    <div className="w-full max-w-[280px] rounded-[28px] border border-white/10 bg-black/22 backdrop-blur-[2px] shadow-[0_24px_60px_rgba(0,0,0,0.28)] overflow-hidden">
+                      <div className="h-[52px] border-b border-white/8 bg-white/[0.03] flex items-center justify-between px-4">
+                        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-white/48">Generating</span>
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#C9571A] shadow-[0_0_18px_rgba(201,87,26,0.5)]" />
+                      </div>
+                      <div className="px-6 py-8 flex flex-col items-center gap-3">
+                        <span className="text-white text-[40px]">✦</span>
+                        <p className="text-white font-black text-[16px]">AI 스틸컷으로 변환</p>
+                        <p className="text-white/72 text-[12px] text-center leading-relaxed">이 장면을 영화 스틸컷 분위기로<br />AI가 다시 그려드립니다</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1386,11 +1421,10 @@ export default function AuditionResult() {
           </div>
         </section>
 
-        {IS_LOCAL_PREVIEW && (
-          <section className="py-10 border-b border-gray-100">
-            <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Card Studio</p>
-            <p className="text-[22px] font-black text-gray-900 mb-2">결과 카드 디자인 테스트</p>
-            <p className="text-[13px] text-gray-500 mb-6">프레임은 유지하고, 사진·점수·평가·스티커만 바뀌는 카드 편집 프리뷰입니다.</p>
+        <section className="py-10 border-b border-gray-100">
+          <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Card Studio</p>
+          <p className="text-[22px] font-black text-gray-900 mb-2">결과 카드 디자인 테스트</p>
+          <p className="text-[13px] text-gray-500 mb-6">프레임은 유지하고, 사진·점수·평가·스티커만 바뀌는 카드 편집 프리뷰입니다.</p>
 
             <div
               ref={cardStageRef}
@@ -1573,8 +1607,7 @@ export default function AuditionResult() {
                 <p className="mt-3 text-[12px] text-gray-500">스티커를 선택한 뒤 드래그로 위치를 바꾸고, 모바일에서는 두 손가락으로 벌리거나 오므려 크기를 조절하세요.</p>
               </div>
             </div>
-          </section>
-        )}
+        </section>
 
         {/* ══ SECTION 6: 공유 CTA ═══════════════════════════ */}
         <section className="pt-10 pb-4">
