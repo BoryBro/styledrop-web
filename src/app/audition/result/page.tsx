@@ -35,6 +35,23 @@ type AuditionResult = {
 
 type GenreMeta = { genre: string; cue: string };
 type Phase = "generating" | "ready" | "error";
+type CardTheme = {
+  id: "card-1" | "card-2" | "card-3" | "card-4" | "card-5";
+  label: string;
+  title: string;
+  frameColor: string;
+  titleEmoji: [string, string];
+  previewSrc: string;
+  accentTextColor: string;
+};
+type CardSticker = {
+  id: string;
+  emoji: string;
+  x: number;
+  y: number;
+  size: number;
+  rotate: number;
+};
 
 // ── 상수 ──────────────────────────────────────────────────────────
 const GENRE_EMOJIS: Record<string, string> = {
@@ -50,6 +67,34 @@ const LOCAL_PREVIEW_CHANGELOG = [
   "얼굴형, 강점, 주의점, 캐릭터, 최적 장르를 탭으로 나눠서 확인할 수 있게 바꿨습니다.",
   "아키타입 설명은 사진 아래 한 줄 브리프로 분리해 가독성을 높였습니다.",
   "사진이 없을 때는 기존 카드형 요약 UI가 자연스럽게 fallback 되도록 유지했습니다.",
+] as const;
+const CARD_THEMES: CardTheme[] = [
+  {
+    id: "card-1", label: "OOTD", title: "OOTD", frameColor: "#F7D319", titleEmoji: ["🌼", "🌼"], previewSrc: "/audition/cards/card-1.png",
+    accentTextColor: "#F7D319",
+  },
+  {
+    id: "card-2", label: "CRIME", title: "CRIME", frameColor: "#FF5B4D", titleEmoji: ["🔫", "🔫"], previewSrc: "/audition/cards/card-2.png",
+    accentTextColor: "#FF5B4D",
+  },
+  {
+    id: "card-3", label: "DARK HORSE", title: "DARK HORSE", frameColor: "#6D7CF6", titleEmoji: ["👻", "👻"], previewSrc: "/audition/cards/card-3.png",
+    accentTextColor: "#6D7CF6",
+  },
+  {
+    id: "card-4", label: "MAIN CHARACTER", title: "MAIN CHARACTER", frameColor: "#5BE96A", titleEmoji: ["😝", "🤓"], previewSrc: "/audition/cards/card-4.png",
+    accentTextColor: "#5BE96A",
+  },
+  {
+    id: "card-5", label: "STEALER", title: "STEALER", frameColor: "#FF4894", titleEmoji: ["🩸", "🩸"], previewSrc: "/audition/cards/card-5.png",
+    accentTextColor: "#FF4894",
+  },
+] as const;
+const CARD_STICKER_CHOICES = [
+  "😎", "😂", "👀", "✨", "💥", "⚡", "👻", "🔥", "❗", "🫶",
+  "😍", "😭", "😡", "🥶", "🤯", "😈", "🩸", "💋", "🖤", "💎",
+  "🌼", "⭐", "🌙", "☁️", "🌈", "🎬", "🎭", "🎤", "🪄", "🔫",
+  "🕶️", "💌", "🍀", "🦋", "🐈‍⬛", "👑", "💫", "‼️", "❤️‍🔥", "😝",
 ] as const;
 
 // ── 관상학 실제 지식 DB ───────────────────────────────────────────
@@ -148,6 +193,39 @@ function gradeLabel(score: number) {
   return { label: "불합격", color: "#ef4444" };
 }
 
+function clamp(n: number, min: number, max: number) {
+  return Math.min(Math.max(n, min), max);
+}
+
+function genreCardTitle(genre: string) {
+  const key = genre.trim().toLowerCase();
+  const map: Record<string, string> = {
+    "판타지": "FANTASY",
+    "범죄": "CRIME",
+    "스릴러": "THRILLER",
+    "멜로": "MELO",
+    "로맨스": "ROMANCE",
+    "로코": "ROM-COM",
+    "코미디": "COMEDY",
+    "공포": "HORROR",
+    "액션": "ACTION",
+    "심리": "PSYCHO",
+    "드라마": "DRAMA",
+    "fantasy": "FANTASY",
+    "crime": "CRIME",
+    "thriller": "THRILLER",
+    "melo": "MELO",
+    "romance": "ROMANCE",
+    "rom-com": "ROM-COM",
+    "comedy": "COMEDY",
+    "horror": "HORROR",
+    "action": "ACTION",
+    "psychological": "PSYCHO",
+    "drama": "DRAMA",
+  };
+  return map[key] ?? genre.toUpperCase().slice(0, 18);
+}
+
 // ── ScoreBar ──────────────────────────────────────────────────────
 function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
@@ -157,6 +235,72 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
         <div className="h-full rounded-full" style={{ width: `${value}%`, backgroundColor: scoreColor(value) }} />
       </div>
       <span className="text-[13px] font-bold w-10 text-right tabular-nums" style={{ color: scoreColor(value) }}>{value}</span>
+    </div>
+  );
+}
+
+function PhysioScanVisual({ src }: { src: string }) {
+  return (
+    <div className="rounded-[28px] overflow-hidden bg-[#111] border border-black/10 flex items-center justify-center py-8 relative">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_32%,rgba(201,87,26,0.16),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.02)_0%,rgba(0,0,0,0.12)_100%)]" />
+      <div className="relative z-[1] h-[270px] w-[220px]">
+        <div className="absolute inset-0 overflow-hidden rounded-[32px] border border-white/10 bg-[#151515] shadow-[0_20px_50px_rgba(0,0,0,0.32)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt="관상 사진"
+            className="h-full w-full object-cover scale-[1.12] brightness-[0.84] contrast-[1.05] saturate-[0.92]"
+            style={{ objectPosition: "center 24%" }}
+          />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_36%,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0)_34%),linear-gradient(180deg,rgba(10,10,10,0.02)_0%,rgba(10,10,10,0.36)_100%)]" />
+          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/30 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/40 to-transparent" />
+        </div>
+
+        <svg width="220" height="270" viewBox="0 0 220 270" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0">
+          <rect x="38" y="0" width="144" height="2" rx="1" fill="url(#resultScanGradOverlay)" style={{ animation: "scan-line 3s ease-in-out infinite" }} />
+          <defs>
+            <linearGradient id="resultScanGradOverlay" x1="0" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="transparent" />
+              <stop offset="50%" stopColor="white" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="transparent" />
+            </linearGradient>
+          </defs>
+          <ellipse cx="110" cy="128" rx="78" ry="98" stroke="#C9571A" strokeWidth="1.1" strokeOpacity="0.42" strokeDasharray="5 4" />
+          <ellipse cx="110" cy="128" rx="60" ry="78" stroke="white" strokeWidth="0.7" strokeOpacity="0.14" />
+          <line x1="110" y1="50" x2="80" y2="103" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.38" />
+          <line x1="110" y1="50" x2="140" y2="103" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.38" />
+          <line x1="80" y1="103" x2="140" y2="103" stroke="#C9571A" strokeWidth="0.65" strokeOpacity="0.28" />
+          <line x1="80" y1="103" x2="110" y2="142" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.38" />
+          <line x1="140" y1="103" x2="110" y2="142" stroke="#C9571A" strokeWidth="0.8" strokeOpacity="0.38" />
+          <line x1="110" y1="142" x2="93" y2="168" stroke="#C9571A" strokeWidth="0.78" strokeOpacity="0.3" />
+          <line x1="110" y1="142" x2="127" y2="168" stroke="#C9571A" strokeWidth="0.78" strokeOpacity="0.3" />
+          <line x1="93" y1="168" x2="110" y2="212" stroke="#C9571A" strokeWidth="0.76" strokeOpacity="0.25" />
+          <line x1="127" y1="168" x2="110" y2="212" stroke="#C9571A" strokeWidth="0.76" strokeOpacity="0.25" />
+          <line x1="58" y1="128" x2="80" y2="103" stroke="#C9571A" strokeWidth="0.72" strokeOpacity="0.22" />
+          <line x1="162" y1="128" x2="140" y2="103" stroke="#C9571A" strokeWidth="0.72" strokeOpacity="0.22" />
+          <circle cx="110" cy="50" r="4" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.35" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0s" }} />
+          <circle cx="80" cy="103" r="4" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.35" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.3s" }} />
+          <circle cx="140" cy="103" r="4" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.35" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.3s" }} />
+          <circle cx="110" cy="142" r="3.5" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.25" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.6s" }} />
+          <circle cx="93" cy="168" r="3.2" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.15" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.8s" }} />
+          <circle cx="127" cy="168" r="3.2" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.15" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "0.8s" }} />
+          <circle cx="58" cy="128" r="3.2" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.15" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "1s" }} />
+          <circle cx="162" cy="128" r="3.2" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.15" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "1s" }} />
+          <circle cx="110" cy="212" r="3.5" fill="white" fillOpacity="0.96" stroke="#C9571A" strokeWidth="1.25" style={{ animation: "dot-pulse 2.2s ease-in-out infinite", animationDelay: "1.2s" }} />
+          <text x="118" y="48" fontSize="9" fill="white" fillOpacity="0.94" fontFamily="sans-serif" fontWeight="700">이마</text>
+          <text x="40" y="101" fontSize="9" fill="white" fillOpacity="0.82" fontFamily="sans-serif" fontWeight="600">눈</text>
+          <text x="148" y="101" fontSize="9" fill="white" fillOpacity="0.82" fontFamily="sans-serif" fontWeight="600">눈</text>
+          <text x="116" y="140" fontSize="9" fill="white" fillOpacity="0.82" fontFamily="sans-serif" fontWeight="600">코</text>
+          <text x="18" y="130" fontSize="9" fill="white" fillOpacity="0.82" fontFamily="sans-serif" fontWeight="600">광대</text>
+          <text x="166" y="130" fontSize="9" fill="white" fillOpacity="0.82" fontFamily="sans-serif" fontWeight="600">광대</text>
+          <text x="116" y="182" fontSize="9" fill="white" fillOpacity="0.82" fontFamily="sans-serif" fontWeight="600">입</text>
+          <text x="116" y="215" fontSize="9" fill="white" fillOpacity="0.82" fontFamily="sans-serif" fontWeight="600">턱</text>
+        </svg>
+      </div>
+      <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+        <span className="text-[10px] font-black text-[#C9571A] tracking-[0.3em] uppercase opacity-75">AI SCANNING</span>
+      </div>
     </div>
   );
 }
@@ -331,8 +475,19 @@ export default function AuditionResult() {
   const [physioPhoto, setPhysioPhoto] = useState<string | null>(null);
   const [activePhysioTab, setActivePhysioTab] = useState(0);
   const [showLocalChangelog, setShowLocalChangelog] = useState(IS_LOCAL_PREVIEW);
+  const [selectedCardThemeId, setSelectedCardThemeId] = useState<CardTheme["id"]>("card-1");
+  const [cardStickers, setCardStickers] = useState<CardSticker[]>([]);
+  const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
   const cachedShareId = useRef<string | null>(null);
   const stillImageRef = useRef<string | null>(null);
+  const cardStageRef = useRef<HTMLDivElement | null>(null);
+  const draggingStickerIdRef = useRef<string | null>(null);
+  const activeStickerPointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStateRef = useRef<{ stickerId: string | null; startDistance: number; startSize: number }>({
+    stickerId: null,
+    startDistance: 0,
+    startSize: 44,
+  });
   const router = useRouter();
 
   // 분석 결과 로드 (무료 — 스틸컷 자동 생성 안 함)
@@ -370,6 +525,96 @@ export default function AuditionResult() {
   useEffect(() => {
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => setCredits(0));
     fetch("/api/auth/me").then(r => r.json()).then(d => setUserId(d.id ?? null)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!cardStageRef.current) return;
+      const rect = cardStageRef.current.getBoundingClientRect();
+      if (activeStickerPointersRef.current.has(event.pointerId)) {
+        activeStickerPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      }
+
+      const activePointers = [...activeStickerPointersRef.current.values()];
+      if (activePointers.length >= 2 && pinchStateRef.current.stickerId) {
+        const [a, b] = activePointers;
+        const distance = Math.hypot(a.x - b.x, a.y - b.y);
+        const nextSize = clamp(
+          Math.round((pinchStateRef.current.startSize * distance) / Math.max(pinchStateRef.current.startDistance, 1)),
+          24,
+          160
+        );
+        setCardStickers(prev => prev.map(sticker => (
+          sticker.id === pinchStateRef.current.stickerId
+            ? { ...sticker, size: nextSize }
+            : sticker
+        )));
+        return;
+      }
+
+      if (!draggingStickerIdRef.current) return;
+      const x = clamp((event.clientX - rect.left) / rect.width, 0.12, 0.88);
+      const y = clamp((event.clientY - rect.top) / rect.height, 0.12, 0.76);
+      setCardStickers(prev => prev.map(sticker => (
+        sticker.id === draggingStickerIdRef.current
+          ? { ...sticker, x, y }
+          : sticker
+      )));
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      activeStickerPointersRef.current.delete(event.pointerId);
+      if (activeStickerPointersRef.current.size < 2) {
+        pinchStateRef.current = {
+          stickerId: null,
+          startDistance: 0,
+          startSize: 44,
+        };
+      }
+      if (activeStickerPointersRef.current.size === 0) {
+        draggingStickerIdRef.current = null;
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, []);
+
+  const addCardSticker = useCallback((emoji: string) => {
+    const nextId = `${emoji}-${Date.now()}`;
+    setSelectedStickerId(nextId);
+    setCardStickers(prev => [
+      ...prev,
+      {
+        id: nextId,
+        emoji,
+        x: 0.5,
+        y: 0.34,
+        size: 44,
+        rotate: (prev.length % 2 === 0 ? -1 : 1) * 10,
+      },
+    ]);
+  }, []);
+
+  const removeLastCardSticker = useCallback(() => {
+    setCardStickers(prev => {
+      const next = prev.slice(0, -1);
+      if (!next.find(sticker => sticker.id === selectedStickerId)) {
+        setSelectedStickerId(next.at(-1)?.id ?? null);
+      }
+      return next;
+    });
+  }, [selectedStickerId]);
+
+  const resetCardStickers = useCallback(() => {
+    setCardStickers([]);
+    setSelectedStickerId(null);
   }, []);
 
   // 스틸컷 생성 (5크레딧 소모)
@@ -542,6 +787,13 @@ export default function AuditionResult() {
   const grade = gradeLabel(overallAvg);
   const faceGuide = physio ? FACE_TYPE_GUIDE[physio.face_type] : null;
   const archetypeGuide = physio ? ARCHETYPE_GUIDE[physio.archetype] : null;
+  const selectedCardTheme = CARD_THEMES.find(theme => theme.id === selectedCardThemeId) ?? CARD_THEMES[0];
+  const cardPreviewImage = userPhotos[bestSceneIdx] ?? stillImage ?? physioPhoto ?? null;
+  const cardTitle = genreCardTitle(bestScene.genre);
+  const actingScore = avgScore(bestScene.scores);
+  const emotionalRangeScore = bestScene.scores["표정연기"] ?? 0;
+  const screenPresenceScore = bestScene.scores["몰입도"] ?? 0;
+  const cardCueLine = (genres[bestSceneIdx]?.cue ?? "").replace(/\s+/g, " ").trim().slice(0, 48);
 
   return (
     <div className="min-h-screen bg-white">
@@ -805,15 +1057,13 @@ export default function AuditionResult() {
 
             {/* 관상 사진 + 얼굴형/아키타입 오버레이 */}
             {physioPhoto && (
-              <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 mb-6">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={physioPhoto} alt="관상 사진" className="w-full h-full object-cover" />
-                {/* 하단 오버레이 */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-5 pb-5 pt-10">
-                  <div className="flex items-end justify-between">
+              <div className="mb-6">
+                <PhysioScanVisual src={physioPhoto} />
+                <div className="mt-4 rounded-2xl bg-gray-50 border border-gray-200 px-4 py-4">
+                  <div className="flex items-end justify-between gap-4">
                     <div>
                       <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-widest mb-1">얼굴형</p>
-                      <p className="text-[28px] font-black text-white leading-tight">{physio.face_type}</p>
+                      <p className="text-[26px] font-black text-gray-900 leading-tight">{physio.face_type}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">캐릭터</p>
@@ -985,6 +1235,196 @@ export default function AuditionResult() {
             })}
           </div>
         </section>
+
+        {IS_LOCAL_PREVIEW && (
+          <section className="py-10 border-b border-gray-100">
+            <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Card Studio</p>
+            <p className="text-[22px] font-black text-gray-900 mb-2">결과 카드 디자인 테스트</p>
+            <p className="text-[13px] text-gray-500 mb-6">프레임은 유지하고, 사진·점수·평가·스티커만 바뀌는 카드 편집 프리뷰입니다.</p>
+
+            <div
+              ref={cardStageRef}
+              className="relative mx-auto w-full max-w-[380px] aspect-[677/938] overflow-hidden rounded-[40px] shadow-[0_26px_70px_rgba(0,0,0,0.16)] select-none"
+              style={{ backgroundColor: selectedCardTheme.frameColor }}
+            >
+              <div className="absolute left-[3.6928%] top-[2.026%] h-[95.95%] w-[92.615%] overflow-hidden rounded-[30px] bg-white">
+                <div className="absolute inset-0 overflow-hidden">
+                  {cardPreviewImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={cardPreviewImage}
+                      alt="결과 카드 미리보기"
+                      className="absolute left-[-8%] top-[-4%] h-[108%] w-[116%] max-w-none object-cover"
+                      style={{ objectPosition: "center 20%" }}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#f3f3f3] text-[14px] font-bold text-gray-400">
+                      사진 없음
+                    </div>
+                  )}
+                  <div className="absolute left-[-26.3%] top-[53.9%] h-[46.2%] w-[156.9%] bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.82)_100%)] opacity-70" />
+                </div>
+
+                <div
+                  className="absolute left-1/2 top-0 inline-flex h-[7.67%] max-w-[78%] min-w-[40%] -translate-x-1/2 items-center justify-center gap-3 rounded-b-[18px] px-5 text-black"
+                  style={{ backgroundColor: selectedCardTheme.frameColor, fontFamily: "var(--font-unbounded)" }}
+                >
+                  <div style={{ fontSize: "24px", fontWeight: 600, flexShrink: 0 }}>
+                    {selectedCardTheme.titleEmoji[0]}
+                  </div>
+                  <div
+                    className="truncate text-center uppercase"
+                    style={{ fontSize: "clamp(14px, 3vw, 20px)", fontWeight: 600, letterSpacing: "0.09em" }}
+                  >
+                    {cardTitle}
+                  </div>
+                  <div style={{ fontSize: "24px", fontWeight: 600, flexShrink: 0 }}>
+                    {selectedCardTheme.titleEmoji[1]}
+                  </div>
+                </div>
+
+                <div className="absolute left-[18%] top-[66.3%] w-[64%]">
+                  <div className="rounded-[16px] bg-black/78 px-4 py-2 text-center text-white shadow-[0_12px_24px_rgba(0,0,0,0.28)] backdrop-blur-[2px]">
+                    <div
+                      className="uppercase"
+                      style={{
+                        color: selectedCardTheme.accentTextColor,
+                        fontFamily: "var(--font-outfit)",
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        letterSpacing: "0.06em",
+                        lineHeight: 1.1,
+                      }}
+                    >
+                      SCENE DIRECTION
+                    </div>
+                    <div
+                      className="mt-1.5 break-keep"
+                      style={{
+                        fontFamily: "var(--font-outfit)",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        lineHeight: 1.28,
+                        letterSpacing: "-0.01em",
+                      }}
+                    >
+                      {cardCueLine || "씬 지시문이 여기에 표시됩니다."}
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className="absolute bottom-0 left-[19%] h-[18.2%] w-[62%] overflow-hidden rounded-t-[18px]"
+                  style={{ backgroundColor: selectedCardTheme.frameColor }}
+                >
+                  <div className="absolute left-[4.5%] top-[8%] flex h-[82%] w-[91%] flex-col gap-[6%]">
+                    {[
+                      { label: "연기 점수", value: actingScore },
+                      { label: "감정 폭", value: emotionalRangeScore },
+                      { label: "화면 장악력", value: screenPresenceScore },
+                    ].map(item => (
+                      <div
+                        key={item.label}
+                        className="flex h-[29%] min-h-0 items-center rounded-[18px] border border-black px-[5.25%]"
+                        style={{ backgroundColor: selectedCardTheme.frameColor }}
+                      >
+                        <div className="flex w-full items-center justify-between gap-4" style={{ fontFamily: '"Pretendard", sans-serif' }}>
+                          <span className="whitespace-nowrap text-[11px] font-bold leading-none text-black sm:text-[15px]">{item.label}</span>
+                          <span className="text-[16px] font-black leading-none text-black sm:text-[22px]">{item.value}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {cardStickers.map(sticker => (
+                  <button
+                    key={sticker.id}
+                    type="button"
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                      setSelectedStickerId(sticker.id);
+                      activeStickerPointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+                      const sameStickerPointers = activeStickerPointersRef.current.size;
+                      if (sameStickerPointers >= 2) {
+                        const [a, b] = [...activeStickerPointersRef.current.values()];
+                        pinchStateRef.current = {
+                          stickerId: sticker.id,
+                          startDistance: Math.hypot(a.x - b.x, a.y - b.y),
+                          startSize: sticker.size,
+                        };
+                        draggingStickerIdRef.current = null;
+                        return;
+                      }
+                      draggingStickerIdRef.current = sticker.id;
+                    }}
+                    className={`absolute z-[3] cursor-grab active:cursor-grabbing ${selectedStickerId === sticker.id ? "drop-shadow-[0_0_0_2px_rgba(255,255,255,0.92)]" : ""}`}
+                    style={{
+                      left: `${sticker.x * 100}%`,
+                      top: `${sticker.y * 100}%`,
+                      transform: `translate(-50%, -50%) rotate(${sticker.rotate}deg)`,
+                      fontSize: `${sticker.size}px`,
+                      lineHeight: 1,
+                      touchAction: "none",
+                      fontFamily: "var(--font-unbounded)",
+                    }}
+                  >
+                    {sticker.emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-5">
+              <div>
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.24em] mb-3">Template</p>
+                <div className="flex flex-wrap gap-3">
+                  {CARD_THEMES.map(theme => (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      onClick={() => setSelectedCardThemeId(theme.id)}
+                      aria-label={theme.label}
+                      className={`h-9 w-9 rounded-full border-2 transition-transform ${selectedCardThemeId === theme.id ? "scale-110 border-gray-900 shadow-[0_10px_18px_rgba(0,0,0,0.16)]" : "border-white shadow-[0_4px_10px_rgba(0,0,0,0.10)]"}`}
+                      style={{ backgroundColor: theme.frameColor }}
+                    >
+                      <span className="sr-only">{theme.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-3 text-[12px] text-gray-500">색상 칩을 눌러 카드 프레임 톤을 바꿉니다.</p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.24em]">Stickers</p>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={removeLastCardSticker} className="rounded-full border border-gray-200 px-3 py-1.5 text-[11px] font-black text-gray-600">
+                      마지막 삭제
+                    </button>
+                    <button type="button" onClick={resetCardStickers} className="rounded-full border border-gray-200 px-3 py-1.5 text-[11px] font-black text-gray-600">
+                      초기화
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {CARD_STICKER_CHOICES.map(emoji => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => addCardSticker(emoji)}
+                      className="rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-[18px]"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-3 text-[12px] text-gray-500">스티커를 선택한 뒤 드래그로 위치를 바꾸고, 모바일에서는 두 손가락으로 벌리거나 오므려 크기를 조절하세요.</p>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ══ SECTION 6: 공유 CTA ═══════════════════════════ */}
         <section className="pt-10 pb-4">

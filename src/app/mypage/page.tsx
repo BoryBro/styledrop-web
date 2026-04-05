@@ -8,6 +8,11 @@ import { getGuestHistory, type GuestHistoryItem } from "@/lib/guest-history";
 import { STYLE_LABELS, VISIBLE_STYLE_IDS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+
 type HistoryItem = {
   id: string;
   style_id: string;
@@ -70,6 +75,8 @@ export default function MyPage() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -94,6 +101,30 @@ export default function MyPage() {
       .then(d => setCredits(d.credits ?? 0))
       .catch(() => {});
   }, [user, loading]);
+
+  useEffect(() => {
+    const standalone = window.matchMedia("(display-mode: standalone)").matches
+      || ((window.navigator as Navigator & { standalone?: boolean }).standalone === true);
+    setIsStandalone(standalone);
+
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setDeferredInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+
+    const handleAppInstalled = () => {
+      setDeferredInstallPrompt(null);
+      setIsStandalone(true);
+      showToast("홈 화면에 추가됐어요.");
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, [showToast]);
 
   const handleDeleteAccount = async () => {
     setDeleting(true);
@@ -136,6 +167,27 @@ export default function MyPage() {
         link: { mobileWebUrl: link, webUrl: link },
       },
     });
+  };
+
+  const handleInstallApp = async () => {
+    if (isStandalone) {
+      showToast("이미 홈 화면에서 앱처럼 실행 중이에요.");
+      return;
+    }
+
+    if (deferredInstallPrompt) {
+      await deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice.catch(() => null);
+      setDeferredInstallPrompt(null);
+      if (choice?.outcome === "accepted") {
+        showToast("홈 화면에 추가하는 중이에요.");
+      }
+      return;
+    }
+
+    const ua = navigator.userAgent.toLowerCase();
+    const isIOS = /iphone|ipad|ipod/.test(ua);
+    router.push(isIOS ? "/install-app#ios" : "/install-app#android");
   };
 
   // 스타일별 그룹핑 (history가 없어도 STYLE_ORDER 전체 표시)
@@ -499,18 +551,27 @@ export default function MyPage() {
                 아이폰과 안드로이드에서 홈 화면에 추가해두면 브라우저를 열지 않고도 더 빠르게 들어올 수 있습니다.
               </p>
               <div className="flex flex-wrap gap-2 mb-4">
-                {["빠른 실행", "아이폰 안내", "안드로이드 안내"].map((item) => (
+                {[
+                  "빠른 실행",
+                  deferredInstallPrompt ? "안드로이드 즉시 설치" : "안드로이드 안내",
+                  "아이폰 안내",
+                ].map((item) => (
                   <span key={item} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold text-white/70">
                     {item}
                   </span>
                 ))}
               </div>
-              <Link
-                href="/install-app"
+              <button
+                type="button"
+                onClick={handleInstallApp}
                 className="flex w-full items-center justify-center rounded-2xl bg-[#C9571A] px-4 py-3.5 text-[15px] font-bold text-white transition-colors hover:bg-[#B34A12]"
               >
-                홈 화면 추가 방법 보기
-              </Link>
+                {isStandalone
+                  ? "이미 홈 화면에서 실행 중"
+                  : deferredInstallPrompt
+                    ? "홈 화면에 바로 추가"
+                    : "홈 화면 추가 방법 보기"}
+              </button>
             </div>
           </section>
         )}

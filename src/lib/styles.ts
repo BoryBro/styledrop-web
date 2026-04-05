@@ -93,7 +93,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "TREND",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/angel-before.jpg",
+    beforeImg: "/thumbnails/idol-photocard-before.jpg",
     afterImg: "/thumbnails/angel-after.jpg",
     popular: true,
   },
@@ -105,7 +105,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "TREND",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/angel-before.jpg",
+    beforeImg: "/thumbnails/coquette-ribbon-before.jpg",
     afterImg: "/thumbnails/angel-after.jpg",
   },
   {
@@ -116,7 +116,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "TREND",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/angel-before.jpg",
+    beforeImg: "/thumbnails/balletcore-muse-before.jpg",
     afterImg: "/thumbnails/angel-after.jpg",
   },
   {
@@ -127,7 +127,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "Y2K",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/gyaru-before.jpg",
+    beforeImg: "/thumbnails/yearbook-2006-before.jpg",
     afterImg: "/thumbnails/gyaru-after.jpg",
     popular: true,
   },
@@ -139,7 +139,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "HOT",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/flash-before.jpg",
+    beforeImg: "/thumbnails/club-flash-before.jpg",
     afterImg: "/thumbnails/flash-after.jpg",
     popular: true,
   },
@@ -151,7 +151,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "Y2K",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/gyaru-before.jpg",
+    beforeImg: "/thumbnails/frosted-glam-before.jpg",
     afterImg: "/thumbnails/gyaru-after.jpg",
   },
   {
@@ -162,7 +162,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "NEW",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/angel-before.jpg",
+    beforeImg: "/thumbnails/red-carpet-glam-before.jpg",
     afterImg: "/thumbnails/angel-after.jpg",
   },
   {
@@ -173,7 +173,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "TREND",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/angel-before.jpg",
+    beforeImg: "/thumbnails/dark-coquette-before.jpg",
     afterImg: "/thumbnails/angel-after.jpg",
   },
   {
@@ -184,7 +184,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "FILM",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/flash-before.jpg",
+    beforeImg: "/thumbnails/datecam-film-before.jpg",
     afterImg: "/thumbnails/flash-after.jpg",
   },
   {
@@ -195,7 +195,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "HOT",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/grab-before.jpg",
+    beforeImg: "/thumbnails/city-pop-neon-before.jpg",
     afterImg: "/thumbnails/grab-after.jpg",
   },
   {
@@ -206,7 +206,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "RETRO",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/gyaru-before.jpg",
+    beforeImg: "/thumbnails/ulzzang-cam-before.jpg",
     afterImg: "/thumbnails/gyaru-after.jpg",
   },
   {
@@ -217,7 +217,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "MEME",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/joseon-before.jpg?v=2",
+    beforeImg: "/thumbnails/jjimjilbang-master-before.jpg",
     afterImg: "/thumbnails/joseon-after.jpg?v=2",
   },
   {
@@ -228,7 +228,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "MEME",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/flash-before.jpg",
+    beforeImg: "/thumbnails/pcbang-legend-before.jpg",
     afterImg: "/thumbnails/flash-after.jpg",
   },
   {
@@ -239,7 +239,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "MEME",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/joseon-before.jpg?v=2",
+    beforeImg: "/thumbnails/hiking-club-before.jpg",
     afterImg: "/thumbnails/joseon-ref-1.jpg",
   },
   {
@@ -250,7 +250,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "MEME",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/gyaru-before.jpg",
+    beforeImg: "/thumbnails/karaoke-queen-before.jpg",
     afterImg: "/thumbnails/gyaru-after.jpg",
   },
   {
@@ -261,7 +261,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "MEME",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/grab-before.jpg",
+    beforeImg: "/thumbnails/mart-flyer-before.jpg",
     afterImg: "/thumbnails/grab-after.jpg",
   },
   {
@@ -272,7 +272,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "MEME",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/flash-before.jpg",
+    beforeImg: "/thumbnails/service-area-snack-before.jpg",
     afterImg: "/thumbnails/flash-after.jpg",
   },
   {
@@ -283,7 +283,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "MEME",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/joseon-before.jpg?v=2",
+    beforeImg: "/thumbnails/retreat-staff-before.jpg",
     afterImg: "/thumbnails/joseon-ref-2.jpg",
   },
   {
@@ -294,7 +294,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "MEME",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/angel-before.jpg",
+    beforeImg: "/thumbnails/wedding-guest-chaos-before.jpg",
     afterImg: "/thumbnails/angel-after.jpg",
   },
   {
@@ -305,7 +305,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "MEME",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/grab-before.jpg",
+    beforeImg: "/thumbnails/baseball-date-before.jpg",
     afterImg: "/thumbnails/grab-after.jpg",
   },
   {
@@ -316,7 +316,7 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "MEME",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/flash-before.jpg",
+    beforeImg: "/thumbnails/pojangmacha-night-before.jpg",
     afterImg: "/thumbnails/flash-after.jpg",
   },
 ];
