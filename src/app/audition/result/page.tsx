@@ -6,6 +6,13 @@ import Link from "next/link";
 
 // ── 타입 ──────────────────────────────────────────────────────────
 type Scores = { 이해도: number; 표정연기: number; 창의성: number; 몰입도: number };
+type SceneEvidence = { label: string; observation: string; impact: string };
+type ExpressionBreakdown = {
+  eyes?: string;
+  brows?: string;
+  mouth?: string;
+  focus?: string;
+};
 
 type SceneResult = {
   genre: string;
@@ -13,6 +20,20 @@ type SceneResult = {
   assigned_role: string;
   style_prompt: string;
   scores: Scores;
+  cue_match?: string;
+  emotion_read?: string;
+  direction_note?: string;
+  matched_points?: string[];
+  missed_points?: string[];
+  expression_breakdown?: ExpressionBreakdown;
+  evidence?: SceneEvidence[];
+};
+
+type PhysioFeatureReading = {
+  feature: string;
+  observation: string;
+  impression: string;
+  casting_effect: string;
 };
 
 type Physiognomy = {
@@ -23,18 +44,53 @@ type Physiognomy = {
   weaknesses: string[];
   best_genre: string;
   verdict: string;
+  screen_impression?: string;
+  casting_frame?: string;
+  watchpoint?: string;
+  feature_readings?: PhysioFeatureReading[];
+};
+
+type OverallDiagnosis = {
+  best_fit: string;
+  biggest_gap: string;
+  casting_reason: string;
+  training_focus: string;
+};
+
+type PersonalityAxis = {
+  name: string;
+  left_label: string;
+  right_label: string;
+  score: number;
+  leaning: string;
+  summary: string;
+  evidence: string[];
+};
+
+type PersonalityProfile = {
+  summary: string;
+  acting_temperament: string;
+  collaboration_style: string;
+  pressure_response: string;
+  casting_keyword: string;
+  recommended_roles: string[];
+  axes: PersonalityAxis[];
 };
 
 type AuditionResult = {
   scenes: SceneResult[];
   overall_critique: string;
   overall_one_liner: string;
+  overall_diagnosis?: OverallDiagnosis;
   physiognomy?: Physiognomy;
   personality_summary?: string;
+  personality_profile?: PersonalityProfile;
 };
 
 type GenreMeta = { genre: string; cue: string };
 type Phase = "generating" | "ready" | "error";
+
+const KAKAO_SHARE_REWARD_PENDING_KEY = "sd_au_kakao_share_reward_pending";
 
 // ── 상수 ──────────────────────────────────────────────────────────
 const GENRE_EMOJIS: Record<string, string> = {
@@ -157,6 +213,40 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
         <div className="h-full rounded-full" style={{ width: `${value}%`, backgroundColor: scoreColor(value) }} />
       </div>
       <span className="text-[13px] font-bold w-10 text-right tabular-nums" style={{ color: scoreColor(value) }}>{value}</span>
+    </div>
+  );
+}
+
+function AxisBar({ axis }: { axis: PersonalityAxis }) {
+  const boundedScore = Math.max(0, Math.min(100, axis.score ?? 50));
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.24em] mb-1">{axis.name}</p>
+          <p className="text-[13px] font-bold text-gray-900 leading-snug">{axis.leaning}</p>
+        </div>
+        <span className="text-[18px] font-black text-gray-900 tabular-nums">{boundedScore}</span>
+      </div>
+      <div className="mb-2">
+        <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+          <div className="h-full rounded-full bg-[#C9571A]" style={{ width: `${boundedScore}%` }} />
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 text-[11px] font-bold text-gray-400 mb-3">
+        <span>{axis.left_label}</span>
+        <span>{axis.right_label}</span>
+      </div>
+      <p className="text-[13px] text-gray-700 leading-relaxed">{axis.summary}</p>
+      {axis.evidence?.length ? (
+        <div className="mt-3 flex flex-col gap-2">
+          {axis.evidence.slice(0, 2).map(item => (
+            <div key={item} className="rounded-xl bg-gray-50 px-3 py-2">
+              <p className="text-[12px] text-gray-600 leading-snug">{item}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -327,6 +417,7 @@ export default function AuditionResult() {
   const [credits, setCredits] = useState<number | null>(null);
   const [showStillConfirm, setShowStillConfirm] = useState(false);
   const [shareRewardToast, setShareRewardToast] = useState(false);
+  const [showShareRewardModal, setShowShareRewardModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [referralCopied, setReferralCopied] = useState(false);
   const [physioPhoto, setPhysioPhoto] = useState<string | null>(null);
@@ -422,18 +513,48 @@ export default function AuditionResult() {
   };
 
   // 공유 후 1크레딧 보상
-  const claimShareReward = () => {
-    fetch("/api/reward/share", { method: "POST" })
-      .then(r => r.json())
-      .then(d => {
-        if (d.ok) {
-          setCredits(d.credits);
-          setShareRewardToast(true);
-          setTimeout(() => setShareRewardToast(false), 3000);
-        }
-      })
-      .catch(() => {});
-  };
+  const claimShareReward = useCallback(async (mode: "toast" | "modal" = "toast") => {
+    try {
+      const r = await fetch("/api/reward/share", { method: "POST" });
+      const d = await r.json();
+      if (!d.ok) return false;
+      setCredits(d.credits);
+      if (mode === "modal") {
+        setShowShareRewardModal(true);
+      } else {
+        setShareRewardToast(true);
+        setTimeout(() => setShareRewardToast(false), 3000);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    const maybeClaimPendingKakaoReward = async () => {
+      if (sessionStorage.getItem(KAKAO_SHARE_REWARD_PENDING_KEY) !== "1") return;
+      sessionStorage.removeItem(KAKAO_SHARE_REWARD_PENDING_KEY);
+      await claimShareReward("modal");
+    };
+
+    const handleFocus = () => {
+      void maybeClaimPendingKakaoReward();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void maybeClaimPendingKakaoReward();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [claimShareReward]);
 
   const handleSave = useCallback(async () => {
     if (!result || isSaving) return;
@@ -482,14 +603,15 @@ export default function AuditionResult() {
       const Kakao = (window as any).Kakao;
       if (!Kakao?.isInitialized()) Kakao?.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
       const bestScene = result.scenes[bestSceneIdx];
+      sessionStorage.setItem(KAKAO_SHARE_REWARD_PENDING_KEY, "1");
       Kakao?.Share?.sendDefault({
         objectType: "text",
         text: `AI 감독이 나한테 "${bestScene?.assigned_role}" 역할을 줬어 😂\n내 오디션 결과 보러와`,
         link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       });
       fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event_type: "audition_share_kakao" }) }).catch(() => {});
-      claimShareReward();
     } catch {
+      sessionStorage.removeItem(KAKAO_SHARE_REWARD_PENDING_KEY);
       navigator.clipboard?.writeText(window.location.origin + "/audition/solo");
     } finally {
       setIsSharing(false);
@@ -522,7 +644,6 @@ export default function AuditionResult() {
       setCopyToast(true);
       setTimeout(() => setCopyToast(false), 2500);
       fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event_type: "audition_share_link_copy" }) }).catch(() => {});
-      claimShareReward();
     } catch { /* silent */ }
     finally { setIsCopying(false); }
   };
@@ -543,6 +664,7 @@ export default function AuditionResult() {
 
   // ── READY — 단일 스크롤 ──────────────────────────────────────────
   const physio = result.physiognomy;
+  const personalityProfile = result.personality_profile;
   const bestScene = result.scenes[bestSceneIdx];
   const overallAvg = Math.round(result.scenes.reduce((s, sc) => s + avgScore(sc.scores), 0) / result.scenes.length);
   const grade = gradeLabel(overallAvg);
@@ -558,6 +680,23 @@ export default function AuditionResult() {
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-[13px] font-bold px-5 py-3 rounded-full shadow-xl flex items-center gap-2"
           style={{ animation: "fade-up 0.3s ease-out" }}>
           <span>🎉</span><span>1크레딧 지급됐어요!</span>
+        </div>
+      )}
+
+      {showShareRewardModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center px-4">
+          <div className="w-full max-w-xs rounded-[28px] bg-white shadow-2xl border border-black/5 px-6 py-6 text-center">
+            <p className="text-[11px] font-black text-[#C9571A] uppercase tracking-[0.28em] mb-3">Share Reward</p>
+            <p className="text-[24px] font-black text-gray-900 leading-tight mb-2">1크레딧이 지급되었어요!</p>
+            <p className="text-[14px] text-gray-500 leading-relaxed mb-5">카카오 공유 참여 고맙습니다.</p>
+            <button
+              type="button"
+              onClick={() => setShowShareRewardModal(false)}
+              className="w-full rounded-2xl bg-[#C9571A] text-white font-bold py-3.5 text-[15px]"
+            >
+              확인
+            </button>
+          </div>
         </div>
       )}
 
@@ -683,6 +822,67 @@ export default function AuditionResult() {
             </div>
           </div>
         </section>
+
+        {(personalityProfile || result.personality_summary) && (
+          <section className="py-10 border-b border-gray-100">
+            <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Personality Matrix</p>
+            <p className="text-[22px] font-black text-gray-900 mb-2">밸런스 게임 성향 해석</p>
+            <p className="text-[13px] text-gray-500 mb-5">답변 패턴을 바탕으로 현장 태도와 캐스팅 방향을 읽었습니다.</p>
+
+            {personalityProfile?.summary ? (
+              <div className="rounded-2xl bg-gray-900 px-5 py-5 text-white mb-4">
+                <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.28em] mb-2">Core Read</p>
+                <p className="text-[18px] font-black leading-snug">{personalityProfile.summary}</p>
+                {result.personality_summary && (
+                  <p className="text-[13px] text-gray-300 leading-relaxed mt-3">{result.personality_summary}</p>
+                )}
+              </div>
+            ) : result.personality_summary ? (
+              <div className="rounded-2xl bg-gray-900 px-5 py-5 text-white mb-4">
+                <p className="text-[18px] font-black leading-snug">{result.personality_summary}</p>
+              </div>
+            ) : null}
+
+            {personalityProfile && (
+              <>
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                  {[
+                    { label: "연기 태도", value: personalityProfile.acting_temperament },
+                    { label: "현장 협업", value: personalityProfile.collaboration_style },
+                    { label: "압박 반응", value: personalityProfile.pressure_response },
+                    { label: "캐스팅 키워드", value: personalityProfile.casting_keyword },
+                  ].map(item => (
+                    <div key={item.label} className="rounded-2xl bg-gray-50 border border-gray-200 px-4 py-4">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.22em] mb-2">{item.label}</p>
+                      <p className="text-[13px] font-bold text-gray-900 leading-snug">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {personalityProfile.recommended_roles?.length ? (
+                  <div className="mb-5">
+                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.24em] mb-3">Recommended Roles</p>
+                    <div className="flex flex-wrap gap-2">
+                      {personalityProfile.recommended_roles.map(role => (
+                        <span key={role} className="rounded-full bg-orange-50 text-[#C9571A] border border-[#C9571A]/15 px-3 py-1.5 text-[12px] font-black">
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {personalityProfile.axes?.length ? (
+                  <div className="flex flex-col gap-3">
+                    {personalityProfile.axes.map(axis => (
+                      <AxisBar key={axis.name} axis={axis} />
+                    ))}
+                  </div>
+                ) : null}
+              </>
+            )}
+          </section>
+        )}
 
         {/* ══ SECTION 2: AI 스틸컷 (선택 유료) ════════════ */}
         <section className="py-10 border-b border-gray-100">
@@ -857,6 +1057,89 @@ export default function AuditionResult() {
                   </div>
                 </div>
 
+                {(scene.cue_match || scene.emotion_read || scene.direction_note) && (
+                  <div className="grid grid-cols-1 gap-3">
+                    {scene.cue_match && (
+                      <div className="rounded-2xl bg-gray-50 border border-gray-200 px-4 py-4">
+                        <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.24em] mb-2">지시문 수행</p>
+                        <p className="text-[13px] text-gray-800 leading-relaxed">{scene.cue_match}</p>
+                      </div>
+                    )}
+                    {scene.emotion_read && (
+                      <div className="rounded-2xl bg-gray-50 border border-gray-200 px-4 py-4">
+                        <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.24em] mb-2">실제 읽힌 감정</p>
+                        <p className="text-[13px] text-gray-800 leading-relaxed">{scene.emotion_read}</p>
+                      </div>
+                    )}
+                    {scene.direction_note && (
+                      <div className="rounded-2xl bg-orange-50 border border-orange-100 px-4 py-4">
+                        <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.24em] mb-2">디렉팅 노트</p>
+                        <p className="text-[13px] text-gray-800 leading-relaxed">{scene.direction_note}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {scene.expression_breakdown && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: "눈빛", value: scene.expression_breakdown.eyes },
+                      { label: "눈썹", value: scene.expression_breakdown.brows },
+                      { label: "입", value: scene.expression_breakdown.mouth },
+                      { label: "시선", value: scene.expression_breakdown.focus },
+                    ].filter(item => item.value).map(item => (
+                      <div key={item.label} className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.22em] mb-2">{item.label}</p>
+                        <p className="text-[13px] text-gray-800 leading-snug">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {((scene.matched_points?.length ?? 0) > 0 || (scene.missed_points?.length ?? 0) > 0) && (
+                  <div className="grid grid-cols-1 gap-3">
+                    {(scene.matched_points?.length ?? 0) > 0 && (
+                      <div className="rounded-2xl bg-green-50 border border-green-100 px-4 py-4">
+                        <p className="text-[10px] font-black text-[#22c55e] uppercase tracking-[0.22em] mb-3">맞게 들어간 포인트</p>
+                        <div className="flex flex-col gap-2.5">
+                          {scene.matched_points?.map(point => (
+                            <div key={point} className="flex items-start gap-2.5">
+                              <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#22c55e] flex-shrink-0" />
+                              <p className="text-[13px] text-gray-800 leading-snug">{point}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {(scene.missed_points?.length ?? 0) > 0 && (
+                      <div className="rounded-2xl bg-orange-50 border border-orange-100 px-4 py-4">
+                        <p className="text-[10px] font-black text-[#f97316] uppercase tracking-[0.22em] mb-3">빠진 포인트</p>
+                        <div className="flex flex-col gap-2.5">
+                          {scene.missed_points?.map(point => (
+                            <div key={point} className="flex items-start gap-2.5">
+                              <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#f97316] flex-shrink-0" />
+                              <p className="text-[13px] text-gray-800 leading-snug">{point}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {(scene.evidence?.length ?? 0) > 0 && (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.24em]">근거 포인트</p>
+                    {scene.evidence?.map(item => (
+                      <div key={`${item.label}-${item.observation}`} className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                        <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.22em] mb-2">{item.label}</p>
+                        <p className="text-[13px] font-bold text-gray-900 leading-snug mb-2">{item.observation}</p>
+                        <p className="text-[12px] text-gray-600 leading-relaxed">{item.impact}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* 점수 바 */}
                 <div className="bg-gray-50 rounded-2xl px-4 py-4 flex flex-col gap-3">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">세부 점수</p>
@@ -981,6 +1264,46 @@ export default function AuditionResult() {
               </div>
             )}
 
+            {(physio.screen_impression || physio.casting_frame || physio.watchpoint) && (
+              <div className="grid grid-cols-1 gap-3 mb-5">
+                {physio.screen_impression && (
+                  <div className="rounded-2xl bg-gray-50 border border-gray-200 px-4 py-4">
+                    <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.22em] mb-2">화면 첫인상</p>
+                    <p className="text-[13px] text-gray-800 leading-relaxed">{physio.screen_impression}</p>
+                  </div>
+                )}
+                {physio.casting_frame && (
+                  <div className="rounded-2xl bg-gray-50 border border-gray-200 px-4 py-4">
+                    <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.22em] mb-2">캐스팅 프레임</p>
+                    <p className="text-[13px] text-gray-800 leading-relaxed">{physio.casting_frame}</p>
+                  </div>
+                )}
+                {physio.watchpoint && (
+                  <div className="rounded-2xl bg-orange-50 border border-orange-100 px-4 py-4">
+                    <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.22em] mb-2">주의해서 볼 지점</p>
+                    <p className="text-[13px] text-gray-800 leading-relaxed">{physio.watchpoint}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(physio.feature_readings?.length ?? 0) > 0 && (
+              <div className="flex flex-col gap-3 mb-6">
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.24em]">얼굴 포인트 리딩</p>
+                {physio.feature_readings?.map(item => (
+                  <div key={`${item.feature}-${item.observation}`} className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <p className="text-[12px] font-black text-[#C9571A]">{item.feature}</p>
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.22em]">Casting Evidence</span>
+                    </div>
+                    <p className="text-[13px] font-bold text-gray-900 leading-snug mb-2">{item.observation}</p>
+                    <p className="text-[12px] text-gray-600 leading-relaxed mb-2">{item.impression}</p>
+                    <p className="text-[12px] text-gray-800 leading-relaxed">{item.casting_effect}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* 탭 네비게이션 */}
             <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
               {["얼굴형 해설", "강점", "주의점", "캐릭터", "최적 장르"].map((tab, i) => (
@@ -1099,6 +1422,22 @@ export default function AuditionResult() {
             <p className="text-[14px] text-gray-300 leading-[1.9]">{result.overall_critique}</p>
           </div>
 
+          {result.overall_diagnosis && (
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              {[
+                { label: "베스트 핏", value: result.overall_diagnosis.best_fit },
+                { label: "가장 큰 갭", value: result.overall_diagnosis.biggest_gap },
+                { label: "캐스팅 이유", value: result.overall_diagnosis.casting_reason },
+                { label: "훈련 포커스", value: result.overall_diagnosis.training_focus },
+              ].map(item => (
+                <div key={item.label} className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.22em] mb-2">{item.label}</p>
+                  <p className="text-[13px] text-gray-900 leading-snug">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* 장르별 점수 요약 */}
           <div className="flex flex-col gap-3">
             {result.scenes.map((scene, i) => {
@@ -1122,23 +1461,25 @@ export default function AuditionResult() {
         <section className="pt-10 pb-4">
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Share</p>
           <p className="text-[22px] font-black text-gray-900 mb-2">결과 공유하기</p>
-          <p className="text-[13px] text-[#C9571A] font-bold mb-6">📢 공유하면 1크레딧 지급! (최초 1회)</p>
 
           <div className="flex flex-col gap-3">
-            <button
-              onClick={handleKakaoShare}
-              disabled={isSharing}
-              className="w-full flex items-center justify-center gap-2 bg-[#FEE500] hover:bg-[#F0D900] disabled:opacity-60 text-[#191919] font-bold py-4 rounded-2xl text-[15px] transition-colors"
-            >
-              {isSharing ? (
-                <div className="w-4 h-4 rounded-full border-2 border-[#191919]/30 border-t-[#191919]" style={{ animation: "spin 0.8s linear infinite" }} />
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/>
-                </svg>
-              )}
-              {isSharing ? "링크 생성 중..." : "카카오로 공유하기"}
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleKakaoShare}
+                disabled={isSharing}
+                className="w-full flex items-center justify-center gap-2 bg-[#FEE500] hover:bg-[#F0D900] disabled:opacity-60 text-[#191919] font-bold py-4 rounded-2xl text-[15px] transition-colors"
+              >
+                {isSharing ? (
+                  <div className="w-4 h-4 rounded-full border-2 border-[#191919]/30 border-t-[#191919]" style={{ animation: "spin 0.8s linear infinite" }} />
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/>
+                  </svg>
+                )}
+                {isSharing ? "링크 생성 중..." : "카카오로 공유하기"}
+              </button>
+              <p className="px-1 text-[13px] font-bold text-[#C9571A]">카카오로 공유하고 돌아오면 1크레딧이 지급돼요. (최초 1회)</p>
+            </div>
 
             <button
               onClick={handleCopyLink}

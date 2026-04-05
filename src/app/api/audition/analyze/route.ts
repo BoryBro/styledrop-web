@@ -2,50 +2,72 @@ import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 
 type Scores = { 이해도: number; 표정연기: number; 창의성: number; 몰입도: number };
+type PersonalityAnswerPayload = {
+  category: string;
+  question: string;
+  choice: "A" | "B";
+  answerText: string;
+  opposingText: string;
+};
 
-function buildPrompt(genres: string[], cues: string[], flavor: "spicy" | "mild" = "spicy", personality?: string[]): string {
+function buildPrompt(
+  genres: string[],
+  cues: string[],
+  flavor: "spicy" | "mild" = "spicy",
+  personality?: PersonalityAnswerPayload[]
+): string {
   const steps = genres.map((g, i) => `${i + 1}번 사진\n  - 장르: [${g}]\n  - 상황: "${cues[i]}"`).join("\n\n");
+  const personalityBlock = personality && personality.length > 0
+    ? `
+━━━ [③] 성향 밸런스 게임 결과 ━━━
+유저는 아래 질문들에 직접 답했다. 반드시 선택 문장을 근거로 해석해라.
+질문이 보여준 태도와 선택 문장을 근거 삼아, 이 사람의 연기 성향과 캐스팅 성향을 분석해라.
 
-  return `너는 연기 경력 27년의 독설 감독이자 관상학 연구가야.
-유저가 제출한 셀카 3장을 보고 두 가지를 동시에 분석해:
-① 각 장르별 연기 표정 평가
-② 얼굴 관상학 분석 — 이 사람이 타고난 배역을 판정
+${personality.map((item, i) => (
+  `${i + 1}. ${item.category}\n- 질문: ${item.question}\n- 선택: ${item.choice} / ${item.answerText}\n- 반대 선택: ${item.opposingText}`
+)).join("\n\n")}
+`
+    : "";
+
+  return `너는 연기 경력 27년의 캐스팅 디렉터이자 표정 연기 코치, 그리고 얼굴 인상 분석가다.
+이번 평가는 "그럴싸한 문장"이 아니라 "근거가 보이는 결과"여야 한다.
+유저가 제출한 셀카 3장과 밸런스 게임 답변을 보고 아래 3가지를 동시에 분석해:
+① 장르별 연기 수행 정확도
+② 얼굴 인상/관상 기반 캐스팅 포지션
+③ 밸런스 게임 답변 기반 성향 프로파일
 
 ━━━ 평가 대상 ━━━
 ${steps}
 
 ━━━ [①] 연기 표정 분석 ━━━
-각 사진을 실제로 보고 분석:
-1. 얼굴이 보이는가? 카메라를 향하고 있나? → 안 보이면 이 상황 자체를 독설로 찌를 것
-2. 눈빛 — 주어진 장르/상황의 감정이 실제로 눈에 담겨있나?
-3. 눈썹 — 상황에 맞게 올라갔나/내려갔나/찌푸렸나?
-4. 입 모양 — 긴장/이완/벌림 정도가 상황과 맞나?
-5. 얼굴 전체 통일성 — 눈은 슬픈데 입은 웃거나, 표정이 따로 논다면 즉시 지적
+각 사진을 실제로 보고, 반드시 아래 근거를 기준으로 판단해라:
+1. 지시문 핵심 감정/상황을 읽어냈는가
+2. 눈빛이 감정 방향과 일치하는가
+3. 눈썹이 감정 강약을 돕는가
+4. 입/입술 긴장도가 장르와 맞는가
+5. 시선과 얼굴 정면성이 카메라를 살리는가
+6. 눈-입-눈썹이 하나의 감정으로 통일되어 있는가
+7. "정지 이미지 기준으로 읽히는 감정"과 "사용자가 의도했을 법한 감정"의 차이를 분명히 설명해라
 
 ━━━ 점수 기준 ━━━
-- 얼굴 안 보임/딴 곳 봄 → 이해도 5~15, 나머지도 낮게
-- 표정이 상황과 전혀 안 맞음 → 각 항목 10~30점
-- 반쯤 맞음 → 35~54점
-- 주요 표정은 맞지만 어색함 → 55~74점
-- 눈·입·눈썹 모두 딱 맞음 → 75~95점
-⚠️ 잘 했으면 85~95점도 줄 것. 3장 점수가 다 비슷하면 안 됨.
+- 얼굴 안 보임 / 시선 이탈 심함 → 이해도 5~20
+- 장르 감정과 거의 안 맞음 → 20~40
+- 의도는 보이지만 디테일이 약함 → 45~64
+- 핵심 감정은 맞고 어색함만 남음 → 65~79
+- 눈·눈썹·입이 같은 감정을 밀어줌 → 80~94
+세 장 점수는 차이를 둬라. 모두 비슷한 점수를 주지 마라.
 
 ━━━ 말투 강도: ${flavor === "spicy" ? "🌶️ 매운맛" : "🥛 순한맛"} ━━━
-${flavor === "spicy" ? `- 욕설은 친한 친구한테 하듯 자연스럽게. 단 남발 금지 — 꼭 필요한 순간에만.
-- 씨발/존나/이새끼 정도는 OK. 그 이상 수위 금지.
-- 점수 25점 미만: "씨발 이게 연기야? ㅋㅋ" 수준
-- 점수 25~50점: "존나 애매한데 ㅋㅋ" 수준
-- 점수 50~70점: "오 이새끼 봐라, 쬐끔 되는 거 아냐?" 츤데레
-- 점수 70점+: "야 씨발 이거 진짜 됩니다" 극찬` : `- 점수 25점 미만: "이건 진짜 아니에요. 배우 포기하세요" 독설
-- 점수 25~50점: "솔직히 많이 부족해요" 수준
-- 점수 50~70점: "조금은 됩니다. 근데 많이 아쉽네요" 수준
-- 점수 70점+: "오 이거 봐봐요, 진짜 됩니다" 극찬`}
-- 친절한 칭찬 금지. 반드시 뼈 있는 한 마디 포함.
+- 말투는 전문 평가 톤을 유지하되, 너무 무겁지 않게.
+${flavor === "spicy" ? "- 매운맛은 직설적으로, 하지만 비꼬기보다 정확한 지적을 우선해라." : "- 순한맛은 날카롭되 공격적이지 않게 말해라."}
+- 무조건 칭찬하거나 무조건 까지 말고, 잘한 것과 부족한 것을 둘 다 분리해라.
 
 ━━━ [②] 관상학 분석 ━━━
-3장의 사진으로 아래 항목을 분석해:
+관상이라는 표현은 유지하되, 실제 출력은 "얼굴 특징이 화면에서 어떻게 읽히는지"를 중심으로 작성해라.
+즉, 미신처럼 단정하지 말고 "이런 인상으로 읽힌다"는 식으로 분석해라.
+3장의 사진과 정면 얼굴 인상을 기준으로 아래를 보라:
 
-얼굴 특징 분석:
+얼굴 특징 관찰 기준:
 - 이마: 넓고 높은지(지성·리더십) / 좁거나 낮은지(실행력·현실적)
 - 눈: 크고 생기있는지(감정표현·주인공형) / 날카롭고 좁은지(냉철·악역형) / 눈꼬리 방향(올라감=카리스마, 내려감=온화)
 - 눈썹: 진하고 또렷한지(의지력) / 옅은지(유연함)
@@ -65,64 +87,156 @@ ${flavor === "spicy" ? `- 욕설은 친한 친구한테 하듯 자연스럽게. 
 - "인생 조연형" — 균형잡혔지만 주인공 아우라는 없음 (독설 포인트)
 - "카리스마 조연형" — 강한 인상이지만 주인공보다는 조연
 
-관상학 말투: 친한 친구한테 솔직하게 말하는 전문가 톤.
-장점은 진지하게 인정, 단점은 가볍게 찌르기 (심한 욕설 없이, 대신 뼈있게).
-${personality && personality.length > 0 ? `
-━━━ [③] 성향 밸런스 게임 결과 ━━━
-유저가 10가지 선택 질문에 답했어. 각 항목은 "A 선택" 또는 "B 선택" 형태야.
-이 결과를 종합해서 이 사람의 연기 성향과 어울리는 캐릭터 유형을 판단해.
-관상 분석 결과와 교차해서 해석하면 더 정확해.
-
-${personality.map((p, i) => `Q${i + 1}: ${p}`).join("\n")}
-
-성향 분석 말투: 친구한테 말하듯 짧고 날카롭게. 심한 욕 없이.
-` : ""}
+${personalityBlock}
 ━━━ 응답 형식 ━━━
 JSON만 출력. 한국어, style_prompt만 영어:
 {
   "scenes": [
     {
       "genre": "${genres[0]}",
-      "critique": "[실제 사진 분석 + 상황 언급 기반 독설. 2~3문장, 70자 이내. 구체적 표정 요소 포함.]",
-      "assigned_role": "[짧고 강렬한 단역명 (10~15자). MZ 말투로 과감하게. 점수 낮을수록 독하게. 숫자 붙이지 말 것.]",
+      "critique": "[사진에서 실제로 읽힌 표정과 지시문 적합도를 짧게 총평. 2문장.]",
+      "cue_match": "[이 장면의 지시문을 얼마나 정확히 수행했는지 한 문장]",
+      "emotion_read": "[정지 이미지에서 실제로 읽히는 핵심 감정 한 문장]",
+      "direction_note": "[지금 이 장면을 더 살리려면 무엇을 고쳐야 하는지 한 문장]",
+      "matched_points": ["[잘 맞은 요소 1]", "[잘 맞은 요소 2]"],
+      "missed_points": ["[아쉬운 요소 1]", "[아쉬운 요소 2]"],
+      "expression_breakdown": {
+        "eyes": "[눈빛 읽힘]",
+        "brows": "[눈썹 읽힘]",
+        "mouth": "[입/입술 읽힘]",
+        "focus": "[시선/정면성 읽힘]"
+      },
+      "evidence": [
+        { "label": "[예: 눈빛]", "observation": "[실제 보이는 특징]", "impact": "[그 특징이 장면에 준 영향]" },
+        { "label": "[예: 입술]", "observation": "[실제 보이는 특징]", "impact": "[그 특징이 장면에 준 영향]" },
+        { "label": "[예: 시선]", "observation": "[실제 보이는 특징]", "impact": "[그 특징이 장면에 준 영향]" }
+      ],
+      "assigned_role": "[짧고 강렬한 캐스팅 포지션명]",
       "style_prompt": "[이 사람 얼굴 기반 ${genres[0]} 장르 스틸컷. 2문장. correct human anatomy, proper hands with exactly 5 fingers each hand 포함]",
       "scores": { "이해도": 0, "표정연기": 0, "창의성": 0, "몰입도": 0 }
     },
     {
       "genre": "${genres[1]}",
-      "critique": "[${genres[1]} 상황 기반 독설. 2~3문장, 70자 이내.]",
-      "assigned_role": "[10~15자 단역명. 점수 낮을수록 독하게.]",
+      "critique": "[${genres[1]} 총평 2문장]",
+      "cue_match": "[한 문장]",
+      "emotion_read": "[한 문장]",
+      "direction_note": "[한 문장]",
+      "matched_points": ["[잘 맞은 요소 1]", "[잘 맞은 요소 2]"],
+      "missed_points": ["[아쉬운 요소 1]", "[아쉬운 요소 2]"],
+      "expression_breakdown": {
+        "eyes": "[눈빛 읽힘]",
+        "brows": "[눈썹 읽힘]",
+        "mouth": "[입/입술 읽힘]",
+        "focus": "[시선/정면성 읽힘]"
+      },
+      "evidence": [
+        { "label": "[라벨]", "observation": "[관찰]", "impact": "[영향]" },
+        { "label": "[라벨]", "observation": "[관찰]", "impact": "[영향]" },
+        { "label": "[라벨]", "observation": "[관찰]", "impact": "[영향]" }
+      ],
+      "assigned_role": "[짧은 캐스팅 포지션명]",
       "style_prompt": "[${genres[1]} 장르 스틸컷. correct human anatomy, proper hands with exactly 5 fingers each hand. 2문장.]",
       "scores": { "이해도": 0, "표정연기": 0, "창의성": 0, "몰입도": 0 }
     },
     {
       "genre": "${genres[2]}",
-      "critique": "[${genres[2]} 상황 기반 독설. 2~3문장, 70자 이내.]",
-      "assigned_role": "[10~15자 단역명. 점수 낮을수록 독하게.]",
+      "critique": "[${genres[2]} 총평 2문장]",
+      "cue_match": "[한 문장]",
+      "emotion_read": "[한 문장]",
+      "direction_note": "[한 문장]",
+      "matched_points": ["[잘 맞은 요소 1]", "[잘 맞은 요소 2]"],
+      "missed_points": ["[아쉬운 요소 1]", "[아쉬운 요소 2]"],
+      "expression_breakdown": {
+        "eyes": "[눈빛 읽힘]",
+        "brows": "[눈썹 읽힘]",
+        "mouth": "[입/입술 읽힘]",
+        "focus": "[시선/정면성 읽힘]"
+      },
+      "evidence": [
+        { "label": "[라벨]", "observation": "[관찰]", "impact": "[영향]" },
+        { "label": "[라벨]", "observation": "[관찰]", "impact": "[영향]" },
+        { "label": "[라벨]", "observation": "[관찰]", "impact": "[영향]" }
+      ],
+      "assigned_role": "[짧은 캐스팅 포지션명]",
       "style_prompt": "[${genres[2]} 장르 스틸컷. correct human anatomy, proper hands with exactly 5 fingers each hand. 2문장.]",
       "scores": { "이해도": 0, "표정연기": 0, "창의성": 0, "몰입도": 0 }
     }
   ],
-  "overall_critique": "[3장 종합 독설. ① 충격적인 것 콕 집어 찌르기 ② 그나마 나은 장르 츤데레 칭찬 ③ 최종 판정. SNS 캡처각. 2~3문장]",
-  "overall_one_liner": "[연기력 단 한 문장. 평균 70점+ → 극찬. 40~69점 → 독설+인정. 39점- → 진짜 독설. 짧고 임팩트 있게.]",
+  "overall_critique": "[3장 종합 총평. 잘한 점, 약한 점, 최종 판정이 모두 보이게 2~3문장]",
+  "overall_one_liner": "[결과를 압축하는 한 문장]",
+  "overall_diagnosis": {
+    "best_fit": "[가장 잘 맞는 장르/포지션]",
+    "biggest_gap": "[가장 큰 약점]",
+    "casting_reason": "[왜 그런 캐스팅이 나오는지]",
+    "training_focus": "[다음에 집중해야 할 훈련 포인트]"
+  },
   "physiognomy": {
     "face_type": "[얼굴형 한 단어: 둥근형/각진형/달걀형/역삼각형 중 하나]",
     "archetype": "[캐릭터 아키타입 한 문장: 위 8가지 중 하나]",
-    "archetype_reason": "[아키타입 판정 이유. 얼굴의 어떤 특징이 그렇게 만드는지 구체적으로. 2문장.]",
+    "archetype_reason": "[얼굴의 어떤 특징 때문에 그렇게 읽히는지 2문장]",
+    "screen_impression": "[화면에서 첫인상이 어떻게 읽히는지 한 문장]",
+    "casting_frame": "[감독이 이 얼굴을 어떤 포지션으로 볼지 한 문장]",
+    "watchpoint": "[이 얼굴이 오해받거나 손해 볼 수 있는 지점 한 문장]",
+    "feature_readings": [
+      { "feature": "이마", "observation": "[보이는 특징]", "impression": "[주는 인상]", "casting_effect": "[캐스팅 해석]" },
+      { "feature": "눈", "observation": "[보이는 특징]", "impression": "[주는 인상]", "casting_effect": "[캐스팅 해석]" },
+      { "feature": "입", "observation": "[보이는 특징]", "impression": "[주는 인상]", "casting_effect": "[캐스팅 해석]" },
+      { "feature": "턱/광대", "observation": "[보이는 특징]", "impression": "[주는 인상]", "casting_effect": "[캐스팅 해석]" }
+    ],
     "strengths": ["[관상학적 강점 1 — 구체적인 얼굴 특징 + 그게 어떤 배역에 유리한지]", "[강점 2]", "[강점 3]"],
-    "weaknesses": ["[관상학적 약점 1 — 뼈있게 찌르되 심한 욕 없이. 예: '이마가 좁아서 순진한 주인공은 솔직히 어울리지 않아']", "[약점 2]"],
+    "weaknesses": ["[관상학적 약점 1 — 어떤 인상적 한계가 있는지]", "[약점 2]"],
     "best_genre": "[이 얼굴에 가장 어울리는 장르 한 단어]",
-    "verdict": "[관상 총평 한 문장. 이 사람이 배우로 데뷔한다면 어떤 캐릭터가 될지. 친구한테 말하듯 솔직하게.]"
+    "verdict": "[관상 총평 한 문장. 이 사람이 배우로 데뷔한다면 어떤 캐릭터로 읽힐지.]"
+  },
+  "personality_profile": {
+    "summary": "[성향 핵심 한 문장]",
+    "acting_temperament": "[연기할 때 어떤 태도로 접근할 가능성이 높은지]",
+    "collaboration_style": "[현장 협업 스타일 해석]",
+    "pressure_response": "[압박 상황 반응]",
+    "casting_keyword": "[캐스팅 키워드 1개]",
+    "recommended_roles": ["[어울리는 역할 1]", "[어울리는 역할 2]", "[어울리는 역할 3]"],
+    "axes": [
+      {
+        "name": "[축 이름]",
+        "left_label": "[좌측 성향]",
+        "right_label": "[우측 성향]",
+        "score": 0,
+        "leaning": "[어느 쪽으로 기울었는지]",
+        "summary": "[왜 그렇게 읽히는지 한 문장]",
+        "evidence": ["[답변 근거 1]", "[답변 근거 2]"]
+      },
+      {
+        "name": "[축 이름]",
+        "left_label": "[좌측 성향]",
+        "right_label": "[우측 성향]",
+        "score": 0,
+        "leaning": "[어느 쪽으로 기울었는지]",
+        "summary": "[왜 그렇게 읽히는지 한 문장]",
+        "evidence": ["[답변 근거 1]", "[답변 근거 2]"]
+      },
+      {
+        "name": "[축 이름]",
+        "left_label": "[좌측 성향]",
+        "right_label": "[우측 성향]",
+        "score": 0,
+        "leaning": "[어느 쪽으로 기울었는지]",
+        "summary": "[왜 그렇게 읽히는지 한 문장]",
+        "evidence": ["[답변 근거 1]", "[답변 근거 2]"]
+      },
+      {
+        "name": "[축 이름]",
+        "left_label": "[좌측 성향]",
+        "right_label": "[우측 성향]",
+        "score": 0,
+        "leaning": "[어느 쪽으로 기울었는지]",
+        "summary": "[왜 그렇게 읽히는지 한 문장]",
+        "evidence": ["[답변 근거 1]", "[답변 근거 2]"]
+      }
+    ]
   }${personality && personality.length > 0 ? `,
-  "personality_summary": "[성향 분석 결과 한 문장. 관상과 연결해서 이 사람이 어떤 배우 기질을 가졌는지 날카롭게. 친구에게 말하듯.]"` : ""}
+  "personality_summary": "[성향 분석 결과 한 문장]"` : ""}
 }`;
 }
-
-const GENRE_EMOJIS: Record<string, string> = {
-  멜로: "💔", 스릴러: "🔪", 일상: "😐", 공포: "👻",
-  코미디: "😂", 액션: "💥", 판타지: "✨", 범죄: "🕵️",
-  로맨스: "🌹", 심리: "🧠",
-};
 
 const MOCK_CRITIQUES: Record<string, string[]> = {
   공포: [
@@ -522,7 +636,7 @@ const OVERALL_CRITIQUES: ((g: string[]) => string)[] = [
   (g) => `세 장 다 열심히 하셨는데요, 열심히랑 잘하는 건 달라요. ${g[2]}에서 잠깐 잘하셨고요. 나머지는 열심히만 하셨어요. 최종 판정: 열정상 수상.`,
   (g) => `${g[0]}는 몸은 있는데 표정이 없고, ${g[1]}는 표정은 있는데 장르가 없고, ${g[2]}는 장르는 있는데 연기가 없어요. 합치면 완벽한데. 최종 판정: 분리불가 패키지 불합격.`,
   (g) => `이번 오디션에서 제일 인상적이었던 건 ${g[1]}이에요. 오 이새끼 봐라 했거든요. 나머지는 그냥 넘어갈게요. 최종 판정: ${g[1]} 단역 합격, 나머지 불합격.`,
-  (g) => `세 장 모두 '잘 하려는 의지'는 보여요. 의지랑 실력이 비례하면 지금쯤 할리우드 갔겠죠. 최종 판정: 의지 만점, 실력 재검토.`,
+  () => `세 장 모두 '잘 하려는 의지'는 보여요. 의지랑 실력이 비례하면 지금쯤 할리우드 갔겠죠. 최종 판정: 의지 만점, 실력 재검토.`,
 ];
 
 function pickRandom<T>(arr: T[]): T {
@@ -539,6 +653,106 @@ function mockScores(): Scores {
   };
 }
 
+function buildMockSceneAnalysis(genre: string, cue: string) {
+  return {
+    cue_match: `${cue}라는 상황은 읽고 들어갔지만, 감정 강약이 완전히 정리되진 않았어요.`,
+    emotion_read: `정지 이미지 기준으로는 ${genre} 장르 감정보다 '긴장한 본인'이 먼저 읽히는 컷입니다.`,
+    direction_note: "다음에는 눈빛 방향 하나를 먼저 정하고, 입술 힘을 그 감정에 맞춰 같이 잠가주세요.",
+    matched_points: [
+      "카메라를 정면으로 받아내는 태도는 유지됨",
+      "표정을 만들려는 의도 자체는 프레임 안에 남아 있음",
+    ],
+    missed_points: [
+      "눈-입-눈썹이 같은 감정을 향하지 않아 읽힘이 분산됨",
+      "지시문 핵심 감정보다 촬영 긴장감이 먼저 보임",
+    ],
+    expression_breakdown: {
+      eyes: "눈빛은 살아 있지만 장르 감정보다 긴장감이 먼저 읽힙니다.",
+      brows: "눈썹 각도가 감정 강약을 충분히 밀어주지 못합니다.",
+      mouth: "입술 긴장도가 애매해서 감정의 끝맺음이 흐립니다.",
+      focus: "정면 응시는 유지됐지만 시선 압력이 아직 약합니다.",
+    },
+    evidence: [
+      { label: "눈빛", observation: "동공 방향은 정면인데 감정 초점이 약합니다.", impact: "장면의 감정이 선명하게 박히지 않습니다." },
+      { label: "입술", observation: "입술 힘이 반쯤 풀려 있어 표정 결론이 흐립니다.", impact: "지시문 의도가 덜 확정돼 보입니다." },
+      { label: "얼굴 통일성", observation: "눈과 입이 같은 감정으로 묶이지 않습니다.", impact: "표정이 '연기 중'처럼 보일 가능성이 높습니다." },
+    ],
+  };
+}
+
+function buildMockOverallDiagnosis(genres: string[]) {
+  return {
+    best_fit: `${genres[0]}나 ${genres[1]}처럼 감정 방향이 분명한 장르에서 가능성이 있습니다.`,
+    biggest_gap: "감정은 잡는데 미세한 표정 근육이 아직 분리돼서 읽힙니다.",
+    casting_reason: "카메라를 피하지 않는 타입이라 프레임 장악력은 있는데, 디테일이 아직 덜 정리됐습니다.",
+    training_focus: "눈빛 방향과 입술 긴장도를 같이 맞추는 훈련이 가장 먼저 필요합니다.",
+  };
+}
+
+function buildMockPhysioDetails() {
+  return {
+    screen_impression: "첫인상은 부드럽게 들어오지만, 가까이 보면 의외로 단단한 결이 읽히는 얼굴입니다.",
+    casting_frame: "감독 입장에서는 선역 단정보다 '안정적인데 한 번 비트는 역할'로 먼저 볼 가능성이 높아요.",
+    watchpoint: "표정이 약간만 굳어도 거리감이 생겨서 감성 캐릭터에서 손해를 볼 수 있습니다.",
+    feature_readings: [
+      { feature: "이마", observation: "이마 면적이 안정적으로 열려 있습니다.", impression: "생각이 정리된 사람처럼 읽힙니다.", casting_effect: "리더/기획형 배역의 설득력을 보탭니다." },
+      { feature: "눈", observation: "눈매가 과하게 날카롭지 않고 중심이 잘 잡혀 있습니다.", impression: "차갑기보다 침착한 인상을 만듭니다.", casting_effect: "선한 인물도 가능하지만 반전형 역할도 받칠 수 있습니다." },
+      { feature: "입", observation: "입매가 크게 흔들리지 않아 감정 절제가 먼저 보입니다.", impression: "감정을 함부로 흘리지 않는 사람처럼 보입니다.", casting_effect: "속을 감추는 캐릭터에 유리합니다." },
+      { feature: "턱/광대", observation: "턱선은 무난하고 광대는 과하게 튀지 않습니다.", impression: "강압적이기보다 균형형 인상으로 읽힙니다.", casting_effect: "주연 보조축이나 현실적인 캐릭터에 잘 붙습니다." },
+    ],
+  };
+}
+
+function buildMockPersonalityProfile(personality?: PersonalityAnswerPayload[]) {
+  const evidence = personality?.slice(0, 4).map(item => `${item.category} — ${item.answerText}`) ?? [];
+  return {
+    summary: "겉으로는 침착하게 들어오지만, 선택 패턴을 보면 안쪽 추진력이 꽤 강한 편입니다.",
+    acting_temperament: "캐릭터를 크게 흔들기보다 내부 감정을 쌓아서 한 번에 터뜨리는 타입으로 읽힙니다.",
+    collaboration_style: "현장에서는 먼저 튀기보다 판을 읽고 필요한 순간 존재감을 올리는 쪽에 가깝습니다.",
+    pressure_response: "압박이 걸리면 무너지기보다 더 통제하려는 반응이 강해 보입니다.",
+    casting_keyword: "정제된 긴장감",
+    recommended_roles: ["속을 숨기는 신입 형사", "반전 있는 현실형 조연", "감정 누르는 멜로 상대역"],
+    axes: [
+      {
+        name: "존재감",
+        left_label: "전면 돌파",
+        right_label: "은근한 존재감",
+        score: 62,
+        leaning: "은근한 존재감 쪽으로 기울어 있음",
+        summary: "앞으로 확 튀기보다 서서히 존재감을 올리는 방식이 더 자연스럽습니다.",
+        evidence: evidence.slice(0, 2),
+      },
+      {
+        name: "소통 방식",
+        left_label: "직진형",
+        right_label: "정리형",
+        score: 46,
+        leaning: "상황 따라 직진하는 편",
+        summary: "감정을 오래 묵히기보다 필요한 순간에는 정면으로 꺼내는 기질이 보입니다.",
+        evidence: evidence.slice(1, 3),
+      },
+      {
+        name: "판단 방식",
+        left_label: "직관형",
+        right_label: "분석형",
+        score: 57,
+        leaning: "분석형 쪽이 조금 더 강함",
+        summary: "무작정 지르기보다 본인 기준을 세우고 움직이려는 경향이 읽힙니다.",
+        evidence: evidence.slice(0, 2),
+      },
+      {
+        name: "감정 처리",
+        left_label: "표출형",
+        right_label: "절제형",
+        score: 68,
+        leaning: "절제형으로 꽤 기울어 있음",
+        summary: "감정을 바로 다 쓰기보다 안에 남겨두는 쪽이라, 누적형 캐릭터에서 강점이 납니다.",
+        evidence: evidence.slice(2, 4),
+      },
+    ],
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { images, genres, cues, flavor, personality } = await request.json();
@@ -548,6 +762,7 @@ export async function POST(request: NextRequest) {
     }
 
     const g: string[] = (Array.isArray(genres) && genres.length === 3) ? genres : ["장르1", "장르2", "장르3"];
+    const personalityArr: PersonalityAnswerPayload[] | undefined = Array.isArray(personality) ? personality : undefined;
 
     // ── Mock 모드 ──────────────────────────────────────────────────
     if (process.env.MOCK_GEMINI === "true") {
@@ -589,6 +804,7 @@ export async function POST(request: NextRequest) {
           assigned_role: pickRandom(MOCK_ROLES[genre] ?? [`배경에서 고개 돌리는 행인 ${i + 2}`]),
           style_prompt: `Cinematic film still, ${genre} genre Korean movie, atmospheric lighting, background extra, shallow depth of field.`,
           scores: mockScores(),
+          ...buildMockSceneAnalysis(genre, cues?.[i] ?? `${genre} 장면`),
         })),
         overall_critique: pickRandom(OVERALL_CRITIQUES)(g),
         overall_one_liner: pickRandom([
@@ -603,7 +819,11 @@ export async function POST(request: NextRequest) {
           "감독 모니터 보다가 뒤로 넘어질 뻔했어요. 황당해서 ㅋㅋ",
           "이거 보고 제가 은퇴 고려했어요. 충격이 너무 커서.",
         ]),
-        physiognomy: pickRandom(MOCK_PHYSIOGNOMY),
+        overall_diagnosis: buildMockOverallDiagnosis(g),
+        physiognomy: {
+          ...pickRandom(MOCK_PHYSIOGNOMY),
+          ...buildMockPhysioDetails(),
+        },
         ...(Array.isArray(personality) && personality.length > 0 ? {
           personality_summary: pickRandom([
             "관상은 냉철한 악역형인데 성향은 감정형이라 — 겉은 차가운데 속은 뜨거운 반전 캐릭터가 딱 맞아.",
@@ -612,13 +832,13 @@ export async function POST(request: NextRequest) {
             "복수 선택한 거 봤어. 이 성향이면 악역 연기에서 진짜 감정 나올 수 있어 — 나쁜 거 아니니까 잘 써먹어.",
             "감정을 바로 내뱉는 타입이라 멜로 연기에서 눈물 연기는 자연스럽게 나올 것 같은데, 그게 강점이야.",
           ]),
+          personality_profile: buildMockPersonalityProfile(personalityArr),
         } : {}),
       });
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
-    const personalityArr: string[] | undefined = Array.isArray(personality) ? personality : undefined;
     const prompt = (Array.isArray(cues) && cues.length === 3)
       ? buildPrompt(g, cues, flavor ?? "spicy", personalityArr)
       : buildPrompt(g, ["상황1", "상황2", "상황3"], flavor ?? "spicy", personalityArr);

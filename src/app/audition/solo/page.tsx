@@ -392,6 +392,13 @@ function pickRandomCue(genreId: GenreId): string {
 const VIDEO_CONSTRAINTS = { width: 720, height: 720, facingMode: "user" };
 
 type CaptureItem = { base64: string; dataUrl: string };
+type PersonalityAnswer = {
+  category: string;
+  question: string;
+  choice: "A" | "B";
+  answerText: string;
+  opposingText: string;
+};
 type Phase = "loading" | "login_required" | "no_credits" | "intro" | "genre_select" | "personality_quiz" | "capture_physio_guide" | "capture_physio" | "capture" | "analyzing" | "error";
 
 const QUIZ_QUESTIONS = [
@@ -468,7 +475,7 @@ function AuditionSoloInner() {
   const [captures, setCaptures] = useState<CaptureItem[]>([]);
   const [agreed, setAgreed] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [personalityAnswers, setPersonalityAnswers] = useState<string[]>([]);
+  const [personalityAnswers, setPersonalityAnswers] = useState<PersonalityAnswer[]>([]);
   const [quizStep, setQuizStep] = useState(0);
   const [quizAnim, setQuizAnim] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -838,8 +845,17 @@ function AuditionSoloInner() {
     const current = quizQuestions[quizStep];
     const progress = ((quizStep + 1) / quizQuestions.length) * 100;
 
-    const handleAnswer = (answer: string) => {
-      const next = [...personalityAnswers, answer];
+    const handleAnswer = (choice: "A" | "B") => {
+      const next = [
+        ...personalityAnswers,
+        {
+          category: current.category,
+          question: current.q,
+          choice,
+          answerText: choice === "A" ? current.a : current.b,
+          opposingText: choice === "A" ? current.b : current.a,
+        },
+      ];
       setPersonalityAnswers(next);
       setQuizAnim(true);
       setTimeout(() => {
