@@ -21,6 +21,19 @@ function parseSession(request: NextRequest): { id: string; nickname: string } | 
 
 const STYLE_CONFIGS: Record<string, { temperature?: number; topP?: number; topK?: number }> = {};
 
+const STRICT_IDENTITY_LOCK = `IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first`;
+
+const SELFIE_REALISM_LOCK = `FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details`;
+
 // 2D 구조: STYLE_PROMPTS[styleId][variant]
 // 서브 옵션이 없는 스타일은 "default" 키만 가짐
 const STYLE_PROMPTS: Record<string, Record<string, string>> = {
@@ -244,6 +257,365 @@ A highly stylized flash-shot fantasy portrait of the uploaded user as a glamorou
   "gyaru": {
     "default": "Transform this photo into an authentic early-2000s Japanese gyaru (ギャル) portrait style. Keep the person's identity intact — same face structure, same person.\n\nMAKEUP TRANSFORMATION:\n- Heavy dramatic eye makeup: thick layered false lashes, strong black eyeliner with extended outer corners\n- Dark dramatic contact lens effect (high contrast, enlarged-looking)\n- White shimmer highlight under the eyes (tear bag / aegyo-sal emphasis)\n- Bright vertical nose highlight stripe\n- Pale matte skin base with soft airbrushed finish\n- Pink blush across cheeks and nose bridge\n- Glossy light pink overlined lips\n\nHAIR:\n- Dye to blonde or light brown\n- Voluminous, curled, layered gyaru styling\n- Shiny, slightly synthetic-looking texture\n\nOUTFIT & BACKGROUND:\n- Leopard or animal print elements in outfit or background\n- Sparkly, rhinestone-style accessories\n- Feminine, over-the-top Y2K gyaru fashion\n\nPHOTO STYLE:\n- Front-facing selfie angle, slightly top-down\n- Direct flash lighting: overexposed skin highlights, high contrast\n- Warm candy-like color tone\n- Retro Japanese photo booth (purikura) aesthetic: slight grain, warm saturation\n\nSTRICT RULES:\n- Preserve the person's identity: same face, same bone structure\n- No face reshaping or identity change\n- Output must look like a real early-2000s gyaru photo",
   },
+  "idol-photocard": {
+    "default": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+Transform the uploaded photo into a polished K-pop photocard style portrait.
+
+LOOK:
+- Clear radiant skin with glossy realistic highlights
+- Soft pink blush, subtle shimmer under the eyes, glossy gradient lips
+- Clean sparkling idol makeup, fresh and youthful
+- Hair should stay recognizable but more polished, silky, and camera-ready
+
+WARDROBE & STYLING:
+- Trendy feminine idol styling: soft knit top, fitted cardigan, ribbon detail, or clean stage-casual look
+- Delicate accessories such as a tiny hair clip, ribbon, or stud earrings
+
+COMPOSITION:
+- Chest-up or close portrait framing
+- Subject centered like a collectible photocard
+- Slightly cute, camera-aware expression, gentle smile or soft neutral
+
+BACKGROUND:
+- Clean pastel or softly blurred studio background
+- Light bokeh, airy glow, polished entertainment-company photocard mood
+
+PHOTO STYLE:
+- High-resolution beauty portrait
+- Bright but soft frontal lighting
+- Subtle skin texture retained
+- Premium photocard finish, not plastic or uncanny
+
+STRICT RULES:
+- Do not change the person into a different idol face
+- Do not exaggerate eye enlargement too much
+- Keep the result believable, polished, and instantly recognizable`
+  },
+  "coquette-ribbon": {
+    "default": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+Transform the uploaded photo into a romantic coquette portrait.
+
+STYLING:
+- Satin ribbons, bow accents, lace trim, pearl details
+- Soft rosy blush, glossy lips, fluttery lashes, subtle shimmer
+- Feminine, sweet, polished styling without changing identity
+
+HAIR:
+- Keep the same hairstyle recognizable
+- Add a refined coquette finish: soft curls, smooth shine, ribbon accessory, delicate framing pieces
+
+OUTFIT:
+- Soft pink, ivory, blush, or cream coquette outfit
+- Lace camisole, cardigan, ribbon blouse, or satin dress
+
+BACKGROUND:
+- Dreamy bedroom or vanity corner
+- Soft pink ambient light, ribbons, framed mirror, satin textures, perfume-bottle mood
+
+PHOTO STYLE:
+- Flash-assisted but flattering portrait
+- Slight softness, gentle bloom, social-media-ready editorial cute mood
+
+EXPRESSION:
+- Sweet, composed, softly flirty, delicate
+
+STRICT RULES:
+- Do not turn this into fantasy angel imagery
+- Do not create a generic doll face
+- Keep it trendy, feminine, and human`
+  },
+  "balletcore-muse": {
+    "default": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+Transform the uploaded photo into an off-duty balletcore muse portrait.
+
+STYLING:
+- Soft ballerina-inspired makeup with cool pink tones and luminous skin
+- Delicate satin ribbon details, wrap cardigan, leg-warmer or rehearsalwear mood
+- Graceful but modern fashion-editorial softness
+
+HAIR:
+- Keep the person's real hairstyle recognizable
+- Style it into a soft bun, ribbon tie, or polished rehearsal-day finish
+
+SCENE:
+- Minimal dance studio, hallway mirror, or softly lit rehearsal room
+- Neutral walls, satin textures, pale light, quiet luxury atmosphere
+
+POSE:
+- Elegant relaxed posture, elongated neck, calm shoulders
+- Delicate hand placement, serene expression
+
+PHOTO STYLE:
+- Soft diffused daylight mixed with subtle editorial polish
+- Airy, expensive, feminine, quiet, refined
+
+STRICT RULES:
+- Preserve the person's actual identity strongly
+- Do not make the face look overly animated or porcelain
+- Keep the aesthetic wearable and current`
+  },
+  "yearbook-2006": {
+    "default": `${STRICT_IDENTITY_LOCK}
+
+Transform the uploaded photo into a nostalgic 2006 yearbook portrait.
+
+ERA DETAILS:
+- Side bangs or softly layered Y2K hair styling
+- Frosty pink or beige lips
+- Soft matte skin, thin eyeliner, glossy highlights
+- A polished but very 2006 school-photo beauty look
+
+COMPOSITION:
+- Clean studio yearbook portrait framing
+- Classic school-photo pose, direct camera eye contact
+- Mid-close portrait, centered, simple background
+
+BACKGROUND:
+- Blue-gray or warm beige studio backdrop
+- Slightly artificial studio lighting like a school photography setup
+
+PHOTO TEXTURE:
+- Mild digital camera softness
+- Light nostalgic grain
+- Slight early-2000s department-store portrait finish
+
+MOOD:
+- Pretty, a little awkward, very nostalgic, instantly yearbook-coded
+
+STRICT RULES:
+- Keep the same recognizable person
+- Do not make it comedic or parody
+- Keep the era styling strong but flattering`
+  },
+  "club-flash": {
+    "default": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+Transform the uploaded photo into a nightlife flash party portrait.
+
+LOOK:
+- Strong direct camera flash
+- Glossy skin highlights, slightly sweaty party glow
+- Smoky shimmer eyes, glossy lips, nightlife makeup
+
+SCENE:
+- Dark club or lounge background
+- Out-of-focus neon lighting, silhouettes, reflective surfaces, late-night energy
+- The subject remains the clear main focus
+
+COMPOSITION:
+- Candid but flattering party shot
+- Slight motion in the background, subject sharp under flash
+
+MOOD:
+- Fun, cool, social, a little chaotic, high-energy
+- Like a premium digital-camera party photo from a fashion crowd
+
+STRICT RULES:
+- Keep the exact person recognizable
+- Do not over-darken the face
+- Do not lose realism under the flash lighting`
+  },
+  "frosted-glam": {
+    "default": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+Transform the uploaded photo into a 2006-inspired frosted glam beauty portrait.
+
+MAKEUP:
+- Frosty pink or icy beige lipstick
+- Silver or champagne shimmer eyeshadow
+- Glossy reflective skin high points
+- Defined lashes with modern-but-Y2K glamour
+
+HAIR:
+- Keep hairstyle recognizable but smoother, glossier, and more beauty-editorial
+
+COMPOSITION:
+- Beauty close-up or chest-up portrait
+- Subject fills the frame like a magazine beauty campaign
+
+LIGHTING:
+- Crisp beauty lighting with a slight flash feeling
+- Reflective highlights on lips, lids, and cheekbones
+
+COLOR:
+- Cool pink, icy nude, silver, champagne, soft taupe
+
+MOOD:
+- Expensive, glossy, nostalgic, pretty, trend-driven
+
+STRICT RULES:
+- Keep the person's identity fully intact
+- Do not make it look like heavy drag makeup
+- Stay beauty-editorial, not costume`
+  },
+  "red-carpet-glam": {
+    "default": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+Transform the uploaded photo into a red-carpet editorial glamour portrait.
+
+STYLING:
+- Luxury event makeup: sculpted but natural, glowing skin, defined eyes, glossy nude lips
+- Elegant hair styling, polished and camera-ready
+- Black, white, champagne, or jewel-tone gown styling
+
+SCENE:
+- Red carpet or step-and-repeat event entrance
+- Paparazzi flash ambience, premium event backdrop, cinematic luxury mood
+
+COMPOSITION:
+- Half-body or three-quarter portrait
+- Confident pose, celebrity energy, poised posture
+
+PHOTO STYLE:
+- High-end event photography
+- Strong flash bursts and polished skin sheen
+- Premium editorial finish
+
+STRICT RULES:
+- Keep the person instantly recognizable
+- Avoid turning the face into a generic celebrity
+- Make it aspirational, elegant, and believable`
+  },
+  "dark-coquette": {
+    "default": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+Transform the uploaded photo into a dark coquette portrait.
+
+LOOK:
+- Black lace, ribbon choker, cherry-red lip accents, soft smoky eye
+- Feminine but moody styling
+- Porcelain-inspired glow without erasing real identity
+
+HAIR:
+- Same hairstyle preserved but styled with darker, shinier, moodier finish
+
+OUTFIT:
+- Black lace top, velvet ribbon details, fitted romantic silhouette
+
+BACKGROUND:
+- Dim bedroom, vintage vanity, candlelit mirror corner, or moody editorial set
+- Deep burgundy, black, espresso, and dark cherry tones
+
+MOOD:
+- Romantic, slightly melancholic, stylish, internet-trend coded
+
+PHOTO STYLE:
+- Flash plus shadowy ambient light
+- Intimate, editorial, dramatic but still social-app-friendly
+
+STRICT RULES:
+- Do not turn this into gothic horror
+- Do not over-age the subject
+- Keep it pretty, moody, and wearable`
+  },
+  "datecam-film": {
+    "default": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+Transform the uploaded photo into a nostalgic date-cam film snapshot.
+
+SCENE:
+- Warm candid evening outing
+- Restaurant window, city sidewalk, convenience store, or casual date-night environment
+- The image should feel spontaneous and emotionally real
+
+PHOTO STYLE:
+- Compact camera flash
+- Slight blur or softness from motion
+- Fine film grain and timestamp-camera mood
+- Warm skin tones with imperfect but charming exposure
+
+MOOD:
+- Cute, intimate, casual, lived-in, very save-to-camera-roll energy
+
+COMPOSITION:
+- Candid framing, not overly posed
+- The subject remains the clear focus and recognizable
+
+STRICT RULES:
+- Do not make the blur so strong that the face changes
+- Do not make it too dark or muddy
+- Keep the emotional warmth and authenticity`
+  },
+  "city-pop-neon": {
+    "default": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+Transform the uploaded photo into a neon city-pop night portrait.
+
+SCENE:
+- Night street with Korean or Japanese city energy
+- Neon signs, convenience-store glow, reflective pavement, glossy night air
+- The subject stands out sharply against a vibrant urban background
+
+LOOK:
+- Glossy lips, luminous skin, subtle shimmer, stylish night-out fashion
+- Chic, feminine, cool-girl energy
+
+LIGHTING:
+- Mixed neon ambient light plus controlled frontal flash
+- Pink, blue, teal, and warm shop-light reflections
+
+PHOTO STYLE:
+- Stylish urban fashion snapshot
+- Slight cinematic depth but still social-photo realism
+
+MOOD:
+- Cool, pretty, urban, slightly dreamy, playlist-cover energy
+
+STRICT RULES:
+- Keep the face identity exact
+- Do not make it cyberpunk armor or sci-fi costume
+- Stay fashionable, glossy, and human`
+  },
+  "ulzzang-cam": {
+    "default": `${STRICT_IDENTITY_LOCK}
+
+${SELFIE_REALISM_LOCK}
+
+Transform the uploaded photo into a nostalgic ulzzang-cam selfie revival.
+
+LOOK:
+- Bright under-eye emphasis, softly enlarged-looking eyes without changing identity
+- Blur-filter softness, glossy gradient lips, pink blush, cute clean makeup
+- Fresh 2010s Korean internet beauty mood
+
+HAIR & STYLING:
+- Keep hairstyle recognizable
+- Add girly styling details like soft clips, polished bangs, or neat framing strands
+
+PHOTO STYLE:
+- Front-facing webcam or phone-cam selfie feel
+- Slight beauty blur, bright exposure, cute digital softness
+- Charming, slightly artificial, intentionally nostalgic internet-camera aesthetic
+
+MOOD:
+- Pretty, playful, cute, nostalgic, instantly saveable
+
+STRICT RULES:
+- Do not distort the face proportions too much
+- Do not turn it into a cartoon filter
+- Keep the user recognizable and flattering`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -259,6 +631,17 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   },
   "grab-selfie":     { "default": [] },
   "gyaru":           { "default": [] },
+  "idol-photocard":  { "default": [] },
+  "coquette-ribbon": { "default": [] },
+  "balletcore-muse": { "default": [] },
+  "yearbook-2006":   { "default": [] },
+  "club-flash":      { "default": [] },
+  "frosted-glam":    { "default": [] },
+  "red-carpet-glam": { "default": [] },
+  "dark-coquette":   { "default": [] },
+  "datecam-film":    { "default": [] },
+  "city-pop-neon":   { "default": [] },
+  "ulzzang-cam":     { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
