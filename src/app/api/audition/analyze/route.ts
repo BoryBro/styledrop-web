@@ -7,12 +7,17 @@ function buildPrompt(genres: string[], cues: string[], flavor: "spicy" | "mild" 
   const steps = genres.map((g, i) => `${i + 1}번 사진\n  - 장르: [${g}]\n  - 상황: "${cues[i]}"`).join("\n\n");
 
   return `너는 연기 경력 27년의 독설 감독이자 관상학 연구가야.
-유저가 제출한 셀카 3장을 보고 두 가지를 동시에 분석해:
+유저가 제출한 연기 셀카 3장과 관상 전용 정면 사진 1장을 보고 두 가지를 동시에 분석해:
 ① 각 장르별 연기 표정 평가
 ② 얼굴 관상학 분석 — 이 사람이 타고난 배역을 판정
 
 ━━━ 평가 대상 ━━━
 ${steps}
+
+4번 사진
+  - 관상 전용 정면 사진
+  - 반드시 이 사진만 관상학 분석에 사용
+  - 1~3번 사진은 연기 평가 전용
 
 ━━━ [①] 연기 표정 분석 ━━━
 각 사진을 실제로 보고 분석:
@@ -43,7 +48,9 @@ ${flavor === "spicy" ? `- 욕설은 친한 친구한테 하듯 자연스럽게. 
 - 친절한 칭찬 금지. 반드시 뼈 있는 한 마디 포함.
 
 ━━━ [②] 관상학 분석 ━━━
-3장의 사진으로 아래 항목을 분석해:
+반드시 4번 사진(관상 전용 정면 사진)만 보고 아래 항목을 분석해.
+1~3번 연기 사진은 관상 판정 근거로 쓰지 마.
+4번 사진에 단일 인물의 정면 얼굴이 선명하게 보이지 않으면 관상 판정을 멈추고 "판별불가"로 응답해.
 
 얼굴 특징 분석:
 - 이마: 넓고 높은지(지성·리더십) / 좁거나 낮은지(실행력·현실적)
@@ -84,6 +91,9 @@ JSON만 출력. 한국어, style_prompt만 영어:
     {
       "genre": "${genres[0]}",
       "critique": "[실제 사진 분석 + 상황 언급 기반 독설. 2~3문장, 70자 이내. 구체적 표정 요소 포함.]",
+      "direction_fit": "[지시문 적합도 1문장. 감정은 맞는지, 숨기기/밀어붙이기 결이 맞는지 구체적으로.]",
+      "emotion_read": "[사진에서 실제로 먼저 읽힌 감정 1문장. 예: '분노보다 당황이 먼저 읽힌다.']",
+      "evidence_points": ["[눈/눈썹/입/시선 중 실제 근거 1]", "[실제 근거 2]", "[실제 근거 3]"],
       "assigned_role": "[짧고 강렬한 단역명 (10~15자). MZ 말투로 과감하게. 점수 낮을수록 독하게. 숫자 붙이지 말 것.]",
       "style_prompt": "[이 사람 얼굴 기반 ${genres[0]} 장르 스틸컷. 2문장. correct human anatomy, proper hands with exactly 5 fingers each hand 포함]",
       "scores": { "이해도": 0, "표정연기": 0, "창의성": 0, "몰입도": 0 }
@@ -91,6 +101,9 @@ JSON만 출력. 한국어, style_prompt만 영어:
     {
       "genre": "${genres[1]}",
       "critique": "[${genres[1]} 상황 기반 독설. 2~3문장, 70자 이내.]",
+      "direction_fit": "[지시문 적합도 1문장]",
+      "emotion_read": "[실제로 먼저 읽힌 감정 1문장]",
+      "evidence_points": ["[실제 근거 1]", "[실제 근거 2]", "[실제 근거 3]"],
       "assigned_role": "[10~15자 단역명. 점수 낮을수록 독하게.]",
       "style_prompt": "[${genres[1]} 장르 스틸컷. correct human anatomy, proper hands with exactly 5 fingers each hand. 2문장.]",
       "scores": { "이해도": 0, "표정연기": 0, "창의성": 0, "몰입도": 0 }
@@ -98,6 +111,9 @@ JSON만 출력. 한국어, style_prompt만 영어:
     {
       "genre": "${genres[2]}",
       "critique": "[${genres[2]} 상황 기반 독설. 2~3문장, 70자 이내.]",
+      "direction_fit": "[지시문 적합도 1문장]",
+      "emotion_read": "[실제로 먼저 읽힌 감정 1문장]",
+      "evidence_points": ["[실제 근거 1]", "[실제 근거 2]", "[실제 근거 3]"],
       "assigned_role": "[10~15자 단역명. 점수 낮을수록 독하게.]",
       "style_prompt": "[${genres[2]} 장르 스틸컷. correct human anatomy, proper hands with exactly 5 fingers each hand. 2문장.]",
       "scores": { "이해도": 0, "표정연기": 0, "창의성": 0, "몰입도": 0 }
@@ -106,23 +122,21 @@ JSON만 출력. 한국어, style_prompt만 영어:
   "overall_critique": "[3장 종합 독설. ① 충격적인 것 콕 집어 찌르기 ② 그나마 나은 장르 츤데레 칭찬 ③ 최종 판정. SNS 캡처각. 2~3문장]",
   "overall_one_liner": "[연기력 단 한 문장. 평균 70점+ → 극찬. 40~69점 → 독설+인정. 39점- → 진짜 독설. 짧고 임팩트 있게.]",
   "physiognomy": {
-    "face_type": "[얼굴형 한 단어: 둥근형/각진형/달걀형/역삼각형 중 하나]",
-    "archetype": "[캐릭터 아키타입 한 문장: 위 8가지 중 하나]",
-    "archetype_reason": "[아키타입 판정 이유. 얼굴의 어떤 특징이 그렇게 만드는지 구체적으로. 2문장.]",
-    "strengths": ["[관상학적 강점 1 — 구체적인 얼굴 특징 + 그게 어떤 배역에 유리한지]", "[강점 2]", "[강점 3]"],
-    "weaknesses": ["[관상학적 약점 1 — 뼈있게 찌르되 심한 욕 없이. 예: '이마가 좁아서 순진한 주인공은 솔직히 어울리지 않아']", "[약점 2]"],
-    "best_genre": "[이 얼굴에 가장 어울리는 장르 한 단어]",
-    "verdict": "[관상 총평 한 문장. 이 사람이 배우로 데뷔한다면 어떤 캐릭터가 될지. 친구한테 말하듯 솔직하게.]"
+    "analysis_status": "[ok 또는 retry_required 중 하나. 4번 사진에서 단일 인물 정면 얼굴이 선명하지 않으면 retry_required]",
+    "face_type": "[얼굴형 한 단어: 둥근형/각진형/달걀형/역삼각형 중 하나. 정면 얼굴 판독 불가면 판별불가]",
+    "archetype": "[캐릭터 아키타입 한 문장: 위 8가지 중 하나. 판독 불가면 판별불가]",
+    "archetype_reason": "[아키타입 판정 이유. 얼굴의 어떤 특징이 그렇게 만드는지 구체적으로. 2문장. 판독 불가면 왜 판독 불가인지 설명]",
+    "screen_impression": "[성격 단정 말고 화면 첫인상/카메라 인상 1문장. 예: '눈보다 턱선이 먼저 읽혀서 차가운 집중감이 생긴다.']",
+    "casting_frame": "[캐스팅할 때 먼저 떠오르는 역할 결 1문장. 예: '주인공보다 강한 조연, 혹은 초반부터 시선 끄는 라이벌 톤.']",
+    "feature_readings": ["[눈: 실제 특징 + 읽히는 인상]", "[코/입: 실제 특징 + 읽히는 인상]", "[턱/얼굴형: 실제 특징 + 읽히는 인상]"],
+    "strengths": ["[관상학적 강점 1 — 구체적인 얼굴 특징 + 그게 어떤 배역에 유리한지. 판독 불가면 정면 얼굴이 선명하지 않아 강점 판독 불가라고 명시]", "[강점 2]", "[강점 3]"],
+    "weaknesses": ["[관상학적 약점 1 — 뼈있게 찌르되 심한 욕 없이. 판독 불가면 현재 사진으로는 눈·코·입·턱 구조 판독이 어렵다고 명시]", "[약점 2]"],
+    "best_genre": "[이 얼굴에 가장 어울리는 장르 한 단어. 판독 불가면 판별불가]",
+    "verdict": "[관상 총평 한 문장. 판독 불가면 정면 얼굴 사진으로 다시 촬영하라고 솔직하게 말할 것.]"
   }${personality && personality.length > 0 ? `,
   "personality_summary": "[성향 분석 결과 한 문장. 관상과 연결해서 이 사람이 어떤 배우 기질을 가졌는지 날카롭게. 친구에게 말하듯.]"` : ""}
 }`;
 }
-
-const GENRE_EMOJIS: Record<string, string> = {
-  멜로: "💔", 스릴러: "🔪", 일상: "😐", 공포: "👻",
-  코미디: "😂", 액션: "💥", 판타지: "✨", 범죄: "🕵️",
-  로맨스: "🌹", 심리: "🧠",
-};
 
 const MOCK_CRITIQUES: Record<string, string[]> = {
   공포: [
@@ -522,7 +536,7 @@ const OVERALL_CRITIQUES: ((g: string[]) => string)[] = [
   (g) => `세 장 다 열심히 하셨는데요, 열심히랑 잘하는 건 달라요. ${g[2]}에서 잠깐 잘하셨고요. 나머지는 열심히만 하셨어요. 최종 판정: 열정상 수상.`,
   (g) => `${g[0]}는 몸은 있는데 표정이 없고, ${g[1]}는 표정은 있는데 장르가 없고, ${g[2]}는 장르는 있는데 연기가 없어요. 합치면 완벽한데. 최종 판정: 분리불가 패키지 불합격.`,
   (g) => `이번 오디션에서 제일 인상적이었던 건 ${g[1]}이에요. 오 이새끼 봐라 했거든요. 나머지는 그냥 넘어갈게요. 최종 판정: ${g[1]} 단역 합격, 나머지 불합격.`,
-  (g) => `세 장 모두 '잘 하려는 의지'는 보여요. 의지랑 실력이 비례하면 지금쯤 할리우드 갔겠죠. 최종 판정: 의지 만점, 실력 재검토.`,
+  () => `세 장 모두 '잘 하려는 의지'는 보여요. 의지랑 실력이 비례하면 지금쯤 할리우드 갔겠죠. 최종 판정: 의지 만점, 실력 재검토.`,
 ];
 
 function pickRandom<T>(arr: T[]): T {
@@ -541,7 +555,7 @@ function mockScores(): Scores {
 
 export async function POST(request: NextRequest) {
   try {
-    const { images, genres, cues, flavor, personality } = await request.json();
+    const { images, genres, cues, flavor, personality, physioImage } = await request.json();
 
     if (!Array.isArray(images) || images.length !== 3) {
       return NextResponse.json({ error: "이미지 3장이 필요합니다." }, { status: 400 });
@@ -554,27 +568,51 @@ export async function POST(request: NextRequest) {
       console.log("[MOCK] audition/analyze — Gemini API 호출 생략");
       const MOCK_PHYSIOGNOMY = [
         {
+          analysis_status: "ok",
           face_type: "역삼각형",
           archetype: "냉철한 악역형",
           archetype_reason: "눈꼬리가 살짝 올라가 있고 광대뼈가 또렷해서 자연스럽게 카리스마가 나온다. 웃어도 눈이 안 웃는 타입이라 악역이나 형사 역할이 딱 맞아.",
+          screen_impression: "눈보다 광대와 턱선이 먼저 읽혀서 화면에 뜨자마자 긴장감이 생긴다.",
+          casting_frame: "주인공의 라이벌, 냉정한 형사, 혹은 첫 등장부터 힘이 있는 조연 프레임이 먼저 잡힌다.",
+          feature_readings: [
+            "눈: 눈꼬리가 살짝 올라가 있어 온화함보다 긴장감이 먼저 읽힌다.",
+            "코·입: 코선이 또렷하고 입매가 얇아 단호한 인상으로 묶인다.",
+            "턱·얼굴형: 턱이 좁게 떨어져 날카로운 마무리감이 남는다.",
+          ],
           strengths: ["날카로운 눈빛이 스릴러/범죄 장르에서 별도 연기 없이 분위기를 만들어냄", "광대뼈가 또렷해서 카메라가 자동으로 집중하는 얼굴 구조", "전체적으로 강한 인상이라 한 번 보면 잊히지 않는 얼굴"],
           weaknesses: ["이마가 살짝 좁아서 순진한 주인공 연기는 솔직히 좀 버겁다", "입술이 얇은 편이라 따뜻하고 포근한 멜로 캐릭터는 믿음이 안 간다"],
           best_genre: "스릴러",
           verdict: "배우로 데뷔하면 감독들이 알아서 악역이나 냉철한 형사 역할로 캐스팅할 얼굴 — 억지로 순한 척하지 말고 그냥 그 카리스마 밀어붙여.",
         },
         {
+          analysis_status: "ok",
           face_type: "달걀형",
           archetype: "반전 매력형",
           archetype_reason: "전체적으로 부드러운 인상인데 눈빛에 예상 못 한 날카로움이 있다. 착한 줄 알았는데 반전 있는 캐릭터, 딱 요즘 드라마가 좋아하는 유형이야.",
+          screen_impression: "전체 균형은 부드럽지만 눈에서 한 번 더 시선이 걸려 반전 가능성이 느껴진다.",
+          casting_frame: "처음엔 무난해 보여도 씬이 갈수록 존재감이 붙는 반전형 캐릭터가 먼저 떠오른다.",
+          feature_readings: [
+            "눈: 눈매는 부드럽지만 안쪽 긴장감이 남아 있어 단순 순둥이로 끝나지 않는다.",
+            "코·입: 선이 과하지 않아 장르 적응폭이 넓게 읽힌다.",
+            "턱·얼굴형: 달걀형 밸런스가 좋아 카메라 각도에 크게 무너지지 않는다.",
+          ],
           strengths: ["달걀형 얼굴은 카메라 각도 어디서 찍어도 무너지지 않는 구조", "눈과 눈썹의 균형이 좋아서 감정 표현 폭이 넓음", "인상이 유연해서 다양한 장르에 적응 가능한 편"],
           weaknesses: ["반대로 너무 평범해 보일 수 있어 — 강렬한 첫인상이 없는 게 약점", "광대뼈가 낮아서 화면에서 존재감을 스스로 만들어야 하는 타입"],
           best_genre: "멜로",
           verdict: "단역보다는 주연 or 주연 조연이 맞는 얼굴인데, 문제는 첫인상이 너무 무난해서 본인이 캐릭터로 채워야 한다 — 외모 믿지 말고 연기 실력 믿어.",
         },
         {
+          analysis_status: "ok",
           face_type: "각진형",
           archetype: "카리스마 주인공형",
           archetype_reason: "이마가 넓고 턱선이 또렷해서 리더십이 얼굴에서 자연스럽게 나온다. 화면에 등장하면 시선이 자동으로 집중되는 구조야.",
+          screen_impression: "이마와 턱선이 먼저 잡혀서 화면 중심축이 단단하게 선다.",
+          casting_frame: "무리해서 힘주지 않아도 리더, 팀장, 주인공 포지션이 자연스럽게 떠오른다.",
+          feature_readings: [
+            "눈: 시선이 정면에서 흔들리지 않아 인물 중심이 안정적으로 보인다.",
+            "코·입: 코선이 또렷하고 입매가 단단해 결단형 인상으로 읽힌다.",
+            "턱·얼굴형: 각진 턱선이 캐릭터의 추진력을 바로 만들어준다.",
+          ],
           strengths: ["넓은 이마와 또렷한 눈썹이 지성과 리더십을 자연스럽게 표현", "턱선이 강해서 강인한 캐릭터나 주인공 역할에서 신뢰감이 생김", "정면 얼굴이 카메라에서 강하게 잡히는 구조"],
           weaknesses: ["표정이 조금만 굳어도 냉정하거나 무섭게 보여서 코미디 장르는 좀 힘들다", "각진 인상 때문에 섬세한 감성 연기를 할 때 오히려 더 많이 노력해야 함"],
           best_genre: "액션",
@@ -586,6 +624,9 @@ export async function POST(request: NextRequest) {
         scenes: g.map((genre, i) => ({
           genre,
           critique: pickRandom(MOCK_CRITIQUES[genre] ?? [`${genre} 장르 연기인데 뭘 하려는 건지 의도는 알겠는데 실행이 문제예요.`]),
+          direction_fit: `${genre} 지시문 방향은 따라갔는데, 감정을 숨기거나 밀어붙이는 결이 끝까지 정리되진 않았어요.`,
+          emotion_read: `${genre} 씬에서는 설정 감정보다 긴장과 멍함이 먼저 읽힙니다.`,
+          evidence_points: ["눈썹 움직임이 약함", "입 주변 긴장이 먼저 보임", "시선 고정이 짧아 몰입이 덜 읽힘"],
           assigned_role: pickRandom(MOCK_ROLES[genre] ?? [`배경에서 고개 돌리는 행인 ${i + 2}`]),
           style_prompt: `Cinematic film still, ${genre} genre Korean movie, atmospheric lighting, background extra, shallow depth of field.`,
           scores: mockScores(),
@@ -623,10 +664,14 @@ export async function POST(request: NextRequest) {
       ? buildPrompt(g, cues, flavor ?? "spicy", personalityArr)
       : buildPrompt(g, ["상황1", "상황2", "상황3"], flavor ?? "spicy", personalityArr);
 
+    const physioReference = typeof physioImage === "string" && physioImage.trim() ? physioImage : images[0];
     const contents = [
       ...images.map((b64: string) => ({
         inlineData: { mimeType: "image/jpeg" as const, data: b64 },
       })),
+      {
+        inlineData: { mimeType: "image/jpeg" as const, data: physioReference },
+      },
       { text: prompt },
     ];
 
@@ -641,6 +686,22 @@ export async function POST(request: NextRequest) {
     const raw = textPart?.text ?? "{}";
     const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
     const result = JSON.parse(cleaned);
+
+    if (result?.physiognomy && typeof result.physiognomy === "object") {
+      const faceType = String(result.physiognomy.face_type ?? "");
+      const archetype = String(result.physiognomy.archetype ?? "");
+      const verdict = String(result.physiognomy.verdict ?? "");
+      const inferredStatus =
+        faceType === "판별불가" ||
+        archetype === "판별불가" ||
+        verdict.includes("다시 촬영") ||
+        verdict.includes("판별불가")
+          ? "retry_required"
+          : "ok";
+
+      result.physiognomy.analysis_status =
+        result.physiognomy.analysis_status === "retry_required" ? "retry_required" : inferredStatus;
+    }
 
     if (!Array.isArray(result.scenes) || result.scenes.length !== 3) {
       throw new Error("응답 구조가 올바르지 않습니다.");

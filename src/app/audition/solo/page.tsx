@@ -7,6 +7,7 @@ import Link from "next/link";
 import type ReactWebcam from "react-webcam";
 import type { WebcamProps } from "react-webcam";
 import { useAuth } from "@/hooks/useAuth";
+import { analyzePhysioPhoto, type PhysioPhotoCheck } from "@/lib/physio-face";
 
 // SSR 비활성화 — react-webcam은 브라우저 전용
 // react-webcam의 타입 선언이 next/dynamic ref 타입과 맞지 않아 loader 반환만 느슨하게 맞춘다.
@@ -392,6 +393,12 @@ function pickRandomCue(genreId: GenreId): string {
 const VIDEO_CONSTRAINTS = { width: 720, height: 720, facingMode: "user" };
 
 type CaptureItem = { base64: string; dataUrl: string };
+type PersonalityAnswer = {
+  category: string;
+  question: string;
+  choice: "A" | "B";
+  answer: string;
+};
 type Phase = "loading" | "login_required" | "no_credits" | "intro" | "genre_select" | "personality_quiz" | "capture_physio_guide" | "capture_physio" | "capture" | "analyzing" | "error";
 
 const QUIZ_QUESTIONS = [
@@ -468,7 +475,7 @@ function AuditionSoloInner() {
   const [captures, setCaptures] = useState<CaptureItem[]>([]);
   const [agreed, setAgreed] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [personalityAnswers, setPersonalityAnswers] = useState<string[]>([]);
+  const [personalityAnswers, setPersonalityAnswers] = useState<PersonalityAnswer[]>([]);
   const [quizStep, setQuizStep] = useState(0);
   const [quizAnim, setQuizAnim] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -476,6 +483,8 @@ function AuditionSoloInner() {
   const [physioCapture, setPhysioCapture] = useState<CaptureItem | null>(null);
   const [physioCountdown, setPhysioCountdown] = useState<number | null>(null);
   const [physioPreviewUrl, setPhysioPreviewUrl] = useState<string | null>(null);
+  const [physioCheck, setPhysioCheck] = useState<PhysioPhotoCheck | null>(null);
+  const [isPhysioChecking, setIsPhysioChecking] = useState(false);
   const [pendingCapture, setPendingCapture] = useState<CaptureItem | null>(null);
   const webcamRef = useRef<ReactWebcam | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -494,6 +503,44 @@ function AuditionSoloInner() {
 
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current); }, []);
   useEffect(() => () => { if (physioCountdownRef.current) clearInterval(physioCountdownRef.current); }, []);
+  useEffect(() => {
+    if (!physioPreviewUrl) {
+      setPhysioCheck(null);
+      setIsPhysioChecking(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsPhysioChecking(true);
+
+    analyzePhysioPhoto(physioPreviewUrl)
+      .then((nextCheck) => {
+        if (cancelled) return;
+        setPhysioCheck(nextCheck);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPhysioCheck({
+          status: "unsupported",
+          geometry: {
+            imageWidth: 1000,
+            imageHeight: 1250,
+            faceBox: { x: 250, y: 140, width: 500, height: 720 },
+            points: [],
+            detected: false,
+          },
+          reason: "이 브라우저는 얼굴 자동 판별을 안정적으로 수행하지 못해 서버에서 최종 판별합니다.",
+        });
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsPhysioChecking(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [physioPreviewUrl]);
 
   // 인증 + 크레딧 체크
   useEffect(() => {
@@ -537,7 +584,7 @@ function AuditionSoloInner() {
         physioImage: physioCapture?.base64 ?? images[0],
         genres: genreLabels,
         cues: stepCues,
-        personality: personalityAnswers,
+        personality: personalityAnswers.map((item, idx) => `Q${idx + 1}. [${item.category}] ${item.question} -> ${item.choice}: ${item.answer}`),
       }),
     }).then(async res => {
       const data = await res.json();
@@ -552,6 +599,7 @@ function AuditionSoloInner() {
         sessionStorage.setItem("sd_au_genres", JSON.stringify(genreMeta));
         sessionStorage.setItem("sd_au_images", JSON.stringify(captures.map(c => c.dataUrl)));
         if (physioCapture) sessionStorage.setItem("sd_au_physio", physioCapture.dataUrl);
+        sessionStorage.setItem("sd_au_personality", JSON.stringify(personalityAnswers));
         router.push("/audition/result");
       })
       .catch(err => {
@@ -567,6 +615,8 @@ function AuditionSoloInner() {
     setCaptures([]);
     setStepIdx(0);
     setPhysioCapture(null);
+    setPhysioPreviewUrl(null);
+    setPhysioCheck(null);
     setPhase("capture_physio_guide");
   }, [selectedGenres]);
 
@@ -838,8 +888,16 @@ function AuditionSoloInner() {
     const current = quizQuestions[quizStep];
     const progress = ((quizStep + 1) / quizQuestions.length) * 100;
 
-    const handleAnswer = (answer: string) => {
-      const next = [...personalityAnswers, answer];
+    const handleAnswer = (choice: "A" | "B") => {
+      const next = [
+        ...personalityAnswers,
+        {
+          category: current.category,
+          question: current.q,
+          choice,
+          answer: choice === "A" ? current.a : current.b,
+        },
+      ];
       setPersonalityAnswers(next);
       setQuizAnim(true);
       setTimeout(() => {
@@ -981,6 +1039,8 @@ function AuditionSoloInner() {
   if (phase === "capture_physio") {
     // 프리뷰 모드
     if (physioPreviewUrl) {
+      const needsRetry = physioCheck?.status === "retry_required";
+      const canProceed = !isPhysioChecking && physioCheck?.status !== "retry_required";
       return (
         <div className="bg-[#0A0A0A] flex flex-col" style={{ height: "100dvh" }}>
           <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 flex-shrink-0">
@@ -997,22 +1057,39 @@ function AuditionSoloInner() {
                 <div style={{ ...PHYSIO_OVAL_STYLE, border: "2px solid rgba(201,87,26,0.6)" }} />
               </div>
             </div>
+            <div className={`rounded-2xl border px-4 py-3 ${needsRetry ? "border-[#C9571A]/30 bg-[#2A140C]" : "border-white/10 bg-white/5"}`}>
+              <p className={`text-[12px] font-bold ${needsRetry ? "text-[#FFB089]" : "text-white/85"}`}>
+                {isPhysioChecking
+                  ? "얼굴 위치를 확인하는 중입니다..."
+                  : physioCheck?.status === "retry_required"
+                    ? physioCheck.reason
+                    : physioCheck?.status === "unsupported"
+                      ? physioCheck.reason
+                      : "정면 얼굴이 확인되었습니다. 이 사진으로 관상 분석을 진행할 수 있습니다."}
+              </p>
+            </div>
             <div className="mt-auto flex gap-3">
               <button
-                onClick={() => setPhysioPreviewUrl(null)}
+                onClick={() => {
+                  setPhysioPreviewUrl(null);
+                  setPhysioCheck(null);
+                }}
                 className="flex-1 bg-white/10 border border-white/20 text-white font-bold py-4 rounded-2xl text-[15px] transition-colors"
               >
                 다시 찍기
               </button>
               <button
                 onClick={() => {
+                  if (!canProceed) return;
                   setPhysioCapture({ base64: physioPreviewUrl.split(",")[1], dataUrl: physioPreviewUrl });
                   setPhysioPreviewUrl(null);
+                  setPhysioCheck(null);
                   setPhase("capture");
                 }}
-                className="flex-1 bg-[#C9571A] text-white font-bold py-4 rounded-2xl text-[15px] transition-colors"
+                disabled={!canProceed}
+                className="flex-1 bg-[#C9571A] disabled:bg-[#2A2A2A] disabled:text-white/35 text-white font-bold py-4 rounded-2xl text-[15px] transition-colors"
               >
-                이대로 진행하기
+                {isPhysioChecking ? "얼굴 확인 중..." : needsRetry ? "정면 얼굴로 다시 찍기" : "이대로 진행하기"}
               </button>
             </div>
           </main>
