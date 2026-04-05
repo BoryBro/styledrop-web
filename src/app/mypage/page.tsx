@@ -489,6 +489,31 @@ export default function MyPage() {
             )}
           </div>
         )}
+
+        {!loading && !selectedStyle && (
+          <section className="pt-2">
+            <div className="rounded-[28px] border border-[#C9571A]/20 bg-[linear-gradient(180deg,#17110E_0%,#0F0F0F_100%)] px-5 py-5">
+              <p className="text-[11px] font-black text-[#C9571A] uppercase tracking-[0.28em] mb-2">Home Screen</p>
+              <p className="text-[20px] font-black text-white leading-tight mb-2">StyleDrop을 앱처럼 꺼내 쓰기</p>
+              <p className="text-[13px] text-white/60 leading-relaxed mb-4">
+                아이폰과 안드로이드에서 홈 화면에 추가해두면 브라우저를 열지 않고도 더 빠르게 들어올 수 있습니다.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {["빠른 실행", "아이폰 안내", "안드로이드 안내"].map((item) => (
+                  <span key={item} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold text-white/70">
+                    {item}
+                  </span>
+                ))}
+              </div>
+              <Link
+                href="/install-app"
+                className="flex w-full items-center justify-center rounded-2xl bg-[#C9571A] px-4 py-3.5 text-[15px] font-bold text-white transition-colors hover:bg-[#B34A12]"
+              >
+                홈 화면 추가 방법 보기
+              </Link>
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Footer */}
