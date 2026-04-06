@@ -1,0 +1,77 @@
+필터명: 찜질방 만렙
+스타일 ID: jjimjilbang-master
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["jjimjilbang-master"]
+
+===== VARIANT: egg =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+REAL-WORLD HUMOR LOCK:
+- The image should be funny because of the situation, outfit, prop, or setting, not because the face is distorted
+- Keep the subject as the same recognizable person
+- Make it feel like a real candid or documentary photo someone accidentally took
+- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
+- One person only, clear focus, believable Korean everyday setting
+
+Transform the uploaded photo into a classic Korean jjimjilbang candid photo.
+
+SCENE:
+- Warm indoor Korean sauna lounge or resting hall
+- Yellow-brown heated floor mats, wooden walls, casual lounge area
+- The subject wears a jjimjilbang outfit and the iconic sheep-head towel
+- Holding two baked eggs and a cup of sikhye
+
+MOOD:
+- Slightly over-serious expression inside an obviously mundane, funny situation
+- Feels like a real phone photo taken by a friend
+
+PHOTO STYLE:
+- Flat indoor lighting, slight phone-camera noise, realistic candid framing
+- Keep the face natural and recognizable
+
+===== VARIANT: nap =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+REAL-WORLD HUMOR LOCK:
+- The image should be funny because of the situation, outfit, prop, or setting, not because the face is distorted
+- Keep the subject as the same recognizable person
+- Make it feel like a real candid or documentary photo someone accidentally took
+- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
+- One person only, clear focus, believable Korean everyday setting
+
+Transform the uploaded photo into a Korean jjimjilbang resting-area snapshot.
+
+SCENE:
+- Spacious heated floor room with blankets, mats, and a casual sauna atmosphere
+- The subject lies or reclines lazily in jjimjilbang clothes with a sheep-head towel
+- One arm as a pillow, relaxed exhausted vibe, maybe a folded blanket nearby
+
+MOOD:
+- Unfiltered human-life comedy, comfy and slightly embarrassing
+
+PHOTO STYLE:
+- Realistic overhead or side-angle candid phone photo
+- Slightly dim indoor light, no glamorization, believable face preservation

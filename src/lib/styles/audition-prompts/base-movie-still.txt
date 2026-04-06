@@ -1,0 +1,12 @@
+Use the attached front-facing physiognomy reference photo only to preserve this person's exact identity, facial proportions, eyes, nose, lips, jawline, skin texture, hairline, and overall likeness.
+
+Do not create a selfie, photocard, collage, or poster. Create a premium cinematic still from a Korean feature film. The image must feel like a real captured movie frame with production design, believable wardrobe, atmospheric lighting, realistic depth of field, natural body posture, and a composed medium close-up or medium shot.
+
+The emotional situation is: {{SCENE_CUE}}.
+Cast this person as: {{ASSIGNED_ROLE}}.
+The screen impression should feel like: {{SCREEN_IMPRESSION}}.
+The casting frame should feel like: {{CASTING_FRAME}}.
+The archetype tone can guide the performance energy: {{ARCHETYPE}}.
+
+Even if the reference image is neutral and front-facing, transform it into a believable in-scene shot with realistic anatomy, proper hands, and exactly five fingers on each visible hand. No text, no graphic overlays, no poster typography, no split layout.
+

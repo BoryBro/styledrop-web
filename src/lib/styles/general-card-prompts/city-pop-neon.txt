@@ -1,0 +1,45 @@
+필터명: 네온 시티팝
+스타일 ID: city-pop-neon
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["city-pop-neon"]
+
+===== VARIANT: default =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+Transform the uploaded photo into a neon city-pop night portrait.
+
+SCENE:
+- Night street with Korean or Japanese city energy
+- Neon signs, convenience-store glow, reflective pavement, glossy night air
+- The subject stands out sharply against a vibrant urban background
+
+LOOK:
+- Glossy lips, luminous skin, subtle shimmer, stylish night-out fashion
+- Chic, feminine, cool-girl energy
+
+LIGHTING:
+- Mixed neon ambient light plus controlled frontal flash
+- Pink, blue, teal, and warm shop-light reflections
+
+PHOTO STYLE:
+- Stylish urban fashion snapshot
+- Slight cinematic depth but still social-photo realism
+
+MOOD:
+- Cool, pretty, urban, slightly dreamy, playlist-cover energy
+
+STRICT RULES:
+- Keep the face identity exact
+- Do not make it cyberpunk armor or sci-fi costume
+- Stay fashionable, glossy, and human

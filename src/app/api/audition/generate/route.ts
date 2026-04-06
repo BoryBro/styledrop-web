@@ -1,4 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { addWatermark } from "@/lib/watermark";
@@ -8,6 +10,26 @@ import {
   parseLimitCookie, encodeLimitCookie,
 } from "@/lib/rate-limit";
 
+type ScoreMap = Partial<Record<"이해도" | "표정연기" | "창의성" | "몰입도", number>>;
+type GenerateScene = {
+  genre?: string;
+  assigned_role?: string;
+  style_prompt?: string;
+  scores?: ScoreMap;
+};
+type GenerateGenreMeta = {
+  genre?: string;
+  cue?: string;
+};
+type GeneratePhysiognomy = {
+  archetype?: string;
+  face_type?: string;
+  screen_impression?: string;
+  casting_frame?: string;
+};
+
+type GeneratePromptTemplateId = "thriller 2";
+
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
   try {
     const cookie = request.cookies.get("sd_session")?.value;
@@ -16,39 +38,60 @@ function parseSession(request: NextRequest): { id: string; nickname: string } | 
   } catch { return null; }
 }
 
+function averageSceneScore(scene?: GenerateScene | null) {
+  if (!scene?.scores) return 0;
+  const labels: Array<keyof ScoreMap> = ["이해도", "표정연기", "창의성", "몰입도"];
+  const total = labels.reduce((sum, label) => sum + (scene.scores?.[label] ?? 0), 0);
+  return total / labels.length;
+}
+
+function clampText(value: unknown, limit = 120) {
+  return typeof value === "string"
+    ? value.replace(/\s+/g, " ").trim().slice(0, limit)
+    : "";
+}
+
+function buildStillPrompt({
+  genre,
+  cue,
+  assignedRole,
+  archetype,
+  screenImpression,
+  castingFrame,
+  fallbackStylePrompt,
+}: {
+  genre: string;
+  cue: string;
+  assignedRole: string;
+  archetype: string;
+  screenImpression: string;
+  castingFrame: string;
+  fallbackStylePrompt: string;
+}) {
+  const genreLabel = genre || "drama";
+  const cueLine = cue || "a decisive dramatic moment";
+  const roleLine = assignedRole || "scene-stealing supporting role";
+  const archetypeLine = archetype || "distinctive cinematic screen presence";
+  const impressionLine = screenImpression || castingFrame || "clear, memorable screen presence";
+
+  return [
+    "Use the attached front-facing reference photo only to preserve this person's exact identity, facial proportions, eyes, nose, lips, jawline, skin tone, and overall likeness.",
+    `Create a premium cinematic still from a Korean ${genreLabel} feature film, not a selfie or poster, with film-grade lighting, production design, wardrobe, natural body posture, and a realistic medium close-up or medium shot.`,
+    `The moment should feel like "${cueLine}", casting this person as "${roleLine}" with a ${archetypeLine}; the frame should read as ${impressionLine}.`,
+    "Even if the reference image is neutral and front-facing, transform it into a believable in-scene movie frame with realistic anatomy, proper hands, exactly five fingers on each visible hand, and no text or graphic overlays.",
+    fallbackStylePrompt ? `Additional art direction: ${fallbackStylePrompt}` : "",
+  ].filter(Boolean).join(" ");
+}
+
+async function loadPromptTemplate(templateId: GeneratePromptTemplateId) {
+  const filePath = path.join(process.cwd(), "src/lib/styles/audition-prompts", `${templateId}.txt`);
+  const content = await readFile(filePath, "utf8");
+  return content.trim();
+}
+
 export async function POST(request: NextRequest) {
   const session = parseSession(request);
   const now = Date.now();
-
-  // ── 회원: 크레딧 3개 차감 ─────────────────────────────────────────
-  if (session) {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_KEY!
-    );
-    const { data: creditRow } = await supabase
-      .from("user_credits")
-      .select("credits")
-      .eq("user_id", session.id)
-      .single();
-    if (!creditRow || creditRow.credits < 5) {
-      return NextResponse.json(
-        { error: "크레딧이 부족해요. AI 오디션은 5크레딧이 필요합니다!" },
-        { status: 429 }
-      );
-    }
-    const { error: e1 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
-    const { error: e2 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
-    const { error: e3 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
-    const { error: e4 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
-    const { error: e5 } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
-    if (e1 || e2 || e3 || e4 || e5) {
-      return NextResponse.json(
-        { error: "크레딧 차감에 실패했어요. 다시 시도해주세요." },
-        { status: 500 }
-      );
-    }
-  }
 
   // ── 비회원: 쿠키 기반 무료 체험 제한 ──────────────────────────────────
   const raw = !session ? request.cookies.get(GUEST_COOKIE)?.value : undefined;
@@ -76,23 +119,74 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    const { image, mimeType, stylePrompt } = await request.json();
+    const {
+      image,
+      physioImage,
+      mimeType,
+      stylePrompt,
+      scenes,
+      genreMeta,
+      physiognomy,
+      promptTemplateId,
+    } = await request.json();
 
-    if (!image || !stylePrompt) {
-      return NextResponse.json({ error: "이미지와 프롬프트가 필요합니다." }, { status: 400 });
+    const normalizedScenes: GenerateScene[] = Array.isArray(scenes) ? scenes : [];
+    const normalizedGenreMeta: GenerateGenreMeta[] = Array.isArray(genreMeta) ? genreMeta : [];
+    const normalizedPhysiognomy: GeneratePhysiognomy = physiognomy && typeof physiognomy === "object"
+      ? physiognomy
+      : {};
+
+    const referenceImage =
+      typeof physioImage === "string" && physioImage.trim()
+        ? physioImage
+        : typeof image === "string" && image.trim()
+          ? image
+          : "";
+
+    if (!referenceImage) {
+      return NextResponse.json({ error: "관상용 정면 사진이 필요합니다." }, { status: 400 });
+    }
+
+    const bestSceneIdx = normalizedScenes.reduce((best, scene, index) => (
+      averageSceneScore(scene) > averageSceneScore(normalizedScenes[best]) ? index : best
+    ), 0);
+    const bestScene = normalizedScenes[bestSceneIdx] ?? {};
+    const bestGenreMeta = normalizedGenreMeta[bestSceneIdx] ?? normalizedGenreMeta.find((item) => item.genre === bestScene.genre) ?? {};
+    const defaultPromptText = buildStillPrompt({
+      genre: clampText(bestScene.genre, 32),
+      cue: clampText(bestGenreMeta.cue, 96),
+      assignedRole: clampText(bestScene.assigned_role, 40),
+      archetype: clampText(normalizedPhysiognomy.archetype, 40),
+      screenImpression: clampText(normalizedPhysiognomy.screen_impression, 72),
+      castingFrame: clampText(normalizedPhysiognomy.casting_frame, 72),
+      fallbackStylePrompt: clampText(stylePrompt ?? bestScene.style_prompt, 200),
+    });
+
+    let promptText = defaultPromptText;
+    if (promptTemplateId === "thriller 2") {
+      const templatePrompt = await loadPromptTemplate("thriller 2");
+      const sceneCueLine = clampText(bestGenreMeta.cue, 120);
+      const roleLine = clampText(bestScene.assigned_role, 48);
+      promptText = [
+        templatePrompt,
+        sceneCueLine ? `Scene cue to honor: ${sceneCueLine}.` : "",
+        roleLine ? `Character role to embody: ${roleLine}.` : "",
+      ].filter(Boolean).join("\n\n");
+    }
+
+    if (!promptText) {
+      return NextResponse.json({ error: "스틸컷 생성용 장르 정보가 부족합니다." }, { status: 400 });
     }
 
     // ── Mock 모드: API 호출 없이 원본 이미지를 그대로 반환 ─────────────
     if (process.env.MOCK_GEMINI === "true") {
       console.log("[MOCK] audition/generate — Gemini API 호출 생략, 원본 이미지 반환");
-      return NextResponse.json({ image, mimeType: "image/jpeg" });
+      return NextResponse.json({ image: referenceImage, mimeType: "image/jpeg" });
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-
-    const promptText = `이 사람의 얼굴 형태와 이목구비를 100% 유지하면서, 다음 배역에 맞게 합성해: ${stylePrompt}`;
     const contents = [
-      { inlineData: { mimeType: (mimeType || "image/jpeg") as "image/jpeg", data: image } },
+      { inlineData: { mimeType: (mimeType || "image/jpeg") as "image/jpeg", data: referenceImage } },
       { text: promptText },
     ];
 

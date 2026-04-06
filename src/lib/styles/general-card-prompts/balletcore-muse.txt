@@ -1,0 +1,46 @@
+필터명: 오프듀티 발레코어
+스타일 ID: balletcore-muse
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["balletcore-muse"]
+
+===== VARIANT: default =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+Transform the uploaded photo into an off-duty balletcore muse portrait.
+
+STYLING:
+- Soft ballerina-inspired makeup with cool pink tones and luminous skin
+- Delicate satin ribbon details, wrap cardigan, leg-warmer or rehearsalwear mood
+- Graceful but modern fashion-editorial softness
+
+HAIR:
+- Keep the person's real hairstyle recognizable
+- Style it into a soft bun, ribbon tie, or polished rehearsal-day finish
+
+SCENE:
+- Minimal dance studio, hallway mirror, or softly lit rehearsal room
+- Neutral walls, satin textures, pale light, quiet luxury atmosphere
+
+POSE:
+- Elegant relaxed posture, elongated neck, calm shoulders
+- Delicate hand placement, serene expression
+
+PHOTO STYLE:
+- Soft diffused daylight mixed with subtle editorial polish
+- Airy, expensive, feminine, quiet, refined
+
+STRICT RULES:
+- Preserve the person's actual identity strongly
+- Do not make the face look overly animated or porcelain
+- Keep the aesthetic wearable and current

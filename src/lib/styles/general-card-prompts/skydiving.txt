@@ -1,0 +1,77 @@
+필터명: 스카이다이빙
+스타일 ID: skydiving
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["skydiving"]
+
+===== VARIANT: default =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+REAL-WORLD HUMOR LOCK:
+- The image should be funny because of the situation, outfit, prop, or setting, not because the face is distorted
+- Keep the subject as the same recognizable person
+- Make it feel like a real candid or documentary photo someone accidentally took
+- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
+- One person only, clear focus, believable Korean everyday setting
+
+Transform the uploaded photo into a tandem skydiving snapshot high above a coastal city.
+
+SCENE:
+- Mid-air freefall during a real tandem skydive
+- Bright blue sky, scattered white clouds, distant coastline and city grid far below
+- Subject strapped into visible skydiving harness gear
+- Wide action-camera perspective, arms spread or expressive midair pose
+- Wind-blown clothing and hair, intense daylight, natural airborne energy
+
+MOOD:
+- Adrenaline-filled, spontaneous, thrilling, slightly chaotic in a funny and iconic real-life way
+
+PHOTO STYLE:
+- Ultra-realistic action-camera travel snapshot, crisp daylight, high-altitude clarity, authentic extreme-sports documentary feel
+
+===== VARIANT: tandem_jump =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+REAL-WORLD HUMOR LOCK:
+- The image should be funny because of the situation, outfit, prop, or setting, not because the face is distorted
+- Keep the subject as the same recognizable person
+- Make it feel like a real candid or documentary photo someone accidentally took
+- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
+- One person only, clear focus, believable Korean everyday setting
+
+Transform the uploaded photo into a real tandem skydiving action photo over the ocean and city.
+
+SCENE:
+- Subject attached to an instructor in full tandem skydive gear
+- Open sky, clouds drifting nearby, coastline and patchwork land far below
+- Subject making an energetic hand gesture or excited expression in freefall
+- Instructor behind the subject with realistic harness connection and airborne posture
+- Strong midday sunlight, clean weather, authentic extreme-sports environment
+
+MOOD:
+- Wild, exhilarating, real, and unintentionally hilarious because it looks like a genuine once-in-a-lifetime snapshot
+
+PHOTO STYLE:
+- GoPro-style extreme sports documentary photo, wide-angle perspective, sharp daylight realism, natural motion and altitude atmosphere

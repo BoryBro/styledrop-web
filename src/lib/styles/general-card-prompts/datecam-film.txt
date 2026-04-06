@@ -1,0 +1,43 @@
+필터명: 데이트캠 필름
+스타일 ID: datecam-film
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["datecam-film"]
+
+===== VARIANT: default =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+Transform the uploaded photo into a nostalgic date-cam film snapshot.
+
+SCENE:
+- Warm candid evening outing
+- Restaurant window, city sidewalk, convenience store, or casual date-night environment
+- The image should feel spontaneous and emotionally real
+
+PHOTO STYLE:
+- Compact camera flash
+- Slight blur or softness from motion
+- Fine film grain and timestamp-camera mood
+- Warm skin tones with imperfect but charming exposure
+
+MOOD:
+- Cute, intimate, casual, lived-in, very save-to-camera-roll energy
+
+COMPOSITION:
+- Candid framing, not overly posed
+- The subject remains the clear focus and recognizable
+
+STRICT RULES:
+- Do not make the blur so strong that the face changes
+- Do not make it too dark or muddy
+- Keep the emotional warmth and authenticity

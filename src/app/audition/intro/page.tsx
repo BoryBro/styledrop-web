@@ -6,7 +6,6 @@ import Link from "next/link";
 
 // ── 타이핑 훅 ──────────────────────────────────────────────────
 function useTypewriter(lines: string[], speed = 60, pause = 1800) {
-  const [display, setDisplay] = useState("");
   const [lineIdx, setLineIdx] = useState(0);
   const [charIdx, setCharIdx] = useState(0);
   const [deleting, setDeleting] = useState(false);
@@ -21,14 +20,15 @@ function useTypewriter(lines: string[], speed = 60, pause = 1800) {
     } else if (deleting && charIdx > 0) {
       timeout = setTimeout(() => setCharIdx(c => c - 1), speed / 2);
     } else {
-      setDeleting(false);
-      setLineIdx(i => (i + 1) % lines.length);
+      timeout = setTimeout(() => {
+        setDeleting(false);
+        setLineIdx(i => (i + 1) % lines.length);
+      }, 0);
     }
-    setDisplay(current.slice(0, charIdx));
     return () => clearTimeout(timeout);
   }, [charIdx, deleting, lineIdx, lines, pause, speed]);
 
-  return display;
+  return lines[lineIdx]?.slice(0, charIdx) ?? "";
 }
 
 // ── 실제 카드 이미지 마르퀴 ─────────────────────────────────────
@@ -78,8 +78,18 @@ function CardMarquee() {
 
 function CardCarousel() {
   const n = CARD_IMAGES.length;
-  const CARD_W = 162;
-  const GAP = 14;
+  const [viewportWidth, setViewportWidth] = useState(390);
+
+  useEffect(() => {
+    const syncViewport = () => setViewportWidth(window.innerWidth);
+    syncViewport();
+    window.addEventListener("resize", syncViewport);
+    return () => window.removeEventListener("resize", syncViewport);
+  }, []);
+
+  const CARD_W = Math.min(Math.max(Math.round(viewportWidth * 0.66), 252), 390);
+  const CARD_H = Math.round(CARD_W * (938 / 677));
+  const GAP = 8;
   const UNIT = CARD_W + GAP;
   // 3벌 복사 → 가운데 벌(n~2n-1)에서 시작, 끝에 다다르면 조용히 리셋
   const all = [...CARD_IMAGES, ...CARD_IMAGES, ...CARD_IMAGES];
@@ -109,9 +119,9 @@ function CardCarousel() {
     <div
       className="w-full relative"
       style={{
-        height: 310,
-        maskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
-        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
+        height: Math.round(CARD_H * 1.34),
+        maskImage: 'linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%)',
         overflowX: 'hidden',
       }}
     >
@@ -139,10 +149,10 @@ function CardCarousel() {
               className="rounded-2xl object-cover flex-shrink-0"
               style={{
                 width: CARD_W,
-                height: 228,
-                opacity: isCenter ? 1 : dist === 1 ? 0.46 : 0.15,
-                transform: isCenter ? 'scale(1.12)' : 'scale(0.86)',
-                boxShadow: isCenter ? '0 20px 48px rgba(0,0,0,0.3)' : 'none',
+                height: CARD_H,
+                opacity: isCenter ? 1 : 0,
+                transform: isCenter ? 'scale(1.22)' : 'scale(0.76)',
+                boxShadow: isCenter ? '0 34px 72px rgba(0,0,0,0.48)' : 'none',
                 transition: instant ? 'none' : 'opacity 0.6s ease, transform 0.72s cubic-bezier(0.33,1,0.68,1), box-shadow 0.6s ease',
               }}
             />
@@ -391,13 +401,20 @@ export default function AuditionIntroPage() {
       <div className="mx-6 h-px bg-gray-100" />
 
       {/* ── 카드 쇼케이스 ───────────────────────────────── */}
-      <section className="py-12 flex flex-col gap-6">
-        <div className="px-6">
-          <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Result Cards</p>
-          <p className="text-[26px] font-black text-gray-900 leading-tight">당신만의 배역<br />캐릭터 카드가<br />만들어집니다.</p>
+      <section className="relative overflow-hidden bg-[#050505] py-14 flex flex-col gap-7">
+        <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_70%)]" />
+        <div className="absolute left-1/2 top-[34%] h-[220px] w-[220px] -translate-x-1/2 rounded-full bg-[#5D6EFF]/20 blur-[90px]" />
+
+        <div className="relative px-6">
+          <p className="text-[11px] font-black text-white/35 uppercase tracking-[0.3em] mb-2">Result Cards</p>
+          <p className="text-[31px] font-black text-white leading-[1.12]">당신만의 배역<br />캐릭터 카드가<br />만들어집니다.</p>
         </div>
-        <CardCarousel />
-        <p className="px-6 text-[12px] text-gray-400 font-medium">* 실제 결과는 본인 사진 기반으로 제작됩니다</p>
+
+        <div className="relative">
+          <CardCarousel />
+        </div>
+
+        <p className="relative px-6 text-[12px] text-white/35 font-medium">* 실제 결과는 본인 사진 기반으로 제작됩니다</p>
       </section>
 
       <div className="mx-6 h-px bg-gray-100" />
@@ -406,7 +423,11 @@ export default function AuditionIntroPage() {
       <section className="px-6 py-12 flex flex-col gap-5">
         <div>
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Before You Start</p>
-          <p className="text-[26px] font-black text-gray-900 leading-tight">시작 전에<br />꼭 확인하세요.</p>
+          <p className="text-[26px] font-black text-gray-900 leading-tight">
+            시작 전에
+            <br />
+            <span style={{ fontFamily: '"BMKkubulim", sans-serif', color: '#5D6EFF' }}>꼭</span> 확인하세요.
+          </p>
         </div>
 
         <div className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 flex items-center gap-4">
@@ -422,7 +443,7 @@ export default function AuditionIntroPage() {
           <ul className="flex flex-col gap-4">
             {[
               { icon: "📸", text: "한번 촬영한 컷은 다시 찍을 수 없으니 이점 유의해주세요" },
-              { icon: "💳", text: "크레딧 2개가 소모되며, 이 서비스는 환불이 어렵습니다" },
+              { icon: "💳", text: "시작 시 5크레딧이 바로 소모되며, 스틸컷 생성까지 포함된 패키지입니다" },
             ].map(item => (
               <li key={item.icon} className="flex items-start gap-3">
                 <span className="text-[18px] flex-shrink-0 mt-0.5">{item.icon}</span>
@@ -460,7 +481,7 @@ export default function AuditionIntroPage() {
             className="text-[12px] font-extrabold px-2.5 py-1 rounded-lg"
             style={{ background: agreed ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.06)' }}
           >
-            2크레딧
+            5크레딧
           </span>
           시작하기
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

@@ -1,7 +1,18 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 type Scores = { 이해도: number; 표정연기: number; 창의성: number; 몰입도: number };
+
+function parseSession(request: NextRequest): { id: string; nickname: string } | null {
+  try {
+    const cookie = request.cookies.get("sd_session")?.value;
+    if (!cookie) return null;
+    return JSON.parse(Buffer.from(cookie, "base64").toString());
+  } catch {
+    return null;
+  }
+}
 
 function buildPrompt(genres: string[], cues: string[], flavor: "spicy" | "mild" = "spicy", personality?: string[]): string {
   const steps = genres.map((g, i) => `${i + 1}번 사진\n  - 장르: [${g}]\n  - 상황: "${cues[i]}"`).join("\n\n");
@@ -123,6 +134,13 @@ JSON만 출력. 한국어, style_prompt만 영어:
   "overall_one_liner": "[연기력 단 한 문장. 평균 70점+ → 극찬. 40~69점 → 독설+인정. 39점- → 진짜 독설. 짧고 임팩트 있게.]",
   "physiognomy": {
     "analysis_status": "[ok 또는 retry_required 중 하나. 4번 사진에서 단일 인물 정면 얼굴이 선명하지 않으면 retry_required]",
+    "validation": {
+      "face_visible": "[boolean. 얼굴 핵심 부위가 충분히 보이면 true]",
+      "single_face": "[boolean. 한 명만 보이면 true]",
+      "frontal_face": "[boolean. 정면에 가깝게 보고 있으면 true]",
+      "face_fill": "[small, medium, large 중 하나. 얼굴이 프레임에서 너무 작으면 small]",
+      "reason": "[판독 실패 또는 주의 사유 1문장]"
+    },
     "face_type": "[얼굴형 한 단어: 둥근형/각진형/달걀형/역삼각형 중 하나. 정면 얼굴 판독 불가면 판별불가]",
     "archetype": "[캐릭터 아키타입 한 문장: 위 8가지 중 하나. 판독 불가면 판별불가]",
     "archetype_reason": "[아키타입 판정 이유. 얼굴의 어떤 특징이 그렇게 만드는지 구체적으로. 2문장. 판독 불가면 왜 판독 불가인지 설명]",
@@ -554,11 +572,51 @@ function mockScores(): Scores {
 }
 
 export async function POST(request: NextRequest) {
+  const session = parseSession(request);
+  let refundedOnError = false;
+  let deductedCredits = 0;
+
   try {
+    if (!session) {
+      return NextResponse.json({ error: "AI 오디션은 로그인 후 이용할 수 있습니다." }, { status: 401 });
+    }
+
     const { images, genres, cues, flavor, personality, physioImage } = await request.json();
 
     if (!Array.isArray(images) || images.length !== 3) {
       return NextResponse.json({ error: "이미지 3장이 필요합니다." }, { status: 400 });
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!
+    );
+    const { data: creditRow } = await supabase
+      .from("user_credits")
+      .select("credits")
+      .eq("user_id", session.id)
+      .single();
+
+    if (!creditRow || creditRow.credits < 5) {
+      return NextResponse.json(
+        { error: "크레딧이 부족해요. AI 오디션은 5크레딧이 필요합니다!" },
+        { status: 429 }
+      );
+    }
+
+    for (let index = 0; index < 5; index += 1) {
+      const { error } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
+      if (error) {
+        if (deductedCredits > 0) {
+          await supabase.rpc("add_credits", { p_user_id: session.id, p_credits: deductedCredits });
+          refundedOnError = true;
+        }
+        return NextResponse.json(
+          { error: "크레딧 차감에 실패했어요. 다시 시도해주세요." },
+          { status: 500 }
+        );
+      }
+      deductedCredits += 1;
     }
 
     const g: string[] = (Array.isArray(genres) && genres.length === 3) ? genres : ["장르1", "장르2", "장르3"];
@@ -569,6 +627,13 @@ export async function POST(request: NextRequest) {
       const MOCK_PHYSIOGNOMY = [
         {
           analysis_status: "ok",
+          validation: {
+            face_visible: true,
+            single_face: true,
+            frontal_face: true,
+            face_fill: "large",
+            reason: "정면 얼굴이 충분히 크게 잡혀 세부 판독이 가능합니다.",
+          },
           face_type: "역삼각형",
           archetype: "냉철한 악역형",
           archetype_reason: "눈꼬리가 살짝 올라가 있고 광대뼈가 또렷해서 자연스럽게 카리스마가 나온다. 웃어도 눈이 안 웃는 타입이라 악역이나 형사 역할이 딱 맞아.",
@@ -586,6 +651,13 @@ export async function POST(request: NextRequest) {
         },
         {
           analysis_status: "ok",
+          validation: {
+            face_visible: true,
+            single_face: true,
+            frontal_face: true,
+            face_fill: "large",
+            reason: "정면 얼굴이 충분히 크게 잡혀 세부 판독이 가능합니다.",
+          },
           face_type: "달걀형",
           archetype: "반전 매력형",
           archetype_reason: "전체적으로 부드러운 인상인데 눈빛에 예상 못 한 날카로움이 있다. 착한 줄 알았는데 반전 있는 캐릭터, 딱 요즘 드라마가 좋아하는 유형이야.",
@@ -603,6 +675,13 @@ export async function POST(request: NextRequest) {
         },
         {
           analysis_status: "ok",
+          validation: {
+            face_visible: true,
+            single_face: true,
+            frontal_face: true,
+            face_fill: "large",
+            reason: "정면 얼굴이 충분히 크게 잡혀 세부 판독이 가능합니다.",
+          },
           face_type: "각진형",
           archetype: "카리스마 주인공형",
           archetype_reason: "이마가 넓고 턱선이 또렷해서 리더십이 얼굴에서 자연스럽게 나온다. 화면에 등장하면 시선이 자동으로 집중되는 구조야.",
@@ -688,10 +767,17 @@ export async function POST(request: NextRequest) {
     const result = JSON.parse(cleaned);
 
     if (result?.physiognomy && typeof result.physiognomy === "object") {
+      const validation = result.physiognomy.validation ?? {};
+      const validationFailed =
+        validation.face_visible === false ||
+        validation.single_face === false ||
+        validation.frontal_face === false ||
+        validation.face_fill === "small";
       const faceType = String(result.physiognomy.face_type ?? "");
       const archetype = String(result.physiognomy.archetype ?? "");
       const verdict = String(result.physiognomy.verdict ?? "");
       const inferredStatus =
+        validationFailed ||
         faceType === "판별불가" ||
         archetype === "판별불가" ||
         verdict.includes("다시 촬영") ||
@@ -701,6 +787,26 @@ export async function POST(request: NextRequest) {
 
       result.physiognomy.analysis_status =
         result.physiognomy.analysis_status === "retry_required" ? "retry_required" : inferredStatus;
+
+      if (result.physiognomy.analysis_status === "retry_required") {
+        const reason = String(validation.reason ?? verdict ?? "정면 얼굴 사진으로 다시 촬영해주세요.");
+        result.physiognomy.face_type = "판별불가";
+        result.physiognomy.archetype = "판별불가";
+        result.physiognomy.archetype_reason = reason;
+        result.physiognomy.screen_impression = "정면 얼굴이 충분히 잡히지 않아 화면 인상을 판독하지 못했습니다.";
+        result.physiognomy.casting_frame = "정면 얼굴이 선명한 사진으로 다시 찍어야 배역 인상을 읽을 수 있습니다.";
+        result.physiognomy.feature_readings = [
+          "눈: 현재 사진에서는 정면 눈매를 판독할 수 없습니다.",
+          "코·입: 현재 사진에서는 코선과 입매를 안정적으로 읽을 수 없습니다.",
+          "턱·얼굴형: 현재 사진에서는 턱선과 얼굴형을 판정할 수 없습니다.",
+        ];
+        result.physiognomy.strengths = ["정면 얼굴 사진이 아니어서 강점 분석을 보류했습니다."];
+        result.physiognomy.weaknesses = ["몸사진·측면사진·가려진 얼굴은 관상 판독 대상이 아닙니다."];
+        result.physiognomy.best_genre = "판별불가";
+        result.physiognomy.verdict = reason.includes("다시")
+          ? reason
+          : `${reason} 정면 얼굴 사진으로 다시 촬영해주세요.`;
+      }
     }
 
     if (!Array.isArray(result.scenes) || result.scenes.length !== 3) {
@@ -711,6 +817,19 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[audition/analyze] error:", msg);
+
+    if (session && deductedCredits > 0 && !refundedOnError) {
+      try {
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_KEY!
+        );
+        await supabase.rpc("add_credits", { p_user_id: session.id, p_credits: deductedCredits });
+      } catch (refundError) {
+        console.error("[audition/analyze] refund error:", refundError);
+      }
+    }
+
     return NextResponse.json(
       { error: process.env.NODE_ENV === "development" ? msg : "감독님이 자리를 비웠습니다. 잠시 후 다시 시도해주세요." },
       { status: 500 }

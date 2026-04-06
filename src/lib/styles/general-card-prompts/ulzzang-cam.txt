@@ -1,0 +1,42 @@
+필터명: 얼짱캠 부활
+스타일 ID: ulzzang-cam
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["ulzzang-cam"]
+
+===== VARIANT: default =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+Transform the uploaded photo into a nostalgic ulzzang-cam selfie revival.
+
+LOOK:
+- Bright under-eye emphasis, softly enlarged-looking eyes without changing identity
+- Blur-filter softness, glossy gradient lips, pink blush, cute clean makeup
+- Fresh 2010s Korean internet beauty mood
+
+HAIR & STYLING:
+- Keep hairstyle recognizable
+- Add girly styling details like soft clips, polished bangs, or neat framing strands
+
+PHOTO STYLE:
+- Front-facing webcam or phone-cam selfie feel
+- Slight beauty blur, bright exposure, cute digital softness
+- Charming, slightly artificial, intentionally nostalgic internet-camera aesthetic
+
+MOOD:
+- Pretty, playful, cute, nostalgic, instantly saveable
+
+STRICT RULES:
+- Do not distort the face proportions too much
+- Do not turn it into a cartoon filter
+- Keep the user recognizable and flattering

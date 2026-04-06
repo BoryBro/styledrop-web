@@ -1,0 +1,50 @@
+필터명: 아이돌 포토카드
+스타일 ID: idol-photocard
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["idol-photocard"]
+
+===== VARIANT: default =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+Transform the uploaded photo into a polished K-pop photocard style portrait.
+
+LOOK:
+- Clear radiant skin with glossy realistic highlights
+- Soft pink blush, subtle shimmer under the eyes, glossy gradient lips
+- Clean sparkling idol makeup, fresh and youthful
+- Hair should stay recognizable but more polished, silky, and camera-ready
+
+WARDROBE & STYLING:
+- Trendy feminine idol styling: soft knit top, fitted cardigan, ribbon detail, or clean stage-casual look
+- Delicate accessories such as a tiny hair clip, ribbon, or stud earrings
+
+COMPOSITION:
+- Chest-up or close portrait framing
+- Subject centered like a collectible photocard
+- Slightly cute, camera-aware expression, gentle smile or soft neutral
+
+BACKGROUND:
+- Clean pastel or softly blurred studio background
+- Light bokeh, airy glow, polished entertainment-company photocard mood
+
+PHOTO STYLE:
+- High-resolution beauty portrait
+- Bright but soft frontal lighting
+- Subtle skin texture retained
+- Premium photocard finish, not plastic or uncanny
+
+STRICT RULES:
+- Do not change the person into a different idol face
+- Do not exaggerate eye enlargement too much
+- Keep the result believable, polished, and instantly recognizable

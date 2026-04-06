@@ -1,0 +1,79 @@
+필터명: 메이드카페 직원 💗
+스타일 ID: maid-cafe-heart
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["maid-cafe-heart"]
+
+===== VARIANT: default =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural candid portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+REAL-WORLD HUMOR LOCK:
+- The image should feel charming because of the outfit, pose, expression, and real-life setting, not because the face is distorted
+- Keep the subject as the same recognizable person
+- Make it feel like a real themed café or cosplay maid café snapshot someone casually took
+- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
+- One person only, clear focus, believable indoor lifestyle setting
+- The styling should work naturally for any uploaded subject, regardless of gender, by adapting the costume and presentation in a flattering, believable, café-themed way rather than forcing a gendered look
+
+Transform the uploaded photo into a themed Japanese maid café snapshot.
+
+SCENE:
+- Soft pastel café interior with bright window light, warm wooden tables, light curtains, and a cute service-counter atmosphere
+- Subject wearing a polished maid café uniform or café-themed costume adapted naturally to suit the person in the uploaded photo
+- Decorative accessories such as ribbon, lace, wrist frills, or themed name tag may be included if they fit naturally
+- Subject poses toward the camera with a sweet hand-heart or welcoming service gesture
+- Background may include softly blurred staff or customers in similar themed café attire for realism, but the uploaded subject remains the only clear focus
+
+MOOD:
+- Cute, cheerful, slightly performative, warmly staged, the kind of themed café photo that feels earnest and unintentionally iconic
+
+PHOTO STYLE:
+- Bright soft indoor snapshot, lightly overexposed highlights, pastel-toned realism, candid café-photo feeling, natural skin texture, authentic themed-venue atmosphere
+
+===== VARIANT: heart_pose =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural candid portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+REAL-WORLD HUMOR LOCK:
+- The image should feel charming because of the outfit, pose, expression, and real-life setting, not because the face is distorted
+- Keep the subject as the same recognizable person
+- Make it feel like a real themed café or cosplay maid café snapshot someone casually took
+- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
+- One person only, clear focus, believable indoor lifestyle setting
+- The styling should work naturally for any uploaded subject, regardless of gender, by adapting the costume and presentation in a flattering, believable, café-themed way rather than forcing a gendered look
+
+Transform the uploaded photo into a cute themed café portrait with a hand-heart pose.
+
+SCENE:
+- Pastel maid café or character café interior with soft pink and cream tones
+- Subject seated or standing at a table, wearing a themed service outfit naturally adapted to the person
+- Subject making a heart shape with both hands toward the camera
+- Small dessert, colorful drink, or table accessory may appear in the foreground
+- Softly blurred background figures in matching themed uniforms can appear for environmental realism
+
+MOOD:
+- Sweet, friendly, playful, softly theatrical, funny only because it feels extremely sincere and real
+
+PHOTO STYLE:
+- Soft daylight café snapshot, gentle bloom in highlights, bright pastel realism, natural candid framing, authentic themed-culture photo atmosphere

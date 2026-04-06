@@ -1,0 +1,73 @@
+필터명: 결혼식 하객 직찍
+스타일 ID: wedding-guest-chaos
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["wedding-guest-chaos"]
+
+===== VARIANT: buffet =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+REAL-WORLD HUMOR LOCK:
+- The image should be funny because of the situation, outfit, prop, or setting, not because the face is distorted
+- Keep the subject as the same recognizable person
+- Make it feel like a real candid or documentary photo someone accidentally took
+- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
+- One person only, clear focus, believable Korean everyday setting
+
+Transform the uploaded photo into a Korean wedding guest candid at the buffet line.
+
+SCENE:
+- Wedding hall buffet area with elegant but busy atmosphere
+- Subject dressed up as a wedding guest, holding a plate or waiting in line
+- Nice outfit, but the timing and angle are hilariously ordinary
+
+MOOD:
+- Dressed beautifully, photographed at the least glamorous moment
+
+PHOTO STYLE:
+- Candid event photography with realistic indoor wedding lighting
+
+===== VARIANT: photo =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+REAL-WORLD HUMOR LOCK:
+- The image should be funny because of the situation, outfit, prop, or setting, not because the face is distorted
+- Keep the subject as the same recognizable person
+- Make it feel like a real candid or documentary photo someone accidentally took
+- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
+- One person only, clear focus, believable Korean everyday setting
+
+Transform the uploaded photo into a Korean wedding hall photo-table candid.
+
+SCENE:
+- Floral wedding photo wall or guest table area
+- Subject in polished guest styling, standing awkwardly for a quick photo
+- Formal but unintentionally funny posture
+
+MOOD:
+- Pretty but slightly uncomfortable, extremely real wedding-guest energy
+
+PHOTO STYLE:
+- Event flash snapshot, believable wedding-hall ambiance, no luxury editorial finish

@@ -1,0 +1,42 @@
+필터명: 2006 이어북
+스타일 ID: yearbook-2006
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["yearbook-2006"]
+
+===== VARIANT: default =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+Transform the uploaded photo into a nostalgic 2006 yearbook portrait.
+
+ERA DETAILS:
+- Side bangs or softly layered Y2K hair styling
+- Frosty pink or beige lips
+- Soft matte skin, thin eyeliner, glossy highlights
+- A polished but very 2006 school-photo beauty look
+
+COMPOSITION:
+- Clean studio yearbook portrait framing
+- Classic school-photo pose, direct camera eye contact
+- Mid-close portrait, centered, simple background
+
+BACKGROUND:
+- Blue-gray or warm beige studio backdrop
+- Slightly artificial studio lighting like a school photography setup
+
+PHOTO TEXTURE:
+- Mild digital camera softness
+- Light nostalgic grain
+- Slight early-2000s department-store portrait finish
+
+MOOD:
+- Pretty, a little awkward, very nostalgic, instantly yearbook-coded
+
+STRICT RULES:
+- Keep the same recognizable person
+- Do not make it comedic or parody
+- Keep the era styling strong but flattering

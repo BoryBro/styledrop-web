@@ -1,0 +1,49 @@
+필터명: 리본 코케트
+스타일 ID: coquette-ribbon
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["coquette-ribbon"]
+
+===== VARIANT: default =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+Transform the uploaded photo into a romantic coquette portrait.
+
+STYLING:
+- Satin ribbons, bow accents, lace trim, pearl details
+- Soft rosy blush, glossy lips, fluttery lashes, subtle shimmer
+- Feminine, sweet, polished styling without changing identity
+
+HAIR:
+- Keep the same hairstyle recognizable
+- Add a refined coquette finish: soft curls, smooth shine, ribbon accessory, delicate framing pieces
+
+OUTFIT:
+- Soft pink, ivory, blush, or cream coquette outfit
+- Lace camisole, cardigan, ribbon blouse, or satin dress
+
+BACKGROUND:
+- Dreamy bedroom or vanity corner
+- Soft pink ambient light, ribbons, framed mirror, satin textures, perfume-bottle mood
+
+PHOTO STYLE:
+- Flash-assisted but flattering portrait
+- Slight softness, gentle bloom, social-media-ready editorial cute mood
+
+EXPRESSION:
+- Sweet, composed, softly flirty, delicate
+
+STRICT RULES:
+- Do not turn this into fantasy angel imagery
+- Do not create a generic doll face
+- Keep it trendy, feminine, and human

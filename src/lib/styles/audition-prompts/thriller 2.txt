@@ -1,0 +1,146 @@
+[INPUT_IMAGE]
+
+SYSTEM ROLE:
+You are a high-precision cinematic transformation engine.
+You must preserve identity perfectly and reconstruct the scene around the face.
+
+--------------------------------
+CORE OBJECTIVE
+--------------------------------
+Transform the input face into a psychologically tense thriller film still.
+The output must feel like a real cinematic frame — not AI-generated, not stylized.
+
+--------------------------------
+IDENTITY LOCK (ABSOLUTE PRIORITY)
+--------------------------------
+- Preserve 100% of the original face identity
+- Do NOT alter:
+  - bone structure
+  - face shape
+  - eye size or spacing
+  - nose or lips
+  - proportions
+- The face must remain pixel-faithful to the input
+- The person must be instantly recognizable
+
+CRITICAL:
+- The face must NOT look composited or pasted
+- Seamlessly integrate into lighting, grain, and environment
+- Match color temperature, contrast, and texture with the scene
+
+--------------------------------
+FACE INTEGRATION RULES (VERY IMPORTANT)
+--------------------------------
+- Apply subtle skin imperfection:
+  - visible pores
+  - slight dryness
+  - uneven tone
+  - faint dark circles
+- Remove beauty filter look completely
+- Slightly desaturate skin tone
+- Add realistic shadow falloff across facial planes
+- Reduce clarity slightly to match lens softness
+
+--------------------------------
+EMOTIONAL STATE (LOCKED)
+--------------------------------
+- Expression: suppressed anxiety / internal distress
+- Eyes:
+  - unfocused or slightly downward gaze
+  - subtle tension around eyelids
+- Lips:
+  - slightly pressed or relaxed downward
+- No exaggerated acting — must feel natural and restrained
+
+--------------------------------
+BODY & POSTURE
+--------------------------------
+- Seated position on a soft sofa
+- Slightly hunched posture
+- Shoulders subtly tense
+- Hands clasped together in front
+- Fingers slightly tense or trembling
+- Knuckles lightly pale
+
+--------------------------------
+WARDROBE
+--------------------------------
+- Dark heavy wool sweater (charcoal / deep gray / navy)
+- Minimal styling, no fashion emphasis
+- Matte fabric only (no shine)
+
+--------------------------------
+ENVIRONMENT (SCENE CONSTRUCTION)
+--------------------------------
+Location:
+- dimly lit modern apartment or lounge
+- minimalistic, cold interior
+
+Background:
+- large window behind subject
+- rain droplets visible on glass
+- faint city lights outside (blurred bokeh)
+- subtle reflection of subject in window (important)
+
+Details:
+- reflective surfaces (glass table, marble, or polished materials)
+- slightly abstracted background (low clarity)
+
+--------------------------------
+LIGHTING (CRITICAL)
+--------------------------------
+- Primary light: cold bluish key light from LEFT
+- Soft but directional
+- Creates:
+  - gentle shadow falloff on right side of face
+  - specular highlights on eyes and skin
+- No warm tones on subject
+
+Accent:
+- very faint red neon glow in background (blurred, not dominant)
+- suggestion of a “BAR” sign, but illegible
+
+--------------------------------
+CAMERA & OPTICS
+--------------------------------
+- medium close-up framing
+- straight-on camera angle
+- lens: 50mm full-frame equivalent
+- shallow depth of field (strong subject isolation)
+- background heavily defocused
+
+--------------------------------
+IMAGE TEXTURE & COLOR
+--------------------------------
+- subtle digital film grain (fine, not noisy)
+- slight vignette around edges
+- cool-toned color grading:
+  - slate gray
+  - navy blue
+  - desaturated blacks
+- low contrast but deep shadows
+
+--------------------------------
+REALISM ENFORCEMENT
+--------------------------------
+- Must look like a real film still, not AI art
+- No over-sharpening
+- No HDR look
+- No cinematic exaggeration
+- No stylization artifacts
+
+--------------------------------
+NEGATIVE CONSTRAINTS
+--------------------------------
+- no beauty retouching
+- no glowing skin
+- no anime or illustration style
+- no surreal or fantasy elements
+- no face distortion or identity drift
+
+--------------------------------
+FINAL GOAL
+--------------------------------
+A quiet, oppressive, psychologically tense cinematic frame,
+where the subject feels trapped in their own thoughts,
+captured in a raw, realistic moment.

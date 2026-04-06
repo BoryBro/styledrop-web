@@ -404,34 +404,87 @@ STRICT RULES:
 - Keep the era styling strong but flattering`
   },
   "club-flash": {
-    "default": `${STRICT_IDENTITY_LOCK}
+    "default": `IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, skin texture, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic party model
+- Do not feminize or masculinize the face unnaturally
+- Adapt styling, grooming, outfit details, and makeup intensity naturally to the uploaded person, whether male or female
+- If any style instruction conflicts with identity preservation, preserve identity first
 
-${SELFIE_REALISM_LOCK}
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions, hairline, and facial volume
+- Maintain a natural candid nightlife-photo feel, not an over-generated beauty-editorial face
+- Do not over-smooth the face or erase unique facial details
+- Keep pores, slight under-eye texture, natural skin sheen, and real facial dimension
+- The subject should NOT be staring directly into the camera
+- Use an off-guard moment: looking slightly to the side, glancing downward, mid-conversation, laughing, turning the head, or reacting to someone nearby
+- Expression should feel spontaneous, socially alive, and unposed
 
-Transform the uploaded photo into a nightlife flash party portrait.
+NIGHTLIFE REALISM LOCK:
+- Transform the uploaded photo into an ultra-natural nightlife flash portrait captured in a real club, lounge, bar, or party environment
+- The realism must come from believable lighting, candid body language, natural expression, imperfect framing, and authentic environmental detail
+- The image should feel like a real premium digital-camera or phone-flash party photo someone captured in the middle of the night
+- Avoid fashion-campaign artificiality, fantasy glamour, surreal effects, cartoon stylization, or AI-looking symmetry
+- Keep the subject as the only clear main identity focus
+- Any surrounding people must remain soft, partial, cropped, or out of focus
 
 LOOK:
-- Strong direct camera flash
-- Glossy skin highlights, slightly sweaty party glow
-- Smoky shimmer eyes, glossy lips, nightlife makeup
+- Strong direct on-camera flash hitting the subject at close range
+- Bright flash exposure on the face and upper body, while the background falls into darker ambient tones
+- Natural glossy skin highlights from flash, slight warmth, realistic late-night skin sheen, subtle sweat or humidity glow
+- Styling should suit the uploaded subject naturally:
+  - for women: optional glossy lips, subtle shimmer lids, softly smudged nightlife makeup, realistic party-ready skin
+  - for men: natural skin sheen, light under-eye depth, subtle flash highlights, optional slightly tousled hair or lived-in grooming
+- No excessive contouring, no drag-like makeup exaggeration, no plastic skin, no editorial over-retouching
 
 SCENE:
-- Dark club or lounge background
-- Out-of-focus neon lighting, silhouettes, reflective surfaces, late-night energy
-- The subject remains the clear main focus
+- Dark nightclub, lounge, underground bar, or private party setting
+- Out-of-focus neon accents, practical club lights, reflective metal or glass surfaces, dim interior depth
+- Hints of people, drink glasses, chrome details, LED strips, speaker lights, mirror reflections, or bottle service atmosphere in the background
+- Background should feel crowded, alive, and late-night, but never distract from the subject
+- Light haze, ambient darkness, and localized color spill are allowed if realistic
+- No stage performance feel, no red-carpet backdrop, no studio setup
 
 COMPOSITION:
-- Candid but flattering party shot
-- Slight motion in the background, subject sharp under flash
+- Candid shoulder-up or waist-up party portrait
+- Slightly imperfect documentary framing, as if shot quickly by a friend in the moment
+- Subject remains sharp under flash
+- Background may show slight motion blur, low-light drag, or soft ghosting from movement
+- Camera angle can be slightly tilted, close, intimate, and casual
+- The subject may be seated in a booth, leaning near a table, standing near friends, turning away from the lens, or caught mid-reaction
+- Do not force a centered portrait pose
+- Do not force direct eye contact
+
+LIGHTING:
+- Primary light source is a harsh but realistic direct camera flash
+- Secondary ambient light comes from club practicals: magenta, cyan, warm amber, deep red, violet, or cool white accents
+- Keep flash realism: bright foreground skin, shiny catchlights, crisp facial detail, darker depth behind
+- Do not over-darken the face
+- Do not let colored ambient lighting overpower recognition
+- Preserve true facial readability under the flash
 
 MOOD:
-- Fun, cool, social, a little chaotic, high-energy
-- Like a premium digital-camera party photo from a fashion crowd
+- Fun, cool, social, messy in a believable way, high-energy but intimate
+- Feels like a real after-midnight memory
+- Slightly chaotic, slightly glamorous, accidentally iconic
+- The charm should come from how real and in-the-moment it feels, not from exaggeration
 
 STRICT RULES:
-- Keep the exact person recognizable
-- Do not over-darken the face
-- Do not lose realism under the flash lighting`
+- Keep the exact person recognizable at first glance
+- Do not change age, ethnicity, or core facial anatomy
+- Do not turn the result into a stylized fashion editorial
+- Do not make the subject pose like a model unless the original face naturally suits that moment
+- Do not over-process skin or sharpen details unnaturally
+- Do not make the lighting too clean, balanced, or studio-like
+- Preserve realism under direct flash above all else
+
+OUTPUT TARGET:
+- Ultra-realistic candid nightlife flash portrait
+- Same person, real club energy, natural off-guard expression
+- Looks like a genuine premium party snapshot taken by a friend at the perfect accidental moment`
   },
   "frosted-glam": {
     "default": `${STRICT_IDENTITY_LOCK}

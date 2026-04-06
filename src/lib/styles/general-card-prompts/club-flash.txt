@@ -1,0 +1,43 @@
+필터명: 클럽 플래시샷
+스타일 ID: club-flash
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["club-flash"]
+
+===== VARIANT: default =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+Transform the uploaded photo into a nightlife flash party portrait.
+
+LOOK:
+- Strong direct camera flash
+- Glossy skin highlights, slightly sweaty party glow
+- Smoky shimmer eyes, glossy lips, nightlife makeup
+
+SCENE:
+- Dark club or lounge background
+- Out-of-focus neon lighting, silhouettes, reflective surfaces, late-night energy
+- The subject remains the clear main focus
+
+COMPOSITION:
+- Candid but flattering party shot
+- Slight motion in the background, subject sharp under flash
+
+MOOD:
+- Fun, cool, social, a little chaotic, high-energy
+- Like a premium digital-camera party photo from a fashion crowd
+
+STRICT RULES:
+- Keep the exact person recognizable
+- Do not over-darken the face
+- Do not lose realism under the flash lighting

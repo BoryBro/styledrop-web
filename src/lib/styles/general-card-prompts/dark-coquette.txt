@@ -1,0 +1,47 @@
+필터명: 다크 코케트
+스타일 ID: dark-coquette
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["dark-coquette"]
+
+===== VARIANT: default =====
+
+IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural selfie or portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+Transform the uploaded photo into a dark coquette portrait.
+
+LOOK:
+- Black lace, ribbon choker, cherry-red lip accents, soft smoky eye
+- Feminine but moody styling
+- Porcelain-inspired glow without erasing real identity
+
+HAIR:
+- Same hairstyle preserved but styled with darker, shinier, moodier finish
+
+OUTFIT:
+- Black lace top, velvet ribbon details, fitted romantic silhouette
+
+BACKGROUND:
+- Dim bedroom, vintage vanity, candlelit mirror corner, or moody editorial set
+- Deep burgundy, black, espresso, and dark cherry tones
+
+MOOD:
+- Romantic, slightly melancholic, stylish, internet-trend coded
+
+PHOTO STYLE:
+- Flash plus shadowy ambient light
+- Intimate, editorial, dramatic but still social-app-friendly
+
+STRICT RULES:
+- Do not turn this into gothic horror
+- Do not over-age the subject
+- Keep it pretty, moody, and wearable
