@@ -169,8 +169,8 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "HOT",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/skydiving-before.jpg?v=1",
-    afterImg: "/thumbnails/skydiving-after.jpg?v=1",
+    beforeImg: "/thumbnails/skydiving-before.jpg?v=2",
+    afterImg: "/thumbnails/skydiving-after.jpg?v=2",
   },
   {
     id: "maid-cafe-heart",
@@ -180,8 +180,8 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "TREND",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/maid-cafe-heart-before.jpg?v=1",
-    afterImg: "/thumbnails/maid-cafe-heart-after.jpg?v=1",
+    beforeImg: "/thumbnails/maid-cafe-heart-before.jpg?v=2",
+    afterImg: "/thumbnails/maid-cafe-heart-after.jpg?v=2",
   },
   {
     id: "hiphop-grillz",
