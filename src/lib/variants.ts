@@ -25,13 +25,13 @@ export const STYLE_VARIANTS: Record<string, Variant[]> = {
     { id: "summit", label: "정상 인증", desc: "정상석 앞에서 건진 산악회 필수 인증샷", thumbnail: "/thumbnails/joseon-ref-2.jpg" },
     { id: "break", label: "약수터 휴식", desc: "등산 중간에 김밥이랑 커피 들고 쉬는 현실짤", thumbnail: "/thumbnails/joseon-ref-1.jpg" },
   ],
-  "karaoke-queen": [
-    { id: "ballad", label: "발라드 몰입", desc: "탬버린 내려놓고 감성 잡은 노래방 발라드짤", thumbnail: "/thumbnails/gyaru-after.jpg" },
-    { id: "dance", label: "댄스 폭주", desc: "조명 터지고 탬버린 흔드는 흥 폭발 노래방짤", thumbnail: "/thumbnails/flash-after.jpg" },
+  "skydiving": [
+    { id: "default", label: "프리폴 스냅", desc: "푸른 하늘 위에서 순간 포착된 스카이다이빙 직찍", thumbnail: "/thumbnails/grab-after.jpg" },
+    { id: "tandem_jump", label: "탠덤 점프", desc: "강사와 함께 떨어지는 실제 탠덤 점프 액션샷", thumbnail: "/thumbnails/flash-after.jpg" },
   ],
-  "mart-flyer": [
-    { id: "produce", label: "채소 특가", desc: "배추랑 대파 들고 진심으로 웃는 전단지 모델짤", thumbnail: "/thumbnails/grab-after.jpg" },
-    { id: "promo", label: "초특가 홍보", desc: "형광 조끼 입고 세일 안내하는 지역 마트 광고짤", thumbnail: "/thumbnails/flash-after.jpg" },
+  "maid-cafe-heart": [
+    { id: "default", label: "웰컴 포즈", desc: "테마 카페 직원처럼 카메라를 향해 환영 인사를 건네는 스냅", thumbnail: "/thumbnails/angel-soft.jpg" },
+    { id: "heart_pose", label: "하트 포즈", desc: "손하트와 디저트 소품이 함께 잡히는 메이드카페 직찍", thumbnail: "/thumbnails/angel-after.jpg" },
   ],
   "service-area-snack": [
     { id: "hotdog", label: "핫도그 먹방", desc: "휴게소 핫도그 하나 들고도 완성되는 여행짤", thumbnail: "/thumbnails/flash-after.jpg" },

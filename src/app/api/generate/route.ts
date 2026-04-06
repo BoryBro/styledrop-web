@@ -744,82 +744,119 @@ PHOTO STYLE:
 - Casual natural-light snapshot
 - Slightly flushed cheeks and real-world hiking texture, no beautified fantasy`
   },
-  "karaoke-queen": {
-    "ballad": `${STRICT_IDENTITY_LOCK}
+  "skydiving": {
+    "default": `${STRICT_IDENTITY_LOCK}
 
 ${SELFIE_REALISM_LOCK}
 
 ${HUMOR_REALISM_LOCK}
 
-Transform the uploaded photo into a Korean karaoke-room ballad moment.
+Transform the uploaded photo into a tandem skydiving snapshot high above a coastal city.
 
 SCENE:
-- Small noraebang room with colored lights, sofa bench, screen, and mic
-- The subject holds a microphone seriously with overcommitted emotion
-- Tambourine on the table, half-finished drinks nearby
+- Mid-air freefall during a real tandem skydive
+- Bright blue sky, scattered white clouds, distant coastline and city grid far below
+- Subject strapped into visible skydiving harness gear
+- Wide action-camera perspective, arms spread or expressive midair pose
+- Wind-blown clothing and hair, intense daylight, natural airborne energy
 
 MOOD:
-- Deeply sincere in a slightly ridiculous setting
-- Funny because the subject is taking it too seriously
+- Adrenaline-filled, spontaneous, thrilling, slightly chaotic in a funny and iconic real-life way
 
 PHOTO STYLE:
-- Flashy but realistic room lighting, candid friend-photo feeling`,
-    "dance": `${STRICT_IDENTITY_LOCK}
+- Ultra-realistic action-camera travel snapshot, crisp daylight, high-altitude clarity, authentic extreme-sports documentary feel`,
+    "tandem_jump": `${STRICT_IDENTITY_LOCK}
 
 ${SELFIE_REALISM_LOCK}
 
 ${HUMOR_REALISM_LOCK}
 
-Transform the uploaded photo into a chaotic Korean karaoke dance-song snapshot.
+Transform the uploaded photo into a real tandem skydiving action photo over the ocean and city.
 
 SCENE:
-- Noraebang room with party lights and a standing mic
-- Subject waving a tambourine or dancing with exaggerated energy
-- Dynamic but still believable pose, one-person focus
+- Subject attached to an instructor in full tandem skydive gear
+- Open sky, clouds drifting nearby, coastline and patchwork land far below
+- Subject making an energetic hand gesture or excited expression in freefall
+- Instructor behind the subject with realistic harness connection and airborne posture
+- Strong midday sunlight, clean weather, authentic extreme-sports environment
 
 MOOD:
-- High-energy, goofy, lovable, the kind of photo friends save forever
+- Wild, exhilarating, real, and unintentionally hilarious because it looks like a genuine once-in-a-lifetime snapshot
 
 PHOTO STYLE:
-- Direct flash, vivid room lights, slight motion blur in limbs but face still recognizable`
+- GoPro-style extreme sports documentary photo, wide-angle perspective, sharp daylight realism, natural motion and altitude atmosphere`
   },
-  "mart-flyer": {
-    "produce": `${STRICT_IDENTITY_LOCK}
+  "maid-cafe-heart": {
+    "default": `IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
 
-${SELFIE_REALISM_LOCK}
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural candid portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
 
-${HUMOR_REALISM_LOCK}
+REAL-WORLD HUMOR LOCK:
+- The image should feel charming because of the outfit, pose, expression, and real-life setting, not because the face is distorted
+- Keep the subject as the same recognizable person
+- Make it feel like a real themed café or cosplay maid café snapshot someone casually took
+- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
+- One person only, clear focus, believable indoor lifestyle setting
+- The styling should work naturally for any uploaded subject, regardless of gender, by adapting the costume and presentation in a flattering, believable, café-themed way rather than forcing a gendered look
 
-Transform the uploaded photo into a hyper-local Korean grocery flyer model shot.
-
-SCENE:
-- Local supermarket produce corner
-- Subject poses too earnestly holding napa cabbage, green onions, or a basket of vegetables
-- Apron or simple market vest allowed, no brand logos or readable text
-
-MOOD:
-- Cheerful but slightly awkward, funny because it feels like a real neighborhood ad
-
-PHOTO STYLE:
-- Flat retail lighting, realistic storefront photography, very local and sincere`,
-    "promo": `${STRICT_IDENTITY_LOCK}
-
-${SELFIE_REALISM_LOCK}
-
-${HUMOR_REALISM_LOCK}
-
-Transform the uploaded photo into a neighborhood supermarket promotion photo.
+Transform the uploaded photo into a themed Japanese maid café snapshot.
 
 SCENE:
-- Entry area of a small Korean mart
-- Subject in casual promo styling, pointing toward stacks of discounted goods
-- Bright sale atmosphere, but avoid readable numbers or text signs
+- Soft pastel café interior with bright window light, warm wooden tables, light curtains, and a cute service-counter atmosphere
+- Subject wearing a polished maid café uniform or café-themed costume adapted naturally to suit the person in the uploaded photo
+- Decorative accessories such as ribbon, lace, wrist frills, or themed name tag may be included if they fit naturally
+- Subject poses toward the camera with a sweet hand-heart or welcoming service gesture
+- Background may include softly blurred staff or customers in similar themed café attire for realism, but the uploaded subject remains the only clear focus
 
 MOOD:
-- Enthusiastic local-ad energy, slightly chaotic and very funny
+- Cute, cheerful, slightly performative, warmly staged, the kind of themed café photo that feels earnest and unintentionally iconic
 
 PHOTO STYLE:
-- Practical commercial snapshot, not polished fashion photography`
+- Bright soft indoor snapshot, lightly overexposed highlights, pastel-toned realism, candid café-photo feeling, natural skin texture, authentic themed-venue atmosphere`,
+    "heart_pose": `IDENTITY LOCK — NON-NEGOTIABLE:
+- Preserve the exact same person from the uploaded photo
+- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
+- Keep skin tone family and ethnicity consistent
+- Do not replace the subject with a generic model
+- If any style instruction conflicts with identity preservation, preserve identity first
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural candid portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+
+REAL-WORLD HUMOR LOCK:
+- The image should feel charming because of the outfit, pose, expression, and real-life setting, not because the face is distorted
+- Keep the subject as the same recognizable person
+- Make it feel like a real themed café or cosplay maid café snapshot someone casually took
+- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
+- One person only, clear focus, believable indoor lifestyle setting
+- The styling should work naturally for any uploaded subject, regardless of gender, by adapting the costume and presentation in a flattering, believable, café-themed way rather than forcing a gendered look
+
+Transform the uploaded photo into a cute themed café portrait with a hand-heart pose.
+
+SCENE:
+- Pastel maid café or character café interior with soft pink and cream tones
+- Subject seated or standing at a table, wearing a themed service outfit naturally adapted to the person
+- Subject making a heart shape with both hands toward the camera
+- Small dessert, colorful drink, or table accessory may appear in the foreground
+- Softly blurred background figures in matching themed uniforms can appear for environmental realism
+
+MOOD:
+- Sweet, friendly, playful, softly theatrical, funny only because it feels extremely sincere and real
+
+PHOTO STYLE:
+- Soft daylight café snapshot, gentle bloom in highlights, bright pastel realism, natural candid framing, authentic themed-culture photo atmosphere`
   },
   "service-area-snack": {
     "hotdog": `${STRICT_IDENTITY_LOCK}
@@ -1049,14 +1086,6 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "hiking-club": {
     "summit": [],
     "break": [],
-  },
-  "karaoke-queen": {
-    "ballad": [],
-    "dance": [],
-  },
-  "mart-flyer": {
-    "produce": [],
-    "promo": [],
   },
   "service-area-snack": {
     "hotdog": [],
