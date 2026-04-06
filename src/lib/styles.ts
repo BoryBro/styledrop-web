@@ -205,6 +205,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/hellotokyo-before.jpg?v=1",
     afterImg: "/thumbnails/hellotokyo-after.jpg?v=1",
   },
+  {
+    id: "mongolian-warrior",
+    name: "몽골의 전사",
+    desc: "초원 위에 선 몽골 전사의 다큐멘터리풍 전신 인물사진",
+    bgColor: "#2b3321",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Mongolian-before.jpg?v=1",
+    afterImg: "/thumbnails/Mongolian-after.jpg?v=1",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */

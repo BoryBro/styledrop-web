@@ -867,6 +867,58 @@ OUTPUT TARGET:
   - #c6b4a9
 - Looks like a genuine high-end digital editorial collage or promotional poster, not AI-generated`
   },
+  "mongolian-warrior": {
+    "default": `Transform this photo into a Mongolian steppe warrior portrait.
+
+This must look like a real high-resolution documentary photograph of a Mongolian warrior on the open grasslands — completely unretouched, raw, grounded, and authentic. Not fantasy art. Not stylized. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the person's facial features: bone structure, eye shape, nose, lips, proportions
+- Same expression and gaze direction
+- CRITICAL: The face must feel naturally integrated into the scene — same lighting direction, same contrast, same skin texture, and same overall image sharpness as the rest of the photograph
+- The face must NOT look like it was pasted onto a different body
+- Match the neck and face seamlessly into the body and scene
+- Apply the same natural outdoor color tone uniformly across the face and body
+- No beautification, no modern skin smoothing
+- Add realistic outdoor skin texture: wind exposure, sun-touched skin, natural pores, slight dryness from open-air conditions
+
+HAIR — MUST CHANGE COMPLETELY:
+- Do NOT preserve the original hairstyle under any circumstances
+- Replace with authentic Mongolian warrior hair appropriate to the scene
+- Options: long black braid, partially braided hair, or tightly pulled-back practical warrior hair
+- Hair must look natural, functional, and wind-touched
+- No modern salon styling, no fashion-volume, no artificial polish
+
+CLOTHING:
+- Traditional Mongolian warrior clothing suitable for open-steppe travel and combat readiness
+- Thick fur-lined leather jacket or deel-like outerwear with coarse natural materials
+- Heavy dark blue wool trousers
+- Sturdy camel-hide or leather boots
+- Engraved belt or metal-detailed waist fastening
+- Traditional geometric motifs on sleeves, sash, or trim
+- Visible fur cuffs, layered garments, and practical historical construction
+- No modern tailoring, no synthetic fabric look, no fantasy armor design
+
+SCENE:
+- Vast green Mongolian grassland steppe with rolling hills and distant horizon
+- Bright open sky with large billowing clouds
+- Natural daylight across the full landscape
+- Subject standing upright in the field
+- Quiver with feathered arrows visible on the back
+- Holding a domed metal helmet naturally at the side
+- Full body visible head to toe
+
+PHOTOGRAPH QUALITY:
+- High-resolution modern documentary outdoor portrait
+- Crisp natural detail across the entire frame including face, clothing, and distant landscape
+- Deep depth of field with both subject and horizon remaining clear
+- No HDR exaggeration, no digital oversharpening
+- Natural contrast, realistic daylight, balanced tonal range
+- Realistic outdoor color palette: vibrant greens, muted browns, subdued blue sky, natural skin tones
+- Slightly cinematic but still documentary-grade realism
+- Must NOT look like fantasy concept art or a modern costume shoot
+- Raw, grounded, physically believable`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -893,6 +945,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "maid-cafe-heart": { "default": [] },
   "hiphop-grillz": { "default": [] },
   "hellotokyo": { "default": [] },
+  "mongolian-warrior": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
