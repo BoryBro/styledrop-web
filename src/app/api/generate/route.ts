@@ -1509,6 +1509,168 @@ OUTPUT TARGET:
   - #1b1211
 - Looks like a genuine high-end conceptual studio photograph, not AI-generated`
   },
+  "transit-station-security": {
+    "default": `Transform this photo into a candid transit-station security-camera portrait.
+
+This must look like a real low-resolution surveillance-style image captured by a public transit security camera — raw, candid, slightly mischievous, and authentic. Not fantasy art. Not stylized illustration. Not polished editorial photography. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the person's exact facial features: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable identity
+- Keep the same playful tongue-out expression if it fits the uploaded face naturally, or adapt it into a similarly candid mischievous expression
+- CRITICAL: The face must feel naturally integrated into the security-camera scene — same lighting direction, same contrast, same skin texture, same low-resolution image behavior, and same overall image softness as the rest of the frame
+- The face must NOT look pasted onto a different body
+- Match the neck, jawline, skin tone, and visible body seamlessly into the surveillance-camera angle
+- Apply the same cool-toned station lighting and digital artifact color shifts uniformly across the face and body
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Preserve believable facial texture and recognizable identity even under surveillance-style softness and compression
+- The final styling must adapt naturally to the uploaded person regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a natural candid portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+- The image must feel like it was captured by an overhead station camera, not by a phone or fashion camera
+- The subject should feel accidentally caught in-frame rather than posed for a portrait
+
+CLOTHING:
+- If the uploaded photo includes visible clothing, infer and preserve the user’s real outfit as closely as possible, adapting it naturally into the surveillance scene
+- Keep the uploaded clothing’s apparent colors, silhouette, fit, and layering when possible
+- If the uploaded image is only a selfie or does not provide enough outfit information, generate a believable outfit that fits the original scene:
+  - light blue oversized denim jacket
+  - matching baggy jeans
+  - white cropped top or a similarly casual fitted inner layer adapted naturally to the uploaded person
+  - white sneakers
+- The final wardrobe should feel casual, youthful, slightly streetwear-coded, and believable for a transit-station candid moment
+- No fantasy costume elements
+- No random high-fashion substitution
+
+PROP:
+- A large white Valentino shopping bag
+- Bold black serif text reading exactly: “VALENTINO”
+- The bag should be clearly readable and naturally held by the subject
+- The shopping bag must feel real, premium, and physically present in the scene
+- No missing brand text
+- No altered spelling
+
+SCENE:
+- Public transit station turnstile entry
+- Straight-on but slightly downward-angled security-camera view
+- Metal plate flooring and dark square tiles
+- Subject standing near the turnstile gate
+- Two blurred people in the distant background
+- The environment should feel real, slightly impersonal, urban, and captured incidentally
+- The overall scene should feel candid and slightly mischievous
+- No glamorous retail setting
+- No clean editorial backdrop
+
+COMPOSITION:
+- Straight-on, downward-angled medium shot from a surveillance camera position
+- Slight overhead CCTV perspective
+- Subject centered or near-centered within the frame
+- Turnstile and floor geometry clearly visible
+- Background figures remain small, distant, and blurred
+- The shot should feel like a real security-camera still frame, not a deliberately composed fashion image
+
+LIGHTING:
+- Cool ambient transit-station lighting
+- Flat overhead illumination
+- Slightly harsh and digital-feeling tonal response
+- Purple, blue, and green color shifts caused by surveillance-camera artifacts and chromatic aberration
+- No beauty lighting
+- No flash
+- No cinematic spotlighting
+- The lighting should feel impersonal, electronic, and real
+
+DIGITAL SCREEN / CCTV FILTER FEEL:
+- Match the attached reference’s exact digital-screen feeling more closely
+- Add visible RGB channel separation and edge fringing around the subject and high-contrast contours
+- Introduce soft VHS/CCTV-style chromatic aberration in magenta, cyan, and blue at the outer edges of the figure
+- Apply low-resolution surveillance softness with slight scan-like screen texture
+- Add mild digital bloom and glow around bright areas without making the image dreamy
+- Include subtle compression artifacts, weak pixel softness, and faint screen-recorded monitor feel
+- Allow slight color banding, signal noise, and electronic image instability if natural
+- The result should feel like a paused frame from a station monitor or captured off a digital CCTV display
+- Keep the effect controlled and realistic, not glitch-art or sci-fi UI
+
+PHOTO STYLE:
+- Grainy, low-resolution security-footage feel
+- Digital artifacting
+- Mild compression
+- Slight chromatic aberration
+- Slight color-channel instability with cool purple-blue-green shifts
+- Imperfect sharpness and surveillance-camera softness
+- The image should feel like a still grabbed from real CCTV footage or recorded from a station monitor
+- No polished editorial clarity
+- No HDR exaggeration
+- No fantasy glow
+- No AI-looking skin plasticity
+
+COLOR:
+- Preserve and visibly reflect these core palette references:
+  - #52483f
+  - #cbbdda
+  - #3d3a45
+  - #5a5358
+  - #a3aaf0
+  - #332d2d
+  - #6a677d
+  - #caac85
+  - #bbbaef
+  - #7f7db6
+  - #8c8ddd
+  - #9c897e
+  - #806c5f
+  - #aaa0b4
+- The palette should feel cool, slightly distorted, urban, digital, and surveillance-like
+- Keep the color shifts subtle but clearly present
+
+MOOD:
+- Candid
+- Playful
+- Slightly mischievous
+- Urban
+- Youthful
+- Captured-by-accident energy
+- The charm should come from the surveillance angle, the tongue-out expression, the shopping bag, and the imperfect digital image quality, not from changing the person’s identity
+
+STRICT RULES:
+- Keep the face identity exact
+- Keep the surveillance-camera perspective
+- Keep the transit-station turnstile setting
+- Keep the Valentino shopping bag with readable “VALENTINO” text
+- Keep the cool digital artifact look
+- Match the attached reference’s digital-screen filter feel more closely
+- If the uploaded clothing is visible, preserve and infer it into the result
+- If only a selfie is uploaded, generate a believable outfit matching the scene
+- Do not make it polished like fashion photography
+- Do not turn it into a fantasy or luxury campaign image
+
+OUTPUT TARGET:
+- Ultra-realistic transit-station security-camera portrait
+- Same recognizable person
+- Surveillance-style downward angle, turnstile entry, grainy low-resolution digital look, cool purple-blue-green artifact shifts, large white Valentino shopping bag
+- Stronger captured-from-monitor / digital-screen filter feeling with realistic CCTV chromatic fringing
+- User’s real clothing preserved when visible, or believable scene-matching clothing generated when outfit is not visible
+- Must visibly reflect these core palette references:
+  - #52483f
+  - #cbbdda
+  - #3d3a45
+  - #5a5358
+  - #a3aaf0
+  - #332d2d
+  - #6a677d
+  - #caac85
+  - #bbbaef
+  - #7f7db6
+  - #8c8ddd
+  - #9c897e
+  - #806c5f
+  - #aaa0b4
+- Looks like a genuine security-camera still, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -1541,6 +1703,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "western-gunslinger": { "default": [] },
   "drink-pov": { "default": [] },
   "existential-studio": { "default": [] },
+  "transit-station-security": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [

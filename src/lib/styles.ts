@@ -271,6 +271,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/Existential_studio-before.jpg?v=1",
     afterImg: "/thumbnails/Existential_studio-after.jpg?v=1",
   },
+  {
+    id: "transit-station-security",
+    name: "CCTV에 포착된 나",
+    desc: "지하철 개찰구 CCTV에 잡힌 듯한 장난기 있는 보안카메라 스틸",
+    bgColor: "#4c4654",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Transit_station_securit-before.jpg?v=1",
+    afterImg: "/thumbnails/Transit_station_securit-after.jpg?v=1",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */
