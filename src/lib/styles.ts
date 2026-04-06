@@ -47,8 +47,8 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "TREND",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/idol-photocard-before.jpg",
-    afterImg: "/thumbnails/angel-after.jpg",
+    beforeImg: "/thumbnails/idol-photocard-before.jpg?v=2",
+    afterImg: "/thumbnails/idol-photocard-after.jpg?v=1",
   },
   {
     id: "club-flash",
