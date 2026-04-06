@@ -918,6 +918,58 @@ PHOTOGRAPH QUALITY:
 - Slightly cinematic but still documentary-grade realism
 - Must NOT look like fantasy concept art or a modern costume shoot
 - Raw, grounded, physically believable`
+    ,
+    "tribal": `Transform this photo into a Mongolian tribal warrior portrait.
+
+This must look like a real high-resolution documentary photograph of a Mongolian tribal warrior on the steppe — completely unretouched, raw, grounded, and authentic. Not fantasy art. Not stylized. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the person's facial features: bone structure, eye shape, nose, lips, proportions
+- Same expression and gaze direction
+- CRITICAL: The face must feel naturally integrated into the scene — same lighting direction, same contrast, same skin texture, and same overall image sharpness as the rest of the photograph
+- The face must NOT look like it was pasted onto a different body
+- Match the neck and face seamlessly into the body and scene
+- Apply the same harsh outdoor daylight tone uniformly across the face and body
+- No beautification, no modern skin smoothing
+- Add realistic outdoor skin texture: sun exposure, wind dryness, natural pores, slight roughness from open-air conditions
+- The final tribal-warrior styling must adapt naturally to the uploaded person regardless of gender, while preserving the same recognizable identity and maintaining a historically believable Mongolian warrior appearance
+
+HAIR — MUST CHANGE COMPLETELY:
+- Do NOT preserve the original hairstyle under any circumstances
+- Replace with authentic Mongolian tribal warrior hair appropriate to the scene
+- Options: tightly pulled-back hair, practical long hair, braided hair, or historically plausible warrior grooming adapted naturally to the uploaded person
+- Hair must look functional, weather-exposed, and historically grounded
+- No modern salon styling, no fashion-volume, no artificial polish
+
+CLOTHING:
+- Traditional Mongolian tribal warrior attire
+- Thick patterned tunic in vivid cobalt blue with scarlet-orange trim and embroidered ornamental chest detailing
+- Wide leather belt cinched at the waist with metal studs and visible fastening hardware
+- Decorative sword in an ornate scabbard attached at the belt
+- Heavy embroidered fur-trimmed outer coat draped over the shoulders like a mantle
+- Conical felt hat with fur lining and ornate embroidery
+- Rich textile textures, visible stitching, layered fabric weight, rough historical materials
+- No modern tailoring, no synthetic fabric look, no fantasy armor design
+
+SCENE:
+- Nomadic Mongolian camp setting on grassy steppe hills
+- Large traditional felt tent structure directly behind the subject, with weathered fabric, hide-covered surfaces, wooden support framing, and scattered gear near the edges
+- Harsh direct daylight with strong shadows
+- Subject standing upright, centered, proud and stoic
+- Gripping a polished wooden spear with visible metal ornament or inlay
+- Decorative sword and belt details clearly visible
+- Three-quarters length portrait composition
+
+PHOTOGRAPH QUALITY:
+- High-resolution modern documentary outdoor portrait
+- Subject in crisp focus
+- Background tent and landscape subtly blurred with moderate depth of field
+- Slight oversharpening effect typical of a modern smartphone image
+- Harsh direct natural daylight with sharp shadow edges and bright specular highlights on metal details
+- Natural but vivid color palette: cobalt blue, scarlet-orange, fur browns, weathered ivory tent fabric, muted grassland greens
+- No HDR exaggeration, no fantasy glow, no cinematic overgrading
+- Must NOT look like fantasy concept art or a studio costume shoot
+- Raw, grounded, physically believable`
   },
   "american-rugby-player": {
     "default": `Transform this photo into an American rugby action portrait.
@@ -1005,7 +1057,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "maid-cafe-heart": { "default": [] },
   "hiphop-grillz": { "default": [] },
   "hellotokyo": { "default": [] },
-  "mongolian-warrior": { "default": [] },
+  "mongolian-warrior": { "default": [], "tribal": [] },
   "american-rugby-player": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {

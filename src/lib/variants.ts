@@ -13,4 +13,8 @@ export const STYLE_VARIANTS: Record<string, Variant[]> = {
     { id: "v3", label: "자연에서 한컷 🤍", desc: "부끄러워하듯 웃는게 뽀인트!",   thumbnail: "/thumbnails/joseon-ref-1.jpg" },
     { id: "v5", label: "ootd 인생사진",    desc: "마실 나갔다가 사진 한장~ ✦",    thumbnail: "/thumbnails/joseon-ref-2.jpg" },
   ],
+  "mongolian-warrior": [
+    { id: "default", label: "초원 전사", desc: "넓은 초원 위에 선 몽골 전사 다큐멘터리 컷", thumbnail: "/thumbnails/Mongolian-after.jpg?v=1" },
+    { id: "tribal", label: "부족 전사", desc: "전통 천막과 창이 함께 보이는 부족 전사 인물사진", thumbnail: "/thumbnails/Mongolian-after.jpg?v=1" },
+  ],
 };
