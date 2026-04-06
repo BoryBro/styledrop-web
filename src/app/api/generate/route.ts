@@ -677,6 +677,196 @@ OUTPUT TARGET:
 - Dark background, hard light, diamond-heavy styling, premium editorial energy
 - Looks like a genuine high-end music portrait, not AI-generated`
   },
+  "hellotokyo": {
+    "default": `Transform this photo into a stylized Tokyo-pop promotional collage portrait.
+
+This must look like a real high-resolution digital editorial poster or graphic-design collage image — playful, chaotic, aspirational, glossy, and visually layered, with a deliberate mix of black-and-white urban photography and high-saturation cartoon-style graphic overlays. Not painterly. Not low-effort sticker spam. Not generic travel poster. Real editorial-collage design energy.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the person's exact facial features: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable identity
+- Keep the expression bright, surprised, energetic, and model-like, adapted naturally from the uploaded person
+- CRITICAL: The face must feel naturally integrated into the collage image — same lighting direction, same contrast logic, same skin texture, and same overall image sharpness as the main photographic layer
+- The face must NOT look pasted onto a different fashion body
+- Match the head, neck, hairline, and visible skin seamlessly into the clothing, pose, and graphic composition
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Preserve realistic pores, lip texture, subtle under-eye structure, and believable skin variation, even within the stylized editorial finish
+- The final Tokyo-pop styling must adapt naturally to the uploaded person regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a real photographed portrait base, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+- The portrait base should feel like a fashion-editorial photo embedded into a graphic poster layout
+- The subject should feel lively, energetic, youthful, and travel-poster ready
+
+HAIR:
+- Adapt the hairstyle naturally to the uploaded person while preserving recognizability
+- Hair should feel playful, styled, youthful, and fashion-forward
+- If the original hair allows, introduce soft lively movement and a slightly quirky Tokyo street-style finish
+- No fantasy hair rendering
+- No anime hair
+- No wig-like texture
+- Keep the result human and editorial
+
+STYLING / OUTFIT:
+- Pastel-toned layered street-fashion styling inspired by Harajuku or Tokyo youth fashion
+- Yellow hoodie
+- Tan skirt
+- Playful layered clothing
+- Fun scarf
+- Large fluffy earmuffs
+- The styling should feel cheerful, spontaneous, quirky, and fashion-editorial
+- Keep the clothing colorful, youthful, and expressive without becoming costume cosplay
+- No fantasy costume elements
+- No random wardrobe substitution unrelated to the described look
+
+POSE:
+- Dynamic pose with one hand stretched dramatically toward the camera in extreme perspective
+- The pose should suggest excitement, motion, invitation, and playful energy
+- The forward-reaching hand must feel intentionally exaggerated by perspective, as if inviting the viewer into the scene
+- Bright eyes, slightly opened mouth, glossy lips, and an excited, surprised, model-like expression
+- The gesture should feel spontaneous and high-energy, not stiff
+
+SCENE:
+- Shibuya-style Tokyo urban environment
+- Background city imagery should be primarily grayscale or black-and-white
+- Use dense urban Tokyo street atmosphere with signage, architectural layers, and metropolitan energy
+- The background should function as the photographic base for the collage
+- It should feel like a travel-poster/editorial graphic celebrating Tokyo pop culture, youth culture, and visual overload
+
+GRAPHIC OVERLAYS:
+- Overlay colorful cartoon-style text, stickers, signs, symbols, and geometric design elements throughout the composition
+- Required visible text elements must include:
+  - “HELLO TOKYO”
+  - “LET'S GO!”
+  - “HEI TOKYO”
+  - “PARTOFRUBY”
+  - “START” inside a barcode-style box
+- Include Japanese food references or stickers for:
+  - ramen
+  - onigiri
+  - dessert
+- Include graphic elements:
+  - heart icon
+  - yellow polka dots
+  - stars
+  - Japanese text “すごい”
+  - Japanese text “こんにちは!”
+- The collage should feel dense, energetic, whimsical, and intentionally overloaded, but still well-designed
+- Typography should feel comic-book-like, pop, graphic, flat, and editorial
+- Additional flat illustrations and digital enhancements are encouraged if they support the Tokyo-pop collage aesthetic
+- No missing required text elements
+- No minimalist layout
+- No generic sticker pack look
+
+EDITORIAL TEXT BLOCK:
+- Include a bottom editorial-style text area describing Tokyo as the “Eastern Capital”
+- Reference Tokyo’s history and culture
+- Encourage adventure, discovery, and trying foods
+- The lower text block should feel like real magazine/editorial copy integrated into the poster design
+- The text area should support the travel-and-pop-culture theme without overpowering the subject
+
+COLOR:
+- The overall palette must prominently use neon green, yellow, pink, black, and white highlights
+- Include and preserve the following HEX values explicitly as core design references:
+  - #070504
+  - #705d2d
+  - #f2d792
+  - #c3ad65
+  - #f6f3ef
+  - #957f43
+  - #43c755
+  - #f7d313
+  - #ed9967
+  - #e9d2ca
+  - #f5ee3d
+  - #37332c
+  - #c35536
+  - #888b84
+  - #c6b4a9
+- The palette should feel graphic, pop, playful, slightly chaotic, and editorially controlled
+- The subject should remain readable against the louder color overlays
+- Use black-and-white city background contrast against high-saturation overlays for stronger pop impact
+
+LIGHTING:
+- The subject should feel brightly lit in a clean editorial way
+- The base portrait should retain believable real-photography light behavior
+- Overlays and collage graphics may intensify the visual energy, but the face and clothing must still feel grounded in a real captured photo
+- No fantasy glow
+- No painterly lighting
+- No muddy contrast
+- Keep the image vibrant, readable, and punchy
+
+LOOK / FINISH:
+- Digital editorial / poster / graphic-design medium
+- Crisp, polished, high-resolution finish
+- Strong collage design language with flat illustrations, graphic text, and layered composition
+- A mix of real photography, digital enhancement, and poster-like design treatment
+- High-energy comic-book-inspired typography and layout
+- The final result should feel like a professional promotional collage, not a random scrapbook
+- No analog film look
+- No painterly texture
+- No low-resolution sticker spam
+- No AI-looking incoherent layer clutter
+
+COMPOSITION:
+- The subject must remain the main focal point
+- Use strong forward perspective from the outstretched hand
+- Let the hand and arm create depth and motion into the frame
+- Surround the subject with layered graphic elements, text, food icons, and urban Tokyo imagery
+- Maintain a balanced but intentionally chaotic editorial layout
+- The image should feel like a magazine cover, poster, or travel-culture promo spread
+- The overall composition should be dense, whimsical, youthful, and instantly eye-catching
+
+MOOD:
+- Whimsical
+- Chaotic
+- Aspirational
+- Quirky
+- Spontaneous
+- Playful
+- Travel-hyped
+- Pop-culture saturated
+- Diverse, energetic Tokyo street-culture mood
+- The excitement should come from the pose, graphic overload, travel atmosphere, and collage design, not from changing the person's identity
+
+STRICT RULES:
+- Keep the face identity exact
+- Do not omit any required text elements
+- Do not omit the Japanese text elements
+- Do not omit the food references
+- Do not omit the bottom editorial copy area
+- Do not omit the HEX color values
+- Do not turn the image into anime
+- Do not make it painterly
+- Do not reduce it to a simple poster with one or two stickers
+- Keep it dense, graphic, youthful, and editorial
+
+OUTPUT TARGET:
+- Ultra-realistic Tokyo-pop promotional collage portrait
+- Same recognizable person
+- Dynamic hand-toward-camera perspective, pastel Harajuku-inspired styling, grayscale Shibuya-style Tokyo background, dense colorful graphic overlays, comic-style typography, food stickers, Japanese text, and editorial travel-poster energy
+- Must visibly reflect these core palette references:
+  - #070504
+  - #705d2d
+  - #f2d792
+  - #c3ad65
+  - #f6f3ef
+  - #957f43
+  - #43c755
+  - #f7d313
+  - #ed9967
+  - #e9d2ca
+  - #f5ee3d
+  - #37332c
+  - #c35536
+  - #888b84
+  - #c6b4a9
+- Looks like a genuine high-end digital editorial collage or promotional poster, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -702,6 +892,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "skydiving": { "default": [] },
   "maid-cafe-heart": { "default": [] },
   "hiphop-grillz": { "default": [] },
+  "hellotokyo": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [

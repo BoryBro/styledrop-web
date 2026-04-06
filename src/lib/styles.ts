@@ -194,6 +194,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/hiphop-grillz-before.jpg?v=1",
     afterImg: "/thumbnails/hiphop-grillz-after.jpg?v=1",
   },
+  {
+    id: "hellotokyo",
+    name: "헬로 도쿄",
+    desc: "도쿄 팝 그래픽이 폭발하는 하이텐션 에디토리얼 콜라주 포스터",
+    bgColor: "#171511",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/hellotokyo-before.jpg?v=1",
+    afterImg: "/thumbnails/hellotokyo-after.jpg?v=1",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */
