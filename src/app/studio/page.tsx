@@ -323,17 +323,20 @@ export default function Studio() {
           </div>
 
           <div className="flex flex-col gap-3">
-            {styles.map((style) => (
-              <button
-                key={style.id}
-                onClick={() => handleCardClick(style)}
-                className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden text-left transition-all duration-300 border-2 ${
-                  selectedStyle === style.id
-                    ? "border-[#C9571A] shadow-[0_4px_24px_rgb(201,87,26,0.3)]"
-                    : "border-transparent"
-                } ${!style.active ? "cursor-default" : "cursor-pointer"}`}
-                style={{ backgroundColor: style.bgColor }}
-              >
+            {styles.map((style) => {
+              const hasOptions = (STYLE_VARIANTS[style.id]?.length ?? 0) > 1;
+
+              return (
+                <button
+                  key={style.id}
+                  onClick={() => handleCardClick(style)}
+                  className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden text-left transition-all duration-300 border-2 ${
+                    selectedStyle === style.id
+                      ? "border-[#C9571A] shadow-[0_4px_24px_rgb(201,87,26,0.3)]"
+                      : "border-transparent"
+                  } ${!style.active ? "cursor-default" : "cursor-pointer"}`}
+                  style={{ backgroundColor: style.bgColor }}
+                >
                 {/* Split before/after for active cards with images */}
                 {style.beforeImg && style.afterImg ? (
                   <>
@@ -362,7 +365,14 @@ export default function Studio() {
 
                 {/* Bottom left text */}
                 <div className="absolute bottom-0 left-0 p-5">
-                  <p className="text-[24px] font-bold text-white tracking-tight leading-tight mb-0.5">{style.name}</p>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    {hasOptions && (
+                      <span className="inline-flex items-center rounded-lg bg-white/14 px-2 py-1 text-[11px] font-extrabold text-white backdrop-blur-md ring-1 ring-white/15">
+                        옵션
+                      </span>
+                    )}
+                    <p className="text-[24px] font-bold text-white tracking-tight leading-tight">{style.name}</p>
+                  </div>
                   <p className="text-[14px] text-[#ccc] mt-0.5 break-keep">{style.desc}</p>
                   {style.active && (
                     <div className="flex items-center gap-2 mt-2">
@@ -397,8 +407,9 @@ export default function Studio() {
                     </svg>
                   </div>
                 )}
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
 
           {/* 실험실 섹션 헤더 */}
