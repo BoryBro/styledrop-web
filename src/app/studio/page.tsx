@@ -13,11 +13,7 @@ function formatCount(n: number): string {
 }
 
 const ALL_STYLE_CARDS = VISIBLE_STYLES.map((s) => ({ ...s, bgImage: s.afterImg }));
-// 스타일 카드 리스트: 인기 먼저, 나머지는 원래 순서
-const STYLES = [
-  ...ALL_STYLE_CARDS.filter(s => s.popular),
-  ...ALL_STYLE_CARDS.filter(s => !s.popular),
-];
+type StyleCard = (typeof ALL_STYLE_CARDS)[number];
 
 type Toast = { id: number; message: string };
 
@@ -52,7 +48,7 @@ export default function Studio() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showNoCreditModal, setShowNoCreditModal] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
-  const [variantSelectStyle, setVariantSelectStyle] = useState<typeof STYLES[0] | null>(null);
+  const [variantSelectStyle, setVariantSelectStyle] = useState<StyleCard | null>(null);
   const [showCameraGuide, setShowCameraGuide] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -85,7 +81,23 @@ export default function Studio() {
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
   }, []);
 
-  const handleCardClick = (style: typeof STYLES[0]) => {
+  const styleOrder = ALL_STYLE_CARDS.reduce<Record<string, number>>((acc, style, index) => {
+    acc[style.id] = index;
+    return acc;
+  }, {});
+
+  const styles = [...ALL_STYLE_CARDS].sort((a, b) => {
+    if (a.popular && b.popular) {
+      const usageDiff = (usageCounts?.[b.id] ?? 0) - (usageCounts?.[a.id] ?? 0);
+      if (usageDiff !== 0) return usageDiff;
+      return styleOrder[a.id] - styleOrder[b.id];
+    }
+    if (a.popular) return -1;
+    if (b.popular) return 1;
+    return styleOrder[a.id] - styleOrder[b.id];
+  });
+
+  const handleCardClick = (style: StyleCard) => {
     if (!style.active) {
       showToast("곧 출시됩니다 ✨");
       return;
@@ -311,7 +323,7 @@ export default function Studio() {
           </div>
 
           <div className="flex flex-col gap-3">
-            {STYLES.map((style) => (
+            {styles.map((style) => (
               <button
                 key={style.id}
                 onClick={() => handleCardClick(style)}
