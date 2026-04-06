@@ -260,6 +260,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/Drink_POV-before.jpg?v=1",
     afterImg: "/thumbnails/Drink_POV-after.jpg?v=1",
   },
+  {
+    id: "existential-studio",
+    name: "덩그러니 나 혼자 ✨",
+    desc: "흰 스튜디오 한가운데 홀로 앉은 인물을 둘러싼 모션 블러 군중 컷",
+    bgColor: "#d7dade",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Existential_studio-before.jpg?v=1",
+    afterImg: "/thumbnails/Existential_studio-after.jpg?v=1",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */

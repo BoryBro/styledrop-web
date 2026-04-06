@@ -1351,6 +1351,164 @@ OUTPUT TARGET:
 - Vibrant red, pink, and blue summer palette
 - Looks like a genuine high-end lifestyle beverage photo, not AI-generated`
   },
+  "existential-studio": {
+    "default": `Transform this photo into a minimalist existential studio portrait.
+
+This must look like a real high-resolution contemporary studio photograph — stark, moody, introspective, and slightly surreal, with one sharply focused seated central figure and multiple motion-blurred suited figures moving around them. Not fantasy art. Not illustration. Not painterly. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the uploaded person's exact facial features: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable identity
+- Only the central seated figure must use the uploaded person’s face and identity
+- The surrounding blurred figures must NOT inherit the uploaded person's identity
+- The blurred surrounding figures should remain generic anonymous adult males in black suits, rendered too motion-blurred to have specific recognizable faces
+- CRITICAL: The central face must feel naturally integrated into the seated body and studio scene — same lighting direction, same contrast, same skin texture, and same overall image sharpness as the rest of the sharply focused subject
+- The central face must NOT look pasted onto the seated body
+- Match the neck, jawline, skin tone, and body posture seamlessly into the scene
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Preserve realistic pores, subtle skin texture, lip texture, and believable facial detail on the central seated figure
+- The final central-subject styling must adapt naturally to the uploaded person regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the central seated subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a real photographed portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+- The central seated figure must remain the only sharply readable identity in the image
+- All other moving figures must remain secondary, anonymous, and motion-smeared
+
+CENTRAL SUBJECT STYLING:
+- Young adult seated at the center of a stark white studio
+- Slightly loose short-sleeve white shirt
+- Black pants
+- Casual sneakers
+- Lightly tousled natural hair adapted to the uploaded person if needed
+- Styling should feel minimal, contemporary, neutral, and emotionally understated
+- No fashion-editorial excess
+- No costume elements
+- No bright accent colors beyond subtle natural skin and clothing tones
+
+SURROUNDING FIGURES:
+- Multiple adult male figures in black suits moving briskly around the central subject
+- These figures must remain generic and anonymous
+- They should appear in both foreground and background
+- Their movement should create strong motion blur, visual noise, and a sense of urgency
+- They must NOT become sharp enough to compete with the central subject
+- They must NOT resemble the uploaded person
+- Their black suits should read as formal, minimal, and slightly imposing
+- Their blurred bodies should create a ring of movement around the central seated figure
+
+SCENE:
+- Minimalist stark white studio environment
+- Straight-on medium-wide framing
+- Central subject seated cross-legged on the floor at the exact center of the composition
+- Large empty white space around the seated figure
+- Surrounding blurred figures moving through the frame in foreground and background
+- The image should feel spatially clean but psychologically crowded
+- The overall scene should emphasize isolation, existential detachment, and emotional stillness inside visual chaos
+
+COMPOSITION:
+- Straight-on medium-wide shot
+- Central seated figure perfectly or near-perfectly centered
+- Surrounding suited figures crossing the frame from multiple directions
+- Strong visual contrast between stillness and motion
+- The composition should use negative space effectively
+- The central figure must remain visually dominant and fully readable
+- The moving figures should frame, encircle, and pressure the composition without obscuring the seated subject’s identity
+- The shot should feel balanced, graphic, and slightly surreal in a photographic way
+
+LIGHTING:
+- Clean, even studio lighting
+- Neutral white backdrop and floor
+- Soft controlled highlights on the central subject
+- No dramatic colored lighting
+- No theatrical spotlight
+- No harsh beauty lighting
+- Lighting should feel minimal, modern, and psychologically cold
+- The central subject should be cleanly exposed and sharp
+- The blurred figures should remain readable as dark moving silhouettes with slight skin-tone smears where visible
+
+PHOTO STYLE:
+- High-resolution modern digital studio photograph
+- Central seated figure frozen in crisp focus
+- Surrounding figures rendered with strong motion blur
+- Clean digital image quality with negligible grain or noise
+- Real photographic sharpness on the seated subject only
+- The image should feel like a contemporary conceptual portrait shot in a professional studio
+- No HDR exaggeration
+- No fantasy glow
+- No painterly texture
+- No artificial composite look
+- No low-fi blur filter
+
+CAMERA / LENS:
+- Straight-on medium-wide studio shot
+- Wide-angle lens feel, approximately 28mm to 35mm full-frame equivalent
+- Slight spatial exaggeration and depth between foreground blurred figures and centered seated subject
+- The lens should preserve the central subject sharply while allowing the moving figures to streak naturally through the frame
+- Use a shutter speed slow enough to create dramatic motion blur on the passersby, while the central figure remains crisply frozen
+- Real optical rendering only, not fake blur
+
+COLOR:
+- Dominant monochrome palette of black, white, and cool gray tones
+- The central seated subject should retain subtle natural skin tones and warm highlights
+- The blurred passersby should remain mostly black, white, and neutral skin-tone smears
+- Use the following HEX values as the core palette reference:
+  - #010103
+  - #d6d9db
+  - #cdd2d6
+  - #e0e1df
+  - #c3c8cd
+  - #b6bbc0
+  - #a6abb3
+  - #9396a0
+  - #807e88
+  - #656169
+  - #1b1211
+- The palette should feel restrained, modern, cold, and introspective
+- No bright accent colors
+- No warm cinematic grading
+
+MOOD:
+- Moody
+- Introspective
+- Slightly surreal
+- Emotionally isolated
+- Existential
+- Stillness surrounded by urgency
+- The power of the image should come from the contrast between the sharply focused seated subject and the blurred suited crowd, not from changing the person’s identity
+
+STRICT RULES:
+- Only the center seated figure uses the uploaded person's face and identity
+- Do not apply the uploaded face to any surrounding moving figures
+- Keep the surrounding blurred figures generic and anonymous
+- Do not omit the motion blur effect
+- Do not remove the stark white studio environment
+- Do not add extra props or narrative objects
+- Do not stylize it into fantasy or fashion campaign excess
+- Keep the image photographic, minimal, and psychologically tense
+
+OUTPUT TARGET:
+- Ultra-realistic minimalist existential studio portrait
+- Same recognizable uploaded person only on the centered seated figure
+- Sharp central subject in white shirt and black pants, seated cross-legged
+- Anonymous blurred black-suited figures moving around in foreground and background
+- Stark white studio, monochrome palette, isolation-versus-motion tension
+- Must visibly reflect these core palette references:
+  - #010103
+  - #d6d9db
+  - #cdd2d6
+  - #e0e1df
+  - #c3c8cd
+  - #b6bbc0
+  - #a6abb3
+  - #9396a0
+  - #807e88
+  - #656169
+  - #1b1211
+- Looks like a genuine high-end conceptual studio photograph, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -1382,6 +1540,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "american-cheerleader": { "default": [] },
   "western-gunslinger": { "default": [] },
   "drink-pov": { "default": [] },
+  "existential-studio": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
