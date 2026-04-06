@@ -238,6 +238,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/cheerleader-before.jpg?v=1",
     afterImg: "/thumbnails/cheerleader-after.jpg?v=1",
   },
+  {
+    id: "western-gunslinger",
+    name: "나는야 서부 총잡이",
+    desc: "먼지 자욱한 서부 마을에서 포착된 총잡이의 시네마틱 영화 스틸",
+    bgColor: "#3a281b",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/gunslinger-before.jpg?v=1",
+    afterImg: "/thumbnails/gunslinger-after.jpg?v=1",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */

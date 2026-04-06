@@ -1091,6 +1091,139 @@ PHOTOGRAPH QUALITY:
 - Must NOT look like concept art, fashion illustration, or a studio beauty shoot
 - Raw, celebratory, physically believable`
   },
+  "western-gunslinger": {
+    "default": `Transform this photo into a Western gunslinger portrait.
+This must look like a real high-resolution cinematic Western film still captured in a dusty Texas frontier town at daybreak — completely unretouched, raw, grounded, and authentic, with a much stronger sense of a real movie scene frozen at a decisive dramatic moment. Not fantasy art. Not stylized illustration. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the person's facial features: bone structure, eye shape, nose, lips, proportions
+- Same expression and gaze direction unless the action of the scene naturally requires a slight shift in eye-line
+- CRITICAL: The face must feel naturally integrated into the scene — same lighting direction, same contrast, same skin texture, same dust exposure, and same overall image sharpness as the rest of the photograph
+- The face must NOT look like it was pasted onto a different body
+- Match the neck and face seamlessly into the body and scene
+- Apply the same early morning frontier light tone uniformly across the face and body
+- No beautification, no modern skin smoothing
+- Add realistic skin texture: dust, dry air exposure, light stubble or natural facial texture, subtle sun-weathering, pores, and slight shadowing under the eyes
+- The final gunslinger styling must adapt naturally to the uploaded person regardless of gender, while preserving the same recognizable identity and maintaining a physically believable Western gunslinger appearance
+
+HAIR — MUST CHANGE COMPLETELY:
+- Do NOT preserve the original hairstyle under any circumstances
+- Replace with authentic Western frontier grooming appropriate to the scene
+- Options: rugged hat-flattened hair, practical short hair, loosely tied-back frontier hair, or naturally unpolished period-appropriate grooming adapted to the uploaded person
+- Hair must look dust-touched, practical, and historically grounded
+- No salon styling, no fashion-volume, no artificial polish
+
+CLOTHING:
+- Weathered brown leather cowboy hat with a worn brim
+- Rugged thick canvas or oilskin duster coat with visible wear, dust, and creasing
+- Checked frontier work shirt underneath
+- Metal buttons and rough practical fastening
+- Gun belt across the waist with silver studs and a polished metal buckle
+- Holstered revolver clearly visible at the hip
+- Heavy natural fabrics, leather, worn stitching, practical Western construction
+- No modern tailoring, no synthetic fabric look, no fantasy costume design
+
+SCENE:
+- Dusty Texas frontier town main street
+- Timber-framed wooden storefronts lining the road
+- One visible hanging sign reading "GENERAL STORE"
+- Dry dirt street, muted wooden facades, frontier architecture, and sparse early-morning town atmosphere
+- The scene should feel like a real film moment just after or during the draw, not a static costume portrait
+- The subject may be firing a revolver, lowering the gun just after a shot, or holding the weapon in a live standoff moment
+- A thin trail of fresh smoke may rise naturally from the revolver barrel or cylinder gap if the shot has just been fired
+- Add lived-in frontier detail: hitching posts, dust along the road edge, warped wooden boards, faint window reflections, tether rails, wagon traces, and sparse props that make the town feel inhabited but eerily still
+- The world must feel like a believable Western set captured in-camera, not a themed backdrop
+- The scene should suggest unseen opponents, off-screen danger, and immediate narrative consequence
+
+ACTION / PERFORMANCE:
+- The subject does NOT need to look directly into the camera
+- A more cinematic off-axis eyeline is preferred: looking toward an off-screen threat, tracking someone across the street, or reacting in the split second after firing
+- The body can be slightly twisted from recoil, stepping into the draw, or braced after the shot
+- Coat hem, sleeve, dust, and gun arm may show subtle motion from the action
+- The performance should feel tense, instinctive, and filmic, like a real actor caught in the middle of a gunfight beat
+- No exaggerated action-movie posing
+- No superhero stance
+- Keep it grounded, dangerous, and physically believable
+
+SHOT DESIGN / CAMERA ANGLE:
+- Replace the static straight-on portrait feeling with a more dynamic movie-shot composition
+- Use a lower or slightly canted camera angle, as if the camera operator is positioned in the street during the confrontation
+- The shot can be a dynamic medium close-up, medium shot, or slightly wider hero frame depending on the action beat
+- The frame should feel like part of an edited Western sequence: either the shot right before the draw, the instant of the gunshot, or the aftermath with smoke still in the air
+- Slight Dutch tilt is allowed if subtle and motivated by the action
+- Foreground occlusion such as drifting dust, a hitching post edge, or blurred wood detail is allowed if it increases immersion
+- The composition should feel like a real dramatic insert or confrontation shot from a prestige Western feature film
+
+PHOTOGRAPH QUALITY:
+- High-resolution modern cinematic Western portrait
+- Shot with a professional cinema camera or high-end DSLR/mirrorless system
+- The image should feel like a frame extracted from a prestige Western film, not just a portrait
+- Neutral-to-warm frontier color balance
+- Early morning sunlight filtered through dust in the air
+- Faded diffuse light beams allowed in the background and side atmosphere
+- Soft but directional shadows under the hat brim and along the coat folds
+- Stronger cinematic treatment is allowed: deeper mood, richer tonal separation, dust haze, and more dramatic atmospheric contrast while still remaining photographic
+- Slight anamorphic-style atmosphere is allowed in the light response if it still feels photographic and period-appropriate
+- No HDR exaggeration
+- No fantasy glow
+- No overdone blockbuster grading
+- No artificial composite look
+- Must NOT look like concept art, a costume photoshoot, or a theme-park reenactment
+- Raw, dramatic, physically believable
+
+LIGHTING:
+- Early morning sun with soft but directional beams
+- Slight dust diffusion in the air
+- Face partially shadowed under the hat brim
+- Gentle highlights on leather, belt buckle, revolver metal, and cheek structure
+- No hard modern flash
+- No glossy beauty lighting
+- Light should feel naturally shaped by dust, wood reflections, and open-air frontier conditions
+- Add stronger cinematic light separation between the subject and the background through dust-filled air and angled morning sun
+- Let the sunlight feel low, fragile, and tense, as if the town has only just awakened
+- If the revolver has just fired, allow faint smoke to catch the side light naturally
+
+CAMERA / LENS:
+- Use a real cinematic lens choice written directly into the shot language
+- Preferred lens options:
+  - 50mm anamorphic equivalent for a dramatic medium shot with environmental tension
+  - 65mm spherical equivalent for a tighter, prestige-western character frame
+  - 75mm to 85mm equivalent for a compressed reaction shot with smoke and shallow depth
+- The most suitable default is a 65mm full-frame equivalent with shallow depth and strong subject isolation
+- Keep crisp focus on the eyes, face, hat brim, revolver hand, and upper torso
+- Background storefronts and signs rendered with natural lens falloff and selective softness
+- Slight lens softness in the distant background is allowed
+- Natural optical rendering only, not artificial blur
+- Slight handheld micro-tension is allowed only if it still feels composed and cinematic
+- The frame should feel like an intentional dialogue shot, post-shot reaction shot, or pre-draw standoff insert from a serious Western feature film
+
+ATMOSPHERE / CINEMATIC INTENSITY:
+- Add more dramatic frontier atmosphere
+- Fine airborne dust drifting across the street
+- Slight sun haze and suspended particulate catching the light
+- A more severe, high-tension stillness in the frame
+- Optional faint heat-dryness shimmer in the far background if subtle and realistic
+- If the gun has just fired, include a restrained puff of smoke, a lingering barrel haze, or a barely visible recoil aftermath
+- Add subtle environmental motion cues such as drifting dust, a coat edge barely moving, faint particles crossing the sunbeams, or the revolver hand still settling after the shot
+- The image should feel like a premium Western film still captured at the exact moment before or after action
+- No fantasy VFX
+- No surreal smoke effects
+- No exaggerated action-movie gimmicks
+
+MOOD:
+- Stoic, tense, cinematic, dangerous, lonely, and iconic
+- Feels like a real Western film still with stronger dramatic intensity
+- The power should come from the stare, dust, light, wardrobe, action beat, and frontier setting, not from changing the person’s identity
+- The emotional tone should feel heavier, more suspenseful, and more narratively charged, like a scene from a serious period Western rather than a stylized cowboy portrait
+
+OUTPUT TARGET:
+- Ultra-realistic Western gunslinger portrait
+- Same recognizable person
+- Dusty Texas town, rugged cowboy styling, revolver belt, weathered textures, stronger cinematic atmosphere
+- Dynamic movie-scene framing with real lens language, off-axis eyeline, and a live-action standoff or post-shot moment
+- Feels like a genuine movie scene frozen one second before or after the duel
+- Looks like a genuine dramatic Western film still, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -1120,6 +1253,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "mongolian-warrior": { "default": [], "tribal": [] },
   "american-rugby-player": { "default": [] },
   "american-cheerleader": { "default": [] },
+  "western-gunslinger": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
