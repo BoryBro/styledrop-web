@@ -216,6 +216,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/Mongolian-before.jpg?v=1",
     afterImg: "/thumbnails/Mongolian-after.jpg?v=1",
   },
+  {
+    id: "american-rugby-player",
+    name: "미국 럭비 선수",
+    desc: "강한 햇빛 아래 질주하는 럭비 선수의 스포츠 액션 포트레이트",
+    bgColor: "#14233a",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/rugby-before.jpg?v=1",
+    afterImg: "/thumbnails/rugby-after.jpg?v=1",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */

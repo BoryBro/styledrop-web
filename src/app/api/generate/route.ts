@@ -919,6 +919,66 @@ PHOTOGRAPH QUALITY:
 - Must NOT look like fantasy concept art or a modern costume shoot
 - Raw, grounded, physically believable`
   },
+  "american-rugby-player": {
+    "default": `Transform this photo into an American rugby action portrait.
+
+This must look like a real high-resolution sports photograph of an American rugby player in motion during a daytime match or training session — completely unretouched, raw, grounded, and authentic. Not poster art. Not stylized. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the person's facial features: bone structure, eye shape, nose, lips, proportions
+- Same expression and gaze direction
+- CRITICAL: The face must feel naturally integrated into the scene — same lighting direction, same contrast, same skin texture, same sweat sheen, and same overall image sharpness as the rest of the photograph
+- The face must NOT look like it was pasted onto a different body
+- Match the neck and face seamlessly into the body and scene
+- Apply the same harsh sunlit outdoor color tone uniformly across the face and body
+- No beautification, no modern skin smoothing
+- Add realistic athletic skin texture: sweat, pores, sun exposure, slight specular highlights, natural compression and tension from exertion
+- The final rugby-player styling must adapt naturally to the uploaded person regardless of gender, while preserving the same recognizable identity and maintaining a physically believable elite rugby-athlete appearance
+
+HAIR — MUST CHANGE COMPLETELY:
+- Do NOT preserve the original hairstyle under any circumstances
+- Replace with authentic rugby-player grooming appropriate to the scene
+- Options: very short athletic haircut, tightly controlled hair under headgear, or practical match-ready hair adapted naturally to the uploaded person
+- Hair must look functional, sweat-affected, and sports-appropriate
+- No salon styling, no fashion-volume, no artificial polish
+
+CLOTHING:
+- Tight-fitting modern American rugby uniform
+- Shiny synthetic athletic jersey in vivid blue, red, and white team colors
+- Large white number "42" clearly visible on the chest
+- Logo patch on the chest or sleeve reading "RUGBY LEAGUE USA"
+- Short athletic rugby shorts in matching blue
+- Protective blue padded scrum cap or soft rugby headgear
+- White socks and molded cleats with visible branded sportswear detailing
+- Fabric must show realistic stretch, compression, sweat-darkening, seams, and athletic tension across shoulders, chest, arms, and thighs
+- No fashion tailoring, no fantasy uniform design, no unrealistic armor-like shaping
+
+SCENE:
+- Outdoor rugby field under intense clear daylight
+- Lush green grass pitch
+- Background of blurred stadium seating, sideline barriers, and sunlit field surroundings
+- Subject captured mid-run with strong forward motion
+- Arms pumping naturally, torso engaged, athletic stride visible
+- Dynamic sports-action framing from upper thigh to head or near full-body crop depending on the motion
+- The subject remains the clear focal point, isolated from the background by lens compression and shallow depth of field
+
+PHOTOGRAPH QUALITY:
+- High-resolution modern sports-action photograph
+- Shot with a professional DSLR or mirrorless sports camera
+- Medium telephoto sports lens look, approximately 135mm to 200mm full-frame equivalent
+- Fast shutter speed, around 1/1600 to 1/2500 sec, freezing the athlete sharply
+- Aperture around f/2.8 to f/4 for shallow depth of field and strong subject separation
+- Crisp focus locked on the face, upper torso, and leading leg
+- Slight trailing-edge motion softness is allowed only minimally at the farthest moving extremities if it feels naturally captured in-camera
+- Background turf and stadium elements should be strongly out of focus with smooth telephoto compression
+- Slight modern digital oversharpening is acceptable if it matches a real sports-photo look
+- Strong natural sunlight from camera left, creating hard specular highlights on skin, helmet, jersey, and legs
+- Deep, clean shadows and bright rim accents along shoulders, arms, and thighs
+- Saturated but natural sports-photo color: vivid blue, bold red, bright white, rich skin tones, deep green grass
+- No HDR exaggeration, no fantasy glow, no cinematic overgrading, no artificial composite look
+- Must NOT look like concept art, advertising illustration, or a studio athlete shoot
+- Raw, energetic, physically believable`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -946,6 +1006,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "hiphop-grillz": { "default": [] },
   "hellotokyo": { "default": [] },
   "mongolian-warrior": { "default": [] },
+  "american-rugby-player": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
