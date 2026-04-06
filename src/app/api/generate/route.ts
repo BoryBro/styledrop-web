@@ -699,6 +699,94 @@ MOOD:
 PHOTO STYLE:
 - Soft daylight café snapshot, gentle bloom in highlights, bright pastel realism, natural candid framing, authentic themed-culture photo atmosphere`
   },
+  "hiphop-grillz": {
+    "default": `Transform this photo into a luxury hip-hop close-up portrait.
+
+This must look like a real high-resolution editorial-style close-up photograph captured in a dark studio or backstage environment — completely unretouched, raw, grounded, and authentic. Not poster art. Not stylized fantasy. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the person's exact facial features: bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable identity
+- Keep the same expression and gaze direction unless the source image naturally requires a slight adjustment for composition
+- CRITICAL: The face must feel naturally integrated into the scene — same lighting direction, same contrast, same skin texture, same highlight behavior, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted onto a different body
+- Match the neck, jawline, and facial lighting seamlessly into the body and scene
+- Apply the same warm direct-light portrait tone uniformly across the face and body
+- No beautification, no skin smoothing, no artificial symmetry
+- Preserve realistic pores, facial texture, lip texture, beard shadow if applicable, and natural tonal variation
+- The final styling must adapt naturally to the uploaded person regardless of gender while preserving the same recognizable identity
+
+HAIR / GROOMING:
+- Adapt the grooming naturally to the uploaded person
+- Hair should feel intentional, polished, and luxury-portrait appropriate
+- Facial hair, hairline, eyebrows, lashes, and edges must remain believable and identity-consistent
+- No artificial wig-like texture
+- No cartoon styling
+- No over-designed beauty glam
+
+ACCESSORIES:
+- Oversized diamond-encrusted chain necklace with a large statement pendant
+- Additional layered diamond chains around the neck
+- Diamond grillz visible on the teeth
+- Dark luxury sunglasses with reflective lenses and metal detailing
+- Large diamond ring or iced-out hand jewelry visible near the face
+- Jewelry must look heavy, real, premium, and physically believable with accurate reflections and gemstone sparkle
+- No fake CGI jewelry look
+
+CLOTHING:
+- Dark luxury streetwear or upscale performance/studio styling
+- Mostly hidden by the close-up framing, but any visible clothing should feel premium, dark-toned, and compatible with the jewelry-heavy look
+- No fantasy costume elements
+- No bright fashion-editorial wardrobe unrelated to the reference mood
+
+SCENE:
+- Extreme close-up or tight close-up portrait
+- Dark background, almost black, with minimal visible environment
+- Subject filling most of the frame
+- One hand lifted near the face holding or touching the chain naturally
+- Large pendant and layered jewelry occupying the lower foreground
+- Composition should feel intimate, expensive, and aggressive in a real editorial/music-industry way
+
+LIGHTING:
+- Strong direct flash or hard frontal key light
+- Bright specular highlights on skin, lips, glasses, ring, chains, and grillz
+- Deep surrounding shadows with minimal ambient fill
+- Slight warm tone in skin rendering
+- Light should carve the face and jewelry clearly without looking like studio beauty lighting
+- No soft commercial skincare lighting
+
+CAMERA / LENS:
+- Tight telephoto close-up feel or macro-like portrait crop
+- Approximately 85mm to 135mm full-frame equivalent for compressed facial rendering, or a similarly tight close-focus portrait lens look
+- Very close camera distance with intimate framing
+- Shallow depth of field allowed, but the face, teeth, sunglasses, and front jewelry must remain sharp
+- The background should fall into deep soft blur or blackness
+- Real lens rendering only, not artificial blur
+
+PHOTOGRAPH QUALITY:
+- High-resolution modern digital portrait
+- Crisp micro-contrast on jewelry and facial texture
+- Slight gritty editorial sharpness
+- Realistic sensor grain is allowed in darker areas
+- No HDR
+- No fantasy glow
+- No overgrading
+- No posterized skin
+- No AI-looking skin plasticity
+- Natural but dramatic contrast
+- Real gemstone sparkle with small specular point highlights
+- Must NOT look like concept art, fashion illustration, or a synthetic composite
+
+MOOD:
+- Bold, powerful, flashy, confident, expensive, confrontational, and iconic
+- Feels like a real backstage or editorial portrait captured at the perfect moment
+- The intensity should come from the lighting, jewelry, framing, and expression, not from changing the person’s identity
+
+OUTPUT TARGET:
+- Ultra-realistic luxury hip-hop close-up portrait
+- Same recognizable person
+- Dark background, hard light, diamond-heavy styling, premium editorial energy
+- Looks like a genuine high-end music portrait, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -725,6 +813,15 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
     "egg": [],
     "nap": [],
   },
+  "skydiving": {
+    "default": [],
+    "tandem_jump": [],
+  },
+  "maid-cafe-heart": {
+    "default": [],
+    "heart_pose": [],
+  },
+  "hiphop-grillz": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [

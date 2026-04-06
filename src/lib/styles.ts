@@ -58,8 +58,8 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "HOT",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/club-flash-before.jpg",
-    afterImg: "/thumbnails/flash-after.jpg",
+    beforeImg: "/thumbnails/club-flash-before.jpg?v=2",
+    afterImg: "/thumbnails/club-flash-after.jpg?v=1",
   },
   {
     id: "flash-selfie",
@@ -193,6 +193,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/flash-before.jpg",
     afterImg: "/thumbnails/angel-soft.jpg",
+  },
+  {
+    id: "hiphop-grillz",
+    name: "힙합 그릴즈 했어요 ✨",
+    desc: "다이아 체인과 그릴즈가 강조된 하드한 힙합 에디토리얼 클로즈업",
+    bgColor: "#13110f",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/hiphop-grillz-before.jpg?v=1",
+    afterImg: "/thumbnails/hiphop-grillz-after.jpg?v=1",
   },
 ];
 
