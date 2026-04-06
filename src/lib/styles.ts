@@ -227,6 +227,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/rugby-before.jpg?v=1",
     afterImg: "/thumbnails/rugby-after.jpg?v=1",
   },
+  {
+    id: "american-cheerleader",
+    name: "미쿡 치어리더 언니 💗",
+    desc: "강한 조명 아래 체육관 코트에서 빛나는 치어리더 포트레이트",
+    bgColor: "#21314a",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/cheerleader-before.jpg?v=1",
+    afterImg: "/thumbnails/cheerleader-after.jpg?v=1",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */

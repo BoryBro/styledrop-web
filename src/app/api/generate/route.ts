@@ -1031,6 +1031,66 @@ PHOTOGRAPH QUALITY:
 - Must NOT look like concept art, advertising illustration, or a studio athlete shoot
 - Raw, energetic, physically believable`
   },
+  "american-cheerleader": {
+    "default": `Transform this photo into an American cheerleader portrait.
+This must look like a real high-resolution athletic portrait photograph of an American cheerleader on a gymnasium court under strong arena lighting — completely unretouched, raw, grounded, and authentic. Not poster art. Not stylized. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the person's facial features: bone structure, eye shape, nose, lips, proportions
+- Same expression and gaze direction
+- CRITICAL: The face must feel naturally integrated into the scene — same lighting direction, same contrast, same skin texture, same highlight behavior, and same overall image sharpness as the rest of the photograph
+- The face must NOT look like it was pasted onto a different body
+- Match the neck and face seamlessly into the body and scene
+- Apply the same gymnasium lighting color tone uniformly across the face and body
+- No beautification, no modern skin smoothing
+- Add realistic skin texture: natural pores, slight sweat sheen, mild specular highlights from strong arena lights and flash, believable facial dimension under hard lighting
+- The final cheerleader styling must adapt naturally to the uploaded person regardless of gender, while preserving the same recognizable identity and maintaining a physically believable American cheerleader appearance
+
+HAIR — MUST CHANGE COMPLETELY:
+- Do NOT preserve the original hairstyle under any circumstances
+- Replace with authentic cheerleader grooming appropriate to the scene
+- Options: tightly tied high ponytail with a glossy ribbon, controlled performance hair, or neat competition-ready styling adapted naturally to the uploaded person
+- Hair must look fixed in place, performance-ready, and realistically affected by strong overhead light
+- No salon glamour styling beyond believable competitive cheer presentation
+- No artificial fashion-volume or unrealistic hair design
+
+CLOTHING:
+- Sparkling American cheerleader uniform
+- Opaque thick synthetic athletic fabric with metallic-thread shimmer woven into the surface
+- Fitted top with vivid red accents, icy blue-green and off-white base tones, and realistic cheer uniform construction
+- Matching fitted performance skirt or uniform bottom appropriate to competitive cheer styling
+- Glossy ribbon tied into the hair
+- Fabric must show realistic thickness, seam structure, stretch tension, and reflective highlights from direct arena lights and flash
+- No fashion tailoring, no fantasy costume design, no unrealistic stagewear shaping
+
+SCENE:
+- Indoor gymnasium court
+- Subject standing prominently under a strong concentrated spotlight
+- High-angle upper-body close-up framing
+- Background includes an out-of-focus scoreboard, bleacher seats, distant basketball hoops, and soft gym interior elements
+- Most background details should dissolve into soft pastel bokeh, blur, and low-contrast haze under the bright lighting conditions
+- The subject remains the clear focal point, isolated from the background by lens compression, light falloff, and shallow depth of field
+
+PHOTOGRAPH QUALITY:
+- High-resolution modern athletic portrait photograph
+- Shot with a professional DSLR or mirrorless camera
+- Moderate telephoto lens look, approximately 85mm to 135mm full-frame equivalent
+- Aperture around f/2.8 to f/4 for upper-body isolation and smooth background blur
+- Crisp focus locked on the face, hair ribbon, and upper torso
+- Strong arena illumination plus direct photography flash
+- Intense specular highlights on skin, hair ribbon, and metallic threads in the uniform
+- Sharp drop shadows defining facial structure and clothing texture
+- Vintage-feeling image treatment created in-camera or through authentic optical/image characteristics, not artificial over-stylization
+- Slight haze across the image
+- Light leaks visible along the frame edges
+- Mild vintage grain
+- Subtle chromatic aberration at the brightest highlighted edges
+- Slight telephoto compression in facial and upper-body rendering
+- No HDR exaggeration, no fantasy glow, no cinematic overgrading, no artificial composite look
+- Color palette must preserve icy blue-greens, off-white, and vivid red accents with realistic gym-light behavior
+- Must NOT look like concept art, fashion illustration, or a studio beauty shoot
+- Raw, celebratory, physically believable`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -1059,6 +1119,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "hellotokyo": { "default": [] },
   "mongolian-warrior": { "default": [], "tribal": [] },
   "american-rugby-player": { "default": [] },
+  "american-cheerleader": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
