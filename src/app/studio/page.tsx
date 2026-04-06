@@ -87,6 +87,9 @@ export default function Studio() {
   }, {});
 
   const styles = [...ALL_STYLE_CARDS].sort((a, b) => {
+    const aHasOptions = (STYLE_VARIANTS[a.id]?.length ?? 0) > 1;
+    const bHasOptions = (STYLE_VARIANTS[b.id]?.length ?? 0) > 1;
+
     if (a.popular && b.popular) {
       const usageDiff = (usageCounts?.[b.id] ?? 0) - (usageCounts?.[a.id] ?? 0);
       if (usageDiff !== 0) return usageDiff;
@@ -94,6 +97,10 @@ export default function Studio() {
     }
     if (a.popular) return -1;
     if (b.popular) return 1;
+
+    if (aHasOptions && !bHasOptions) return -1;
+    if (!aHasOptions && bHasOptions) return 1;
+
     return styleOrder[a.id] - styleOrder[b.id];
   });
 
