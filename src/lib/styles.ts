@@ -282,6 +282,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/Transit_station_securit-before.jpg?v=1",
     afterImg: "/thumbnails/Transit_station_securit-after.jpg?v=1",
   },
+  {
+    id: "luxury-bedroom-bag",
+    name: "쇼핑백에 들어가자",
+    desc: "침실 한가운데 초대형 쇼핑백 안에 들어간 럭셔리 라이프스타일 컷",
+    bgColor: "#35543f",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Luxury_bedroom-before.jpg?v=1",
+    afterImg: "/thumbnails/Luxury_bedroom-after.jpg?v=1",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */

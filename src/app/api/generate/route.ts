@@ -1671,6 +1671,163 @@ OUTPUT TARGET:
   - #aaa0b4
 - Looks like a genuine security-camera still, not AI-generated`
   },
+  "luxury-bedroom-bag": {
+    "default": `Transform this photo into a luxury bedroom shopping-bag portrait.
+
+This must look like a real high-resolution candid-luxury lifestyle photograph captured on a smartphone in a modern bedroom — playful, irreverent, stylishly nonchalant, and authentic. Not fantasy art. Not stylized illustration. Not glossy studio surrealism. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the person's exact facial features: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable identity
+- Keep the same neutral, aloof, model-like expression unless the uploaded photo naturally requires only a minimal adjustment
+- CRITICAL: The face must feel naturally integrated into the seated body and room scene — same lighting direction, same contrast, same skin texture, same smartphone-camera rendering, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted onto the person inside the shopping bag
+- Match the head, neck, jawline, skin tone, tattoos if visible, and body posture seamlessly into the scene
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Preserve realistic pores, lip texture, subtle under-eye structure, and believable skin variation
+- The final styling must adapt naturally to the uploaded person regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a real photographed portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+- The image should feel like a casually shot but aesthetically strong smartphone photo
+- The person should feel like they are really sitting inside the bag, not composited on top of it
+
+HAIR:
+- Keep the hairstyle naturally recognizable to the uploaded person
+- Hair should be long or medium-long if naturally plausible, straight or softly relaxed, dark brown or similarly natural dark tone unless the user’s uploaded hair clearly differs
+- Hair should feel casual, slightly styled, fashion-aware, and believable in a real bedroom environment
+- No fantasy hair design
+- No overbuilt salon styling
+- No wig-like texture
+
+STYLING / OUTFIT:
+- White spaghetti-strap top or a similarly minimal chic fitted top adapted naturally to the uploaded person
+- Dark sunglasses
+- Bracelets and rings
+- Visible tattoos on the arms and hands if they suit the uploaded subject naturally or if the source material includes tattoo-compatible styling
+- The overall styling should feel chic, fashion-conscious, irreverent, and casually luxurious
+- No costume elements
+- No random high-fashion wardrobe substitution unrelated to the described scene
+
+PROP:
+- A large glossy green shopping bag dominating the foreground
+- Bold readable brand text on the front reading exactly: “BOTTEGA VENETA”
+- The bag must feel oversized, premium, structured, glossy, and physically real
+- The subject is seated inside the bag naturally, as if the bag is large enough to contain them
+- The interaction between the body and the bag must feel believable in terms of weight, compression, and contact
+- No missing brand text
+- No altered spelling
+- No generic unlabeled bag
+
+SCENE:
+- Well-lit modern bedroom
+- Unmade bed with white linens and multiple pillows in the background
+- To the right of the frame, a black nightstand holding:
+  - a phone
+  - a candle
+  - bottled water
+  - a segmented dish
+- Light wood floor with visible grain
+- The room should feel real, lived-in, casual, and stylish rather than staged like a showroom
+- The environment should support the irreverent luxury-lifestyle tone
+
+COMPOSITION:
+- Medium shot
+- The subject seated inside the oversized bag in the foreground
+- Straight-on smartphone-camera framing
+- The bag occupies a large portion of the lower frame and acts as the main anchor object
+- The bed and nightstand remain clearly readable in the background
+- Deep focus composition so the room and objects stay legible
+- The shot should feel candid, slightly absurd, and fashion-aware without becoming surreal in an artificial way
+
+LIGHTING:
+- Soft diffuse daylight
+- Bright but natural bedroom illumination
+- Clean highlights on skin, sunglasses, bag surface, wood floor, and bedding
+- No flash
+- No dramatic studio beauty light
+- No cinematic spotlighting
+- The light should feel like real daytime room light entering through a window
+
+PHOTO STYLE:
+- High-resolution smartphone image
+- Deep focus
+- Crisp modern digital clarity
+- Real bedroom-lifestyle photo rendering
+- No visible film grain
+- No painterly softness
+- No fantasy glow
+- No artificial composite look
+- The image should feel like a premium candid social photo captured spontaneously in a real room
+
+COLOR:
+- The palette must be anchored by stark whites, deep blacks, and the bold green of the shopping bag
+- Preserve and visibly reflect these core palette references:
+  - #968976
+  - #847863
+  - #058545
+  - #c9b5a0
+  - #c6cac3
+  - #0b120c
+  - #9da9a2
+  - #996e4c
+  - #77644e
+  - #575544
+  - #049c58
+  - #ece1cd
+  - #e5c9af
+  - #352d25
+- The green bag should pop strongly against the neutral whites, blacks, woods, and skin tones
+- Keep the color palette natural, expensive, and slightly playful
+- No neon exaggeration
+- No muddy grading
+
+MOOD:
+- Irreverent
+- Playful
+- Stylishly nonchalant
+- Fashion-conscious
+- Casual luxury
+- Slightly absurd but fully believable
+- The power of the image should come from the contrast between the everyday bedroom and the oversized luxury shopping bag, not from changing the person’s identity
+
+STRICT RULES:
+- Keep the face identity exact
+- Keep the oversized glossy green bag
+- Keep the readable “BOTTEGA VENETA” text
+- Keep the modern bedroom setting with the unmade bed and black nightstand details
+- Keep the smartphone-photo realism
+- Do not turn it into a surreal fashion illustration
+- Do not make it look like a clean studio set
+- Do not omit the room objects
+- Do not lose the casual candid energy
+
+OUTPUT TARGET:
+- Ultra-realistic luxury bedroom shopping-bag portrait
+- Same recognizable person
+- Seated inside a large glossy green BOTTEGA VENETA shopping bag
+- White bedding, black nightstand, phone, candle, bottled water, segmented dish, light wood floor, soft daylight
+- Must visibly reflect these core palette references:
+  - #968976
+  - #847863
+  - #058545
+  - #c9b5a0
+  - #c6cac3
+  - #0b120c
+  - #9da9a2
+  - #996e4c
+  - #77644e
+  - #575544
+  - #049c58
+  - #ece1cd
+  - #e5c9af
+  - #352d25
+- Looks like a genuine high-end candid smartphone fashion-lifestyle photo, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -1704,6 +1861,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "drink-pov": { "default": [] },
   "existential-studio": { "default": [] },
   "transit-station-security": { "default": [] },
+  "luxury-bedroom-bag": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
