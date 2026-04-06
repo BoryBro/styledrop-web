@@ -1224,6 +1224,133 @@ OUTPUT TARGET:
 - Feels like a genuine movie scene frozen one second before or after the duel
 - Looks like a genuine dramatic Western film still, not AI-generated`
   },
+  "drink-pov": {
+    "default": `Transform this photo into a whimsical summer drink-point-of-view portrait.
+
+This must look like a real high-resolution lifestyle photograph captured from inside a glass of red slushy drink on a bright sunny day — completely unretouched, playful, grounded, and authentic. Not fantasy illustration. Not cartoonish. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the person's exact facial features: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable identity
+- Keep the same natural expression and gaze direction unless the source image composition requires only a minimal natural adjustment
+- CRITICAL: The face must feel naturally integrated into the scene — same lighting direction, same contrast, same skin texture, same outdoor daylight behavior, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted above the glass
+- Match the head, neck, lips, and facial perspective seamlessly into the drink POV angle
+- Apply the same bright summer daylight tone uniformly across the face and body
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Preserve natural pores, lip texture, subtle under-eye structure, and believable skin variation
+- The final summer-drink styling must adapt naturally to the uploaded person regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a real photographed portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+- The face should appear very close to the lens from a worm’s-eye-view angle, as if the camera is physically inside the glass looking upward
+- The lips should be naturally pursed around a straw in a believable sipping moment
+- The subject should gaze directly downward into the glass or slightly into the lens from above
+
+HAIR:
+- Keep the hairstyle naturally recognizable to the uploaded person
+- Hair should feel slightly messy, glossy, lightly wind-touched, and casual
+- Allow a few loose strands or soft bangs to fall naturally across the forehead
+- Hair should respond realistically to the outdoor setting and top-down angle
+- No fantasy hair styling
+- No overbuilt editorial hair
+- No wig-like texture
+
+CLOTHING:
+- Only a small hint of clothing should be visible
+- Show a soft pink ribbed sleeveless top or a similarly minimal warm-weather top if adaptation is needed
+- Clothing should remain secondary and softly out of focus
+- Keep the styling casual, youthful, summery, and natural
+- No fantasy costume elements
+- No overly styled fashion-editorial wardrobe
+
+SCENE:
+- The camera viewpoint is inside a glass, looking upward through the circular rim
+- A red slushy drink dominates the foreground with thick icy texture, frothy crushed ice, and vibrant saturated red color
+- A light blue straw extends toward the subject’s lips
+- The top inner rim of the glass should create a circular framing element around the subject’s face
+- The red slush should occupy a large part of the foreground, partially out of focus due to the extreme perspective
+- The background should reveal a clear blue sky, indicating a bright sunny outdoor setting
+- The setting should feel refreshing, playful, summery, and real
+- The point of view must clearly feel like the camera is placed inside the drink, not simply below the face
+
+COMPOSITION:
+- Low-angle worm’s-eye-view close-up
+- Extreme perspective distortion from a wide-angle lens
+- Circular glass rim framing the face above
+- The subject’s face centered or slightly off-center above the straw
+- Red slushy texture dominating the lower and side foreground
+- Strong visual depth between foreground ice, straw, lips, face, and blue sky
+- The image should feel immersive, quirky, and instantly eye-catching
+- The composition should look like a real photographed beverage-campaign moment, not a surreal composite
+
+LIGHTING:
+- Bright natural daylight
+- Crisp specular highlights across the skin, lips, straw, glass rim, and textured ice
+- Clean summer sun with strong freshness and clarity
+- No artificial flash
+- No fantasy glow
+- Light should feel direct, outdoor, refreshing, and realistic
+- Maintain strong daylight contrast while preserving natural skin detail
+
+COLOR:
+- Dominant color palette:
+  - vibrant red from the slushy drink
+  - soft pink from the visible clothing
+  - clean soft blue from the sky and straw
+  - natural skin tones
+- Keep the palette fresh, summery, saturated, and playful
+- Strong contrast between red slush, blue sky, and warm skin tones
+- No muddy grading
+- No vintage tint
+- No desaturated cinematic palette
+
+PHOTO STYLE:
+- High-resolution modern lifestyle photograph
+- Wide-angle lens rendering with pronounced perspective distortion
+- Deep depth of field feel, but with some natural foreground softness in the closest slush textures
+- Crisp facial detail and realistic texture
+- Premium commercial summer-photo quality
+- No HDR exaggeration
+- No cartoon rendering
+- No painterly texture
+- No artificial composite look
+- The image should feel like a real photographed beverage or summer-lifestyle campaign
+
+CAMERA / LENS:
+- Wide-angle lens, approximately 18mm to 24mm full-frame equivalent
+- Camera physically positioned inside the glass
+- Pronounced close-range distortion that enlarges the lips, straw, and lower face slightly in a natural optical way
+- Deep immersive perspective from the glass interior
+- Real optical depth only, not fake blur
+- Foreground slush and rim may fall slightly soft due to extreme proximity, while the face remains clearly readable
+
+MOOD:
+- Lively, quirky, whimsical, refreshing, youthful, and summery
+- Feels like a playful real-life snapshot from a high-end beverage campaign or summer editorial
+- The charm should come from the unusual drink POV, bright daylight, and natural facial expression, not from changing the person's identity
+
+STRICT RULES:
+- Keep the face identity exact
+- Do not lose the inside-the-glass POV
+- Do not remove the red slushy foreground
+- Do not remove the light blue straw
+- Do not make it look like a fantasy composite
+- Do not over-retouch the skin
+- Do not flatten the wide-angle distortion
+- Keep it human, photographic, and physically believable
+
+OUTPUT TARGET:
+- Ultra-realistic summer drink POV portrait
+- Same recognizable person
+- Worm’s-eye-view from inside a red slushy glass, light blue straw at the lips, circular glass rim framing the face, clear blue sky above
+- Vibrant red, pink, and blue summer palette
+- Looks like a genuine high-end lifestyle beverage photo, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -1254,6 +1381,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "american-rugby-player": { "default": [] },
   "american-cheerleader": { "default": [] },
   "western-gunslinger": { "default": [] },
+  "drink-pov": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [

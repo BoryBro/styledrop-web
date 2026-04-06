@@ -249,6 +249,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/gunslinger-before.jpg?v=1",
     afterImg: "/thumbnails/gunslinger-after.jpg?v=1",
   },
+  {
+    id: "drink-pov",
+    name: "음료 호로롭",
+    desc: "빨간 슬러시 컵 안에서 올려다본 여름 음료 POV 라이프스타일 컷",
+    bgColor: "#8e2f32",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Drink_POV-before.jpg?v=1",
+    afterImg: "/thumbnails/Drink_POV-after.jpg?v=1",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */
