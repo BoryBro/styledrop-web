@@ -301,42 +301,6 @@ STRICT RULES:
 - Do not exaggerate eye enlargement too much
 - Keep the result believable, polished, and instantly recognizable`
   },
-  "coquette-ribbon": {
-    "default": `${STRICT_IDENTITY_LOCK}
-
-${SELFIE_REALISM_LOCK}
-
-Transform the uploaded photo into a romantic coquette portrait.
-
-STYLING:
-- Satin ribbons, bow accents, lace trim, pearl details
-- Soft rosy blush, glossy lips, fluttery lashes, subtle shimmer
-- Feminine, sweet, polished styling without changing identity
-
-HAIR:
-- Keep the same hairstyle recognizable
-- Add a refined coquette finish: soft curls, smooth shine, ribbon accessory, delicate framing pieces
-
-OUTFIT:
-- Soft pink, ivory, blush, or cream coquette outfit
-- Lace camisole, cardigan, ribbon blouse, or satin dress
-
-BACKGROUND:
-- Dreamy bedroom or vanity corner
-- Soft pink ambient light, ribbons, framed mirror, satin textures, perfume-bottle mood
-
-PHOTO STYLE:
-- Flash-assisted but flattering portrait
-- Slight softness, gentle bloom, social-media-ready editorial cute mood
-
-EXPRESSION:
-- Sweet, composed, softly flirty, delicate
-
-STRICT RULES:
-- Do not turn this into fantasy angel imagery
-- Do not create a generic doll face
-- Keep it trendy, feminine, and human`
-  },
   "club-flash": {
     "default": `IDENTITY LOCK — NON-NEGOTIABLE:
 - Preserve the exact same person from the uploaded photo
@@ -544,7 +508,7 @@ STRICT RULES:
 - Keep the user recognizable and flattering`
   },
   "jjimjilbang-master": {
-    "egg": `${STRICT_IDENTITY_LOCK}
+    "default": `${STRICT_IDENTITY_LOCK}
 
 ${SELFIE_REALISM_LOCK}
 
@@ -564,25 +528,6 @@ MOOD:
 
 PHOTO STYLE:
 - Flat indoor lighting, slight phone-camera noise, realistic candid framing
-- Keep the face natural and recognizable`,
-    "nap": `${STRICT_IDENTITY_LOCK}
-
-${SELFIE_REALISM_LOCK}
-
-${HUMOR_REALISM_LOCK}
-
-Transform the uploaded photo into a Korean jjimjilbang resting-area snapshot.
-
-SCENE:
-- Spacious heated floor room with blankets, mats, and a casual sauna atmosphere
-- The subject lies or reclines lazily in jjimjilbang clothes with a sheep-head towel
-- One arm as a pillow, relaxed exhausted vibe, maybe a folded blanket nearby
-
-MOOD:
-- Unfiltered human-life comedy, comfy and slightly embarrassing
-
-PHOTO STYLE:
-- Realistic overhead or side-angle candid phone photo
 - Slightly dim indoor light, no glamorization, believable face preservation`
   },
   "skydiving": {
@@ -603,26 +548,6 @@ SCENE:
 
 MOOD:
 - Adrenaline-filled, spontaneous, thrilling, slightly chaotic in a funny and iconic real-life way
-
-PHOTO STYLE:
-- Ultra-realistic action-camera travel snapshot, crisp daylight, high-altitude clarity, authentic extreme-sports documentary feel`,
-    "tandem_jump": `${STRICT_IDENTITY_LOCK}
-
-${SELFIE_REALISM_LOCK}
-
-${HUMOR_REALISM_LOCK}
-
-Transform the uploaded photo into a real tandem skydiving action photo over the ocean and city.
-
-SCENE:
-- Subject attached to an instructor in full tandem skydive gear
-- Open sky, clouds drifting nearby, coastline and patchwork land far below
-- Subject making an energetic hand gesture or excited expression in freefall
-- Instructor behind the subject with realistic harness connection and airborne posture
-- Strong midday sunlight, clean weather, authentic extreme-sports environment
-
-MOOD:
-- Wild, exhilarating, real, and unintentionally hilarious because it looks like a genuine once-in-a-lifetime snapshot
 
 PHOTO STYLE:
 - GoPro-style extreme sports documentary photo, wide-angle perspective, sharp daylight realism, natural motion and altitude atmosphere`
@@ -660,41 +585,6 @@ SCENE:
 
 MOOD:
 - Cute, cheerful, slightly performative, warmly staged, the kind of themed café photo that feels earnest and unintentionally iconic
-
-PHOTO STYLE:
-- Bright soft indoor snapshot, lightly overexposed highlights, pastel-toned realism, candid café-photo feeling, natural skin texture, authentic themed-venue atmosphere`,
-    "heart_pose": `IDENTITY LOCK — NON-NEGOTIABLE:
-- Preserve the exact same person from the uploaded photo
-- Keep the same face shape, bone structure, eye shape, nose, lips, jawline, and recognizable identity
-- Keep skin tone family and ethnicity consistent
-- Do not replace the subject with a generic model
-- If any style instruction conflicts with identity preservation, preserve identity first
-
-FACE & CAMERA:
-- Keep the subject instantly recognizable as the original user
-- Preserve believable face proportions and hairline
-- Maintain a natural candid portrait feel, not an over-generated fantasy face
-- Do not over-smooth the face or erase unique facial details
-
-REAL-WORLD HUMOR LOCK:
-- The image should feel charming because of the outfit, pose, expression, and real-life setting, not because the face is distorted
-- Keep the subject as the same recognizable person
-- Make it feel like a real themed café or cosplay maid café snapshot someone casually took
-- Avoid cartoonish exaggeration, meme text, stickers, or surreal effects
-- One person only, clear focus, believable indoor lifestyle setting
-- The styling should work naturally for any uploaded subject, regardless of gender, by adapting the costume and presentation in a flattering, believable, café-themed way rather than forcing a gendered look
-
-Transform the uploaded photo into a cute themed café portrait with a hand-heart pose.
-
-SCENE:
-- Pastel maid café or character café interior with soft pink and cream tones
-- Subject seated or standing at a table, wearing a themed service outfit naturally adapted to the person
-- Subject making a heart shape with both hands toward the camera
-- Small dessert, colorful drink, or table accessory may appear in the foreground
-- Softly blurred background figures in matching themed uniforms can appear for environmental realism
-
-MOOD:
-- Sweet, friendly, playful, softly theatrical, funny only because it feels extremely sincere and real
 
 PHOTO STYLE:
 - Soft daylight café snapshot, gentle bloom in highlights, bright pastel realism, natural candid framing, authentic themed-culture photo atmosphere`
@@ -803,24 +693,14 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "grab-selfie":     { "default": [] },
   "gyaru":           { "default": [] },
   "idol-photocard":  { "default": [] },
-  "coquette-ribbon": { "default": [] },
   "club-flash":      { "default": [] },
   "red-carpet-glam": { "default": [] },
   "dark-coquette":   { "default": [] },
   "datecam-film":    { "default": [] },
   "ulzzang-cam":     { "default": [] },
-  "jjimjilbang-master": {
-    "egg": [],
-    "nap": [],
-  },
-  "skydiving": {
-    "default": [],
-    "tandem_jump": [],
-  },
-  "maid-cafe-heart": {
-    "default": [],
-    "heart_pose": [],
-  },
+  "jjimjilbang-master": { "default": [] },
+  "skydiving": { "default": [] },
+  "maid-cafe-heart": { "default": [] },
   "hiphop-grillz": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
