@@ -1,17 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { StyleControlState } from "@/lib/style-controls";
 import { STYLE_VARIANTS } from "@/lib/variants";
-
-const ADMIN_UI_VERSION = "v2.0.0-ops-console";
 
 type Notice = { id: number; text: string; active: boolean };
 type UserItem = { id: string; nickname: string | null };
 type PaymentItem = { id: string; user_id: string; amount: number; credits: number; status: string; created_at: string };
 type StyleStat = { style_id: string; style_name: string; count: number };
 type Stats = {
-  styleControls: StyleControlState[];
   userList: UserItem[];
   paymentList: PaymentItem[];
   total: number;
@@ -331,7 +327,6 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
-  const [styleControls, setStyleControls] = useState<StyleControlState[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [fetchedAt, setFetchedAt] = useState<Date | null>(null);
@@ -347,8 +342,6 @@ export default function AdminPage() {
   const [refundMsg, setRefundMsg] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
   const [creditSearch, setCreditSearch] = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [styleSavingId, setStyleSavingId] = useState<string | null>(null);
-  const [styleControlMsg, setStyleControlMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const doLogin = async (pw: string) => {
     setError("");
@@ -366,7 +359,6 @@ export default function AdminPage() {
       } else {
         localStorage.setItem("sd_admin_pw", pw);
         setStats(data);
-        setStyleControls(data.styleControls ?? []);
         const now = new Date();
         setFetchedAt(now);
         setElapsed(0);
@@ -393,44 +385,6 @@ export default function AdminPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     doLogin(password);
-  };
-
-  const persistStyleControls = async (nextControls: StyleControlState[], savingId: string) => {
-    setStyleSavingId(savingId);
-    setStyleControlMsg(null);
-    setStyleControls(nextControls);
-
-    try {
-      const response = await fetch("/api/admin/style-controls", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, controls: nextControls }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "저장 실패");
-      setStats((prev) => (prev ? { ...prev, styleControls: nextControls } : prev));
-      setStyleControlMsg({ ok: true, text: "스타일 운영 상태가 저장됐어요." });
-    } catch (error) {
-      setStyleControlMsg({
-        ok: false,
-        text: error instanceof Error ? error.message : "스타일 운영 상태 저장 실패",
-      });
-      if (stats) setStyleControls(stats.styleControls ?? []);
-    } finally {
-      setStyleSavingId(null);
-    }
-  };
-
-  const updateStyleControl = (styleId: string, patch: Partial<StyleControlState>) => {
-    const nextControls = styleControls.map((control) =>
-      control.style_id === styleId
-        ? {
-            ...control,
-            ...patch,
-          }
-        : control
-    );
-    void persistStyleControls(nextControls, styleId);
   };
 
   if (!stats) {
@@ -467,12 +421,7 @@ export default function AdminPage() {
 
       {/* 헤더 */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-extrabold text-gray-900">Admin</h1>
-          <span className="text-[10px] font-bold text-[#C9571A] bg-[#C9571A]/10 border border-[#C9571A]/20 rounded-full px-2 py-0.5">
-            {ADMIN_UI_VERSION}
-          </span>
-        </div>
+        <h1 className="text-xl font-extrabold text-gray-900">Admin</h1>
         <div className="flex items-center gap-3">
           {fetchedAt && (
             <span className="text-[12px] text-gray-400 font-mono tabular-nums">
@@ -533,87 +482,6 @@ export default function AdminPage() {
           >
             {noticesSaving ? "저장 중..." : noticesSaved ? "✓ 저장됨" : "저장하기"}
           </button>
-        </div>
-      </div>
-
-      {/* 긴급 대응 · 스타일 운영 */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">긴급 대응 · 스타일 운영</p>
-        <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[15px] font-bold text-gray-900">카드별 즉시 숨김 / 생성 중지</p>
-              <p className="text-[12px] text-gray-500 mt-1">저장 즉시 스튜디오와 생성 API에 반영됩니다.</p>
-            </div>
-            <span className="text-[11px] text-gray-400 whitespace-nowrap">{styleControls.length}개 카드</span>
-          </div>
-
-          {styleControlMsg && (
-            <div className={`text-[12px] px-3 py-2 rounded-xl border ${
-              styleControlMsg.ok
-                ? "text-[#C9571A] bg-[#FFF7F2] border-[#F3D2BF]"
-                : "text-red-600 bg-red-50 border-red-200"
-            }`}>
-              {styleControlMsg.text}
-            </div>
-          )}
-
-          <div className="flex flex-col gap-2">
-            {styleControls.map((control) => {
-              const usageCount = stats.byStyle.find((item) => item.style_id === control.style_id)?.count ?? 0;
-              const isSaving = styleSavingId === control.style_id;
-              return (
-                <div key={control.style_id} className="rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[14px] font-bold text-gray-900 break-keep">{control.style_name}</p>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${
-                          control.is_visible ? "bg-green-50 text-green-700 border border-green-200" : "bg-gray-200 text-gray-600 border border-gray-300"
-                        }`}>
-                          {control.is_visible ? "노출중" : "숨김"}
-                        </span>
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${
-                          control.is_enabled ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-red-50 text-red-600 border border-red-200"
-                        }`}>
-                          {control.is_enabled ? "생성 가능" : "생성 중지"}
-                        </span>
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-white text-gray-500 border border-gray-200">
-                          사용 {usageCount}회
-                        </span>
-                      </div>
-                    </div>
-                    {isSaving && <span className="text-[11px] text-gray-400 whitespace-nowrap">저장중...</span>}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 mt-3">
-                    <button
-                      onClick={() => updateStyleControl(control.style_id, { is_visible: !control.is_visible })}
-                      disabled={isSaving}
-                      className={`py-2 rounded-xl text-[13px] font-bold transition-colors ${
-                        control.is_visible
-                          ? "bg-gray-900 text-white hover:bg-black"
-                          : "bg-white text-gray-700 border border-gray-300 hover:border-gray-400"
-                      } disabled:opacity-50`}
-                    >
-                      {control.is_visible ? "숨김 처리" : "다시 노출"}
-                    </button>
-                    <button
-                      onClick={() => updateStyleControl(control.style_id, { is_enabled: !control.is_enabled })}
-                      disabled={isSaving}
-                      className={`py-2 rounded-xl text-[13px] font-bold transition-colors ${
-                        control.is_enabled
-                          ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF] hover:bg-[#FFE8DA]"
-                          : "bg-white text-gray-700 border border-gray-300 hover:border-gray-400"
-                      } disabled:opacity-50`}
-                    >
-                      {control.is_enabled ? "생성 중지" : "생성 재개"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
 

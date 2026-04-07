@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { AUDITION_ENABLED } from "@/lib/feature-flags";
-import { VISIBLE_STYLES } from "@/lib/styles";
+import { applyStyleControl, type StyleControlState } from "@/lib/style-controls";
+import { ALL_STYLES } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
 function formatCount(n: number): string {
@@ -13,8 +14,8 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-const ALL_STYLE_CARDS = VISIBLE_STYLES.map((s) => ({ ...s, bgImage: s.afterImg }));
-type StyleCard = (typeof ALL_STYLE_CARDS)[number];
+const BASE_STYLE_CARDS = ALL_STYLES.map((s) => ({ ...s, bgImage: s.afterImg }));
+type StyleCard = (typeof BASE_STYLE_CARDS)[number];
 
 type Toast = { id: number; message: string };
 
@@ -39,6 +40,7 @@ export default function Studio() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [usageCounts, setUsageCounts] = useState<Record<string, number> | null>(null);
+  const [styleControls, setStyleControls] = useState<Record<string, StyleControlState>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectedStyleRef = useRef<string | null>(null);
   const toastIdRef = useRef(0);
@@ -61,6 +63,13 @@ export default function Studio() {
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
     fetch("/api/notices").then(r => r.json()).then(d => setNotices(d.notices ?? [])).catch(() => {});
     fetch("/api/visitors", { method: "GET" }).then(r => r.json()).then(d => setVisitors(d)).catch(() => {});
+    fetch("/api/style-controls")
+      .then((r) => r.json())
+      .then((data) => {
+        const controls = Array.isArray(data.controls) ? data.controls : [];
+        setStyleControls(Object.fromEntries(controls.map((control: StyleControlState) => [control.style_id, control])));
+      })
+      .catch(() => setStyleControls({}));
   }, []);
 
   useEffect(() => {
@@ -82,12 +91,22 @@ export default function Studio() {
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
   }, []);
 
-  const styleOrder = ALL_STYLE_CARDS.reduce<Record<string, number>>((acc, style, index) => {
+  const allStyleCards = BASE_STYLE_CARDS
+    .map((style) => {
+      const control = styleControls[style.id];
+      return {
+        ...applyStyleControl(style, control),
+        bgImage: style.afterImg,
+      };
+    })
+    .filter((style) => !style.hidden);
+
+  const styleOrder = allStyleCards.reduce<Record<string, number>>((acc, style, index) => {
     acc[style.id] = index;
     return acc;
   }, {});
 
-  const styles = [...ALL_STYLE_CARDS].sort((a, b) => {
+  const styles = [...allStyleCards].sort((a, b) => {
     const aHasOptions = (STYLE_VARIANTS[a.id]?.length ?? 0) > 1;
     const bHasOptions = (STYLE_VARIANTS[b.id]?.length ?? 0) > 1;
 
@@ -107,7 +126,7 @@ export default function Studio() {
 
   const handleCardClick = (style: StyleCard) => {
     if (!style.active) {
-      showToast("곧 출시됩니다 ✨");
+      showToast(styleControls[style.id]?.is_enabled === false ? "현재 점검 중입니다. 잠시 후 다시 확인해주세요." : "곧 출시됩니다 ✨");
       return;
     }
     if (!user && remaining === 0) {

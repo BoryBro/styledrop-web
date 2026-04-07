@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 import { addWatermark } from "@/lib/watermark";
+import { loadStyleControlMap } from "@/lib/style-controls.server";
 import { STYLE_LABELS } from "@/lib/styles";
 import {
   GUEST_LIMIT, WINDOW_MS,
@@ -1882,6 +1883,38 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
 export async function POST(request: NextRequest) {
   const session = parseSession(request);
   const now = Date.now();
+  let style = "";
+  let imageBase64 = "";
+  let mimeType = "image/jpeg";
+  let variant = "default";
+
+  try {
+    const body = await request.json();
+    style = body.style;
+    imageBase64 = body.imageBase64;
+    mimeType = body.mimeType || "image/jpeg";
+    variant = body.variant || "default";
+  } catch {
+    return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
+  }
+
+  const stylePrompts = STYLE_PROMPTS[style];
+  const prompt = stylePrompts?.[variant] ?? stylePrompts?.["default"];
+  if (!prompt) {
+    return NextResponse.json({ error: "Invalid style" }, { status: 400 });
+  }
+
+  const styleControl = (await loadStyleControlMap())[style];
+  if (styleControl && (!styleControl.is_visible || !styleControl.is_enabled)) {
+    return NextResponse.json(
+      {
+        error: styleControl.is_enabled
+          ? "현재 숨김 처리된 카드예요."
+          : "현재 점검 중인 카드예요. 잠시 후 다시 확인해주세요.",
+      },
+      { status: 403 }
+    );
+  }
 
   // ── 회원: 크레딧 차감 (원자적) ──────────────────────────────────────
   if (session) {
@@ -1926,14 +1959,6 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    const { style, imageBase64, mimeType, variant = "default" } = await request.json();
-
-    const stylePrompts = STYLE_PROMPTS[style];
-    const prompt = stylePrompts?.[variant] ?? stylePrompts?.["default"];
-    if (!prompt) {
-      return NextResponse.json({ error: "Invalid style" }, { status: 400 });
-    }
-
     // ── 로컬 Mock 모드 (MOCK_GEMINI=true 시 API 호출 없이 입력 이미지 그대로 반환) ──
     if (process.env.MOCK_GEMINI === "true") {
       console.log(`[MOCK] style=${style} variant=${variant} — Gemini API 호출 생략`);
