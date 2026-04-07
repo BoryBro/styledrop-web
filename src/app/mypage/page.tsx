@@ -20,6 +20,7 @@ type HistoryItem = {
   style_id: string;
   variant?: string;
   result_image_url: string;
+  before_image_url?: string | null;
   created_at: string;
 };
 
@@ -74,9 +75,11 @@ export default function MyPage() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [historyDeleteTarget, setHistoryDeleteTarget] = useState<HistoryItem | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [historyView, setHistoryView] = useState<"before" | "after">("after");
   const [toast, setToast] = useState<string | null>(null);
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -209,8 +212,13 @@ export default function MyPage() {
 
   useEffect(() => {
     setActiveIndex(0);
+    setHistoryView("after");
     if (scrollRef.current) scrollRef.current.scrollLeft = 0;
   }, [selectedStyle]);
+
+  useEffect(() => {
+    setHistoryView("after");
+  }, [activeIndex]);
 
   // 스크롤 시 현재 활성 인덱스 감지
   const handleScroll = useCallback(() => {
@@ -220,6 +228,30 @@ export default function MyPage() {
     const idx = Math.round(el.scrollLeft / itemWidth);
     setActiveIndex(Math.min(idx, selectedItems.length - 1));
   }, [selectedItems.length]);
+
+  const handleDeleteHistoryItem = async () => {
+    if (!historyDeleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/history?id=${historyDeleteTarget.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("delete failed");
+
+      setHistory((prev) => prev.filter((item) => item.id !== historyDeleteTarget.id));
+      setHistoryDeleteTarget(null);
+      showToast("변환 기록을 삭제했어요.");
+
+      const remainingInStyle = selectedItems.filter((item) => item.id !== historyDeleteTarget.id);
+      if (remainingInStyle.length === 0) {
+        setSelectedStyle(null);
+      } else if (activeIndex >= remainingInStyle.length) {
+        setActiveIndex(Math.max(0, remainingInStyle.length - 1));
+      }
+    } catch {
+      showToast("삭제에 실패했어요.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
@@ -474,9 +506,50 @@ export default function MyPage() {
                         style={{ width: "100%", scrollSnapAlign: "center" }}
                       >
                         <div className="relative">
+                          {idx === activeIndex && (
+                            <div className="absolute top-4 left-4 z-10 flex items-center gap-1 rounded-full bg-black/60 p-1 backdrop-blur-md border border-white/10">
+                              <button
+                                type="button"
+                                onClick={() => setHistoryView("before")}
+                                disabled={!item.before_image_url}
+                                className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors ${
+                                  historyView === "before"
+                                    ? "bg-white text-black"
+                                    : item.before_image_url
+                                      ? "text-white/70 hover:text-white"
+                                      : "text-white/20 cursor-not-allowed"
+                                }`}
+                              >
+                                BEFORE
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setHistoryView("after")}
+                                className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors ${
+                                  historyView === "after"
+                                    ? "bg-[#C9571A] text-white"
+                                    : "text-white/70 hover:text-white"
+                                }`}
+                              >
+                                AFTER
+                              </button>
+                            </div>
+                          )}
+                          {idx === activeIndex && (
+                            <button
+                              type="button"
+                              onClick={() => setHistoryDeleteTarget(item)}
+                              className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md border border-white/10 hover:bg-[#ff4444] transition-colors"
+                              aria-label="변환 기록 삭제"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M2.5 4h11M6.5 1.75h3M6 7v4.25M10 7v4.25M4.75 4l.5 8.25A1.5 1.5 0 006.75 13.7h2.5a1.5 1.5 0 001.5-1.45L11.25 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                          )}
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={item.result_image_url}
+                            src={historyView === "before" && item.before_image_url ? item.before_image_url : item.result_image_url}
                             alt=""
                             className={`w-full aspect-square rounded-2xl object-cover bg-[#1A1A1A] transition-opacity duration-300 ${idx === activeIndex ? "opacity-100" : "opacity-50"}`}
                           />
@@ -579,6 +652,33 @@ export default function MyPage() {
               <button onClick={() => setShowDeleteModal(false)} className="bg-[#2A2A2A] text-white rounded-xl py-3 flex-1 font-medium">취소</button>
               <button onClick={handleDeleteAccount} disabled={deleting} className="bg-[#ff4444] text-white rounded-xl py-3 flex-1 font-bold disabled:opacity-50 transition-opacity">
                 {deleting ? "처리 중..." : "탈퇴하기"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {historyDeleteTarget && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => !deleting && setHistoryDeleteTarget(null)}>
+          <div className="bg-[#1A1A1A] rounded-2xl p-6 max-w-sm mx-4 border border-[#333] w-full" onClick={e => e.stopPropagation()}>
+            <p className="text-[16px] font-bold text-white">삭제하시겠습니까?</p>
+            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">다시 돌릴 수 없다. 확인을 누르면 즉시 삭제됩니다.</p>
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setHistoryDeleteTarget(null)}
+                disabled={deleting}
+                className="bg-[#2A2A2A] text-white rounded-xl py-3 flex-1 font-medium disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteHistoryItem}
+                disabled={deleting}
+                className="bg-[#ff4444] text-white rounded-xl py-3 flex-1 font-bold disabled:opacity-50"
+              >
+                {deleting ? "삭제 중..." : "확인"}
               </button>
             </div>
           </div>

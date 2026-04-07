@@ -9,6 +9,21 @@ function parseSession(request: NextRequest): { id: string } | null {
   } catch { return null; }
 }
 
+function deriveBeforeImageUrl(afterUrl: string | null): string | null {
+  if (!afterUrl) return null;
+  return /-after\.jpg(?:\?|$)/.test(afterUrl)
+    ? afterUrl.replace(/-after\.jpg(\?.*)?$/, "-before.jpg$1")
+    : null;
+}
+
+function extractSharedImagePaths(afterUrl: string | null): string[] {
+  if (!afterUrl) return [];
+  const matched = afterUrl.match(/\/shared\/([^/?#]+)-after\.jpg(?:\?|$)/);
+  if (!matched) return [];
+  const shareId = matched[1];
+  return [`shared/${shareId}-before.jpg`, `shared/${shareId}-after.jpg`];
+}
+
 export async function GET(request: NextRequest) {
   const session = parseSession(request);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,7 +43,12 @@ export async function GET(request: NextRequest) {
     .limit(50);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ history: data });
+  return NextResponse.json({
+    history: (data ?? []).map((item) => ({
+      ...item,
+      before_image_url: deriveBeforeImageUrl(item.result_image_url),
+    })),
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -57,4 +77,42 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(request: NextRequest) {
+  const session = parseSession(request);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const id = request.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing history id" }, { status: 400 });
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!
+  );
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("transform_history")
+    .select("id, result_image_url")
+    .eq("id", id)
+    .eq("user_id", session.id)
+    .maybeSingle();
+
+  if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const { error: deleteError } = await supabase
+    .from("transform_history")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", session.id);
+
+  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
+
+  const paths = extractSharedImagePaths(existing.result_image_url);
+  if (paths.length > 0) {
+    await supabase.storage.from("shared-images").remove(paths);
+  }
+
+  return NextResponse.json({ ok: true, id });
 }
