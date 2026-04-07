@@ -1,15 +1,17 @@
 "use client";
 
-import { geoMercator, geoPath } from "d3-geo";
+import { geoContains, geoMercator, geoPath } from "d3-geo";
 import Link from "next/link";
 import { feature } from "topojson-client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import koreaEmdTopology from "@tenqube/react-korea-bubble-map/dist/esm/emd-64475e77.js";
 import koreaSidoTopology from "@tenqube/react-korea-bubble-map/dist/esm/sido-0af932a3.js";
 import koreaSigunguTopology from "@tenqube/react-korea-bubble-map/dist/esm/sigungu-3878911c.js";
 import { useAuth } from "@/hooks/useAuth";
 import {
   buildTraceJitter,
+  buildTraceRegionKey,
+  formatTraceRegion,
   getSidoOption,
   normalizeRegionPart,
   normalizeSido,
@@ -162,6 +164,25 @@ function formatRelativeDate(iso: string | null) {
   return `${days}일 전`;
 }
 
+function getCurrentPositionWithFallback() {
+  const attempt = (options: PositionOptions) =>
+    new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+
+  return attempt({
+    enableHighAccuracy: true,
+    timeout: 12000,
+    maximumAge: 0,
+  }).catch(() =>
+    attempt({
+      enableHighAccuracy: false,
+      timeout: 18000,
+      maximumAge: 300000,
+    }),
+  );
+}
+
 function recomputeSummary(traces: Trace[]) {
   const counts = new Map<string, { label: string; count: number }>();
 
@@ -231,6 +252,34 @@ function findDongShape(sido: string, sigungu: string, dong: string) {
   ) ?? null;
 }
 
+function uniqueSortedLabels(labels: string[]) {
+  return [...new Set(labels.filter(Boolean))].sort((left, right) => left.localeCompare(right, "ko"));
+}
+
+function getDistrictSuggestions(sido: string) {
+  const province = findProvinceShape(sido);
+  if (!province) return [];
+
+  const provincePrefix = province.code.slice(0, 2);
+  return uniqueSortedLabels(
+    districtMap
+      .filter((item) => item.code.slice(0, 2) === provincePrefix)
+      .map((item) => item.normalizedLabel),
+  );
+}
+
+function getDongSuggestions(sido: string, sigungu: string) {
+  const district = findDistrictShape(sido, sigungu);
+  if (!district) return [];
+
+  const districtPrefix = district.code.slice(0, 5);
+  return uniqueSortedLabels(
+    dongMap
+      .filter((item) => item.code.slice(0, 5) === districtPrefix)
+      .map((item) => item.normalizedLabel),
+  );
+}
+
 function buildDisplayTrace(trace: Trace): DisplayTrace {
   const normalizedSido = normalizeSido(trace.sido);
   const province = findProvinceShape(normalizedSido);
@@ -296,22 +345,111 @@ function buildVisibleRegionLabels(clusters: TraceCluster[]): RegionLabel[] {
     }));
 }
 
+function buildVisibleDistrictLabels(traces: DisplayTrace[]): RegionLabel[] {
+  const activeKeys = new Set(
+    traces.map((trace) => `${normalizeSido(trace.sido)}|${normalizeRegionPart(trace.sigungu)}`),
+  );
+
+  const labels = districtMap
+    .filter((region) => {
+      const province = provinceMap.find((item) => item.code.slice(0, 2) === region.code.slice(0, 2));
+      return activeKeys.has(`${province?.label ?? ""}|${region.normalizedLabel}`);
+    })
+    .slice(0, 28)
+    .map((region) => ({
+      id: region.code,
+      x: region.centroid.x,
+      y: region.centroid.y,
+      shortLabel: region.shortLabel,
+    }));
+
+  return labels;
+}
+
+function buildVisibleDongLabels(traces: DisplayTrace[]): RegionLabel[] {
+  return traces
+    .filter((trace, index, list) => list.findIndex((item) => item.regionKey === trace.regionKey) === index)
+    .slice(0, 22)
+    .map((trace) => {
+      const shape = findDongShape(trace.sido, trace.sigungu, trace.dong);
+      return {
+        id: trace.regionKey,
+        x: shape?.centroid.x ?? trace.displayX,
+        y: shape?.centroid.y ?? trace.displayY,
+        shortLabel: normalizeRegionPart(trace.dong),
+      };
+    });
+}
+
+function findContainingProvince(coordinates: [number, number]) {
+  const featureItem = koreaFeatureCollection.features.find((item) => geoContains(item as never, coordinates));
+  if (!featureItem) return null;
+  return provinceMap.find((item) => item.code === featureItem.properties.CODE) ?? null;
+}
+
+function findContainingDistrict(coordinates: [number, number]) {
+  const featureItem = koreaSigunguFeatureCollection.features.find((item) => geoContains(item as never, coordinates));
+  if (!featureItem) return null;
+  return districtMap.find((item) => item.code === featureItem.properties.CODE) ?? null;
+}
+
+function findContainingDong(coordinates: [number, number]) {
+  const featureItem = koreaEmdFeatureCollection.features.find((item) => geoContains(item as never, coordinates));
+  if (!featureItem) return null;
+  return dongMap.find((item) => item.code === featureItem.properties.CODE) ?? null;
+}
+
+function buildRegionFromCoordinates(latitude: number, longitude: number) {
+  const coordinates: [number, number] = [longitude, latitude];
+  const dong = findContainingDong(coordinates);
+  const district = dong
+    ? districtMap.find((item) => item.code.slice(0, 5) === dong.code.slice(0, 5)) ?? null
+    : findContainingDistrict(coordinates);
+  const province = district
+    ? provinceMap.find((item) => item.code.slice(0, 2) === district.code.slice(0, 2)) ?? null
+    : findContainingProvince(coordinates);
+
+  if (!province || !district) return null;
+
+  return {
+    sido: province.label,
+    sigungu: district.label,
+    dong: dong?.label ?? "",
+  };
+}
+
 function TraceMap({
   traces,
   clusters,
   activeTrace,
+  previewTrace,
   onPickTrace,
+  onSelectLocation,
+  canRemoveMyTrace,
+  removing,
+  onRemoveMyTrace,
+  participationOverlay,
 }: {
   traces: DisplayTrace[];
   clusters: TraceCluster[];
   activeTrace: DisplayTrace | null;
+  previewTrace: DisplayTrace | null;
   onPickTrace: (trace: DisplayTrace) => void;
+  onSelectLocation: (region: { sido: string; sigungu: string; dong: string }) => void;
+  canRemoveMyTrace: boolean;
+  removing: boolean;
+  onRemoveMyTrace: () => void;
+  participationOverlay?: ReactNode;
 }) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ id: number; startX: number; startY: number; baseX: number; baseY: number } | null>(null);
-  const regionLabels = useMemo(() => buildVisibleRegionLabels(clusters), [clusters]);
+  const mapFrameRef = useRef<HTMLDivElement | null>(null);
+  const draggedRef = useRef(false);
   const detailLevel = zoom >= 4 ? "emd" : zoom >= 1.9 ? "sigungu" : "sido";
+  const provinceLabels = useMemo(() => buildVisibleRegionLabels(clusters), [clusters]);
+  const districtLabels = useMemo(() => buildVisibleDistrictLabels(traces), [traces]);
+  const dongLabels = useMemo(() => buildVisibleDongLabels(traces), [traces]);
 
   const provinceCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -354,6 +492,20 @@ function TraceMap({
     };
   }, []);
 
+  const computeCenteredPan = useCallback(
+    (targetX: number, targetY: number, nextZoom: number) => {
+      const frame = mapFrameRef.current;
+      if (!frame) return null;
+
+      const rect = frame.getBoundingClientRect();
+      return clampPan(nextZoom, {
+        x: rect.width / 2 - (targetX / MAP_WIDTH) * rect.width * nextZoom,
+        y: rect.height / 2 - (targetY / MAP_HEIGHT) * rect.height * nextZoom,
+      });
+    },
+    [clampPan],
+  );
+
   const updateZoom = useCallback(
     (delta: number) => {
       setZoom((current) => {
@@ -364,6 +516,15 @@ function TraceMap({
     },
     [clampPan],
   );
+
+  useEffect(() => {
+    if (!previewTrace) return;
+    const nextZoom = zoom < 2.2 ? 2.2 : zoom;
+    const centeredPan = computeCenteredPan(previewTrace.displayX, previewTrace.displayY, nextZoom);
+    if (!centeredPan) return;
+    setZoom(nextZoom);
+    setPan(centeredPan);
+  }, [computeCenteredPan, previewTrace?.displayX, previewTrace?.displayY, previewTrace?.regionKey, zoom]);
 
   return (
     <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#05070B] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
@@ -384,6 +545,19 @@ function TraceMap({
       />
 
       <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+        {canRemoveMyTrace && (
+          <button
+            onClick={onRemoveMyTrace}
+            disabled={removing}
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/6 text-white/78 shadow-[0_8px_24px_rgba(0,0,0,0.18)] disabled:opacity-60"
+            aria-label="내 흔적 삭제"
+            title="내 흔적 삭제"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3.6 4.3h8.8M6.2 2.7h3.6M5.1 4.3l.5 7.1a1 1 0 0 0 1 .9h2.8a1 1 0 0 0 1-.9l.5-7.1M6.7 6.4v4.1M9.3 6.4v4.1" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        )}
         <button
           onClick={() => updateZoom(0.22)}
           className="h-10 w-10 rounded-2xl border border-white/10 bg-white/6 text-xl text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
@@ -410,6 +584,7 @@ function TraceMap({
       </div>
 
       <div
+        ref={mapFrameRef}
         className="relative aspect-[3/4] w-full touch-none cursor-grab active:cursor-grabbing"
         onWheel={(event) => {
           event.preventDefault();
@@ -423,11 +598,15 @@ function TraceMap({
             baseX: pan.x,
             baseY: pan.y,
           };
+          draggedRef.current = false;
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
         onPointerMove={(event) => {
           const drag = dragRef.current;
           if (!drag || drag.id !== event.pointerId) return;
+          if (Math.abs(event.clientX - drag.startX) > 4 || Math.abs(event.clientY - drag.startY) > 4) {
+            draggedRef.current = true;
+          }
           setPan(
             clampPan(zoom, {
               x: drag.baseX + (event.clientX - drag.startX),
@@ -444,11 +623,35 @@ function TraceMap({
         onPointerCancel={() => {
           dragRef.current = null;
         }}
+        onClick={(event) => {
+          if (draggedRef.current) {
+            draggedRef.current = false;
+            return;
+          }
+
+          const frame = mapFrameRef.current;
+          if (!frame) return;
+
+          const rect = frame.getBoundingClientRect();
+          const localX = event.clientX - rect.left;
+          const localY = event.clientY - rect.top;
+          const svgX = (localX - pan.x) / zoom / rect.width * MAP_WIDTH;
+          const svgY = (localY - pan.y) / zoom / rect.height * MAP_HEIGHT;
+          const invert = projection.invert;
+          if (!invert) return;
+          const coordinates = invert([svgX, svgY]);
+
+          if (!coordinates) return;
+
+          const region = buildRegionFromCoordinates(coordinates[1], coordinates[0]);
+          if (!region) return;
+          onSelectLocation(region);
+        }}
       >
         <svg
           viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
-          className="absolute inset-0 h-full w-full transition-transform duration-200"
-          style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
+          className="absolute inset-0 h-full w-full transition-transform duration-500 ease-out"
+          style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0" }}
         >
           <defs>
             <filter id="trace-blur">
@@ -533,7 +736,7 @@ function TraceMap({
           })}
 
           {detailLevel === "sido" &&
-            regionLabels.map((region) => (
+            provinceLabels.map((region) => (
               <g key={region.id} opacity="0.82">
                 <circle cx={region.x} cy={region.y} r="0.42" fill="rgba(255,255,255,0.18)" />
                 <text
@@ -549,40 +752,94 @@ function TraceMap({
               </g>
             ))}
 
+          {detailLevel === "sigungu" &&
+            districtLabels.map((region) => (
+              <g key={region.id} opacity="0.8">
+                <circle cx={region.x} cy={region.y} r="0.22" fill="rgba(255,255,255,0.15)" />
+                <text
+                  x={region.x + 0.55}
+                  y={region.y - 0.55}
+                  fill="rgba(255,255,255,0.24)"
+                  fontSize="1.2"
+                  fontWeight="700"
+                  letterSpacing="0.03em"
+                >
+                  {region.shortLabel}
+                </text>
+              </g>
+            ))}
+
+          {detailLevel === "emd" &&
+            dongLabels.map((region) => (
+              <g key={region.id} opacity="0.72">
+                <circle cx={region.x} cy={region.y} r="0.1" fill="rgba(255,255,255,0.12)" />
+                <text
+                  x={region.x + 0.28}
+                  y={region.y - 0.25}
+                  fill="rgba(255,255,255,0.18)"
+                  fontSize="0.72"
+                  fontWeight="700"
+                >
+                  {region.shortLabel}
+                </text>
+              </g>
+            ))}
+
           {traces.map((trace) => {
-            const isActive = activeTrace?.user_id === trace.user_id;
+            const isActive = !previewTrace && activeTrace?.user_id === trace.user_id;
 
             return (
               <g key={`${trace.user_id}-${trace.regionKey}`} onClick={() => onPickTrace(trace)} style={{ cursor: "pointer" }}>
                 <circle
                   cx={trace.displayX}
                   cy={trace.displayY}
-                  r={isActive ? 1.25 : 0.44}
+                  r={isActive ? 0.68 : 0.18}
                   fill={isActive ? "rgba(255,196,79,0.98)" : "rgba(255,255,255,0.92)"}
                 />
                 {isActive && (
                   <circle
                     cx={trace.displayX}
                     cy={trace.displayY}
-                    r={2.2}
+                    r={1.15}
                     fill="none"
                     stroke="rgba(255,196,79,0.44)"
-                    strokeWidth="0.34"
+                    strokeWidth="0.18"
                   />
                 )}
               </g>
             );
           })}
+
+          {previewTrace && (
+            <g key={`preview-${previewTrace.regionKey}`} style={{ pointerEvents: "none" }}>
+              <circle
+                cx={previewTrace.displayX}
+                cy={previewTrace.displayY}
+                r={0.78}
+                fill="rgba(255,196,79,0.98)"
+              />
+              <circle cx={previewTrace.displayX} cy={previewTrace.displayY} r={0.9} fill="rgba(255,196,79,0.22)">
+                <animate attributeName="r" values="0.9;2.8;0.9" dur="1.1s" repeatCount="1" />
+                <animate attributeName="opacity" values="0.38;0;0" dur="1.1s" repeatCount="1" />
+              </circle>
+              <circle
+                cx={previewTrace.displayX}
+                cy={previewTrace.displayY}
+                r={1.45}
+                fill="none"
+                stroke="rgba(255,196,79,0.44)"
+                strokeWidth="0.18"
+              />
+            </g>
+          )}
         </svg>
       </div>
 
-      <div className="absolute bottom-4 left-4 right-4 z-20 rounded-[24px] border border-white/10 bg-black/36 px-4 py-3 backdrop-blur-xl">
-        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Trace Focus</p>
-        <p className="mt-1 text-[18px] font-bold text-white">{activeTrace?.regionLabel ?? "사람들이 남긴 흔적을 눌러보세요"}</p>
-        <p className="mt-1 text-[13px] leading-6 text-white/55">
-          {activeTrace ? `${formatRelativeDate(activeTrace.created_at)} 실험실에 점 하나를 남겼어요.` : "작은 점 하나는 한 사람의 참여를 뜻해요."}
-        </p>
-      </div>
+      {participationOverlay && (
+        <div className="absolute bottom-4 left-4 right-4 z-20 sm:right-auto sm:w-[340px]">
+          {participationOverlay}
+        </div>
+      )}
     </div>
   );
 }
@@ -592,6 +849,9 @@ export default function TraceLabPage() {
   const [payload, setPayload] = useState<TracePayload | null>(null);
   const [loadingState, setLoadingState] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [panelExpanded, setPanelExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTrace, setActiveTrace] = useState<Trace | null>(null);
   const [form, setForm] = useState({
@@ -619,13 +879,39 @@ export default function TraceLabPage() {
     fetchPayload();
   }, [fetchPayload]);
 
+  useEffect(() => {
+    if (error) setPanelExpanded(true);
+  }, [error]);
+
   const displayTraces = useMemo(() => (payload?.traces ?? []).map(buildDisplayTrace), [payload?.traces]);
   const activeDisplayTrace = useMemo(
-    () => displayTraces.find((trace) => trace.user_id === activeTrace?.user_id) ?? displayTraces[0] ?? null,
+    () => displayTraces.find((trace) => trace.user_id === activeTrace?.user_id) ?? null,
     [activeTrace?.user_id, displayTraces],
   );
+  const previewDisplayTrace = useMemo(() => {
+    if (!user || payload?.me.alreadyJoined) return null;
+    const normalizedSido = normalizeSido(form.sido);
+    const normalizedSigungu = normalizeRegionPart(form.sigungu);
+    const normalizedDong = normalizeRegionPart(form.dong);
+
+    if (!normalizedSido || !normalizedSigungu) return null;
+
+    return buildDisplayTrace({
+      user_id: user.id,
+      sido: normalizedSido,
+      sigungu: normalizedSigungu,
+      dong: normalizedDong,
+      x: 0,
+      y: 0,
+      regionKey: buildTraceRegionKey(normalizedSido, normalizedSigungu, normalizedDong),
+      regionLabel: formatTraceRegion(normalizedSido, normalizedSigungu, normalizedDong),
+      created_at: null,
+    });
+  }, [form.dong, form.sido, form.sigungu, payload?.me.alreadyJoined, user]);
   const clusters = useMemo(() => buildClusters(displayTraces), [displayTraces]);
   const hotspotList = useMemo(() => [...clusters].sort((left, right) => right.count - left.count).slice(0, 5), [clusters]);
+  const districtSuggestions = useMemo(() => getDistrictSuggestions(form.sido), [form.sido]);
+  const dongSuggestions = useMemo(() => getDongSuggestions(form.sido, form.sigungu), [form.sido, form.sigungu]);
 
   const handleSubmit = async () => {
     if (saving) return;
@@ -666,6 +952,249 @@ export default function TraceLabPage() {
     }
   };
 
+  const handleRemoveMyTrace = async () => {
+    if (removing) return;
+    const confirmed = window.confirm("흔적을 삭제하시겠습니까?");
+    if (!confirmed) return;
+    setRemoving(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/lab/traces", {
+        method: "DELETE",
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error ?? "내 흔적을 삭제하지 못했어요.");
+        return;
+      }
+
+      const myUserId = payload?.me.trace?.user_id ?? user?.id ?? null;
+      const nextTraces = (payload?.traces ?? []).filter((trace) => trace.user_id !== myUserId);
+      const nextPayload: TracePayload = {
+        traces: nextTraces,
+        summary: recomputeSummary(nextTraces),
+        me: {
+          loggedIn: Boolean(user),
+          eligible: payload?.me.eligible ?? false,
+          alreadyJoined: false,
+          trace: null,
+        },
+      };
+
+      setPayload(nextPayload);
+      setActiveTrace(nextTraces[0] ?? null);
+    } catch {
+      setError("내 흔적을 삭제하지 못했어요.");
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  const handleSelectLocation = useCallback((region: { sido: string; sigungu: string; dong: string }) => {
+    setError(null);
+    setActiveTrace(null);
+    setPanelExpanded(true);
+    setForm({
+      sido: normalizeSido(region.sido),
+      sigungu: normalizeRegionPart(region.sigungu),
+      dong: normalizeRegionPart(region.dong),
+    });
+  }, []);
+
+  const fillFromCurrentLocation = async () => {
+    if (locating) return;
+    setLocating(true);
+    setError(null);
+
+    try {
+      if (!window.isSecureContext) {
+        throw new Error("현재 위치 자동 입력은 HTTPS 또는 localhost에서만 작동해요.");
+      }
+
+      if (!navigator.geolocation) {
+        throw new Error("현재 위치를 지원하지 않는 기기예요.");
+      }
+
+      const position = await getCurrentPositionWithFallback();
+
+      const region = buildRegionFromCoordinates(position.coords.latitude, position.coords.longitude);
+      if (!region) {
+        throw new Error("현재 위치 지역 변환에 실패했어요.");
+      }
+
+      setActiveTrace(null);
+      setForm({
+        sido: normalizeSido(region.sido),
+        sigungu: normalizeRegionPart(region.sigungu),
+        dong: normalizeRegionPart(region.dong),
+      });
+    } catch (caught) {
+      const geolocationError =
+        typeof caught === "object" && caught !== null && "code" in caught
+          ? (caught as { code?: number }).code
+          : null;
+      const message =
+        geolocationError !== null
+          ? geolocationError === 1
+            ? "브라우저에서 위치 권한이 꺼져 있어요. 사이트 설정에서 위치를 허용해 주세요."
+            : geolocationError === 2
+              ? "기기에서 현재 위치를 찾지 못했어요. GPS나 네트워크 상태를 확인해 주세요."
+              : geolocationError === 3
+                ? "위치 확인 시간이 초과됐어요. 다시 시도하거나 아래에서 직접 입력해 주세요."
+                : "현재 위치를 가져오지 못했어요."
+          : caught instanceof Error
+            ? caught.message
+            : "현재 위치를 불러오지 못했어요.";
+      setError(message);
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  const panelTitle = payload?.me.alreadyJoined
+    ? "이미 흔적을 남겼어요"
+    : previewDisplayTrace?.regionLabel
+      ? "이 위치에 남길까요?"
+      : "내 흔적 남기기";
+  const panelSubtitle = !user
+    ? "로그인 후 참여 가능"
+    : payload && !payload.me.eligible
+      ? "이미지를 한 번 만들면 참여 가능"
+      : payload?.me.alreadyJoined && payload.me.trace
+        ? payload.me.trace.regionLabel
+        : previewDisplayTrace?.regionLabel ?? "시 / 구 / 동을 고르거나 자동 입력";
+  const canQuickSubmit = Boolean(user && payload?.me.eligible && !payload?.me.alreadyJoined && previewDisplayTrace);
+
+  const participationOverlay = !loading ? (
+    <div className="rounded-[22px] border border-white/10 bg-[linear-gradient(135deg,rgba(8,11,16,0.9)_0%,rgba(10,13,18,0.72)_100%)] p-3 shadow-[0_18px_36px_rgba(0,0,0,0.26)] backdrop-blur-2xl">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setPanelExpanded((current) => !current)}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-[16px] bg-white/[0.03] px-3 py-2 text-left"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">참여하기</p>
+            <p className="mt-0.5 truncate text-[15px] font-black tracking-[-0.03em] text-white">{panelTitle}</p>
+            <p className="truncate text-[11px] text-white/48">{panelSubtitle}</p>
+          </div>
+          <svg
+            className={`shrink-0 transition-transform duration-200 ${panelExpanded ? "rotate-180" : ""}`}
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path d="M4 6.5L8 10l4-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        {canQuickSubmit ? (
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="shrink-0 rounded-[16px] bg-[#6BE2C5] px-3.5 py-3 text-[12px] font-black text-[#05110E] disabled:opacity-70"
+          >
+            {saving ? "남기는 중..." : "남기기"}
+          </button>
+        ) : null}
+        {!payload?.me.alreadyJoined && user && payload?.me.eligible ? (
+          <button
+            onClick={fillFromCurrentLocation}
+            disabled={locating}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-white/[0.05] text-white/80 disabled:opacity-60"
+            aria-label="현재 위치로 자동 입력"
+            title="현재 위치로 자동 입력"
+          >
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 2.2V4M8 12v1.8M2.2 8H4M12 8h1.8M4.4 4.4l1.2 1.2M10.4 10.4l1.2 1.2M11.6 4.4l-1.2 1.2M5.6 10.4l-1.2 1.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              <circle cx="8" cy="8" r="2.35" stroke="currentColor" strokeWidth="1.4"/>
+            </svg>
+          </button>
+        ) : null}
+      </div>
+
+      {panelExpanded && (
+        <div className="mt-2.5 space-y-2">
+          {error ? (
+            <div className="rounded-[14px] border border-[#FF7A6A]/20 bg-[#FF7A6A]/10 px-3 py-2 text-[12px] font-semibold text-[#FFB2A8]">
+              {error}
+            </div>
+          ) : null}
+
+          {!user ? (
+            <button
+              onClick={login}
+              className="w-full rounded-[14px] bg-[#FEE500] px-3 py-2.5 text-[12px] font-black text-[#231815]"
+            >
+              카카오 로그인
+            </button>
+          ) : payload && !payload.me.eligible ? (
+            <Link
+              href="/studio"
+              className="block w-full rounded-[14px] border border-white/10 bg-white/8 px-3 py-2.5 text-center text-[12px] font-black text-white/82"
+            >
+              생성하러 가기
+            </Link>
+          ) : payload?.me.alreadyJoined && payload.me.trace ? (
+            <div className="rounded-[14px] border border-white/8 bg-white/[0.04] px-3 py-2.5 text-[12px] text-white/62">
+              {formatRelativeDate(payload.me.trace.created_at)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-[0.9fr_0.86fr_0.9fr] gap-2">
+              <select
+                value={form.sido}
+                onChange={(event) => {
+                  setActiveTrace(null);
+                  setForm({
+                    sido: event.target.value,
+                    sigungu: "",
+                    dong: "",
+                  });
+                }}
+                className="h-10 min-w-0 rounded-[14px] border border-white/10 bg-[#0D1117]/88 px-3 text-[12px] font-semibold text-white outline-none"
+              >
+                {SIDO_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.label}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={form.sigungu}
+                onChange={(event) => {
+                  setActiveTrace(null);
+                  setForm((current) => ({
+                    ...current,
+                    sigungu: event.target.value,
+                    dong: "",
+                  }));
+                }}
+                list="lab-trace-sigungu-list"
+                autoComplete="off"
+                placeholder="시 / 구 / 군"
+                className="h-10 min-w-0 rounded-[14px] border border-white/10 bg-[#0D1117]/88 px-3 text-[12px] font-semibold text-white placeholder:text-white/24 outline-none"
+              />
+              <input
+                value={form.dong}
+                onChange={(event) => {
+                  setActiveTrace(null);
+                  setForm((current) => ({ ...current, dong: event.target.value }));
+                }}
+                list="lab-trace-dong-list"
+                autoComplete="off"
+                placeholder="동 / 읍 / 면"
+                className="h-10 min-w-0 rounded-[14px] border border-white/10 bg-[#0D1117]/88 px-3 text-[12px] font-semibold text-white placeholder:text-white/24 outline-none"
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  ) : null;
+
   return (
     <div className="min-h-screen bg-[#06070A] text-white">
       <header className="sticky top-0 z-40 border-b border-white/8 bg-[#06070A]/88 backdrop-blur-xl">
@@ -681,6 +1210,17 @@ export default function TraceLabPage() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+        <datalist id="lab-trace-sigungu-list">
+          {districtSuggestions.map((option) => (
+            <option key={option} value={option} />
+          ))}
+        </datalist>
+        <datalist id="lab-trace-dong-list">
+          {dongSuggestions.map((option) => (
+            <option key={option} value={option} />
+          ))}
+        </datalist>
+
         <section className="mb-6 overflow-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(135deg,rgba(18,24,33,0.82)_0%,rgba(12,17,24,0.66)_48%,rgba(16,27,34,0.74)_100%)] px-4 py-3 shadow-[0_22px_54px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl sm:px-5">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
           <div className="pointer-events-none absolute -left-10 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-[#66E6C9]/10 blur-3xl" />
@@ -688,22 +1228,22 @@ export default function TraceLabPage() {
 
           <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2 sm:flex-nowrap sm:gap-x-4">
             <div className="flex min-w-0 items-center gap-1.5">
-              <span className="text-[12px] font-semibold tracking-[-0.02em] text-white/42">참여자</span>
-              <span className="text-[22px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.06em] text-white">
+              <span className="text-[15px] font-semibold tracking-[-0.03em] text-white/52">참여자</span>
+              <span className="text-[15px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.04em] text-[#C9571A]">
                 {payload?.summary.totalParticipants ?? 0}
               </span>
             </div>
             <span className="text-white/18">/</span>
             <div className="flex min-w-0 items-center gap-1.5">
-              <span className="text-[12px] font-semibold tracking-[-0.02em] text-white/42">지역</span>
-              <span className="text-[22px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.06em] text-white">
+              <span className="text-[15px] font-semibold tracking-[-0.03em] text-white/52">지역</span>
+              <span className="text-[15px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.04em] text-[#C9571A]">
                 {payload?.summary.totalRegions ?? 0}
               </span>
             </div>
             <span className="text-white/18">/</span>
             <div className="flex min-w-0 items-center gap-2 sm:flex-1">
-              <span className="shrink-0 text-[12px] font-semibold tracking-[-0.02em] text-white/42">가장 밝은 흔적</span>
-              <span className="truncate text-[15px] font-semibold tracking-[-0.04em] text-white/92">
+              <span className="shrink-0 text-[15px] font-semibold tracking-[-0.03em] text-white/52">가장 밝은 흔적</span>
+              <span className="truncate text-[15px] font-semibold tracking-[-0.03em] text-white/92">
                 {payload?.summary.hottestRegion?.label ?? "아직 첫 흔적을 기다리는 중"}
               </span>
             </div>
@@ -717,101 +1257,22 @@ export default function TraceLabPage() {
                 흔적 지도를 불러오는 중...
               </div>
             ) : (
-              <TraceMap traces={displayTraces} clusters={clusters} activeTrace={activeDisplayTrace} onPickTrace={setActiveTrace} />
+              <TraceMap
+                traces={displayTraces}
+                clusters={clusters}
+                activeTrace={activeDisplayTrace}
+                previewTrace={previewDisplayTrace}
+                onPickTrace={setActiveTrace}
+                onSelectLocation={handleSelectLocation}
+                canRemoveMyTrace={Boolean(!loading && user && payload?.me.alreadyJoined)}
+                removing={removing}
+                onRemoveMyTrace={handleRemoveMyTrace}
+                participationOverlay={participationOverlay}
+              />
             )}
           </section>
 
           <aside className="flex flex-col gap-4">
-            <div className="rounded-[30px] border border-white/10 bg-white/5 p-5">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/40">참여하기</p>
-              <h3 className="mt-2 text-[24px] font-black tracking-[-0.04em] text-white">내 흔적 남기기</h3>
-              <p className="mt-3 text-[14px] leading-6 text-white/58">별도 동의 페이지는 없어요. 여기서 버튼을 누르면 지도에 점 하나가 남습니다.</p>
-
-              {error && (
-                <div className="mt-4 rounded-[20px] border border-[#FF7A6A]/20 bg-[#FF7A6A]/10 px-4 py-3 text-[13px] font-semibold text-[#FFB2A8]">
-                  {error}
-                </div>
-              )}
-
-              {!loading && !user && (
-                <div className="mt-5 rounded-[24px] border border-[#FEE500]/15 bg-[#FEE500]/8 p-4">
-                  <p className="text-[14px] font-bold text-white">카카오 로그인 후 참여할 수 있어요.</p>
-                  <button
-                    onClick={login}
-                    className="mt-4 w-full rounded-[18px] bg-[#FEE500] px-4 py-3 text-[14px] font-black text-[#231815]"
-                  >
-                    카카오 로그인
-                  </button>
-                </div>
-              )}
-
-              {!loading && user && payload && !payload.me.eligible && (
-                <div className="mt-5 rounded-[24px] border border-white/10 bg-black/28 p-4">
-                  <p className="text-[14px] font-bold text-white">이미지를 한 번 만든 계정만 참여할 수 있어요.</p>
-                  <p className="mt-2 text-[13px] leading-6 text-white/55">일반 카드나 오디션 결과를 한 번이라도 만들면 여기 흔적을 남길 수 있습니다.</p>
-                  <Link
-                    href="/studio"
-                    className="mt-4 inline-flex rounded-[16px] border border-white/10 bg-white/8 px-4 py-2.5 text-[13px] font-bold text-white/82"
-                  >
-                    생성하러 가기
-                  </Link>
-                </div>
-              )}
-
-              {!loading && user && payload?.me.alreadyJoined && payload.me.trace && (
-                <div className="mt-5 rounded-[24px] border border-[#6BE2C5]/20 bg-[#6BE2C5]/8 p-4">
-                  <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#89F2D8]">Joined</p>
-                  <p className="mt-2 text-[18px] font-black tracking-[-0.04em] text-white">이미 흔적을 남겼어요</p>
-                  <p className="mt-2 text-[14px] leading-6 text-white/68">{payload.me.trace.regionLabel}</p>
-                  <p className="mt-1 text-[12px] text-white/40">{formatRelativeDate(payload.me.trace.created_at)}</p>
-                </div>
-              )}
-
-              {!loading && user && payload && payload.me.eligible && !payload.me.alreadyJoined && (
-                <div className="mt-5 space-y-3">
-                  <div>
-                    <label className="mb-2 block text-[12px] font-black uppercase tracking-[0.16em] text-white/42">시 / 도</label>
-                    <select
-                      value={form.sido}
-                      onChange={(event) => setForm((current) => ({ ...current, sido: event.target.value }))}
-                      className="h-12 w-full rounded-[18px] border border-white/10 bg-[#0D1117] px-4 text-[14px] font-semibold text-white outline-none"
-                    >
-                      {SIDO_OPTIONS.map((option) => (
-                        <option key={option.id} value={option.label}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-[12px] font-black uppercase tracking-[0.16em] text-white/42">시 / 구 / 군</label>
-                    <input
-                      value={form.sigungu}
-                      onChange={(event) => setForm((current) => ({ ...current, sigungu: event.target.value }))}
-                      placeholder="예: 마포구 / 전주시 덕진구 / 제주시"
-                      className="h-12 w-full rounded-[18px] border border-white/10 bg-[#0D1117] px-4 text-[14px] font-semibold text-white placeholder:text-white/26 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-[12px] font-black uppercase tracking-[0.16em] text-white/42">동 / 읍 / 면</label>
-                    <input
-                      value={form.dong}
-                      onChange={(event) => setForm((current) => ({ ...current, dong: event.target.value }))}
-                      placeholder="예: 연남동 / 금암동 / 애월읍"
-                      className="h-12 w-full rounded-[18px] border border-white/10 bg-[#0D1117] px-4 text-[14px] font-semibold text-white placeholder:text-white/26 outline-none"
-                    />
-                  </div>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={saving}
-                    className="mt-2 w-full rounded-[20px] bg-[#6BE2C5] px-4 py-3.5 text-[15px] font-black text-[#05110E] disabled:opacity-70"
-                  >
-                    {saving ? "점을 남기는 중..." : "내 흔적 남기기"}
-                  </button>
-                </div>
-              )}
-            </div>
-
             <div className="rounded-[30px] border border-white/10 bg-white/5 p-5">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/40">Hotspots</p>
               <h3 className="mt-2 text-[20px] font-black tracking-[-0.04em] text-white">가장 밝은 흔적</h3>

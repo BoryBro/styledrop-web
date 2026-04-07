@@ -335,22 +335,19 @@ export default function Studio() {
               <Link
                 href="/lab/traces"
                 aria-label="실험실 흔적 지도"
-                className="relative flex h-8 w-8 items-center justify-center rounded-full border border-[#6BE2C5]/25 bg-[#0D1217] text-[#6BE2C5] shadow-[0_0_18px_rgba(107,226,197,0.14)]"
+                className="relative flex h-8 items-center justify-center rounded-full border border-[#C9571A]/18 bg-[#120E0C] px-3 shadow-[0_0_18px_rgba(201,87,26,0.14)]"
                 style={{ animation: "tracePulse 2.2s ease-in-out infinite" }}
               >
                 <span
-                  className="pointer-events-none absolute inset-0 rounded-full border border-[#6BE2C5]/35"
+                  className="pointer-events-none absolute inset-0 rounded-full border border-[#C9571A]/30"
                   style={{ animation: "traceGlow 2.2s ease-in-out infinite" }}
                 />
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="relative z-10">
-                  <path
-                    d="M8 14c3.1-2.76 4.8-4.95 4.8-7.05A4.8 4.8 0 1 0 3.2 6.95C3.2 9.05 4.9 11.24 8 14Z"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx="8" cy="6.7" r="1.55" fill="currentColor" />
-                </svg>
+                <span
+                  className="relative z-10 text-[13px] leading-none text-[#F1B089]"
+                  style={{ fontFamily: '"BMKkubulim", sans-serif' }}
+                >
+                  여기 눌러봐
+                </span>
                 <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#FFE082]" style={{ animation: "blink 1.3s step-end infinite" }} />
               </Link>
             )}

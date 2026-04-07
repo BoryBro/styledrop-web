@@ -254,3 +254,23 @@ export async function POST(request: NextRequest) {
     trace,
   });
 }
+
+export async function DELETE(request: NextRequest) {
+  const session = parseSession(request);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const supabase = getSupabase();
+  const deleteRes = await supabase
+    .from("user_events")
+    .delete()
+    .eq("user_id", session.id)
+    .eq("event_type", TRACE_EVENT_TYPE);
+
+  if (deleteRes.error) {
+    return NextResponse.json({ error: deleteRes.error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
