@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getAvailableCredits } from "@/lib/credits.server";
 
 type Scores = { 이해도: number; 표정연기: number; 창의성: number; 몰입도: number };
 
@@ -591,13 +592,9 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_KEY!
     );
-    const { data: creditRow } = await supabase
-      .from("user_credits")
-      .select("credits")
-      .eq("user_id", session.id)
-      .single();
+    const availableCredits = await getAvailableCredits(supabase, session.id);
 
-    if (!creditRow || creditRow.credits < 5) {
+    if (availableCredits < 5) {
       return NextResponse.json(
         { error: "크레딧이 부족해요. AI 오디션은 5크레딧이 필요합니다!" },
         { status: 429 }

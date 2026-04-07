@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { addCreditsWithPolicy } from "@/lib/credits.server";
+import { getCreditExpiryIso } from "@/lib/credits";
 
 const PACKAGES: Record<string, { amount: number; credits: number }> = {
   basic:  { amount: 1900, credits: 10 },
@@ -70,11 +72,18 @@ export async function POST(request: NextRequest) {
     pg_provider: payment.channel?.pgProvider ?? null,
   });
 
-  // 크레딧 적립 (upsert)
-  await supabase.rpc("add_credits", {
-    p_user_id: session.id,
-    p_credits: pkg.credits,
+  // 크레딧 적립 (결제일로부터 1년)
+  const addRes = await addCreditsWithPolicy(supabase, {
+    userId: session.id,
+    credits: pkg.credits,
+    sourceType: "payment",
+    sourceId: paymentId,
+    expiresAt: getCreditExpiryIso(),
   });
+
+  if (!addRes.ok) {
+    return NextResponse.json({ error: addRes.error?.message ?? "크레딧 적립 실패" }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true, credits: pkg.credits });
 }

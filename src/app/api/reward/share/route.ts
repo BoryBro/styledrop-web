@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { addCreditsWithPolicy, getAvailableCredits } from "@/lib/credits.server";
 
 function parseSession(request: NextRequest): { id: string } | null {
   try {
@@ -33,19 +34,21 @@ export async function POST(request: NextRequest) {
   }
 
   // 1크레딧 지급
-  await supabase.rpc("add_credits", { p_user_id: session.id, p_credits: 1 });
+  const addRes = await addCreditsWithPolicy(supabase, {
+    userId: session.id,
+    credits: 1,
+    sourceType: "reward",
+    sourceId: "share_credit_reward",
+  });
+  if (!addRes.ok) {
+    return NextResponse.json({ error: addRes.error?.message ?? "크레딧 지급 실패" }, { status: 500 });
+  }
   await supabase.from("user_events").insert({
     user_id: session.id,
     event_type: "share_credit_reward",
     metadata: { credits: 1 },
   });
 
-  // 최신 크레딧 잔액 조회
-  const { data: creditRow } = await supabase
-    .from("user_credits")
-    .select("credits")
-    .eq("user_id", session.id)
-    .single();
-
-  return NextResponse.json({ ok: true, credits: creditRow?.credits ?? null });
+  const credits = await getAvailableCredits(supabase, session.id);
+  return NextResponse.json({ ok: true, credits });
 }

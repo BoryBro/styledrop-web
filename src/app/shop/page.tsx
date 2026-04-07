@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as PortOne from "@portone/browser-sdk/v2";
+import { CREDIT_VALIDITY_TEXT } from "@/lib/credits";
 
 const PACKAGES = [
   {
@@ -125,6 +126,7 @@ export default function ShopPage() {
           <div>
             <p className="text-white font-bold text-2xl">충전 완료!</p>
             <p className="text-[#999] text-sm mt-2">크레딧 {earnedCredits}회가 충전됐어요</p>
+            <p className="text-[#777] text-xs mt-1">유효기간: {CREDIT_VALIDITY_TEXT}</p>
           </div>
           <button
             onClick={() => router.push("/studio")}
@@ -160,7 +162,7 @@ export default function ShopPage() {
           <div>
             <p className="text-[#C9571A] font-bold text-[13px]">크레딧이란?</p>
             <p className="text-[#C9571A]/70 text-[12px] mt-0.5 leading-relaxed break-keep">
-              크레딧 1개 = 워터마크 없는 고화질 이미지 변환 1회. 유효기간 없이 잔액 그대로 유지됩니다.
+              크레딧 1개 = 워터마크 없는 고화질 이미지 변환 1회. 충전된 크레딧은 {CREDIT_VALIDITY_TEXT} 동안 사용할 수 있습니다.
             </p>
           </div>
         </div>

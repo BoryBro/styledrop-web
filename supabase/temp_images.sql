@@ -8,24 +8,48 @@ CREATE TABLE IF NOT EXISTS temp_images (
 
 ALTER TABLE temp_images ENABLE ROW LEVEL SECURITY;
 
--- 크레딧 차감 함수 (원자적)
-CREATE OR REPLACE FUNCTION deduct_credit(p_user_id TEXT)
+DROP FUNCTION IF EXISTS deduct_credit(TEXT);
+
+CREATE OR REPLACE FUNCTION deduct_credit(
+  p_user_id TEXT,
+  p_amount INTEGER DEFAULT 1
+)
 RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  new_credits INTEGER;
+  remaining_to_deduct INTEGER := GREATEST(COALESCE(p_amount, 1), 1);
+  lot_row RECORD;
+  deduct_from_lot INTEGER;
 BEGIN
-  UPDATE user_credits
-  SET credits = credits - 1, updated_at = NOW()
-  WHERE user_id = p_user_id AND credits > 0
-  RETURNING credits INTO new_credits;
+  PERFORM refresh_user_credit_balance(p_user_id);
 
-  IF new_credits IS NULL THEN
+  FOR lot_row IN
+    SELECT id, remaining_credits
+    FROM credit_lots
+    WHERE user_id = p_user_id
+      AND remaining_credits > 0
+      AND expires_at > NOW()
+    ORDER BY expires_at ASC, created_at ASC, id ASC
+    FOR UPDATE
+  LOOP
+    EXIT WHEN remaining_to_deduct <= 0;
+
+    deduct_from_lot := LEAST(lot_row.remaining_credits, remaining_to_deduct);
+
+    UPDATE credit_lots
+    SET remaining_credits = remaining_credits - deduct_from_lot,
+        updated_at = NOW()
+    WHERE id = lot_row.id;
+
+    remaining_to_deduct := remaining_to_deduct - deduct_from_lot;
+  END LOOP;
+
+  IF remaining_to_deduct > 0 THEN
     RAISE EXCEPTION 'insufficient_credits';
   END IF;
 
-  RETURN new_credits;
+  RETURN refresh_user_credit_balance(p_user_id);
 END;
 $$;

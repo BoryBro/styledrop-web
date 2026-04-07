@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getAvailableCredits, getPaymentLotRemainingCredits } from "@/lib/credits.server";
 
 const UNIT_PRICE = 190; // 기본 패키지 정가 단가 (원/회)
 
@@ -29,19 +30,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "이미 환불된 결제입니다." }, { status: 409 });
   }
 
-  // 현재 유저 크레딧 조회
-  const { data: creditRow } = await supabase
-    .from("user_credits")
-    .select("credits")
-    .eq("user_id", payment.user_id)
-    .single();
-
-  const currentCredits = creditRow?.credits ?? 0;
+  const currentCredits = await getAvailableCredits(supabase, payment.user_id);
+  const paymentLot = await getPaymentLotRemainingCredits(supabase, payment.id);
 
   // ── 부분 환불 계산 ──────────────────────────────────────────────────
   // creditsToRemove: 실제로 회수 가능한 크레딧 (현재 잔액 or 구매수량 중 작은 값)
   // usedCredits: 이미 사용되어 회수 불가능한 크레딧
-  const creditsToRemove = Math.min(currentCredits, payment.credits);
+  const refundableCreditBase = paymentLot?.remainingCredits ?? currentCredits;
+  const creditsToRemove = Math.min(refundableCreditBase, payment.credits);
   const usedCredits = payment.credits - creditsToRemove;
   const deduction = usedCredits * UNIT_PRICE;
   const refundAmount = Math.max(0, payment.amount - deduction);
@@ -105,6 +101,16 @@ export async function POST(request: NextRequest) {
 
   // 크레딧 차감
   const newCredits = Math.max(0, currentCredits - creditsToRemove);
+  if (paymentLot) {
+    await supabase
+      .from("credit_lots")
+      .update({
+        remaining_credits: Math.max(0, paymentLot.remainingCredits - creditsToRemove),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", paymentLot.lotId);
+  }
+
   await supabase
     .from("user_credits")
     .upsert({ user_id: payment.user_id, credits: newCredits }, { onConflict: "user_id" });

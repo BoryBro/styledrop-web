@@ -38,7 +38,8 @@ export default function TermsOfService() {
             <li>결제는 카카오페이를 통해 포트원(PortOne)으로 처리됩니다.</li>
             <li>크레딧은 결제 완료 즉시 계정에 지급됩니다.</li>
             <li>크레딧의 현금 환급은 불가하며, 타 계정으로의 양도도 불가합니다.</li>
-            <li>크레딧의 유효기간은 없으며, 잔액은 계정 유지 기간 동안 보존됩니다.</li>
+            <li>유상 충전 크레딧의 유효기간은 충전일로부터 1년입니다.</li>
+            <li>무상 지급 크레딧도 별도 고지가 없는 경우 지급일로부터 최대 1년 이내 사용 가능합니다.</li>
           </ul>
         </section>
 
@@ -73,7 +74,7 @@ export default function TermsOfService() {
         </section>
 
         <section className="pt-4 mt-6 border-t border-white/10 text-white/40 text-xs space-y-1">
-          <p>본 약관은 2026년 3월 31일부터 시행됩니다. (v2.0)</p>
+          <p>본 약관은 2026년 4월 7일부터 시행됩니다. (v2.1)</p>
           <p>문의: support@styledrop.cloud</p>
         </section>
       </div>
