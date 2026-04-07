@@ -88,6 +88,8 @@ type Stats = {
     auditionStillCount?: number;
     apiCost: number;
     revenue: number;
+    costSource?: string;
+    currency?: string | null;
     estimateMode?: string;
     weightUnitCost?: number;
     weights?: {
@@ -110,6 +112,8 @@ type Stats = {
 
 type MonthlyCost = {
   styleCount: number; auditionCount: number; auditionStillCount?: number; apiCost: number; revenue: number;
+  costSource?: string;
+  currency?: string | null;
   shareKakao?: number; shareLink?: number; saveImage?: number;
   auditionShareKakao?: number; auditionShareLink?: number;
   estimateMode?: string;
@@ -170,6 +174,8 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
   const costRatio = m && m.revenue > 0 ? Math.round((m.apiCost / m.revenue) * 100) : 0;
   const profitRatio = m && m.revenue > 0 ? Math.round((profit / m.revenue) * 100) : 0;
 
+  const isActual = m?.costSource === "bigquery_actual" || m?.costSource === "manual_actual";
+
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">비용 · 매출 · 남는 돈</p>
@@ -198,7 +204,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
               </p>
             </div>
             <span className="text-[11px] text-gray-400 whitespace-nowrap">
-              {isMar ? "실제 청구서 기준" : "실제 청구서 보정 추정"}
+              {isActual ? "실제 청구서 기준" : "실제 청구서 보정 추정"}
             </span>
           </div>
 
@@ -239,7 +245,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
             </div>
           </div>
 
-          {!isMar && m.referenceWindow && (
+          {!isMar && !isActual && m.referenceWindow && (
             <div className="rounded-xl bg-[#FFF7F2] border border-[#F0D5C6] px-3 py-3 flex flex-col gap-2">
               <p className="text-[13px] font-bold text-gray-900">실측 보정 기준</p>
               <div className="flex items-center justify-between">
@@ -264,9 +270,9 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
 
           <div className="text-[11px] text-gray-400 px-1 leading-relaxed">
             <p>매출 = 결제 완료 금액 기준</p>
-            <p>AI 비용 = 기능별 사용량 x 실측 청구서 보정 단가</p>
-            {isMar
-              ? <p>3월 비용은 Google 청구서 실측값 기준입니다.</p>
+            <p>AI 비용 = {isActual ? "Google Billing export 실제값" : "기능별 사용량 x 실측 청구서 보정 단가"}</p>
+            {isActual
+              ? <p>{activeMonth} 비용은 실제 Gemini 청구 데이터 기준입니다.</p>
               : <p>4월은 4/1~4/7 실제 청구서 15,999원을 기준으로 보정한 추정치입니다.</p>}
             <p>이 숫자는 PG 수수료, 광고비, 인건비 제외 기준입니다.</p>
           </div>

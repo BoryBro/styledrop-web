@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getGenerationErrorOverview } from "@/lib/generation-errors.server";
 import { loadStyleControls } from "@/lib/style-controls.server";
+import { getGeminiBillingSnapshot, hasGeminiBillingConfig } from "@/lib/google-billing.server";
 import { ALL_STYLES, STYLE_LABELS } from "@/lib/styles";
 
 export async function POST(request: NextRequest) {
@@ -18,10 +19,22 @@ export async function POST(request: NextRequest) {
 
   const todayIso = new Date(Date.now() - 24 * 3600000).toISOString();
 
-  // ── 월별 비용 & 손익 계산 상수 ──────────────────────────────────────
-  const STYLE_UNIT_COST = 117;    // ₩/건 (3월 실측 역산)
-  const AUDITION_UNIT_COST = 468; // ₩/건 (Gemini 4회 호출 기준)
   const MAR_ACTUAL_API_COST = 16313; // 3월 Google 청구서 실측값 (세전)
+  const APR_REFERENCE_BILLING = {
+    from: "2026-04-01",
+    to: "2026-04-07T23:59:59",
+    actualCost: 15999,
+  } as const;
+  const COST_WEIGHTS = {
+    style: 1,
+    auditionAnalyze: 2,
+    auditionStill: 1,
+  } as const;
+
+  const calcWeightedOps = (styleCount: number, auditionAnalyzeCount: number, auditionStillCount: number) =>
+    styleCount * COST_WEIGHTS.style
+    + auditionAnalyzeCount * COST_WEIGHTS.auditionAnalyze
+    + auditionStillCount * COST_WEIGHTS.auditionStill;
 
   // variant 컬럼이 없을 수 있으므로 먼저 시도, 실패하면 fallback
   const usageWithVariant = await supabase.from("style_usage").select("style_id, style_name, user_id, variant");
@@ -31,8 +44,11 @@ export async function POST(request: NextRequest) {
     : await supabase.from("style_usage").select("style_id, style_name, user_id");
 
   const [eventsRes, todayEventsRes, usersRes, todaySignupRes, todayUsageRes, todayUsageRowsRes, paymentsRes, todayPaymentsRes, userListRes,
-    marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marRevenueRes, aprRevenueRes,
+    marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marAuditionStillRes, aprAuditionStillRes,
+    aprRefUsageRes, aprRefAuditionRes, aprRefAuditionStillRes,
+    marRevenueRes, aprRevenueRes,
     aprShareKakaoRes, aprShareLinkRes, aprSaveRes, aprAuditionShareKakaoRes, aprAuditionShareLinkRes,
+    marBillingSnapshot, aprBillingSnapshot,
     styleControls,
     generationErrorOverview,
   ] = await Promise.all([
@@ -47,11 +63,18 @@ export async function POST(request: NextRequest) {
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
     supabase.from("users").select("id, nickname, created_at, last_login_at").order("created_at", { ascending: false }).limit(500),
     // 월별 스타일 변환
-    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
-    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
+    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
     // 월별 오디션 — audition_history 테이블 사용 (처음부터 기록됨)
     supabase.from("audition_history").select("id", { count: "exact", head: true }).gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
     supabase.from("audition_history").select("id", { count: "exact", head: true }).gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    // 월별 오디션 스틸컷 — style_usage의 audition 행
+    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).eq("style_id", "audition").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
+    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).eq("style_id", "audition").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    // 4/1~4/7 실제 청구서 보정 기준
+    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", APR_REFERENCE_BILLING.from).lte("created_at", APR_REFERENCE_BILLING.to),
+    supabase.from("audition_history").select("id", { count: "exact", head: true }).gte("created_at", APR_REFERENCE_BILLING.from).lte("created_at", APR_REFERENCE_BILLING.to),
+    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).eq("style_id", "audition").gte("created_at", APR_REFERENCE_BILLING.from).lte("created_at", APR_REFERENCE_BILLING.to),
     // 월별 매출
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
@@ -61,6 +84,12 @@ export async function POST(request: NextRequest) {
     supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "save_image").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
     supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_share_kakao").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
     supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_share_link_copy").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    hasGeminiBillingConfig()
+      ? getGeminiBillingSnapshot({ from: "2026-03-01", to: "2026-03-31T23:59:59" }).catch(() => null)
+      : Promise.resolve(null),
+    hasGeminiBillingConfig()
+      ? getGeminiBillingSnapshot({ from: "2026-04-01", to: "2026-04-30T23:59:59" }).catch(() => null)
+      : Promise.resolve(null),
     loadStyleControls(),
     getGenerationErrorOverview(),
   ]);
@@ -202,6 +231,32 @@ export async function POST(request: NextRequest) {
     })
     .sort((a, b) => b.count - a.count);
 
+  const marStyleCount = marUsageRes.count ?? 0;
+  const aprStyleCount = aprUsageRes.count ?? 0;
+  const marAuditionCount = marAuditionRes.count ?? 0;
+  const aprAuditionCount = aprAuditionRes.count ?? 0;
+  const marAuditionStillCount = marAuditionStillRes.count ?? 0;
+  const aprAuditionStillCount = aprAuditionStillRes.count ?? 0;
+
+  const aprReferenceStyleCount = aprRefUsageRes.count ?? 0;
+  const aprReferenceAuditionCount = aprRefAuditionRes.count ?? 0;
+  const aprReferenceAuditionStillCount = aprRefAuditionStillRes.count ?? 0;
+  const aprReferenceWeightedOps = calcWeightedOps(
+    aprReferenceStyleCount,
+    aprReferenceAuditionCount,
+    aprReferenceAuditionStillCount,
+  );
+  const calibratedUnitCost = aprReferenceWeightedOps > 0
+    ? APR_REFERENCE_BILLING.actualCost / aprReferenceWeightedOps
+    : 0;
+  const aprEstimatedApiCost = Math.round(
+    calcWeightedOps(aprStyleCount, aprAuditionCount, aprAuditionStillCount) * calibratedUnitCost
+  );
+  const marResolvedApiCost = marBillingSnapshot?.amount ?? MAR_ACTUAL_API_COST;
+  const aprResolvedApiCost = aprBillingSnapshot?.amount ?? aprEstimatedApiCost;
+  const marCostSource = marBillingSnapshot ? "bigquery_actual" : "manual_actual";
+  const aprCostSource = aprBillingSnapshot ? "bigquery_actual" : "reference_weighted_estimate";
+
   return NextResponse.json({
     userList: userListRes.data ?? [],
     paymentList: payments,
@@ -232,21 +287,40 @@ export async function POST(request: NextRequest) {
     todayRevenue,
     monthlyCosts: {
       "2026-03": {
-        styleCount: marUsageRes.count ?? 0,
-        auditionCount: marAuditionRes.count ?? 0,
-        apiCost: MAR_ACTUAL_API_COST,
+        styleCount: marStyleCount,
+        auditionCount: marAuditionCount,
+        auditionStillCount: marAuditionStillCount,
+        apiCost: marResolvedApiCost,
         revenue: (marRevenueRes.data ?? []).reduce((s: number, p: { amount: number }) => s + (p.amount ?? 0), 0),
+        costSource: marCostSource,
+        currency: marBillingSnapshot?.currency ?? "KRW",
       },
       "2026-04": {
-        styleCount: aprUsageRes.count ?? 0,
-        auditionCount: aprAuditionRes.count ?? 0,
-        apiCost: Math.round((aprUsageRes.count ?? 0) * STYLE_UNIT_COST + (aprAuditionRes.count ?? 0) * AUDITION_UNIT_COST),
+        styleCount: aprStyleCount,
+        auditionCount: aprAuditionCount,
+        auditionStillCount: aprAuditionStillCount,
+        apiCost: aprResolvedApiCost,
         revenue: (aprRevenueRes.data ?? []).reduce((s: number, p: { amount: number }) => s + (p.amount ?? 0), 0),
         shareKakao: aprShareKakaoRes.count ?? 0,
         shareLink: aprShareLinkRes.count ?? 0,
         saveImage: aprSaveRes.count ?? 0,
         auditionShareKakao: aprAuditionShareKakaoRes.count ?? 0,
         auditionShareLink: aprAuditionShareLinkRes.count ?? 0,
+        estimateMode: "reference-weighted",
+        costSource: aprCostSource,
+        currency: aprBillingSnapshot?.currency ?? "KRW",
+        weightUnitCost: Math.round(calibratedUnitCost * 100) / 100,
+        weights: COST_WEIGHTS,
+        referenceWindow: {
+          from: APR_REFERENCE_BILLING.from,
+          to: APR_REFERENCE_BILLING.to,
+          actualCost: APR_REFERENCE_BILLING.actualCost,
+          styleCount: aprReferenceStyleCount,
+          auditionCount: aprReferenceAuditionCount,
+          auditionStillCount: aprReferenceAuditionStillCount,
+          weightedOps: aprReferenceWeightedOps,
+          matchedEstimate: Math.round(aprReferenceWeightedOps * calibratedUnitCost),
+        },
       },
     },
   });
