@@ -27,6 +27,8 @@ type Trace = {
   y: number;
   regionKey: string;
   regionLabel: string;
+  publicImageUrl: string | null;
+  instagramHandle: string | null;
   created_at: string | null;
 };
 
@@ -47,6 +49,7 @@ type TracePayload = {
     eligible: boolean;
     alreadyJoined: boolean;
     trace: Trace | null;
+    latestImageUrl: string | null;
   };
 };
 
@@ -423,8 +426,11 @@ function TraceMap({
   clusters,
   activeTrace,
   previewTrace,
+  pulseUserId,
   onPickTrace,
   onSelectLocation,
+  canFocusMyTrace,
+  onFocusMyTrace,
   canRemoveMyTrace,
   removing,
   onRemoveMyTrace,
@@ -434,8 +440,11 @@ function TraceMap({
   clusters: TraceCluster[];
   activeTrace: DisplayTrace | null;
   previewTrace: DisplayTrace | null;
+  pulseUserId: string | null;
   onPickTrace: (trace: DisplayTrace) => void;
   onSelectLocation: (region: { sido: string; sigungu: string; dong: string }) => void;
+  canFocusMyTrace: boolean;
+  onFocusMyTrace: () => void;
   canRemoveMyTrace: boolean;
   removing: boolean;
   onRemoveMyTrace: () => void;
@@ -526,6 +535,15 @@ function TraceMap({
     setPan(centeredPan);
   }, [computeCenteredPan, previewTrace?.displayX, previewTrace?.displayY, previewTrace?.regionKey, zoom]);
 
+  useEffect(() => {
+    if (previewTrace || !activeTrace) return;
+    const nextZoom = zoom < 2 ? 2 : zoom;
+    const centeredPan = computeCenteredPan(activeTrace.displayX, activeTrace.displayY, nextZoom);
+    if (!centeredPan) return;
+    setZoom(nextZoom);
+    setPan(centeredPan);
+  }, [activeTrace?.displayX, activeTrace?.displayY, activeTrace?.user_id, computeCenteredPan, previewTrace, zoom]);
+
   return (
     <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#05070B] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
       <div
@@ -545,6 +563,14 @@ function TraceMap({
       />
 
       <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+        {canFocusMyTrace && (
+          <button
+            onClick={onFocusMyTrace}
+            className="rounded-2xl border border-white/10 bg-white/6 px-3 py-2 text-[12px] font-bold text-white/80 shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+          >
+            내 흔적
+          </button>
+        )}
         {canRemoveMyTrace && (
           <button
             onClick={onRemoveMyTrace}
@@ -787,6 +813,7 @@ function TraceMap({
 
           {traces.map((trace) => {
             const isActive = !previewTrace && activeTrace?.user_id === trace.user_id;
+            const shouldPulse = pulseUserId === trace.user_id;
 
             return (
               <g key={`${trace.user_id}-${trace.regionKey}`} onClick={() => onPickTrace(trace)} style={{ cursor: "pointer" }}>
@@ -796,6 +823,12 @@ function TraceMap({
                   r={isActive ? 0.68 : 0.18}
                   fill={isActive ? "rgba(255,196,79,0.98)" : "rgba(255,255,255,0.92)"}
                 />
+                {shouldPulse && (
+                  <circle cx={trace.displayX} cy={trace.displayY} r={0.68} fill="rgba(255,196,79,0.28)">
+                    <animate attributeName="r" values="0.68;2.4;0.68" dur="1.15s" repeatCount="1" />
+                    <animate attributeName="opacity" values="0.42;0;0" dur="1.15s" repeatCount="1" />
+                  </circle>
+                )}
                 {isActive && (
                   <circle
                     cx={trace.displayX}
@@ -853,11 +886,16 @@ export default function TraceLabPage() {
   const [locating, setLocating] = useState(false);
   const [panelExpanded, setPanelExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [pulseUserId, setPulseUserId] = useState<string | null>(null);
   const [activeTrace, setActiveTrace] = useState<Trace | null>(null);
   const [form, setForm] = useState({
     sido: "서울특별시",
     sigungu: "",
     dong: "",
+    shareImage: false,
+    shareInstagram: false,
+    instagramHandle: "",
   });
 
   const fetchPayload = useCallback(async () => {
@@ -883,6 +921,18 @@ export default function TraceLabPage() {
     if (error) setPanelExpanded(true);
   }, [error]);
 
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = window.setTimeout(() => setToastMessage(null), 1800);
+    return () => window.clearTimeout(timer);
+  }, [toastMessage]);
+
+  useEffect(() => {
+    if (!pulseUserId) return;
+    const timer = window.setTimeout(() => setPulseUserId(null), 1300);
+    return () => window.clearTimeout(timer);
+  }, [pulseUserId]);
+
   const displayTraces = useMemo(() => (payload?.traces ?? []).map(buildDisplayTrace), [payload?.traces]);
   const activeDisplayTrace = useMemo(
     () => displayTraces.find((trace) => trace.user_id === activeTrace?.user_id) ?? null,
@@ -905,9 +955,11 @@ export default function TraceLabPage() {
       y: 0,
       regionKey: buildTraceRegionKey(normalizedSido, normalizedSigungu, normalizedDong),
       regionLabel: formatTraceRegion(normalizedSido, normalizedSigungu, normalizedDong),
+      publicImageUrl: form.shareImage ? payload?.me.latestImageUrl ?? null : null,
+      instagramHandle: form.shareInstagram ? form.instagramHandle.trim().replace(/^@+/, "") || null : null,
       created_at: null,
     });
-  }, [form.dong, form.sido, form.sigungu, payload?.me.alreadyJoined, user]);
+  }, [form.dong, form.instagramHandle, form.shareImage, form.shareInstagram, form.sido, form.sigungu, payload?.me.alreadyJoined, payload?.me.latestImageUrl, user]);
   const clusters = useMemo(() => buildClusters(displayTraces), [displayTraces]);
   const hotspotList = useMemo(() => [...clusters].sort((left, right) => right.count - left.count).slice(0, 5), [clusters]);
   const districtSuggestions = useMemo(() => getDistrictSuggestions(form.sido), [form.sido]);
@@ -922,7 +974,13 @@ export default function TraceLabPage() {
       const response = await fetch("/api/lab/traces", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          sido: form.sido,
+          sigungu: form.sigungu,
+          dong: form.dong,
+          shareImage: form.shareImage,
+          instagramHandle: form.shareInstagram ? form.instagramHandle : "",
+        }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -939,12 +997,15 @@ export default function TraceLabPage() {
           eligible: true,
           alreadyJoined: true,
           trace: data.trace,
+          latestImageUrl: payload?.me.latestImageUrl ?? null,
         },
       };
 
       setPayload(nextPayload);
       setActiveTrace(data.trace);
-      setForm((current) => ({ ...current, sigungu: "", dong: "" }));
+      setPulseUserId(data.trace.user_id);
+      setPanelExpanded(false);
+      setToastMessage("흔적을 남겼어요");
     } catch {
       setError("흔적을 남기지 못했어요.");
     } finally {
@@ -980,11 +1041,13 @@ export default function TraceLabPage() {
           eligible: payload?.me.eligible ?? false,
           alreadyJoined: false,
           trace: null,
+          latestImageUrl: payload?.me.latestImageUrl ?? null,
         },
       };
 
       setPayload(nextPayload);
       setActiveTrace(nextTraces[0] ?? null);
+      setToastMessage("내 흔적을 지웠어요");
     } catch {
       setError("내 흔적을 삭제하지 못했어요.");
     } finally {
@@ -996,11 +1059,12 @@ export default function TraceLabPage() {
     setError(null);
     setActiveTrace(null);
     setPanelExpanded(true);
-    setForm({
+    setForm((current) => ({
+      ...current,
       sido: normalizeSido(region.sido),
       sigungu: normalizeRegionPart(region.sigungu),
       dong: normalizeRegionPart(region.dong),
-    });
+    }));
   }, []);
 
   const fillFromCurrentLocation = async () => {
@@ -1025,11 +1089,12 @@ export default function TraceLabPage() {
       }
 
       setActiveTrace(null);
-      setForm({
+      setForm((current) => ({
+        ...current,
         sido: normalizeSido(region.sido),
         sigungu: normalizeRegionPart(region.sigungu),
         dong: normalizeRegionPart(region.dong),
-      });
+      }));
     } catch (caught) {
       const geolocationError =
         typeof caught === "object" && caught !== null && "code" in caught
@@ -1066,6 +1131,11 @@ export default function TraceLabPage() {
         ? payload.me.trace.regionLabel
         : previewDisplayTrace?.regionLabel ?? "시 / 구 / 동을 고르거나 자동 입력";
   const canQuickSubmit = Boolean(user && payload?.me.eligible && !payload?.me.alreadyJoined && previewDisplayTrace);
+  const activePublicTrace = activeDisplayTrace && (activeDisplayTrace.publicImageUrl || activeDisplayTrace.instagramHandle) ? activeDisplayTrace : null;
+  const myDisplayTrace = useMemo(
+    () => displayTraces.find((trace) => trace.user_id === payload?.me.trace?.user_id) ?? null,
+    [displayTraces, payload?.me.trace?.user_id],
+  );
 
   const participationOverlay = !loading ? (
     <div className="rounded-[22px] border border-white/10 bg-[linear-gradient(135deg,rgba(8,11,16,0.9)_0%,rgba(10,13,18,0.72)_100%)] p-3 shadow-[0_18px_36px_rgba(0,0,0,0.26)] backdrop-blur-2xl">
@@ -1139,55 +1209,121 @@ export default function TraceLabPage() {
               생성하러 가기
             </Link>
           ) : payload?.me.alreadyJoined && payload.me.trace ? (
-            <div className="rounded-[14px] border border-white/8 bg-white/[0.04] px-3 py-2.5 text-[12px] text-white/62">
-              {formatRelativeDate(payload.me.trace.created_at)}
+            <div className="space-y-2 rounded-[14px] border border-white/8 bg-white/[0.04] px-3 py-2.5 text-[12px] text-white/62">
+              <div>{formatRelativeDate(payload.me.trace.created_at)}</div>
+              {(payload.me.trace.publicImageUrl || payload.me.trace.instagramHandle) && (
+                <div className="flex flex-wrap gap-1.5">
+                  {payload.me.trace.publicImageUrl && (
+                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[11px] text-white/66">
+                      이미지 공개중
+                    </span>
+                  )}
+                  {payload.me.trace.instagramHandle && (
+                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[11px] text-white/66">
+                      @{payload.me.trace.instagramHandle}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
-            <div className="grid grid-cols-[0.9fr_0.86fr_0.9fr] gap-2">
-              <select
-                value={form.sido}
-                onChange={(event) => {
-                  setActiveTrace(null);
-                  setForm({
-                    sido: event.target.value,
-                    sigungu: "",
-                    dong: "",
-                  });
-                }}
-                className="h-10 min-w-0 rounded-[14px] border border-white/10 bg-[#0D1117]/88 px-3 text-[12px] font-semibold text-white outline-none"
-              >
-                {SIDO_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.label}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={form.sigungu}
-                onChange={(event) => {
-                  setActiveTrace(null);
-                  setForm((current) => ({
-                    ...current,
-                    sigungu: event.target.value,
-                    dong: "",
-                  }));
-                }}
-                list="lab-trace-sigungu-list"
-                autoComplete="off"
-                placeholder="시 / 구 / 군"
-                className="h-10 min-w-0 rounded-[14px] border border-white/10 bg-[#0D1117]/88 px-3 text-[12px] font-semibold text-white placeholder:text-white/24 outline-none"
-              />
-              <input
-                value={form.dong}
-                onChange={(event) => {
-                  setActiveTrace(null);
-                  setForm((current) => ({ ...current, dong: event.target.value }));
-                }}
-                list="lab-trace-dong-list"
-                autoComplete="off"
-                placeholder="동 / 읍 / 면"
-                className="h-10 min-w-0 rounded-[14px] border border-white/10 bg-[#0D1117]/88 px-3 text-[12px] font-semibold text-white placeholder:text-white/24 outline-none"
-              />
+            <div className="space-y-2">
+              <div className="grid grid-cols-[0.9fr_0.86fr_0.9fr] gap-2">
+                <select
+                  value={form.sido}
+                  onChange={(event) => {
+                    setActiveTrace(null);
+                    setForm((current) => ({
+                      ...current,
+                      sido: event.target.value,
+                      sigungu: "",
+                      dong: "",
+                    }));
+                  }}
+                  className="h-10 min-w-0 rounded-[14px] border border-white/10 bg-[#0D1117]/88 px-3 text-[12px] font-semibold text-white outline-none"
+                >
+                  {SIDO_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.label}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={form.sigungu}
+                  onChange={(event) => {
+                    setActiveTrace(null);
+                    setForm((current) => ({
+                      ...current,
+                      sigungu: event.target.value,
+                      dong: "",
+                    }));
+                  }}
+                  list="lab-trace-sigungu-list"
+                  autoComplete="off"
+                  placeholder="시 / 구 / 군"
+                  className="h-10 min-w-0 rounded-[14px] border border-white/10 bg-[#0D1117]/88 px-3 text-[12px] font-semibold text-white placeholder:text-white/24 outline-none"
+                />
+                <input
+                  value={form.dong}
+                  onChange={(event) => {
+                    setActiveTrace(null);
+                    setForm((current) => ({ ...current, dong: event.target.value }));
+                  }}
+                  list="lab-trace-dong-list"
+                  autoComplete="off"
+                  placeholder="동 / 읍 / 면"
+                  className="h-10 min-w-0 rounded-[14px] border border-white/10 bg-[#0D1117]/88 px-3 text-[12px] font-semibold text-white placeholder:text-white/24 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+                <label className="flex items-center justify-between gap-3 rounded-[14px] border border-white/8 bg-white/[0.03] px-3 py-2 text-[11px] text-white/68">
+                  <div className="min-w-0">
+                    <p className="font-bold text-white/86">내 최근 생성 이미지 공개</p>
+                    <p className="truncate text-white/38">
+                      {payload?.me.latestImageUrl ? "선택하면 최근 결과 이미지 1장이 함께 보여요." : "최근 생성 이미지가 없어서 지금은 공개할 수 없어요."}
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={form.shareImage}
+                    disabled={!payload?.me.latestImageUrl}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        shareImage: event.target.checked && Boolean(payload?.me.latestImageUrl),
+                      }))
+                    }
+                    className="h-4 w-4 accent-[#6BE2C5]"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-3 rounded-[14px] border border-white/8 bg-white/[0.03] px-3 py-2 text-[11px] text-white/68">
+                  <span className="font-bold text-white/86">인스타 공개</span>
+                  <input
+                    type="checkbox"
+                    checked={form.shareInstagram}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        shareInstagram: event.target.checked,
+                        instagramHandle: event.target.checked ? current.instagramHandle : "",
+                      }))
+                    }
+                    className="h-4 w-4 accent-[#6BE2C5]"
+                  />
+                </label>
+              </div>
+
+              {form.shareInstagram && (
+                <input
+                  value={form.instagramHandle}
+                  onChange={(event) => setForm((current) => ({ ...current, instagramHandle: event.target.value.replace(/\s+/g, "") }))}
+                  autoComplete="off"
+                  placeholder="@instagram_id"
+                  className="h-10 w-full rounded-[14px] border border-white/10 bg-[#0D1117]/88 px-3 text-[12px] font-semibold text-white placeholder:text-white/24 outline-none"
+                />
+              )}
             </div>
           )}
         </div>
@@ -1262,8 +1398,15 @@ export default function TraceLabPage() {
                 clusters={clusters}
                 activeTrace={activeDisplayTrace}
                 previewTrace={previewDisplayTrace}
+                pulseUserId={pulseUserId}
                 onPickTrace={setActiveTrace}
                 onSelectLocation={handleSelectLocation}
+                canFocusMyTrace={Boolean(myDisplayTrace)}
+                onFocusMyTrace={() => {
+                  if (!myDisplayTrace) return;
+                  setActiveTrace(myDisplayTrace);
+                  setPulseUserId(myDisplayTrace.user_id);
+                }}
                 canRemoveMyTrace={Boolean(!loading && user && payload?.me.alreadyJoined)}
                 removing={removing}
                 onRemoveMyTrace={handleRemoveMyTrace}
@@ -1273,19 +1416,43 @@ export default function TraceLabPage() {
           </section>
 
           <aside className="flex flex-col gap-4">
+            {activePublicTrace && (
+              <div className="rounded-[30px] border border-white/10 bg-white/5 p-5">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/40">Selected Trace</p>
+                <h3 className="mt-2 text-[18px] font-black tracking-[-0.04em] text-white">{activePublicTrace.regionLabel}</h3>
+                <p className="mt-1 text-[13px] text-white/45">선택한 흔적에서 공개한 정보만 보여줘요.</p>
+                <div className="mt-4 space-y-3">
+                  {activePublicTrace.publicImageUrl && (
+                    <div className="overflow-hidden rounded-[22px] border border-white/10 bg-black/16">
+                      <img src={activePublicTrace.publicImageUrl} alt="" className="aspect-[4/5] w-full object-cover" />
+                    </div>
+                  )}
+                  {activePublicTrace.instagramHandle && (
+                    <div className="rounded-[18px] border border-white/10 bg-black/18 px-4 py-3">
+                      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/38">Instagram</p>
+                      <p className="mt-1 text-[15px] font-bold text-white">@{activePublicTrace.instagramHandle}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="rounded-[30px] border border-white/10 bg-white/5 p-5">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/40">Hotspots</p>
-              <h3 className="mt-2 text-[20px] font-black tracking-[-0.04em] text-white">가장 밝은 흔적</h3>
+              <h3 className="mt-2 text-[20px] font-black tracking-[-0.04em] text-white">많이 남은 흔적</h3>
               <div className="mt-4 space-y-2">
                 {hotspotList.length === 0 && <p className="text-[14px] leading-6 text-white/50">아직 첫 참여자를 기다리는 중이에요.</p>}
-                {hotspotList.map((cluster, index) => (
+                {hotspotList.slice(0, 4).map((cluster, index) => (
                   <button
                     key={cluster.key}
                     onClick={() => {
                       const picked = displayTraces.find((trace) => trace.regionKey === cluster.key) ?? null;
-                      if (picked) setActiveTrace(picked);
+                      if (picked) {
+                        setActiveTrace(picked);
+                        setPulseUserId(picked.user_id);
+                      }
                     }}
-                    className="flex w-full items-center justify-between rounded-[18px] border border-white/8 bg-black/18 px-4 py-3 text-left"
+                    className="flex w-full items-center justify-between rounded-[18px] border border-white/8 bg-black/18 px-4 py-3 text-left transition hover:border-white/14 hover:bg-black/24"
                   >
                     <div className="flex items-center gap-3">
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/8 text-[12px] font-black text-white/70">
@@ -1293,16 +1460,22 @@ export default function TraceLabPage() {
                       </span>
                       <div>
                         <p className="text-[14px] font-bold text-white">{cluster.label}</p>
-                        <p className="text-[12px] text-white/42">빛나는 흔적이 많은 지역</p>
+                        <p className="text-[12px] text-white/42">눌러서 이 지역으로 보기</p>
                       </div>
                     </div>
-                    <span className="text-[13px] font-black text-[#6BE2C5]">{cluster.count}</span>
+                    <span className="text-[13px] font-black text-[#6BE2C5]">{cluster.count}명</span>
                   </button>
                 ))}
               </div>
             </div>
           </aside>
         </div>
+
+        {toastMessage && (
+          <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-white/10 bg-[rgba(8,11,16,0.86)] px-4 py-2 text-[13px] font-bold text-white shadow-[0_18px_48px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+            {toastMessage}
+          </div>
+        )}
       </main>
     </div>
   );

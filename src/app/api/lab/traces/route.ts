@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 const TRACE_EVENT_TYPE = "lab_trace_join";
 
-type Session = { id: string } | null;
+type Session = { id: string; nickname?: string; profileImage?: string | null } | null;
 
 function parseSession(request: NextRequest): Session {
   try {
@@ -41,6 +41,10 @@ function safeNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function cleanInstagramHandle(value: unknown) {
+  return safeString(value).replace(/^@+/, "").trim();
+}
+
 function parseTraceRecord(row: {
   user_id: string | null;
   metadata?: Record<string, unknown> | null;
@@ -54,6 +58,8 @@ function parseTraceRecord(row: {
   const y = safeNumber(metadata.y);
   const regionKey = safeString(metadata.region_key) || buildTraceRegionKey(sido, sigungu, dong);
   const regionLabel = safeString(metadata.region_label) || formatTraceRegion(sido, sigungu, dong);
+  const publicImageUrl = safeString(metadata.public_image_url) || null;
+  const instagramHandle = cleanInstagramHandle(metadata.instagram_handle) || null;
 
   if (!row.user_id || !sido || !sigungu || !dong || x === null || y === null) return null;
 
@@ -66,6 +72,8 @@ function parseTraceRecord(row: {
     y,
     regionKey,
     regionLabel,
+    publicImageUrl,
+    instagramHandle,
     created_at: row.created_at ?? null,
   };
 }
@@ -112,6 +120,20 @@ async function getEligibility(session: NonNullable<Session>) {
   return (usageRes.count ?? 0) > 0 || (auditionRes.count ?? 0) > 0;
 }
 
+async function getLatestTransformImage(session: NonNullable<Session>) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("transform_history")
+    .select("result_image_url")
+    .eq("user_id", session.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return null;
+  return safeString(data?.result_image_url) || null;
+}
+
 export async function GET(request: NextRequest) {
   const session = parseSession(request);
   const supabase = getSupabase();
@@ -141,15 +163,18 @@ export async function GET(request: NextRequest) {
     eligible: false,
     alreadyJoined: false,
     trace: null as null | (typeof traces)[number],
+    latestImageUrl: null as string | null,
   };
 
   if (session) {
+    const latestImageUrl = await getLatestTransformImage(session);
     const trace = traces.find((item) => item.user_id === session.id) ?? null;
     me = {
       loggedIn: true,
       eligible: await getEligibility(session),
       alreadyJoined: Boolean(trace),
       trace,
+      latestImageUrl,
     };
   }
 
@@ -166,10 +191,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { sido, sigungu, dong } = await request.json();
+  const { sido, sigungu, dong, shareImage, instagramHandle } = await request.json();
   const normalizedSido = normalizeSido(sido);
   const normalizedSigungu = normalizeRegionPart(sigungu);
   const normalizedDong = normalizeRegionPart(dong);
+  const normalizedInstagramHandle = cleanInstagramHandle(instagramHandle);
 
   if (!getSidoOption(normalizedSido)) {
     return NextResponse.json({ error: "시/도를 선택해주세요." }, { status: 400 });
@@ -211,6 +237,8 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  const latestImageUrl = shareImage ? await getLatestTransformImage(session) : null;
+
   const point = buildTracePoint({
     sido: normalizedSido,
     sigungu: normalizedSigungu,
@@ -227,6 +255,8 @@ export async function POST(request: NextRequest) {
     y: point.y,
     regionKey: buildTraceRegionKey(normalizedSido, normalizedSigungu, normalizedDong),
     regionLabel: formatTraceRegion(normalizedSido, normalizedSigungu, normalizedDong),
+    publicImageUrl: latestImageUrl,
+    instagramHandle: normalizedInstagramHandle || null,
     created_at: new Date().toISOString(),
   };
 
@@ -241,6 +271,8 @@ export async function POST(request: NextRequest) {
       y: trace.y,
       region_key: trace.regionKey,
       region_label: trace.regionLabel,
+      public_image_url: trace.publicImageUrl,
+      instagram_handle: trace.instagramHandle,
     },
   });
 
