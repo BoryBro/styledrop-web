@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useId } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AUDITION_ENABLED } from "@/lib/feature-flags";
 import { analyzePhysioPhoto, getPhysioPointMap } from "@/lib/physio-face";
 
 function TypingCastingTitle({ role, speed = 42 }: { role: string; speed?: number }) {
@@ -769,7 +770,7 @@ async function buildSaveCanvas(
 }
 
 // ── 메인 컴포넌트 ──────────────────────────────────────────────────
-export default function AuditionResult() {
+function AuditionResultInner() {
   const [result, setResult] = useState<AuditionResult | null>(null);
   const [userPhotos, setUserPhotos] = useState<string[]>([]);
   const [stillImage, setStillImage] = useState<string | null>(null);
@@ -2134,4 +2135,18 @@ export default function AuditionResult() {
       </div>
     </div>
   );
+}
+
+export default function AuditionResult() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!AUDITION_ENABLED) {
+      router.replace("/studio");
+    }
+  }, [router]);
+
+  if (!AUDITION_ENABLED) return null;
+
+  return <AuditionResultInner />;
 }

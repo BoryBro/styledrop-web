@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { AUDITION_ENABLED } from "@/lib/feature-flags";
 import { VISIBLE_STYLES } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
@@ -419,15 +420,17 @@ export default function Studio() {
             })}
           </div>
 
-          {/* 실험실 섹션 헤더 */}
-          <div className="mt-8 mb-4">
-            <h2 className="text-[20px] font-bold text-[#C9571A]">실험실</h2>
-            <p className="text-[18px] font-bold text-white mt-1">색다른 AI 기능을 체험해봐요</p>
-          </div>
+          {AUDITION_ENABLED && (
+            <>
+              {/* 실험실 섹션 헤더 */}
+              <div className="mt-8 mb-4">
+                <h2 className="text-[20px] font-bold text-[#C9571A]">실험실</h2>
+                <p className="text-[18px] font-bold text-white mt-1">색다른 AI 기능을 체험해봐요</p>
+              </div>
 
-          {/* AI 오디션 카드 */}
-          <Link href="/audition/intro" className="block mb-4 active:scale-[0.97] transition-transform">
-            <div className="relative rounded-2xl overflow-hidden bg-[#0A0A0A] border border-white/[0.07]" style={{ aspectRatio: '4/3' }}>
+              {/* AI 오디션 카드 */}
+              <Link href="/audition/intro" className="block mb-4 active:scale-[0.97] transition-transform">
+                <div className="relative rounded-2xl overflow-hidden bg-[#0A0A0A] border border-white/[0.07]" style={{ aspectRatio: '4/3' }}>
 
               {/* ── 배경: 미묘한 오렌지 코너 글로우 ── */}
               <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 10% 100%, rgba(201,87,26,0.18) 0%, transparent 70%)' }} />
@@ -516,8 +519,10 @@ export default function Studio() {
               {/* ── 오렌지 수직선 장식 (우측) ── */}
               <div className="absolute right-6 z-10" style={{ top: '28%', bottom: '20%', width: '1.5px', background: 'linear-gradient(to bottom, transparent, rgba(201,87,26,0.5), transparent)' }} />
 
-            </div>
-          </Link>
+                </div>
+              </Link>
+            </>
+          )}
         </main>
 
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />

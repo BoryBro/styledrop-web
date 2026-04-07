@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AUDITION_ENABLED } from "@/lib/feature-flags";
 
 // ── 타이핑 훅 ──────────────────────────────────────────────────
 function useTypewriter(lines: string[], speed = 60, pause = 1800) {
@@ -177,6 +178,13 @@ export default function AuditionIntroPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!AUDITION_ENABLED) {
+      router.replace("/studio");
+      return;
+    }
+  }, [router]);
+
+  useEffect(() => {
     const el = bottomRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -186,6 +194,8 @@ export default function AuditionIntroPage() {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  if (!AUDITION_ENABLED) return null;
 
   return (
     <main className="min-h-screen bg-white flex flex-col pb-32">

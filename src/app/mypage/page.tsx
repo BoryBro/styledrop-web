@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { AUDITION_ENABLED } from "@/lib/feature-flags";
 import { getGuestHistory, type GuestHistoryItem } from "@/lib/guest-history";
 import { STYLE_LABELS, VISIBLE_STYLE_IDS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
@@ -92,10 +93,15 @@ export default function MyPage() {
       setHistoryLoading(false);
       return;
     }
-    Promise.all([
+    const requests: Promise<void>[] = [
       fetch("/api/history").then(r => r.json()).then(d => setHistory(d.history ?? [])).catch(() => {}),
-      fetch("/api/audition/history").then(r => r.json()).then(d => setAuditionHistory(d.history ?? [])).catch(() => {}),
-    ]).finally(() => setHistoryLoading(false));
+    ];
+    if (AUDITION_ENABLED) {
+      requests.push(
+        fetch("/api/audition/history").then(r => r.json()).then(d => setAuditionHistory(d.history ?? [])).catch(() => {})
+      );
+    }
+    Promise.all(requests).finally(() => setHistoryLoading(false));
     fetch("/api/credits")
       .then(r => r.json())
       .then(d => setCredits(d.credits ?? 0))
@@ -377,7 +383,7 @@ export default function MyPage() {
             </div>
 
             {/* AI 오디션 기록 */}
-            {auditionHistory.length > 0 && (
+            {AUDITION_ENABLED && auditionHistory.length > 0 && (
               <div>
                 <div className="flex items-baseline gap-2 mb-4 px-1">
                   <h2 className="text-[16px] font-bold text-white">AI 오디션 기록</h2>
