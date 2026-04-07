@@ -498,6 +498,7 @@ export default function AdminPage() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [styleSavingId, setStyleSavingId] = useState<string | null>(null);
   const [styleControlMsg, setStyleControlMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const liveClock = fetchedAt ? new Date(fetchedAt.getTime() + elapsed * 1000) : null;
 
   const doLogin = async (pw: string) => {
     setError("");
@@ -715,9 +716,9 @@ export default function AdminPage() {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          {fetchedAt && (
+          {liveClock && (
             <span className="text-[12px] text-gray-400 font-mono tabular-nums">
-              {fetchedAt.toTimeString().slice(0, 8)} +{elapsed}s
+              {liveClock.toTimeString().slice(0, 8)}
             </span>
           )}
           <button
