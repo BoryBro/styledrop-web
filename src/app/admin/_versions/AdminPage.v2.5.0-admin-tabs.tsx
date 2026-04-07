@@ -4,17 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import type { StyleControlState } from "@/lib/style-controls";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-const ADMIN_UI_VERSION = "v2.6.0-user-list";
+const ADMIN_UI_VERSION = "v2.5.0-admin-tabs";
 
 type AdminTab = "ops" | "metrics" | "revenue" | "users";
 
 type Notice = { id: number; text: string; active: boolean };
-type UserItem = {
-  id: string;
-  nickname: string | null;
-  created_at: string | null;
-  last_login_at: string | null;
-};
+type UserItem = { id: string; nickname: string | null };
 type PaymentItem = { id: string; user_id: string; amount: number; credits: number; status: string; created_at: string };
 type StyleStat = { style_id: string; style_name: string; count: number };
 type GenerationErrorSummary = {
@@ -70,7 +65,6 @@ type Stats = {
   byStyle: StyleStat[];
   byStyleVariants: Record<string, Record<string, number>>;
   totalUsers: number;
-  todaySignupCount: number;
   uniqueLoggedInUsers: number;
   shareKakao: number;
   shareLinkCopy: number;
@@ -105,18 +99,6 @@ function relativeTime(iso: string) {
   if (hours < 24) return `${hours}시간 전`;
   const days = Math.floor(hours / 24);
   return `${days}일 전`;
-}
-
-function formatDateTime(iso?: string | null) {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, MonthlyCost> }) {
@@ -422,7 +404,6 @@ export default function AdminPage() {
   const [refundingId, setRefundingId] = useState<string | null>(null);
   const [refundMsg, setRefundMsg] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
   const [creditSearch, setCreditSearch] = useState("");
-  const [userListSearch, setUserListSearch] = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [styleSavingId, setStyleSavingId] = useState<string | null>(null);
   const [styleControlMsg, setStyleControlMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -609,11 +590,6 @@ export default function AdminPage() {
     const bIssue = Number(issueIds.has(b.style_id));
     if (bIssue !== aIssue) return bIssue - aIssue;
     return b.count - a.count;
-  });
-  const filteredUsers = stats.userList.filter((user) => {
-    if (!userListSearch) return true;
-    const q = userListSearch.toLowerCase();
-    return user.nickname?.toLowerCase().includes(q) || user.id.toLowerCase().includes(q);
   });
   const tabSummary =
     activeTab === "ops"
@@ -1074,52 +1050,6 @@ export default function AdminPage() {
 
       {activeTab === "users" && (
         <>
-          <div className="grid grid-cols-2 gap-2">
-            <MiniCard label="전체 가입 유저" value={`${stats.totalUsers}명`} accent />
-            <MiniCard label="오늘 가입" value={`${stats.todaySignupCount}명`} />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">가입 유저 목록</p>
-            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-3">
-                <input
-                  type="text"
-                  value={userListSearch}
-                  onChange={(e) => setUserListSearch(e.target.value)}
-                  placeholder="닉네임 또는 ID 검색..."
-                  className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
-                />
-                <span className="text-[11px] text-gray-400 whitespace-nowrap">최근 가입순</span>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 overflow-hidden">
-                {filteredUsers.length === 0 ? (
-                  <div className="px-3 py-4 text-[13px] text-gray-500">검색 결과 없음</div>
-                ) : (
-                  filteredUsers.slice(0, 100).map((user) => (
-                    <div key={user.id} className="px-3 py-3 border-b border-gray-100 last:border-0 flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-[14px] font-bold text-gray-900 truncate">{user.nickname ?? "닉네임 없음"}</p>
-                        <p className="text-[11px] text-gray-400 font-mono mt-0.5">{user.id}</p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-[11px] text-gray-500">가입 {formatDateTime(user.created_at)}</p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">
-                          최근 로그인 {user.last_login_at ? relativeTime(user.last_login_at) : "—"}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {filteredUsers.length > 100 && (
-                <p className="text-[11px] text-gray-400 px-1">검색 결과가 많아 최근 100명만 보여주고 있어요.</p>
-              )}
-            </div>
-          </div>
-
           {/* 크레딧 조정 */}
           <div className="flex flex-col gap-1">
             <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">크레딧 조정</p>

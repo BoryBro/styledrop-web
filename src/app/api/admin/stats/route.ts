@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     ? usageWithVariant
     : await supabase.from("style_usage").select("style_id, style_name, user_id");
 
-  const [eventsRes, todayEventsRes, usersRes, todayUsageRes, todayUsageRowsRes, paymentsRes, todayPaymentsRes, userListRes,
+  const [eventsRes, todayEventsRes, usersRes, todaySignupRes, todayUsageRes, todayUsageRowsRes, paymentsRes, todayPaymentsRes, userListRes,
     marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marRevenueRes, aprRevenueRes,
     aprShareKakaoRes, aprShareLinkRes, aprSaveRes, aprAuditionShareKakaoRes, aprAuditionShareLinkRes,
     styleControls,
@@ -40,11 +40,12 @@ export async function POST(request: NextRequest) {
     supabase.from("user_events").select("event_type, metadata"),
     supabase.from("user_events").select("event_type, metadata").gte("created_at", todayIso),
     supabase.from("users").select("id", { count: "exact", head: true }),
+    supabase.from("users").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
     supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
     supabase.from("style_usage").select("style_id").gte("created_at", todayIso),
     supabase.from("payments").select("id, amount, credits, user_id, status, created_at").order("created_at", { ascending: false }),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
-    supabase.from("users").select("id, nickname").order("created_at", { ascending: false }).limit(500),
+    supabase.from("users").select("id, nickname, created_at, last_login_at").order("created_at", { ascending: false }).limit(500),
     // 월별 스타일 변환
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
@@ -215,6 +216,7 @@ export async function POST(request: NextRequest) {
     styleControls,
     ...generationErrorOverview,
     totalUsers: usersRes.count ?? 0,
+    todaySignupCount: todaySignupRes.count ?? 0,
     uniqueLoggedInUsers,
     shareKakao: eventCounts["share_kakao"] ?? 0,
     shareLinkCopy: eventCounts["share_link_copy"] ?? 0,
