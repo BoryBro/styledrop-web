@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import type { StyleControlState } from "@/lib/style-controls";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-const ADMIN_UI_VERSION = "v2.2.0-style-performance";
+const ADMIN_UI_VERSION = "v2.1.0-error-monitor";
 
 type Notice = { id: number; text: string; active: boolean };
 type UserItem = { id: string; nickname: string | null };
@@ -34,15 +34,6 @@ type Stats = {
   generationErrorTotal24h: number;
   generationErrorSummary: GenerationErrorSummary[];
   recentGenerationErrors: RecentGenerationError[];
-  stylePerformanceList: {
-    style_id: string;
-    style_name: string;
-    count: number;
-    saveCount: number;
-    shareCount: number;
-    saveRate: number;
-    shareRate: number;
-  }[];
   userList: UserItem[];
   paymentList: PaymentItem[];
   total: number;
@@ -320,7 +311,31 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
               ratio={`${shareTotal}회`} highlight
             />
           </div>
-          <p className="text-[11px] text-gray-400 px-1">스타일별 저장률/공유율은 아래 스타일별 성과에서 확인</p>
+          {/* 스타일별 공유 스프레드시트 */}
+          {(stats.shareByStyleList?.length ?? 0) > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mt-1">
+              <div className="flex items-center px-4 py-2 bg-gray-50 border-b border-gray-200">
+                <span className="flex-1 text-[11px] font-bold text-gray-400 uppercase tracking-widest">스타일</span>
+                <div className="w-8 flex justify-center">
+                  <div className="w-[18px] h-[18px] rounded bg-[#FEE500] flex items-center justify-center flex-shrink-0">
+                    <KakaoIcon size={12} />
+                  </div>
+                </div>
+                <div className="w-8 flex justify-center">
+                  <LinkIcon size={13} />
+                </div>
+                <span className="w-10 text-right text-[11px] font-bold text-gray-400 uppercase tracking-widest">합계</span>
+              </div>
+              {stats.shareByStyleList.map((s) => (
+                <div key={s.style_id} className="flex items-center px-4 py-2.5 border-b border-gray-100 last:border-0">
+                  <span className="flex-1 text-[13px] text-gray-700 font-medium truncate pr-2">{s.style_name}</span>
+                  <span className="w-8 text-center text-[13px] tabular-nums text-gray-700">{s.kakao}</span>
+                  <span className="w-8 text-center text-[13px] tabular-nums text-gray-700">{s.link}</span>
+                  <span className="w-10 text-right text-[14px] font-bold tabular-nums text-[#C9571A]">{s.total}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -914,26 +929,20 @@ export default function AdminPage() {
       </div>
 
       {/* 스타일별 */}
-      <Section title="스타일별 성과">
-        {stats.stylePerformanceList.length === 0 ? (
+      <Section title="스타일별 사용">
+        {stats.byStyle.length === 0 ? (
           <p className="text-gray-400 text-[15px] py-4">데이터 없음</p>
         ) : (
-          stats.stylePerformanceList.map((s) => {
+          stats.byStyle.map((s) => {
+            const ratio = stats.total > 0 ? Math.round((s.count / stats.total) * 100) : 0;
             const variants = STYLE_VARIANTS[s.style_id];
-            const errorItem = stats.generationErrorSummary.find((item) => item.style_id === s.style_id);
             return (
               <div key={s.style_id} className="py-3 border-b border-gray-100 last:border-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-800 text-[14px] font-bold">{s.style_name}</span>
-                  <span className="text-gray-900 font-bold text-[14px]">{s.count}회</span>
+                  <span className="text-gray-800 text-[15px] font-bold">{s.style_name}</span>
+                  <span className="text-gray-900 font-bold text-[15px]">{s.count}회 <span className="text-gray-600 font-semibold text-[13px]">{ratio}%</span></span>
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-gray-500">
-                  <span>저장 {s.saveCount} · {s.saveRate}%</span>
-                  <span>공유 {s.shareCount} · {s.shareRate}%</span>
-                  {errorItem && (
-                    <span className="text-red-500 font-semibold">오류 {errorItem.errorCount} · {errorItem.errorRate}%</span>
-                  )}
-                </div>
+                <Bar ratio={ratio} />
                 {variants && variants.length > 1 && (
                   <div className="flex gap-1 mt-2 flex-wrap">
                     {variants.map(v => {

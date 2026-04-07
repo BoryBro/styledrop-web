@@ -107,32 +107,53 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 이벤트 집계 + 스타일별 공유 집계
+  // 이벤트 집계 + 스타일별 저장/공유 집계
   const eventCounts: Record<string, number> = {};
-  const shareByStyle: Record<string, { kakao: number; link: number }> = {};
+  const styleEvents: Record<string, { kakao: number; link: number; save: number }> = {};
 
   for (const e of events) {
     eventCounts[e.event_type] = (eventCounts[e.event_type] ?? 0) + 1;
 
-    // 스타일별 공유 집계 (metadata.style_id 있는 경우)
-    if (e.event_type === "share_kakao" || e.event_type === "share_link_copy") {
-      const styleId = (e.metadata as { style_id?: string } | null)?.style_id;
-      if (styleId && validStyleIds.has(styleId)) {
-        if (!shareByStyle[styleId]) shareByStyle[styleId] = { kakao: 0, link: 0 };
-        if (e.event_type === "share_kakao") shareByStyle[styleId].kakao++;
-        else shareByStyle[styleId].link++;
-      }
+    const styleId = (e.metadata as { style_id?: string } | null)?.style_id;
+    if (!styleId || !validStyleIds.has(styleId)) continue;
+
+    if (!styleEvents[styleId]) {
+      styleEvents[styleId] = { kakao: 0, link: 0, save: 0 };
+    }
+
+    if (e.event_type === "share_kakao") {
+      styleEvents[styleId].kakao++;
+    } else if (e.event_type === "share_link_copy") {
+      styleEvents[styleId].link++;
+    } else if (e.event_type === "save_image") {
+      styleEvents[styleId].save++;
     }
   }
 
   // 스타일 이름 붙여서 배열로 변환 (공유 많은 순)
-  const shareByStyleList = Object.entries(shareByStyle).map(([style_id, v]) => ({
+  const shareByStyleList = Object.entries(styleEvents).map(([style_id, v]) => ({
     style_id,
     style_name: STYLE_LABELS[style_id] ?? style_id,
     kakao: v.kakao,
     link: v.link,
     total: v.kakao + v.link,
   })).sort((a, b) => b.total - a.total);
+
+  const stylePerformanceList = byStyle.map((style) => {
+    const event = styleEvents[style.style_id] ?? { kakao: 0, link: 0, save: 0 };
+    const shareCount = event.kakao + event.link;
+    const saveRate = style.count > 0 ? Math.round((event.save / style.count) * 100) : 0;
+    const shareRate = style.count > 0 ? Math.round((shareCount / style.count) * 100) : 0;
+    return {
+      style_id: style.style_id,
+      style_name: style.style_name,
+      count: style.count,
+      saveCount: event.save,
+      shareCount,
+      saveRate,
+      shareRate,
+    };
+  });
 
   return NextResponse.json({
     userList: userListRes.data ?? [],
@@ -153,6 +174,7 @@ export async function POST(request: NextRequest) {
     shareLinkCopy: eventCounts["share_link_copy"] ?? 0,
     saveImage: eventCounts["save_image"] ?? 0,
     shareByStyleList,
+    stylePerformanceList,
     transformEvents: eventCounts["transform"] ?? 0,
     auditionShareKakao: eventCounts["audition_share_kakao"] ?? 0,
     auditionShareLinkCopy: eventCounts["audition_share_link_copy"] ?? 0,
