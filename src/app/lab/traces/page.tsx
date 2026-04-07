@@ -836,17 +836,32 @@ function TraceMap({
               );
             })}
 
-          {clusters.map((cluster) => {
-            const glowSize = 1.8 + Math.min(cluster.count, 9) * 0.9;
-            const opacity = Math.min(0.45, 0.14 + cluster.count * 0.05);
+          {zoom <= 1.65 &&
+            clusters
+              .filter((cluster) => cluster.count >= 10)
+              .map((cluster) => {
+                const blobSize = 0.9 + Math.min(cluster.count - 9, 20) * 0.12;
+                const opacity = Math.min(0.22, 0.08 + (cluster.count - 9) * 0.012);
 
-            return (
-              <g key={`${cluster.key}-glow`}>
-                <circle cx={cluster.x} cy={cluster.y} r={glowSize * 2.2} fill={`rgba(79, 151, 255, ${opacity * 0.18})`} filter="url(#trace-blur)" />
-                <circle cx={cluster.x} cy={cluster.y} r={glowSize * 1.18} fill={`rgba(67, 231, 184, ${opacity * 0.24})`} filter="url(#trace-blur)" />
-              </g>
-            );
-          })}
+                return (
+                  <g key={`${cluster.key}-glow`}>
+                    <circle
+                      cx={cluster.x}
+                      cy={cluster.y}
+                      r={blobSize * 2.2}
+                      fill={`rgba(79, 151, 255, ${opacity * 0.65})`}
+                      filter="url(#trace-blur)"
+                    />
+                    <circle
+                      cx={cluster.x}
+                      cy={cluster.y}
+                      r={blobSize * 1.18}
+                      fill={`rgba(67, 231, 184, ${opacity})`}
+                      filter="url(#trace-blur)"
+                    />
+                  </g>
+                );
+              })}
 
           {detailLevel === "sido" &&
             provinceLabels.map((region) => (
@@ -907,12 +922,12 @@ function TraceMap({
                 <circle
                   cx={trace.displayX}
                   cy={trace.displayY}
-                  r={isActive ? 0.68 : 0.18}
+                  r={isActive ? 0.38 : 0.08}
                   fill={isActive ? "rgba(255,196,79,0.98)" : "rgba(255,255,255,0.92)"}
                 />
                 {shouldPulse && (
-                  <circle cx={trace.displayX} cy={trace.displayY} r={0.68} fill="rgba(255,196,79,0.28)">
-                    <animate attributeName="r" values="0.68;2.4;0.68" dur="1.15s" repeatCount="1" />
+                  <circle cx={trace.displayX} cy={trace.displayY} r={0.38} fill="rgba(255,196,79,0.28)">
+                    <animate attributeName="r" values="0.38;1.8;0.38" dur="1.15s" repeatCount="1" />
                     <animate attributeName="opacity" values="0.42;0;0" dur="1.15s" repeatCount="1" />
                   </circle>
                 )}
@@ -920,10 +935,10 @@ function TraceMap({
                   <circle
                     cx={trace.displayX}
                     cy={trace.displayY}
-                    r={1.15}
+                    r={0.72}
                     fill="none"
                     stroke="rgba(255,196,79,0.44)"
-                    strokeWidth="0.18"
+                    strokeWidth="0.12"
                   />
                 )}
               </g>
@@ -935,20 +950,20 @@ function TraceMap({
               <circle
                 cx={previewTrace.displayX}
                 cy={previewTrace.displayY}
-                r={0.78}
+                r={0.42}
                 fill="rgba(255,196,79,0.98)"
               />
-              <circle cx={previewTrace.displayX} cy={previewTrace.displayY} r={0.9} fill="rgba(255,196,79,0.22)">
-                <animate attributeName="r" values="0.9;2.8;0.9" dur="1.1s" repeatCount="1" />
+              <circle cx={previewTrace.displayX} cy={previewTrace.displayY} r={0.5} fill="rgba(255,196,79,0.22)">
+                <animate attributeName="r" values="0.5;2.1;0.5" dur="1.1s" repeatCount="1" />
                 <animate attributeName="opacity" values="0.38;0;0" dur="1.1s" repeatCount="1" />
               </circle>
               <circle
                 cx={previewTrace.displayX}
                 cy={previewTrace.displayY}
-                r={1.45}
+                r={0.85}
                 fill="none"
                 stroke="rgba(255,196,79,0.44)"
-                strokeWidth="0.18"
+                strokeWidth="0.12"
               />
             </g>
           )}
