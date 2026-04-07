@@ -40,10 +40,19 @@ type TraceCluster = {
   count: number;
 };
 
+type RegionLabel = {
+  id: string;
+  x: number;
+  y: number;
+  shortLabel: string;
+};
+
 const KOREA_MAIN_PATH =
-  "M47 8C59 6 70 9 78 16C84 23 87 32 86 43C89 54 85 65 79 73C81 82 78 89 72 94C64 98 54 98 47 92C38 92 30 88 24 80C19 73 18 64 22 56C18 47 18 39 23 30C25 22 31 15 39 11C42 10 45 9 47 8Z";
+  "M51 6C59 6 67 10 72 16C76 20 79 25 79 31C82 37 82 43 80 48C83 55 82 62 79 67C81 73 80 80 76 86C72 92 66 97 59 101C55 103 51 105 49 109C47 113 42 115 38 113C34 111 32 106 33 101C27 96 23 89 22 81C18 74 17 66 19 58C17 51 17 44 19 36C20 29 24 22 30 16C35 11 42 8 48 7C49 7 50 6 51 6Z";
 const KOREA_JEJU_PATH =
-  "M23 105C26 102 31 101 36 102C39 104 39 108 36 110C32 112 26 112 22 110C20 108 20 106 23 105Z";
+  "M22 106C25 104 30 103 35 103C38 105 38 108 35 110C31 112 26 112 22 111C20 109 20 107 22 106Z";
+const ULLEUNGDO_PATH =
+  "M84 52C85 51 87 51 88 52C89 54 88 56 86 56C84 56 83 54 84 52Z";
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -104,6 +113,18 @@ function buildClusters(traces: Trace[]): TraceCluster[] {
   return [...clusters.values()].sort((left, right) => right.count - left.count);
 }
 
+function buildVisibleRegionLabels(clusters: TraceCluster[]): RegionLabel[] {
+  const activeSidos = new Set(clusters.map((cluster) => cluster.label.split(" ")[0]));
+  const fallbackLabels = new Set(["서울", "경기", "강원", "경북", "경남", "전남", "전북", "부산", "제주"]);
+
+  return SIDO_OPTIONS.filter((region) => activeSidos.has(region.label) || fallbackLabels.has(region.shortLabel)).map((region) => ({
+    id: region.id,
+    x: region.anchor.x,
+    y: region.anchor.y,
+    shortLabel: region.shortLabel,
+  }));
+}
+
 function TraceMap({
   traces,
   clusters,
@@ -118,6 +139,7 @@ function TraceMap({
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ id: number; startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+  const regionLabels = useMemo(() => buildVisibleRegionLabels(clusters), [clusters]);
 
   const clampPan = useCallback((nextZoom: number, nextPan: { x: number; y: number }) => {
     const limitX = (nextZoom - 1) * 140;
@@ -223,33 +245,35 @@ function TraceMap({
         >
           <defs>
             <filter id="trace-blur">
-              <feGaussianBlur stdDeviation="3.6" />
+              <feGaussianBlur stdDeviation="2.8" />
             </filter>
           </defs>
 
-          <path d={KOREA_MAIN_PATH} fill="rgba(16,20,28,0.96)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.65" />
-          <path d={KOREA_JEJU_PATH} fill="rgba(16,20,28,0.96)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.55" />
+          <path d={KOREA_MAIN_PATH} fill="rgba(14,18,26,0.98)" stroke="rgba(255,255,255,0.10)" strokeWidth="0.7" />
+          <path d={KOREA_JEJU_PATH} fill="rgba(14,18,26,0.98)" stroke="rgba(255,255,255,0.10)" strokeWidth="0.55" />
+          <path d={ULLEUNGDO_PATH} fill="rgba(14,18,26,0.98)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.35" />
+          <path d={KOREA_MAIN_PATH} fill="none" stroke="rgba(107,226,197,0.05)" strokeWidth="2.4" />
 
           {clusters.map((cluster) => {
-            const glowSize = 5 + Math.min(cluster.count, 9) * 1.9;
-            const opacity = Math.min(0.62, 0.16 + cluster.count * 0.08);
+            const glowSize = 2.2 + Math.min(cluster.count, 9) * 1.15;
+            const opacity = Math.min(0.5, 0.12 + cluster.count * 0.06);
 
             return (
               <g key={`${cluster.key}-glow`}>
-                <circle cx={cluster.x} cy={cluster.y} r={glowSize * 2.1} fill={`rgba(79, 151, 255, ${opacity * 0.28})`} filter="url(#trace-blur)" />
-                <circle cx={cluster.x} cy={cluster.y} r={glowSize * 1.15} fill={`rgba(67, 231, 184, ${opacity * 0.36})`} filter="url(#trace-blur)" />
+                <circle cx={cluster.x} cy={cluster.y} r={glowSize * 1.75} fill={`rgba(79, 151, 255, ${opacity * 0.24})`} filter="url(#trace-blur)" />
+                <circle cx={cluster.x} cy={cluster.y} r={glowSize * 0.95} fill={`rgba(67, 231, 184, ${opacity * 0.32})`} filter="url(#trace-blur)" />
               </g>
             );
           })}
 
-          {SIDO_OPTIONS.map((region) => (
-            <g key={region.id} opacity="0.8">
-              <circle cx={region.anchor.x} cy={region.anchor.y} r="0.75" fill="rgba(255,255,255,0.18)" />
+          {regionLabels.map((region) => (
+            <g key={region.id} opacity="0.78">
+              <circle cx={region.x} cy={region.y} r="0.55" fill="rgba(255,255,255,0.16)" />
               <text
-                x={region.anchor.x + 1.8}
-                y={region.anchor.y - 1.6}
-                fill="rgba(255,255,255,0.34)"
-                fontSize="3.2"
+                x={region.x + 1.4}
+                y={region.y - 1.2}
+                fill="rgba(255,255,255,0.28)"
+                fontSize="2.8"
                 fontWeight="700"
                 letterSpacing="0.05em"
               >
@@ -263,8 +287,8 @@ function TraceMap({
 
             return (
               <g key={`${trace.user_id}-${trace.regionKey}`} onClick={() => onPickTrace(trace)} style={{ cursor: "pointer" }}>
-                <circle cx={trace.x} cy={trace.y} r={isActive ? 2.6 : 1.65} fill={isActive ? "rgba(255,196,79,0.95)" : "rgba(255,255,255,0.88)"} />
-                {isActive && <circle cx={trace.x} cy={trace.y} r={4.1} fill="none" stroke="rgba(255,196,79,0.45)" strokeWidth="0.75" />}
+                <circle cx={trace.x} cy={trace.y} r={isActive ? 1.45 : 0.72} fill={isActive ? "rgba(255,196,79,0.96)" : "rgba(255,255,255,0.9)"} />
+                {isActive && <circle cx={trace.x} cy={trace.y} r={2.45} fill="none" stroke="rgba(255,196,79,0.4)" strokeWidth="0.45" />}
               </g>
             );
           })}
