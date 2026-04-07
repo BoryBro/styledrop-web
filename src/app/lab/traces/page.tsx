@@ -681,21 +681,23 @@ export default function TraceLabPage() {
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-        <section className="mb-6 rounded-[32px] border border-white/10 bg-[linear-gradient(145deg,#0A0D12_0%,#101720_100%)] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.28)] sm:p-8">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/38">참여자</p>
-              <p className="mt-2 text-[28px] font-black tracking-[-0.04em] text-white">{payload?.summary.totalParticipants ?? 0}</p>
+        <section className="mb-6 rounded-[24px] border border-white/10 bg-[linear-gradient(145deg,#0A0D12_0%,#101720_100%)] px-4 py-3 shadow-[0_24px_60px_rgba(0,0,0,0.24)] sm:px-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span className="text-[12px] font-black tracking-[-0.02em] text-white/38">참여자</span>
+              <span className="text-[22px] font-black tracking-[-0.05em] text-white">{payload?.summary.totalParticipants ?? 0}</span>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/38">지역</p>
-              <p className="mt-2 text-[28px] font-black tracking-[-0.04em] text-white">{payload?.summary.totalRegions ?? 0}</p>
+            <div className="hidden h-5 w-px bg-white/8 sm:block" />
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span className="text-[12px] font-black tracking-[-0.02em] text-white/38">지역</span>
+              <span className="text-[22px] font-black tracking-[-0.05em] text-white">{payload?.summary.totalRegions ?? 0}</span>
             </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/38">가장 밝은 흔적</p>
-              <p className="mt-2 text-[18px] font-black leading-6 tracking-[-0.04em] text-white">
+            <div className="hidden h-5 w-px bg-white/8 sm:block" />
+            <div className="flex min-w-0 items-baseline gap-2 sm:flex-1 sm:justify-end">
+              <span className="shrink-0 text-[12px] font-black tracking-[-0.02em] text-white/38">가장 밝은 흔적</span>
+              <span className="truncate text-[15px] font-black tracking-[-0.04em] text-white">
                 {payload?.summary.hottestRegion?.label ?? "아직 첫 흔적을 기다리는 중"}
-              </p>
+              </span>
             </div>
           </div>
         </section>
