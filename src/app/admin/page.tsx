@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import type { StyleControlState } from "@/lib/style-controls";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-const ADMIN_UI_VERSION = "v2.4.0-profit-clarity";
+const ADMIN_UI_VERSION = "v2.5.0-admin-tabs";
+
+type AdminTab = "ops" | "metrics" | "revenue" | "users";
 
 type Notice = { id: number; text: string; active: boolean };
 type UserItem = { id: string; nickname: string | null };
@@ -283,6 +285,32 @@ function MiniCard({ label, value, accent }: { label: string; value: string | num
   );
 }
 
+function AdminTabButton({
+  label,
+  note,
+  active,
+  onClick,
+}: {
+  label: string;
+  note: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-2xl border px-3 py-3 text-left transition-colors ${
+        active
+          ? "border-[#C9571A] bg-[#FFF4ED] text-[#C9571A]"
+          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+      }`}
+    >
+      <p className="text-[14px] font-extrabold">{label}</p>
+      <p className={`text-[11px] mt-1 ${active ? "text-[#C9571A]/80" : "text-gray-400"}`}>{note}</p>
+    </button>
+  );
+}
+
 function ShareViralSection({ stats, shareTotal, shareRatio }: {
   stats: Stats; shareTotal: number; shareRatio: number;
 }) {
@@ -360,6 +388,7 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
+  const [activeTab, setActiveTab] = useState<AdminTab>("ops");
   const [styleControls, setStyleControls] = useState<StyleControlState[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -562,6 +591,14 @@ export default function AdminPage() {
     if (bIssue !== aIssue) return bIssue - aIssue;
     return b.count - a.count;
   });
+  const tabSummary =
+    activeTab === "ops"
+      ? "공지, 오류, 카드 숨김 같은 운영 대응"
+      : activeTab === "metrics"
+        ? "사용량, 저장률, 공유율 같은 성과 확인"
+        : activeTab === "revenue"
+          ? "매출, 비용, 환불 같은 돈 흐름 확인"
+          : "크레딧 조정 같은 유저 대응";
 
   return (
     <main className="w-full max-w-sm mx-auto px-4 py-10 flex flex-col gap-6 bg-gray-50 min-h-screen">
@@ -589,487 +626,513 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* 공지 관리 */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">공지 관리 (터미널)</p>
-        <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
-          {notices.map((n, i) => (
-            <div key={i} className="flex items-start gap-2">
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-4 gap-2">
+          <AdminTabButton label="운영" note="공지 · 오류 · 긴급 대응" active={activeTab === "ops"} onClick={() => setActiveTab("ops")} />
+          <AdminTabButton label="지표" note="사용량 · 저장 · 공유" active={activeTab === "metrics"} onClick={() => setActiveTab("metrics")} />
+          <AdminTabButton label="매출" note="비용 · 결제 · 환불" active={activeTab === "revenue"} onClick={() => setActiveTab("revenue")} />
+          <AdminTabButton label="유저" note="크레딧 대응" active={activeTab === "users"} onClick={() => setActiveTab("users")} />
+        </div>
+        <p className="text-[12px] text-gray-500 px-1">{tabSummary}</p>
+      </div>
+
+      {activeTab === "ops" && (
+        <>
+          {/* 공지 관리 */}
+          <div className="flex flex-col gap-1">
+            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">공지 관리 (터미널)</p>
+            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
+              {notices.map((n, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <button
+                    onClick={() => setNotices(prev => prev.map((x, j) => j === i ? { ...x, active: !x.active } : x))}
+                    className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border transition-colors ${n.active ? "bg-[#C9571A] border-[#C9571A]" : "bg-white border-gray-300"}`}
+                  >
+                    {n.active && <svg viewBox="0 0 10 8" fill="none" className="w-full h-full p-0.5"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </button>
+                  <input
+                    value={n.text}
+                    onChange={e => setNotices(prev => prev.map((x, j) => j === i ? { ...x, text: e.target.value } : x))}
+                    className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] font-mono focus:outline-none focus:border-[#C9571A]/50 transition-colors"
+                  />
+                  <button
+                    onClick={() => setNotices(prev => prev.filter((_, j) => j !== i))}
+                    className="mt-1 text-gray-400 hover:text-red-500 transition-colors text-lg leading-none"
+                  >×</button>
+                </div>
+              ))}
               <button
-                onClick={() => setNotices(prev => prev.map((x, j) => j === i ? { ...x, active: !x.active } : x))}
-                className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border transition-colors ${n.active ? "bg-[#C9571A] border-[#C9571A]" : "bg-white border-gray-300"}`}
+                onClick={() => setNotices(prev => [...prev, { id: Date.now(), text: "", active: true }])}
+                className="text-[13px] text-gray-500 hover:text-gray-900 transition-colors text-left font-mono"
+              >+ 공지 추가</button>
+              <button
+                onClick={async () => {
+                  setNoticesSaving(true);
+                  setNoticesSaved(false);
+                  await fetch("/api/notices", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ password, notices }),
+                  });
+                  setNoticesSaving(false);
+                  setNoticesSaved(true);
+                  setTimeout(() => setNoticesSaved(false), 2000);
+                }}
+                disabled={noticesSaving}
+                className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-gray-200 text-white font-bold py-2.5 rounded-xl transition-colors text-[14px]"
               >
-                {n.active && <svg viewBox="0 0 10 8" fill="none" className="w-full h-full p-0.5"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                {noticesSaving ? "저장 중..." : noticesSaved ? "✓ 저장됨" : "저장하기"}
               </button>
-              <input
-                value={n.text}
-                onChange={e => setNotices(prev => prev.map((x, j) => j === i ? { ...x, text: e.target.value } : x))}
-                className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] font-mono focus:outline-none focus:border-[#C9571A]/50 transition-colors"
-              />
-              <button
-                onClick={() => setNotices(prev => prev.filter((_, j) => j !== i))}
-                className="mt-1 text-gray-400 hover:text-red-500 transition-colors text-lg leading-none"
-              >×</button>
             </div>
-          ))}
-          <button
-            onClick={() => setNotices(prev => [...prev, { id: Date.now(), text: "", active: true }])}
-            className="text-[13px] text-gray-500 hover:text-gray-900 transition-colors text-left font-mono"
-          >+ 공지 추가</button>
-          <button
-            onClick={async () => {
-              setNoticesSaving(true);
-              setNoticesSaved(false);
-              await fetch("/api/notices", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password, notices }),
-              });
-              setNoticesSaving(false);
-              setNoticesSaved(true);
-              setTimeout(() => setNoticesSaved(false), 2000);
-            }}
-            disabled={noticesSaving}
-            className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-gray-200 text-white font-bold py-2.5 rounded-xl transition-colors text-[14px]"
-          >
-            {noticesSaving ? "저장 중..." : noticesSaved ? "✓ 저장됨" : "저장하기"}
-          </button>
-        </div>
-      </div>
-
-      {/* 오류 모니터링 */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">오류 모니터링</p>
-        <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-2">
-            <MiniCard label="최근 24시간 오류" value={`${stats.generationErrorTotal24h}건`} accent={stats.generationErrorTotal24h > 0} />
-            <MiniCard label="문제 카드" value={`${stats.generationErrorSummary.length}개`} accent={stats.generationErrorSummary.length > 0} />
           </div>
 
-          {stats.generationErrorSummary.length > 0 ? (
-            <div className="rounded-xl border border-gray-200 overflow-hidden">
-              {stats.generationErrorSummary.slice(0, 6).map((item) => (
-                <div key={item.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</p>
-                    <p className="text-[11px] text-gray-500">
-                      오류 {item.errorCount} · 성공 {item.successCount24h} · 오류율 {item.errorRate}% · {item.topErrorType}
-                    </p>
-                  </div>
-                  <span className="text-[11px] text-red-600 font-bold whitespace-nowrap">{relativeTime(item.lastErrorAt)}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[13px] text-gray-500">
-              최근 24시간 기준 기록된 생성 오류가 없어요.
-            </div>
-          )}
+          {/* 오류 모니터링 */}
+          <div className="flex flex-col gap-1">
+            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">오류 모니터링</p>
+            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-2">
+                <MiniCard label="최근 24시간 오류" value={`${stats.generationErrorTotal24h}건`} accent={stats.generationErrorTotal24h > 0} />
+                <MiniCard label="문제 카드" value={`${stats.generationErrorSummary.length}개`} accent={stats.generationErrorSummary.length > 0} />
+              </div>
 
-          {stats.recentGenerationErrors.length > 0 && (
-            <div className="rounded-xl border border-gray-200 overflow-hidden">
-              {stats.recentGenerationErrors.slice(0, 5).map((item) => (
-                <div key={item.id} className="px-3 py-2.5 border-b border-gray-100 last:border-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[12px] font-bold text-gray-900 truncate">{item.style_name}</span>
-                    <span className="text-[11px] text-gray-400 whitespace-nowrap">{relativeTime(item.created_at)}</span>
-                  </div>
-                  <p className="text-[11px] text-gray-500 mt-0.5 truncate">
-                    {item.error_type}{item.finish_reason ? ` · ${item.finish_reason}` : ""}{item.message ? ` · ${item.message}` : ""}
-                  </p>
+              {stats.generationErrorSummary.length > 0 ? (
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                  {stats.generationErrorSummary.slice(0, 6).map((item) => (
+                    <div key={item.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</p>
+                        <p className="text-[11px] text-gray-500">
+                          오류 {item.errorCount} · 성공 {item.successCount24h} · 오류율 {item.errorRate}% · {item.topErrorType}
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-red-600 font-bold whitespace-nowrap">{relativeTime(item.lastErrorAt)}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[13px] text-gray-500">
+                  최근 24시간 기준 기록된 생성 오류가 없어요.
+                </div>
+              )}
 
-      {/* 긴급 대응 · 스타일 운영 */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">긴급 대응 · 스타일 운영</p>
-        <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[15px] font-bold text-gray-900">카드별 즉시 숨김 / 생성 중지</p>
-              <p className="text-[12px] text-gray-500 mt-1">저장 즉시 반영</p>
+              {stats.recentGenerationErrors.length > 0 && (
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                  {stats.recentGenerationErrors.slice(0, 5).map((item) => (
+                    <div key={item.id} className="px-3 py-2.5 border-b border-gray-100 last:border-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[12px] font-bold text-gray-900 truncate">{item.style_name}</span>
+                        <span className="text-[11px] text-gray-400 whitespace-nowrap">{relativeTime(item.created_at)}</span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5 truncate">
+                        {item.error_type}{item.finish_reason ? ` · ${item.finish_reason}` : ""}{item.message ? ` · ${item.message}` : ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <span className="text-[11px] text-gray-400 whitespace-nowrap">{styleControls.length}개 카드</span>
           </div>
 
-          {styleControlMsg && (
-            <div className={`text-[12px] px-3 py-2 rounded-xl border ${
-              styleControlMsg.ok
-                ? "text-[#C9571A] bg-[#FFF7F2] border-[#F3D2BF]"
-                : "text-red-600 bg-red-50 border-red-200"
-            }`}>
-              {styleControlMsg.text}
-            </div>
-          )}
-
-          <div className="rounded-xl border border-gray-200 overflow-hidden">
-            {sortedStyleControls.map((control) => {
-              const usageCount = stats.byStyle.find((item) => item.style_id === control.style_id)?.count ?? 0;
-              const isSaving = styleSavingId === control.style_id;
-              return (
-                <div key={control.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-bold text-gray-900 truncate">{control.style_name}</p>
-                    <p className="text-[11px] text-gray-500">
-                      사용 {usageCount}회 · {control.is_visible ? "노출" : "숨김"} · {control.is_enabled ? "생성중" : "중지"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => updateStyleControl(control.style_id, { is_visible: !control.is_visible })}
-                      disabled={isSaving}
-                      className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
-                        control.is_visible
-                          ? "bg-gray-900 text-white"
-                          : "bg-white text-gray-600 border border-gray-300"
-                      } disabled:opacity-50`}
-                    >
-                      {control.is_visible ? "노출" : "숨김"}
-                    </button>
-                    <button
-                      onClick={() => updateStyleControl(control.style_id, { is_enabled: !control.is_enabled })}
-                      disabled={isSaving}
-                      className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
-                        control.is_enabled
-                          ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]"
-                          : "bg-white text-gray-600 border border-gray-300"
-                      } disabled:opacity-50`}
-                    >
-                      {control.is_enabled ? "생성" : "중지"}
-                    </button>
-                  </div>
-                  <div className="w-10 text-right">
-                    {isSaving && <span className="text-[10px] text-gray-400">저장</span>}
-                  </div>
+          {/* 긴급 대응 · 스타일 운영 */}
+          <div className="flex flex-col gap-1">
+            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">긴급 대응 · 스타일 운영</p>
+            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[15px] font-bold text-gray-900">카드별 즉시 숨김 / 생성 중지</p>
+                  <p className="text-[12px] text-gray-500 mt-1">저장 즉시 반영</p>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+                <span className="text-[11px] text-gray-400 whitespace-nowrap">{styleControls.length}개 카드</span>
+              </div>
 
-      {/* 자동 하이라이트 */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">자동 하이라이트 (24시간)</p>
-        <div className="grid grid-cols-1 gap-2">
-          <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
-            <p className="text-[12px] font-bold text-red-500 mb-2">주의 필요</p>
-            {highlightedProblems.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {highlightedProblems.map((item) => {
-                  const control = styleControls.find((row) => row.style_id === item.style_id);
-                  const perf24h = perf24hMap.get(item.style_id);
-                  const error = errorMap.get(item.style_id);
-                  const reason = !control?.is_visible
-                    ? "숨김 상태"
-                    : control?.is_enabled === false
-                      ? "생성 중지"
-                      : (error?.errorCount ?? 0) > 0
-                        ? `오류 ${error?.errorCount}건`
-                        : perf24h
-                          ? `저장률 ${perf24h.saveRate}%`
-                          : "확인 필요";
+              {styleControlMsg && (
+                <div className={`text-[12px] px-3 py-2 rounded-xl border ${
+                  styleControlMsg.ok
+                    ? "text-[#C9571A] bg-[#FFF7F2] border-[#F3D2BF]"
+                    : "text-red-600 bg-red-50 border-red-200"
+                }`}>
+                  {styleControlMsg.text}
+                </div>
+              )}
+
+              <div className="rounded-xl border border-gray-200 overflow-hidden">
+                {sortedStyleControls.map((control) => {
+                  const usageCount = stats.byStyle.find((item) => item.style_id === control.style_id)?.count ?? 0;
+                  const isSaving = styleSavingId === control.style_id;
                   return (
-                    <div key={item.style_id} className="flex items-center justify-between gap-2">
-                      <span className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</span>
-                      <span className="text-[11px] text-red-500 font-semibold whitespace-nowrap">{reason}</span>
+                    <div key={control.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-bold text-gray-900 truncate">{control.style_name}</p>
+                        <p className="text-[11px] text-gray-500">
+                          사용 {usageCount}회 · {control.is_visible ? "노출" : "숨김"} · {control.is_enabled ? "생성중" : "중지"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => updateStyleControl(control.style_id, { is_visible: !control.is_visible })}
+                          disabled={isSaving}
+                          className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
+                            control.is_visible
+                              ? "bg-gray-900 text-white"
+                              : "bg-white text-gray-600 border border-gray-300"
+                          } disabled:opacity-50`}
+                        >
+                          {control.is_visible ? "노출" : "숨김"}
+                        </button>
+                        <button
+                          onClick={() => updateStyleControl(control.style_id, { is_enabled: !control.is_enabled })}
+                          disabled={isSaving}
+                          className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
+                            control.is_enabled
+                              ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]"
+                              : "bg-white text-gray-600 border border-gray-300"
+                          } disabled:opacity-50`}
+                        >
+                          {control.is_enabled ? "생성" : "중지"}
+                        </button>
+                      </div>
+                      <div className="w-10 text-right">
+                        {isSaving && <span className="text-[10px] text-gray-400">저장</span>}
+                      </div>
                     </div>
                   );
                 })}
               </div>
-            ) : (
-              <p className="text-[13px] text-gray-500">특이사항 없음</p>
-            )}
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
-            <p className="text-[12px] font-bold text-[#C9571A] mb-2">공유 강세</p>
-            {highlightedHighShare.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {highlightedHighShare.map((item) => (
-                  <div key={item.style_id} className="flex items-center justify-between gap-2">
-                    <span className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</span>
-                    <span className="text-[11px] text-[#C9571A] font-semibold whitespace-nowrap">공유율 {item.shareRate}%</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[13px] text-gray-500">아직 공유 데이터 부족</p>
-            )}
-          </div>
-
-          <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
-            <p className="text-[12px] font-bold text-gray-700 mb-2">저장 약세</p>
-            {highlightedLowSave.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {highlightedLowSave.map((item) => (
-                  <div key={item.style_id} className="flex items-center justify-between gap-2">
-                    <span className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</span>
-                    <span className="text-[11px] text-gray-600 font-semibold whitespace-nowrap">저장률 {item.saveRate}%</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[13px] text-gray-500">아직 저장 데이터 부족</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 사용 현황 */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">사용 현황</p>
-        <div className="grid grid-cols-2 gap-2">
-          <MiniCard label="누적 변환" value={`${stats.total}회`} accent />
-          <MiniCard label="오늘 변환" value={`${stats.todayTotal}회`} />
-          <MiniCard label="가입 유저 (전체)" value={`${stats.totalUsers}명`} />
-          <MiniCard label="변환한 유저 (고유)" value={`${stats.uniqueLoggedInUsers}명`} />
-        </div>
-      </div>
-
-      {/* 로그인 vs 게스트 */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">로그인 vs 게스트</p>
-        <p className="text-[12px] text-gray-400 px-1 mb-1">변환 횟수 기준 — 1명이 여러 번 변환하면 중복 집계됨</p>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-gray-500 text-[13px]">로그인 변환</span>
-            <span className="text-gray-900 text-[20px] font-extrabold tabular-nums">{stats.userCount}회</span>
-            <span className="text-[#C9571A] text-[14px] font-bold">{stats.userRatio}%</span>
-            <Bar ratio={stats.userRatio} />
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
-            <span className="text-gray-500 text-[13px]">게스트 변환</span>
-            <span className="text-gray-900 text-[20px] font-extrabold tabular-nums">{stats.guestCount}회</span>
-            <span className="text-gray-500 text-[14px] font-bold">{stats.guestRatio}%</span>
-            <Bar ratio={stats.guestRatio} color="#9ca3af" />
-          </div>
-        </div>
-      </div>
-
-      {/* 공유 & 바이럴 */}
-      <ShareViralSection stats={stats} shareTotal={shareTotal} shareRatio={shareRatio} />
-
-      {/* API 비용 & 손익 */}
-      <MonthlyCostSection monthlyCosts={stats.monthlyCosts ?? {}} />
-
-      {/* 결제 현황 */}
-      <Section title="결제 현황">
-        <Row label="누적 매출" value={`${stats.totalRevenue.toLocaleString()}원`} highlight />
-        <Row label="오늘 매출" value={`${stats.todayRevenue.toLocaleString()}원`} />
-        <Row label="결제 건수" value={`${stats.totalPaymentCount}건`} />
-      </Section>
-
-      {/* 결제 목록 & 원클릭 환불 */}
-      {stats.paymentList.length > 0 && (
-        <div className="flex flex-col gap-1">
-          <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">결제 목록 & 환불</p>
-          <div className="bg-white rounded-2xl px-4 border border-gray-200 flex flex-col">
-            {stats.paymentList.slice(0, 20).map((p) => {
-              const user = stats.userList.find(u => u.id === p.user_id);
-              const date = new Date(p.created_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-              const isRefunded = p.status === "refunded";
-              const isLoading = refundingId === p.id;
-              const msg = refundMsg?.id === p.id ? refundMsg : null;
-              return (
-                <div key={p.id} className="py-3 border-b border-gray-100 last:border-0 flex items-center justify-between gap-2">
-                  <div className="flex flex-col gap-0.5 min-w-0">
-                    <span className="text-gray-900 text-[14px] font-bold truncate">{user?.nickname ?? p.user_id.slice(0, 8)}</span>
-                    <span className="text-gray-500 text-[12px] font-mono">{p.amount.toLocaleString()}원 · {p.credits}크레딧 · {date}</span>
-                    {msg && <span className={`text-[12px] ${msg.ok ? "text-[#C9571A]" : "text-red-500"}`}>{msg.msg}</span>}
-                  </div>
-                  {isRefunded ? (
-                    <span className="text-[12px] text-gray-400 flex-shrink-0">환불됨</span>
-                  ) : (
-                    <button
-                      onClick={async () => {
-                        setRefundingId(p.id);
-                        setRefundMsg(null);
-                        const previewRes = await fetch("/api/admin/refund", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ password, paymentId: p.id, dryRun: true }),
-                        });
-                        const preview = await previewRes.json();
-                        setRefundingId(null);
-                        if (!previewRes.ok) {
-                          setRefundMsg({ id: p.id, ok: false, msg: `오류: ${preview.error}` });
-                          return;
-                        }
-                        if (!preview.canRefund) {
-                          setRefundMsg({ id: p.id, ok: false, msg: `사용분 공제(${preview.usedCredits}회×190원) 후 환불 가능 금액 없음` });
-                          return;
-                        }
-                        const confirmMsg = preview.wasPartial
-                          ? `${user?.nickname ?? "유저"} · 부분환불 ${preview.refundAmount.toLocaleString()}원\n(사용 ${preview.usedCredits}회 × 190원 = ${(preview.usedCredits * 190).toLocaleString()}원 공제)\n\n진행하시겠어요?`
-                          : `${user?.nickname ?? "유저"} · 전액환불 ${preview.refundAmount.toLocaleString()}원\n\n진행하시겠어요?`;
-                        if (!confirm(confirmMsg)) return;
-                        setRefundingId(p.id);
-                        const res = await fetch("/api/admin/refund", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ password, paymentId: p.id }),
-                        });
-                        const data = await res.json();
-                        setRefundingId(null);
-                        setRefundMsg({
-                          id: p.id,
-                          ok: data.ok,
-                          msg: data.ok
-                            ? `✓ ${data.refundedAmount.toLocaleString()}원 환불 완료${data.wasPartial ? ` (${data.usedCredits}회 사용분 공제)` : ''}`
-                            : `오류: ${data.error}`,
-                        });
-                        if (data.ok) p.status = "refunded";
-                      }}
-                      disabled={isLoading}
-                      className="flex-shrink-0 text-[12px] px-3 py-1.5 rounded-lg border border-gray-300 text-gray-500 hover:text-gray-900 hover:border-gray-400 transition-colors disabled:opacity-40"
-                    >
-                      {isLoading ? "처리중..." : "환불"}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 크레딧 조정 */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">크레딧 조정</p>
-        <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
-          <div className="relative">
-            <input
-              type="text"
-              value={creditSearch}
-              onChange={e => {
-                setCreditSearch(e.target.value);
-                setShowUserDropdown(true);
-                setCreditUserId("");
-              }}
-              onFocus={() => setShowUserDropdown(true)}
-              placeholder="닉네임 또는 ID로 검색..."
-              className="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
-            />
-            {showUserDropdown && (
-              <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto shadow-md">
-                {stats.userList
-                  .filter(u => {
-                    if (!creditSearch) return true;
-                    const q = creditSearch.toLowerCase();
-                    return (u.nickname?.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
-                  })
-                  .slice(0, 20)
-                  .map(u => (
-                    <button
-                      key={u.id}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        setCreditUserId(u.id);
-                        setCreditSearch(u.nickname ?? u.id.slice(0, 12));
-                        setShowUserDropdown(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-[14px] hover:bg-gray-50 transition-colors ${
-                        creditUserId === u.id ? "text-[#C9571A]" : "text-gray-700"
-                      }`}
-                    >
-                      {u.nickname ?? u.id.slice(0, 8)} — {u.id.slice(0, 12)}...
-                    </button>
-                  ))}
-                {stats.userList.filter(u => {
-                  if (!creditSearch) return true;
-                  const q = creditSearch.toLowerCase();
-                  return (u.nickname?.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
-                }).length === 0 && (
-                  <p className="px-3 py-2 text-[13px] text-gray-400">검색 결과 없음</p>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {[0, 1, 3, 5, 10, 30].map(n => (
-              <button
-                key={n}
-                onClick={() => setCreditAmount(String(n))}
-                className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${creditAmount === String(n) ? "bg-[#C9571A] text-white" : "bg-gray-100 text-gray-500 hover:text-gray-900"}`}
-              >{n}</button>
-            ))}
-          </div>
-          <button
-            onClick={async () => {
-              if (!creditUserId) { setCreditMsg("유저를 선택해주세요."); return; }
-              setCreditMsg("");
-              const res = await fetch("/api/admin/set-credits", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password, userId: creditUserId, credits: Number(creditAmount) }),
-              });
-              const data = await res.json();
-              setCreditMsg(data.ok ? `✓ ${stats.userList.find(u=>u.id===creditUserId)?.nickname ?? creditUserId.slice(0,8)} → ${creditAmount}크레딧 설정됨` : `오류: ${data.error}`);
-              setTimeout(() => setCreditMsg(""), 3000);
-            }}
-            className="w-full bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-900 font-bold py-2.5 rounded-xl transition-colors text-[14px]"
-          >
-            크레딧 설정
-          </button>
-          {creditMsg && <p className={`text-[13px] text-center ${creditMsg.startsWith("✓") ? "text-[#C9571A]" : "text-red-500"}`}>{creditMsg}</p>}
-        </div>
-      </div>
-
-      {/* 스타일별 */}
-      <Section title="스타일별 성과">
-        {sortedStylePerformance.length === 0 ? (
-          <p className="text-gray-400 text-[15px] py-4">데이터 없음</p>
-        ) : (
-          sortedStylePerformance.map((s) => {
-            const variants = STYLE_VARIANTS[s.style_id];
-            const errorItem = stats.generationErrorSummary.find((item) => item.style_id === s.style_id);
-            const perf24h = perf24hMap.get(s.style_id);
-            const isProblem = issueIds.has(s.style_id);
-            const isHighShare = highShareSet.has(s.style_id);
-            const isLowSave = lowSaveSet.has(s.style_id);
-            return (
-              <div key={s.style_id} className="py-3 border-b border-gray-100 last:border-0">
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-gray-800 text-[14px] font-bold truncate">{s.style_name}</span>
-                      {isProblem && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-500 border border-red-200">문제</span>}
-                      {isHighShare && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]">공유강세</span>}
-                      {isLowSave && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">저장약세</span>}
-                    </div>
-                  </div>
-                  <span className="text-gray-900 font-bold text-[14px]">{s.count}회</span>
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-gray-500">
-                  <span>저장 {s.saveCount} · {s.saveRate}%</span>
-                  <span>공유 {s.shareCount} · {s.shareRate}%</span>
-                  {perf24h && <span>24h 저장 {perf24h.saveRate}% · 공유 {perf24h.shareRate}%</span>}
-                  {errorItem && (
-                    <span className="text-red-500 font-semibold">오류 {errorItem.errorCount} · {errorItem.errorRate}%</span>
-                  )}
-                </div>
-                {variants && variants.length > 1 && (
-                  <div className="flex gap-1 mt-2 flex-wrap">
-                    {variants.map(v => {
-                      const cnt = stats.byStyleVariants?.[s.style_id]?.[v.id] ?? 0;
+          {/* 자동 하이라이트 */}
+          <div className="flex flex-col gap-1">
+            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">자동 하이라이트 (24시간)</p>
+            <div className="grid grid-cols-1 gap-2">
+              <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
+                <p className="text-[12px] font-bold text-red-500 mb-2">주의 필요</p>
+                {highlightedProblems.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {highlightedProblems.map((item) => {
+                      const control = styleControls.find((row) => row.style_id === item.style_id);
+                      const perf24h = perf24hMap.get(item.style_id);
+                      const error = errorMap.get(item.style_id);
+                      const reason = !control?.is_visible
+                        ? "숨김 상태"
+                        : control?.is_enabled === false
+                          ? "생성 중지"
+                          : (error?.errorCount ?? 0) > 0
+                            ? `오류 ${error?.errorCount}건`
+                            : perf24h
+                              ? `저장률 ${perf24h.saveRate}%`
+                              : "확인 필요";
                       return (
-                        <span key={v.id} className="text-[12px] text-gray-500 bg-gray-100 border border-gray-200 rounded-full px-2 py-0.5">
-                          {v.label}{cnt > 0 ? ` · ${cnt}회` : ""}
-                        </span>
+                        <div key={item.style_id} className="flex items-center justify-between gap-2">
+                          <span className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</span>
+                          <span className="text-[11px] text-red-500 font-semibold whitespace-nowrap">{reason}</span>
+                        </div>
                       );
                     })}
                   </div>
+                ) : (
+                  <p className="text-[13px] text-gray-500">특이사항 없음</p>
                 )}
               </div>
-            );
-          })
-        )}
-      </Section>
+
+              <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
+                <p className="text-[12px] font-bold text-[#C9571A] mb-2">공유 강세</p>
+                {highlightedHighShare.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {highlightedHighShare.map((item) => (
+                      <div key={item.style_id} className="flex items-center justify-between gap-2">
+                        <span className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</span>
+                        <span className="text-[11px] text-[#C9571A] font-semibold whitespace-nowrap">공유율 {item.shareRate}%</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-gray-500">아직 공유 데이터 부족</p>
+                )}
+              </div>
+
+              <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
+                <p className="text-[12px] font-bold text-gray-700 mb-2">저장 약세</p>
+                {highlightedLowSave.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {highlightedLowSave.map((item) => (
+                      <div key={item.style_id} className="flex items-center justify-between gap-2">
+                        <span className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</span>
+                        <span className="text-[11px] text-gray-600 font-semibold whitespace-nowrap">저장률 {item.saveRate}%</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-gray-500">아직 저장 데이터 부족</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === "metrics" && (
+        <>
+          {/* 사용 현황 */}
+          <div className="flex flex-col gap-1">
+            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">사용 현황</p>
+            <div className="grid grid-cols-2 gap-2">
+              <MiniCard label="누적 변환" value={`${stats.total}회`} accent />
+              <MiniCard label="오늘 변환" value={`${stats.todayTotal}회`} />
+              <MiniCard label="가입 유저 (전체)" value={`${stats.totalUsers}명`} />
+              <MiniCard label="변환한 유저 (고유)" value={`${stats.uniqueLoggedInUsers}명`} />
+            </div>
+          </div>
+
+          {/* 로그인 vs 게스트 */}
+          <div className="flex flex-col gap-1">
+            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">로그인 vs 게스트</p>
+            <p className="text-[12px] text-gray-400 px-1 mb-1">변환 횟수 기준 — 1명이 여러 번 변환하면 중복 집계됨</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+                <span className="text-gray-500 text-[13px]">로그인 변환</span>
+                <span className="text-gray-900 text-[20px] font-extrabold tabular-nums">{stats.userCount}회</span>
+                <span className="text-[#C9571A] text-[14px] font-bold">{stats.userRatio}%</span>
+                <Bar ratio={stats.userRatio} />
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+                <span className="text-gray-500 text-[13px]">게스트 변환</span>
+                <span className="text-gray-900 text-[20px] font-extrabold tabular-nums">{stats.guestCount}회</span>
+                <span className="text-gray-500 text-[14px] font-bold">{stats.guestRatio}%</span>
+                <Bar ratio={stats.guestRatio} color="#9ca3af" />
+              </div>
+            </div>
+          </div>
+
+          {/* 공유 & 바이럴 */}
+          <ShareViralSection stats={stats} shareTotal={shareTotal} shareRatio={shareRatio} />
+
+          {/* 스타일별 */}
+          <Section title="스타일별 성과">
+            {sortedStylePerformance.length === 0 ? (
+              <p className="text-gray-400 text-[15px] py-4">데이터 없음</p>
+            ) : (
+              sortedStylePerformance.map((s) => {
+                const variants = STYLE_VARIANTS[s.style_id];
+                const errorItem = stats.generationErrorSummary.find((item) => item.style_id === s.style_id);
+                const perf24h = perf24hMap.get(s.style_id);
+                const isProblem = issueIds.has(s.style_id);
+                const isHighShare = highShareSet.has(s.style_id);
+                const isLowSave = lowSaveSet.has(s.style_id);
+                return (
+                  <div key={s.style_id} className="py-3 border-b border-gray-100 last:border-0">
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-gray-800 text-[14px] font-bold truncate">{s.style_name}</span>
+                          {isProblem && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-500 border border-red-200">문제</span>}
+                          {isHighShare && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]">공유강세</span>}
+                          {isLowSave && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">저장약세</span>}
+                        </div>
+                      </div>
+                      <span className="text-gray-900 font-bold text-[14px]">{s.count}회</span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-gray-500">
+                      <span>저장 {s.saveCount} · {s.saveRate}%</span>
+                      <span>공유 {s.shareCount} · {s.shareRate}%</span>
+                      {perf24h && <span>24h 저장 {perf24h.saveRate}% · 공유 {perf24h.shareRate}%</span>}
+                      {errorItem && (
+                        <span className="text-red-500 font-semibold">오류 {errorItem.errorCount} · {errorItem.errorRate}%</span>
+                      )}
+                    </div>
+                    {variants && variants.length > 1 && (
+                      <div className="flex gap-1 mt-2 flex-wrap">
+                        {variants.map(v => {
+                          const cnt = stats.byStyleVariants?.[s.style_id]?.[v.id] ?? 0;
+                          return (
+                            <span key={v.id} className="text-[12px] text-gray-500 bg-gray-100 border border-gray-200 rounded-full px-2 py-0.5">
+                              {v.label}{cnt > 0 ? ` · ${cnt}회` : ""}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </Section>
+        </>
+      )}
+
+      {activeTab === "revenue" && (
+        <>
+          {/* API 비용 & 손익 */}
+          <MonthlyCostSection monthlyCosts={stats.monthlyCosts ?? {}} />
+
+          {/* 결제 현황 */}
+          <Section title="결제 현황">
+            <Row label="누적 매출" value={`${stats.totalRevenue.toLocaleString()}원`} highlight />
+            <Row label="오늘 매출" value={`${stats.todayRevenue.toLocaleString()}원`} />
+            <Row label="결제 건수" value={`${stats.totalPaymentCount}건`} />
+          </Section>
+
+          {/* 결제 목록 & 원클릭 환불 */}
+          {stats.paymentList.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">결제 목록 & 환불</p>
+              <div className="bg-white rounded-2xl px-4 border border-gray-200 flex flex-col">
+                {stats.paymentList.slice(0, 20).map((p) => {
+                  const user = stats.userList.find(u => u.id === p.user_id);
+                  const date = new Date(p.created_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+                  const isRefunded = p.status === "refunded";
+                  const isLoading = refundingId === p.id;
+                  const msg = refundMsg?.id === p.id ? refundMsg : null;
+                  return (
+                    <div key={p.id} className="py-3 border-b border-gray-100 last:border-0 flex items-center justify-between gap-2">
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="text-gray-900 text-[14px] font-bold truncate">{user?.nickname ?? p.user_id.slice(0, 8)}</span>
+                        <span className="text-gray-500 text-[12px] font-mono">{p.amount.toLocaleString()}원 · {p.credits}크레딧 · {date}</span>
+                        {msg && <span className={`text-[12px] ${msg.ok ? "text-[#C9571A]" : "text-red-500"}`}>{msg.msg}</span>}
+                      </div>
+                      {isRefunded ? (
+                        <span className="text-[12px] text-gray-400 flex-shrink-0">환불됨</span>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            setRefundingId(p.id);
+                            setRefundMsg(null);
+                            const previewRes = await fetch("/api/admin/refund", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ password, paymentId: p.id, dryRun: true }),
+                            });
+                            const preview = await previewRes.json();
+                            setRefundingId(null);
+                            if (!previewRes.ok) {
+                              setRefundMsg({ id: p.id, ok: false, msg: `오류: ${preview.error}` });
+                              return;
+                            }
+                            if (!preview.canRefund) {
+                              setRefundMsg({ id: p.id, ok: false, msg: `사용분 공제(${preview.usedCredits}회×190원) 후 환불 가능 금액 없음` });
+                              return;
+                            }
+                            const confirmMsg = preview.wasPartial
+                              ? `${user?.nickname ?? "유저"} · 부분환불 ${preview.refundAmount.toLocaleString()}원\n(사용 ${preview.usedCredits}회 × 190원 = ${(preview.usedCredits * 190).toLocaleString()}원 공제)\n\n진행하시겠어요?`
+                              : `${user?.nickname ?? "유저"} · 전액환불 ${preview.refundAmount.toLocaleString()}원\n\n진행하시겠어요?`;
+                            if (!confirm(confirmMsg)) return;
+                            setRefundingId(p.id);
+                            const res = await fetch("/api/admin/refund", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ password, paymentId: p.id }),
+                            });
+                            const data = await res.json();
+                            setRefundingId(null);
+                            setRefundMsg({
+                              id: p.id,
+                              ok: data.ok,
+                              msg: data.ok
+                                ? `✓ ${data.refundedAmount.toLocaleString()}원 환불 완료${data.wasPartial ? ` (${data.usedCredits}회 사용분 공제)` : ""}`
+                                : `오류: ${data.error}`,
+                            });
+                            if (data.ok) p.status = "refunded";
+                          }}
+                          disabled={isLoading}
+                          className="flex-shrink-0 text-[12px] px-3 py-1.5 rounded-lg border border-gray-300 text-gray-500 hover:text-gray-900 hover:border-gray-400 transition-colors disabled:opacity-40"
+                        >
+                          {isLoading ? "처리중..." : "환불"}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === "users" && (
+        <>
+          {/* 크레딧 조정 */}
+          <div className="flex flex-col gap-1">
+            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">크레딧 조정</p>
+            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={creditSearch}
+                  onChange={e => {
+                    setCreditSearch(e.target.value);
+                    setShowUserDropdown(true);
+                    setCreditUserId("");
+                  }}
+                  onFocus={() => setShowUserDropdown(true)}
+                  placeholder="닉네임 또는 ID로 검색..."
+                  className="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
+                />
+                {showUserDropdown && (
+                  <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto shadow-md">
+                    {stats.userList
+                      .filter(u => {
+                        if (!creditSearch) return true;
+                        const q = creditSearch.toLowerCase();
+                        return u.nickname?.toLowerCase().includes(q) || u.id.toLowerCase().includes(q);
+                      })
+                      .slice(0, 20)
+                      .map(u => (
+                        <button
+                          key={u.id}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            setCreditUserId(u.id);
+                            setCreditSearch(u.nickname ?? u.id.slice(0, 12));
+                            setShowUserDropdown(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-[14px] hover:bg-gray-50 transition-colors ${
+                            creditUserId === u.id ? "text-[#C9571A]" : "text-gray-700"
+                          }`}
+                        >
+                          {u.nickname ?? u.id.slice(0, 8)} — {u.id.slice(0, 12)}...
+                        </button>
+                      ))}
+                    {stats.userList.filter(u => {
+                      if (!creditSearch) return true;
+                      const q = creditSearch.toLowerCase();
+                      return u.nickname?.toLowerCase().includes(q) || u.id.toLowerCase().includes(q);
+                    }).length === 0 && (
+                      <p className="px-3 py-2 text-[13px] text-gray-400">검색 결과 없음</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {[0, 1, 3, 5, 10, 30].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setCreditAmount(String(n))}
+                    className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${creditAmount === String(n) ? "bg-[#C9571A] text-white" : "bg-gray-100 text-gray-500 hover:text-gray-900"}`}
+                  >{n}</button>
+                ))}
+              </div>
+              <button
+                onClick={async () => {
+                  if (!creditUserId) { setCreditMsg("유저를 선택해주세요."); return; }
+                  setCreditMsg("");
+                  const res = await fetch("/api/admin/set-credits", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ password, userId: creditUserId, credits: Number(creditAmount) }),
+                  });
+                  const data = await res.json();
+                  setCreditMsg(data.ok ? `✓ ${stats.userList.find(u => u.id === creditUserId)?.nickname ?? creditUserId.slice(0, 8)} → ${creditAmount}크레딧 설정됨` : `오류: ${data.error}`);
+                  setTimeout(() => setCreditMsg(""), 3000);
+                }}
+                className="w-full bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-900 font-bold py-2.5 rounded-xl transition-colors text-[14px]"
+              >
+                크레딧 설정
+              </button>
+              {creditMsg && <p className={`text-[13px] text-center ${creditMsg.startsWith("✓") ? "text-[#C9571A]" : "text-red-500"}`}>{creditMsg}</p>}
+            </div>
+          </div>
+        </>
+      )}
 
     </main>
   );
