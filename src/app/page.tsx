@@ -309,7 +309,7 @@ export default function Home() {
         </p>
         <p className="text-[10px] text-[#2a2a2a] mt-1 leading-relaxed">
           상호: 핑거 · 대표자: 문지환 · 사업자등록번호: 707-79-00261<br/>
-          주소: 대전광역시 서구 동서대로1030번길 8-6(내동) · 연락처: 010-5838-9960
+          주소: 대전광역시 서구 동서대로1030번길 8-6(내동)
         </p>
       </footer>
     </main>
