@@ -37,6 +37,13 @@ type DisplayTrace = Trace & {
   displayY: number;
 };
 
+type SelectableImage = {
+  id: string;
+  style_id: string;
+  result_image_url: string;
+  created_at: string;
+};
+
 type TracePayload = {
   traces: Trace[];
   summary: {
@@ -50,6 +57,7 @@ type TracePayload = {
     alreadyJoined: boolean;
     trace: Trace | null;
     latestImageUrl: string | null;
+    selectableImages: SelectableImage[];
   };
 };
 
@@ -1049,6 +1057,7 @@ export default function TraceLabPage() {
     sigungu: "",
     dong: "",
     shareImage: false,
+    selectedImageId: "",
     shareInstagram: false,
     instagramHandle: "",
   });
@@ -1077,6 +1086,19 @@ export default function TraceLabPage() {
   }, [error]);
 
   useEffect(() => {
+    const images = payload?.me.selectableImages ?? [];
+    if (images.length === 0) {
+      setForm((current) => (current.selectedImageId ? { ...current, selectedImageId: "" } : current));
+      return;
+    }
+
+    setForm((current) => {
+      if (images.some((image) => image.id === current.selectedImageId)) return current;
+      return { ...current, selectedImageId: images[0]?.id ?? "" };
+    });
+  }, [payload?.me.selectableImages]);
+
+  useEffect(() => {
     if (!toastMessage) return;
     const timer = window.setTimeout(() => setToastMessage(null), 1800);
     return () => window.clearTimeout(timer);
@@ -1092,6 +1114,10 @@ export default function TraceLabPage() {
   const activeDisplayTrace = useMemo(
     () => displayTraces.find((trace) => trace.user_id === activeTrace?.user_id) ?? null,
     [activeTrace?.user_id, displayTraces],
+  );
+  const selectedImage = useMemo(
+    () => payload?.me.selectableImages.find((image) => image.id === form.selectedImageId) ?? null,
+    [form.selectedImageId, payload?.me.selectableImages],
   );
   const previewDisplayTrace = useMemo(() => {
     if (!user || payload?.me.alreadyJoined) return null;
@@ -1110,11 +1136,11 @@ export default function TraceLabPage() {
       y: 0,
       regionKey: buildTraceRegionKey(normalizedSido, normalizedSigungu, normalizedDong),
       regionLabel: formatTraceRegion(normalizedSido, normalizedSigungu, normalizedDong),
-      publicImageUrl: form.shareImage ? payload?.me.latestImageUrl ?? null : null,
+      publicImageUrl: form.shareImage ? selectedImage?.result_image_url ?? null : null,
       instagramHandle: form.shareInstagram ? form.instagramHandle.trim().replace(/^@+/, "") || null : null,
       created_at: null,
     });
-  }, [form.dong, form.instagramHandle, form.shareImage, form.shareInstagram, form.sido, form.sigungu, payload?.me.alreadyJoined, payload?.me.latestImageUrl, user]);
+  }, [form.dong, form.instagramHandle, form.shareImage, form.shareInstagram, form.sido, form.sigungu, payload?.me.alreadyJoined, selectedImage?.result_image_url, user]);
   const clusters = useMemo(() => buildClusters(displayTraces), [displayTraces]);
   const hotspotList = useMemo(() => [...clusters].sort((left, right) => right.count - left.count).slice(0, 5), [clusters]);
   const districtSuggestions = useMemo(() => getDistrictSuggestions(form.sido), [form.sido]);
@@ -1134,6 +1160,7 @@ export default function TraceLabPage() {
           sigungu: form.sigungu,
           dong: form.dong,
           shareImage: form.shareImage,
+          selectedImageId: form.shareImage ? form.selectedImageId : "",
           instagramHandle: form.shareInstagram ? form.instagramHandle : "",
         }),
       });
@@ -1153,6 +1180,7 @@ export default function TraceLabPage() {
           alreadyJoined: true,
           trace: data.trace,
           latestImageUrl: payload?.me.latestImageUrl ?? null,
+          selectableImages: payload?.me.selectableImages ?? [],
         },
       };
 
@@ -1197,6 +1225,7 @@ export default function TraceLabPage() {
           alreadyJoined: false,
           trace: null,
           latestImageUrl: payload?.me.latestImageUrl ?? null,
+          selectableImages: payload?.me.selectableImages ?? [],
         },
       };
 
@@ -1431,27 +1460,21 @@ export default function TraceLabPage() {
                 />
               </div>
 
-              <div className="rounded-[14px] border border-white/8 bg-white/[0.03] px-3 py-2">
-                <p className="text-[11px] font-black tracking-[-0.02em] text-white/86">공개 옵션</p>
-                <p className="mt-0.5 text-[11px] leading-5 text-white/42">기본은 비공개예요. 원할 때만 이미지나 인스타를 보여줄 수 있어요.</p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+              <div className="grid grid-cols-2 gap-2">
                 <label className="flex items-center justify-between gap-3 rounded-[14px] border border-white/8 bg-white/[0.03] px-3 py-2 text-[11px] text-white/68">
-                  <div className="min-w-0">
-                    <p className="font-bold text-white/86">내 최근 생성 이미지 공개</p>
-                    <p className="truncate text-white/38">
-                      {payload?.me.latestImageUrl ? "선택하면 최근 결과 이미지 1장이 함께 보여요." : "최근 생성 이미지가 없어서 지금은 공개할 수 없어요."}
-                    </p>
-                  </div>
+                  <span className="font-bold text-white/86">이미지 공개</span>
                   <input
                     type="checkbox"
                     checked={form.shareImage}
-                    disabled={!payload?.me.latestImageUrl}
+                    disabled={!payload?.me.selectableImages.length}
                     onChange={(event) =>
                       setForm((current) => ({
                         ...current,
-                        shareImage: event.target.checked && Boolean(payload?.me.latestImageUrl),
+                        shareImage: event.target.checked && Boolean(payload?.me.selectableImages.length),
+                        selectedImageId:
+                          event.target.checked
+                            ? current.selectedImageId || payload?.me.selectableImages[0]?.id || ""
+                            : current.selectedImageId,
                       }))
                     }
                     className="h-4 w-4 accent-[#6BE2C5]"
@@ -1474,6 +1497,46 @@ export default function TraceLabPage() {
                   />
                 </label>
               </div>
+
+              {form.shareImage && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold text-white/48">
+                    {payload?.me.selectableImages.length
+                      ? "원하는 스타일드롭 결과를 골라서 흔적 카드에 남길 수 있어요."
+                      : "아직 선택할 수 있는 결과 이미지가 없어요."}
+                  </p>
+                  {payload?.me.selectableImages.length ? (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {payload.me.selectableImages.map((image) => {
+                        const selected = image.id === form.selectedImageId;
+                        return (
+                          <button
+                            key={image.id}
+                            type="button"
+                            onClick={() =>
+                              setForm((current) => ({
+                                ...current,
+                                shareImage: true,
+                                selectedImageId: image.id,
+                              }))
+                            }
+                            className={`relative w-[78px] shrink-0 overflow-hidden rounded-[16px] border transition ${
+                              selected
+                                ? "border-[#6BE2C5] shadow-[0_0_0_1px_rgba(107,226,197,0.28)]"
+                                : "border-white/10"
+                            }`}
+                          >
+                            <img src={image.result_image_url} alt="" className="aspect-[4/5] w-full object-cover" />
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6 text-left">
+                              <p className="truncate text-[10px] font-black text-white/92">{image.style_id}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              )}
 
               {form.shareInstagram && (
                 <input
