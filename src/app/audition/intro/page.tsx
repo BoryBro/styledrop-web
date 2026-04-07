@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
@@ -176,8 +176,6 @@ export default function AuditionIntroPage() {
   ], 65, 1800);
 
   const [agreed, setAgreed] = useState(false);
-  const [showCta, setShowCta] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isAuditionLoading && !isAuditionEnabled) {
@@ -185,17 +183,6 @@ export default function AuditionIntroPage() {
       return;
     }
   }, [isAuditionEnabled, isAuditionLoading, router]);
-
-  useEffect(() => {
-    const el = bottomRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setShowCta(true); },
-      { threshold: 0.5 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   if (isAuditionLoading || !isAuditionEnabled) return null;
 
@@ -524,13 +511,9 @@ export default function AuditionIntroPage() {
         </div>
       </section>
 
-      {/* IntersectionObserver 트리거 */}
-      <div ref={bottomRef} className="h-1" />
-
       {/* ── 시작하기 CTA ────────────────────────────────── */}
       <div
-        className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-5 bg-gradient-to-t from-white via-white/95 to-transparent transition-all duration-500 z-50"
-        style={{ opacity: showCta ? 1 : 0, transform: showCta ? 'translateY(0)' : 'translateY(20px)', pointerEvents: showCta ? 'auto' : 'none' }}
+        className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-5 bg-gradient-to-t from-white via-white/95 to-transparent z-50"
       >
         <button
           onClick={() => router.push(`/audition/solo?from_intro=1&flavor=${flavor}`)}
