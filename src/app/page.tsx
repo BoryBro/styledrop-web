@@ -6,111 +6,6 @@ import Link from "next/link";
 
 type User = { id: string; nickname: string | null; profileImage: string | null };
 
-// ── 픽셀아트 배경 요소 ───────────────────────────────────────────────
-const PIXEL_ITEMS = [
-  // 별 ⭐
-  { id: "star1", x: "8%",  y: "12%", anim: "orb-1", dur: "9s",  delay: "0s",   scale: 1.1, color: "#C9571A" },
-  { id: "star2", x: "80%", y: "8%",  anim: "orb-3", dur: "12s", delay: "2s",   scale: 0.8, color: "#FCD34D" },
-  { id: "star3", x: "88%", y: "55%", anim: "orb-2", dur: "10s", delay: "1.5s", scale: 0.9, color: "#C9571A" },
-  { id: "star4", x: "5%",  y: "70%", anim: "orb-4", dur: "14s", delay: "3s",   scale: 0.7, color: "#FCD34D" },
-  // 하트 💖
-  { id: "heart1", x: "75%", y: "30%", anim: "orb-4", dur: "11s", delay: "0.5s", scale: 1.0, color: "#F472B6" },
-  { id: "heart2", x: "12%", y: "45%", anim: "orb-2", dur: "13s", delay: "4s",   scale: 0.8, color: "#F472B6" },
-  // 다이아 💎
-  { id: "gem1", x: "85%", y: "75%", anim: "orb-1", dur: "15s", delay: "1s",   scale: 0.9, color: "#A78BFA" },
-  { id: "gem2", x: "3%",  y: "30%", anim: "orb-3", dur: "11s", delay: "5s",   scale: 0.7, color: "#A78BFA" },
-  // 카메라 📷
-  { id: "cam1", x: "70%", y: "88%", anim: "orb-2", dur: "16s", delay: "2.5s", scale: 1.0, color: "#C9571A" },
-  { id: "cam2", x: "18%", y: "85%", anim: "orb-4", dur: "13s", delay: "0s",   scale: 0.8, color: "#FCD34D" },
-];
-
-function PixelStar({ color, size = 28 }: { color: string; size?: number }) {
-  const p = size / 7;
-  return (
-    <svg width={size} height={size} viewBox="0 0 7 7" fill="none">
-      <rect x="3" y="0" width="1" height="1" fill={color}/>
-      <rect x="2" y="1" width="3" height="1" fill={color}/>
-      <rect x="0" y="2" width="7" height="1" fill={color}/>
-      <rect x="1" y="3" width="5" height="2" fill={color}/>
-      <rect x="0" y="5" width="2" height="1" fill={color}/>
-      <rect x="5" y="5" width="2" height="1" fill={color}/>
-      <rect x="0" y="6" width="1" height="1" fill={color}/>
-      <rect x="6" y="6" width="1" height="1" fill={color}/>
-    </svg>
-  );
-}
-
-function PixelHeart({ color, size = 26 }: { color: string; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 7 6" fill="none">
-      <rect x="1" y="0" width="2" height="1" fill={color}/>
-      <rect x="4" y="0" width="2" height="1" fill={color}/>
-      <rect x="0" y="1" width="7" height="2" fill={color}/>
-      <rect x="1" y="3" width="5" height="1" fill={color}/>
-      <rect x="2" y="4" width="3" height="1" fill={color}/>
-      <rect x="3" y="5" width="1" height="1" fill={color}/>
-    </svg>
-  );
-}
-
-function PixelGem({ color, size = 26 }: { color: string; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 7 7" fill="none">
-      <rect x="2" y="0" width="3" height="1" fill={color}/>
-      <rect x="1" y="1" width="5" height="1" fill={color}/>
-      <rect x="0" y="2" width="7" height="3" fill={color}/>
-      <rect x="1" y="5" width="5" height="1" fill={color}/>
-      <rect x="2" y="6" width="3" height="1" fill={color}/>
-      <rect x="3" y="3" width="1" height="1" fill="white" fillOpacity="0.4"/>
-    </svg>
-  );
-}
-
-function PixelCamera({ color, size = 30 }: { color: string; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 9 7" fill="none">
-      <rect x="2" y="0" width="2" height="1" fill={color}/>
-      <rect x="0" y="1" width="9" height="5" fill={color}/>
-      <rect x="1" y="2" width="7" height="3" fill="#0A0A0A" fillOpacity="0.5"/>
-      <rect x="3" y="2" width="3" height="3" fill={color} fillOpacity="0.7"/>
-      <rect x="4" y="3" width="1" height="1" fill="white" fillOpacity="0.5"/>
-      <rect x="7" y="2" width="1" height="1" fill="white" fillOpacity="0.6"/>
-    </svg>
-  );
-}
-
-function PixelBackground() {
-  return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden>
-      {PIXEL_ITEMS.map((item) => {
-        const isHeart = item.id.startsWith("heart");
-        const isGem   = item.id.startsWith("gem");
-        const isCam   = item.id.startsWith("cam");
-        return (
-          <div
-            key={item.id}
-            className="absolute"
-            style={{
-              left: item.x,
-              top: item.y,
-              opacity: 0.35,
-              transform: `scale(${item.scale})`,
-              animation: `${item.anim} ${item.dur} ease-in-out infinite`,
-              animationDelay: item.delay,
-              imageRendering: "pixelated",
-            }}
-          >
-            {isHeart ? <PixelHeart color={item.color} /> :
-             isGem   ? <PixelGem   color={item.color} /> :
-             isCam   ? <PixelCamera color={item.color} /> :
-                       <PixelStar  color={item.color} />}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function Home() {
   const [isAgreed, setIsAgreed] = useState(false);
   const [shaking, setShaking] = useState(false);
@@ -158,21 +53,31 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-6 relative" suppressHydrationWarning>
-      <PixelBackground />
-      {/* 방문자 카운터 */}
+      <video
+        className="absolute inset-0 h-full w-full object-cover"
+        autoPlay
+        muted
+        loop
+        playsInline
+      >
+        <source src="/intro-bg.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 bg-black/45" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(201,87,26,0.18),transparent_42%)]" />
+
       {visitors && (
-        <div className="absolute top-5 left-0 right-0 flex justify-center z-10">
-          <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/4 border border-white/6 font-mono">
-            <span className="flex items-center gap-1.5 text-[11px] text-[#555]">
+        <div className="absolute top-5 left-0 right-0 flex justify-center z-10 px-4">
+          <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-black/35 border border-white/10 backdrop-blur-md font-mono">
+            <span className="flex items-center gap-1.5 text-[11px] text-white/65">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                 <circle cx="5" cy="5" r="3" fill="#C9571A" opacity="0.7"/>
                 <circle cx="5" cy="5" r="1.5" fill="#C9571A"/>
               </svg>
-              오늘 <span className="text-[#888]">{visitors.today.toLocaleString()}</span>
+              오늘 <span className="text-white/90">{visitors.today.toLocaleString()}</span>
             </span>
-            <span className="text-[#333]">·</span>
-            <span className="text-[11px] text-[#555]">
-              누적 <span className="text-[#888]">{visitors.total.toLocaleString()}</span>
+            <span className="text-white/25">·</span>
+            <span className="text-[11px] text-white/65">
+              누적 <span className="text-white/90">{visitors.total.toLocaleString()}</span>
             </span>
           </div>
         </div>
@@ -182,11 +87,6 @@ export default function Home() {
 
         {/* Logo */}
         <div className="relative flex items-center select-none px-2" style={{ padding: "0.2em 0.5em" }} aria-label="StyleDrop">
-          {/* 하트 */}
-          <span aria-hidden style={{ position: "absolute", top: "-10px", right: "-26px", fontSize: "0.95rem", opacity: 0.75, transform: "rotate(14deg)" }}>🤍</span>
-          <span aria-hidden style={{ position: "absolute", bottom: "-6px", left: "-22px", fontSize: "0.7rem", opacity: 0.55, transform: "rotate(-10deg)" }}>🧡</span>
-
-          {/* StyleDrop */}
           <span
             className="logo-gradient-text"
             style={{
@@ -207,12 +107,12 @@ export default function Home() {
         </div>
 
         {/* Subcopy */}
-        <p className="text-[18px] text-[#888] tracking-[-0.02em]">사진 한 장, 감성은 AI가</p>
+        <p className="text-[18px] text-white/80 tracking-[-0.02em]">사진 한 장, 감성은 AI가</p>
 
         {/* 로그인 상태 */}
         {user === undefined ? null : user ? (
           <div className="flex flex-col items-center gap-3 w-full">
-            <div className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 w-full justify-center">
+            <div className="flex items-center gap-2.5 bg-black/35 border border-white/10 backdrop-blur-md rounded-2xl px-4 py-2.5 w-full justify-center">
               {user.profileImage && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
@@ -232,7 +132,7 @@ export default function Home() {
             {/* 카카오 로그인 버튼 */}
             <button
               onClick={handleKakaoLogin}
-              className="w-full h-[52px] bg-[#FEE500] hover:bg-[#F0D900] text-[#191919] font-bold text-[15px] rounded-full transition-colors flex items-center justify-center gap-2"
+              className="w-full h-[52px] bg-[#FEE500] hover:bg-[#F0D900] text-[#191919] font-bold text-[15px] rounded-full transition-colors flex items-center justify-center gap-2 shadow-lg shadow-black/25"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/>
@@ -243,7 +143,7 @@ export default function Home() {
             {/* 로그인 없이 시작 */}
             <button
               onClick={handleStart}
-              className="w-full h-[52px] bg-[#2A2A2A] hover:bg-[#333] text-white/60 hover:text-white font-bold text-[15px] rounded-full transition-colors"
+              className="w-full h-[52px] bg-black/35 hover:bg-black/50 border border-white/10 backdrop-blur-md text-white/80 hover:text-white font-bold text-[15px] rounded-full transition-colors"
             >
               로그인 없이 시작하기
             </button>
@@ -271,15 +171,15 @@ export default function Home() {
               <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <span className="text-[12px] text-[#555] leading-relaxed">
-            <Link href="/terms" className="text-[#777] underline underline-offset-2">이용약관</Link> 및 <Link href="/privacy" className="text-[#777] underline underline-offset-2">개인정보처리방침</Link>에 동의하며, 업로드된 사진은 AI 처리 후 즉시 삭제됩니다.
+          <span className="text-[12px] text-white/65 leading-relaxed">
+            <Link href="/terms" className="text-white/80 underline underline-offset-2">이용약관</Link> 및 <Link href="/privacy" className="text-white/80 underline underline-offset-2">개인정보처리방침</Link>에 동의하며, 업로드된 사진은 AI 처리 후 즉시 삭제됩니다.
           </span>
         </label>
 
         {/* Links */}
         <div className="flex gap-5">
-          <Link href="/terms" className="text-[12px] text-[#444] hover:text-white/40 transition-colors">이용약관</Link>
-          <Link href="/privacy" className="text-[12px] text-[#444] hover:text-white/40 transition-colors">개인정보처리방침</Link>
+          <Link href="/terms" className="text-[12px] text-white/55 hover:text-white transition-colors">이용약관</Link>
+          <Link href="/privacy" className="text-[12px] text-white/55 hover:text-white transition-colors">개인정보처리방침</Link>
         </div>
       </div>
 
@@ -304,10 +204,10 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="absolute bottom-4 left-0 right-0 text-center px-4">
-        <p className="text-[11px] text-[#333]">
-          © 2026 StyleDrop · <Link href="/terms" className="hover:text-white/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/30 transition-colors">개인정보처리방침</Link>
+        <p className="text-[11px] text-white/45">
+          © 2026 StyleDrop · <Link href="/terms" className="hover:text-white/80 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/80 transition-colors">개인정보처리방침</Link>
         </p>
-        <p className="text-[10px] text-[#2a2a2a] mt-1 leading-relaxed">
+        <p className="text-[10px] text-white/28 mt-1 leading-relaxed">
           상호: 핑거 · 대표자: 문지환 · 사업자등록번호: 707-79-00261<br/>
           주소: 대전광역시 서구 동서대로1030번길 8-6(내동)
         </p>
