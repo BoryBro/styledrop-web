@@ -1641,19 +1641,7 @@ function AuditionResultInner() {
         {cardStudioLocked && (
           <div className="-mt-3 rounded-b-[28px] bg-[#fbfbfd] px-5 pb-4 pt-4 shadow-[0_14px_28px_rgba(0,0,0,0.06)]">
             <div>
-              <div className="flex items-start gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[21px] font-black tracking-[-0.04em] text-[#101218]">스틸컷에 쓸 사진 선택</p>
-                  <p className="mt-1.5 text-[13px] leading-[1.55] text-[#6e7280]">
-                    씬 3장이나 앨범 사진 중 한 장만 고르면 바로 생성할 수 있어요.
-                  </p>
-                  <div className="mt-3">
-                    <GenreMoodLine genre={bestScene.genre} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-3 grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 {stillSourceOptions.map((option) => {
                   const selected = selectedStillSourceKey === option.key;
                   return (
@@ -1713,6 +1701,18 @@ function AuditionResultInner() {
                     </div>
                   )}
                 </button>
+              </div>
+
+              <div className="mt-4 flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[21px] font-black tracking-[-0.04em] text-[#101218]">스틸컷에 쓸 사진 선택</p>
+                  <p className="mt-1.5 text-[13px] leading-[1.55] text-[#6e7280]">
+                    씬 3장이나 앨범 사진 중 한 장만 고르면 바로 생성할 수 있어요.
+                  </p>
+                  <div className="mt-3">
+                    <GenreMoodLine genre={bestScene.genre} />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
