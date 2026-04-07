@@ -488,6 +488,7 @@ export default function AdminPage() {
   const [refundMsg, setRefundMsg] = useState<{ id: string; msg: string; ok: boolean } | null>(null);
   const [creditSearch, setCreditSearch] = useState("");
   const [userListSearch, setUserListSearch] = useState("");
+  const [visibleUserIds, setVisibleUserIds] = useState<string[]>([]);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [styleSavingId, setStyleSavingId] = useState<string | null>(null);
   const [styleControlMsg, setStyleControlMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -682,6 +683,11 @@ export default function AdminPage() {
     const q = userListSearch.toLowerCase();
     return user.nickname?.toLowerCase().includes(q) || user.id.toLowerCase().includes(q);
   });
+  const toggleUserIdVisibility = (userId: string) => {
+    setVisibleUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
   const tabSummary =
     activeTab === "ops"
       ? "공지, 오류, 카드 숨김 같은 운영 대응"
@@ -1207,8 +1213,32 @@ export default function AdminPage() {
                   filteredUsers.slice(0, 100).map((user) => (
                     <div key={user.id} className="px-3 py-3 border-b border-gray-100 last:border-0 flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[14px] font-bold text-gray-900 truncate">{user.nickname ?? "닉네임 없음"}</p>
-                        <p className="text-[11px] text-gray-400 font-mono mt-0.5">{user.id}</p>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="text-[14px] font-bold text-gray-900 truncate">{user.nickname ?? "닉네임 없음"}</p>
+                          <button
+                            type="button"
+                            onClick={() => toggleUserIdVisibility(user.id)}
+                            className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-700"
+                            aria-label={visibleUserIds.includes(user.id) ? "ID 숨기기" : "ID 보기"}
+                            title={visibleUserIds.includes(user.id) ? "ID 숨기기" : "ID 보기"}
+                          >
+                            {visibleUserIds.includes(user.id) ? (
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path d="M1.5 8s2.2-4 6.5-4 6.5 4 6.5 4-2.2 4-6.5 4-6.5-4-6.5-4Z" stroke="currentColor" strokeWidth="1.4"/>
+                                <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4"/>
+                                <path d="M2 14L14 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                              </svg>
+                            ) : (
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path d="M1.5 8s2.2-4 6.5-4 6.5 4 6.5 4-2.2 4-6.5 4-6.5-4-6.5-4Z" stroke="currentColor" strokeWidth="1.4"/>
+                                <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4"/>
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                        {visibleUserIds.includes(user.id) && (
+                          <p className="text-[11px] text-gray-400 font-mono mt-1 break-all">{user.id}</p>
+                        )}
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-[11px] text-gray-500">가입 {formatDateTime(user.created_at)}</p>
