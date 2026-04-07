@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getGenerationErrorOverview } from "@/lib/generation-errors.server";
 import { loadStyleControls } from "@/lib/style-controls.server";
+import { applyStyleControl } from "@/lib/style-controls";
 import { getGeminiBillingSnapshot, hasGeminiBillingConfig } from "@/lib/google-billing.server";
 import { ALL_STYLES, STYLE_LABELS } from "@/lib/styles";
+import { STYLE_VARIANTS } from "@/lib/variants";
 
 export async function POST(request: NextRequest) {
   const { password } = await request.json();
@@ -199,15 +201,41 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const stylePerformanceList = byStyle.map((style) => {
-    const event = styleEvents[style.style_id] ?? { kakao: 0, link: 0, save: 0 };
+  const styleControlMap = Object.fromEntries(styleControls.map((row) => [row.style_id, row]));
+  const usageCountMap = Object.fromEntries(byStyle.map((item) => [item.style_id, item.count]));
+  const baseVisibleStyles = ALL_STYLES
+    .map((style) => applyStyleControl(style, styleControlMap[style.id]))
+    .filter((style) => !style.hidden);
+  const styleOrder = baseVisibleStyles.reduce<Record<string, number>>((acc, style, index) => {
+    acc[style.id] = index;
+    return acc;
+  }, {});
+  const sortedVisibleStyles = [...baseVisibleStyles].sort((a, b) => {
+    const aHasOptions = (STYLE_VARIANTS[a.id]?.length ?? 0) > 1;
+    const bHasOptions = (STYLE_VARIANTS[b.id]?.length ?? 0) > 1;
+
+    if (a.popular && b.popular) {
+      const usageDiff = (usageCountMap[b.id] ?? 0) - (usageCountMap[a.id] ?? 0);
+      if (usageDiff !== 0) return usageDiff;
+      return styleOrder[a.id] - styleOrder[b.id];
+    }
+    if (a.popular) return -1;
+    if (b.popular) return 1;
+    if (aHasOptions && !bHasOptions) return -1;
+    if (!aHasOptions && bHasOptions) return 1;
+    return styleOrder[a.id] - styleOrder[b.id];
+  });
+
+  const stylePerformanceList = sortedVisibleStyles.map((style) => {
+    const count = usageCountMap[style.id] ?? 0;
+    const event = styleEvents[style.id] ?? { kakao: 0, link: 0, save: 0 };
     const shareCount = event.kakao + event.link;
-    const saveRate = style.count > 0 ? Math.round((event.save / style.count) * 100) : 0;
-    const shareRate = style.count > 0 ? Math.round((shareCount / style.count) * 100) : 0;
+    const saveRate = count > 0 ? Math.round((event.save / count) * 100) : 0;
+    const shareRate = count > 0 ? Math.round((shareCount / count) * 100) : 0;
     return {
-      style_id: style.style_id,
-      style_name: style.style_name,
-      count: style.count,
+      style_id: style.id,
+      style_name: style.name,
+      count,
       saveCount: event.save,
       shareCount,
       saveRate,
