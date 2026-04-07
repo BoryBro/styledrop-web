@@ -4,36 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import type { StyleControlState } from "@/lib/style-controls";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-const ADMIN_UI_VERSION = "v2.1.0-error-monitor";
+const ADMIN_UI_VERSION = "v2.0.0-ops-console";
 
 type Notice = { id: number; text: string; active: boolean };
 type UserItem = { id: string; nickname: string | null };
 type PaymentItem = { id: string; user_id: string; amount: number; credits: number; status: string; created_at: string };
 type StyleStat = { style_id: string; style_name: string; count: number };
-type GenerationErrorSummary = {
-  style_id: string;
-  style_name: string;
-  errorCount: number;
-  successCount24h: number;
-  errorRate: number;
-  topErrorType: string;
-  lastErrorAt: string;
-};
-type RecentGenerationError = {
-  id: number;
-  style_id: string;
-  style_name: string;
-  variant: string | null;
-  error_type: string;
-  message: string | null;
-  finish_reason: string | null;
-  created_at: string;
-};
 type Stats = {
   styleControls: StyleControlState[];
-  generationErrorTotal24h: number;
-  generationErrorSummary: GenerationErrorSummary[];
-  recentGenerationErrors: RecentGenerationError[];
   userList: UserItem[];
   paymentList: PaymentItem[];
   total: number;
@@ -69,17 +47,6 @@ type MonthlyCost = {
   shareKakao?: number; shareLink?: number; saveImage?: number;
   auditionShareKakao?: number; auditionShareLink?: number;
 };
-
-function relativeTime(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "방금";
-  if (mins < 60) return `${mins}분 전`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}시간 전`;
-  const days = Math.floor(hours / 24);
-  return `${days}일 전`;
-}
 
 function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, MonthlyCost> }) {
   const [activeMonth, setActiveMonth] = useState("2026-04");
@@ -494,15 +461,6 @@ export default function AdminPage() {
 
   const shareTotal = stats.shareKakao + stats.shareLinkCopy;
   const shareRatio = stats.total > 0 ? Math.round((shareTotal / stats.total) * 100) : 0;
-  const sortedStyleControls = [...styleControls].sort((a, b) => {
-    const aIssue = Number(!a.is_visible || !a.is_enabled);
-    const bIssue = Number(!b.is_visible || !b.is_enabled);
-    if (bIssue !== aIssue) return bIssue - aIssue;
-    const usageA = stats.byStyle.find((item) => item.style_id === a.style_id)?.count ?? 0;
-    const usageB = stats.byStyle.find((item) => item.style_id === b.style_id)?.count ?? 0;
-    if (usageB !== usageA) return usageB - usageA;
-    return a.style_name.localeCompare(b.style_name, "ko");
-  });
 
   return (
     <main className="w-full max-w-sm mx-auto px-4 py-10 flex flex-col gap-6 bg-gray-50 min-h-screen">
@@ -578,61 +536,14 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* 오류 모니터링 */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">오류 모니터링</p>
-        <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-2">
-            <MiniCard label="최근 24시간 오류" value={`${stats.generationErrorTotal24h}건`} accent={stats.generationErrorTotal24h > 0} />
-            <MiniCard label="문제 카드" value={`${stats.generationErrorSummary.length}개`} accent={stats.generationErrorSummary.length > 0} />
-          </div>
-
-          {stats.generationErrorSummary.length > 0 ? (
-            <div className="rounded-xl border border-gray-200 overflow-hidden">
-              {stats.generationErrorSummary.slice(0, 6).map((item) => (
-                <div key={item.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</p>
-                    <p className="text-[11px] text-gray-500">
-                      오류 {item.errorCount} · 성공 {item.successCount24h} · 오류율 {item.errorRate}% · {item.topErrorType}
-                    </p>
-                  </div>
-                  <span className="text-[11px] text-red-600 font-bold whitespace-nowrap">{relativeTime(item.lastErrorAt)}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[13px] text-gray-500">
-              최근 24시간 기준 기록된 생성 오류가 없어요.
-            </div>
-          )}
-
-          {stats.recentGenerationErrors.length > 0 && (
-            <div className="rounded-xl border border-gray-200 overflow-hidden">
-              {stats.recentGenerationErrors.slice(0, 5).map((item) => (
-                <div key={item.id} className="px-3 py-2.5 border-b border-gray-100 last:border-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[12px] font-bold text-gray-900 truncate">{item.style_name}</span>
-                    <span className="text-[11px] text-gray-400 whitespace-nowrap">{relativeTime(item.created_at)}</span>
-                  </div>
-                  <p className="text-[11px] text-gray-500 mt-0.5 truncate">
-                    {item.error_type}{item.finish_reason ? ` · ${item.finish_reason}` : ""}{item.message ? ` · ${item.message}` : ""}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* 긴급 대응 · 스타일 운영 */}
       <div className="flex flex-col gap-1">
         <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">긴급 대응 · 스타일 운영</p>
         <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[15px] font-bold text-gray-900">카드별 즉시 숨김 / 생성 중지</p>
-              <p className="text-[12px] text-gray-500 mt-1">저장 즉시 반영</p>
+              <p className="text-[12px] text-gray-500 mt-1">저장 즉시 스튜디오와 생성 API에 반영됩니다.</p>
             </div>
             <span className="text-[11px] text-gray-400 whitespace-nowrap">{styleControls.length}개 카드</span>
           </div>
@@ -647,44 +558,57 @@ export default function AdminPage() {
             </div>
           )}
 
-          <div className="rounded-xl border border-gray-200 overflow-hidden">
-            {sortedStyleControls.map((control) => {
+          <div className="flex flex-col gap-2">
+            {styleControls.map((control) => {
               const usageCount = stats.byStyle.find((item) => item.style_id === control.style_id)?.count ?? 0;
               const isSaving = styleSavingId === control.style_id;
               return (
-                <div key={control.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-bold text-gray-900 truncate">{control.style_name}</p>
-                    <p className="text-[11px] text-gray-500">
-                      사용 {usageCount}회 · {control.is_visible ? "노출" : "숨김"} · {control.is_enabled ? "생성중" : "중지"}
-                    </p>
+                <div key={control.style_id} className="rounded-2xl border border-gray-200 bg-gray-50 px-3 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[14px] font-bold text-gray-900 break-keep">{control.style_name}</p>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${
+                          control.is_visible ? "bg-green-50 text-green-700 border border-green-200" : "bg-gray-200 text-gray-600 border border-gray-300"
+                        }`}>
+                          {control.is_visible ? "노출중" : "숨김"}
+                        </span>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${
+                          control.is_enabled ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-red-50 text-red-600 border border-red-200"
+                        }`}>
+                          {control.is_enabled ? "생성 가능" : "생성 중지"}
+                        </span>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-white text-gray-500 border border-gray-200">
+                          사용 {usageCount}회
+                        </span>
+                      </div>
+                    </div>
+                    {isSaving && <span className="text-[11px] text-gray-400 whitespace-nowrap">저장중...</span>}
                   </div>
-                  <div className="flex items-center gap-1.5">
+
+                  <div className="grid grid-cols-2 gap-2 mt-3">
                     <button
                       onClick={() => updateStyleControl(control.style_id, { is_visible: !control.is_visible })}
                       disabled={isSaving}
-                      className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
+                      className={`py-2 rounded-xl text-[13px] font-bold transition-colors ${
                         control.is_visible
-                          ? "bg-gray-900 text-white"
-                          : "bg-white text-gray-600 border border-gray-300"
+                          ? "bg-gray-900 text-white hover:bg-black"
+                          : "bg-white text-gray-700 border border-gray-300 hover:border-gray-400"
                       } disabled:opacity-50`}
                     >
-                      {control.is_visible ? "노출" : "숨김"}
+                      {control.is_visible ? "숨김 처리" : "다시 노출"}
                     </button>
                     <button
                       onClick={() => updateStyleControl(control.style_id, { is_enabled: !control.is_enabled })}
                       disabled={isSaving}
-                      className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
+                      className={`py-2 rounded-xl text-[13px] font-bold transition-colors ${
                         control.is_enabled
-                          ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]"
-                          : "bg-white text-gray-600 border border-gray-300"
+                          ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF] hover:bg-[#FFE8DA]"
+                          : "bg-white text-gray-700 border border-gray-300 hover:border-gray-400"
                       } disabled:opacity-50`}
                     >
-                      {control.is_enabled ? "생성" : "중지"}
+                      {control.is_enabled ? "생성 중지" : "생성 재개"}
                     </button>
-                  </div>
-                  <div className="w-10 text-right">
-                    {isSaving && <span className="text-[10px] text-gray-400">저장</span>}
                   </div>
                 </div>
               );

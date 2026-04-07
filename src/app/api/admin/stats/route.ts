@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getGenerationErrorOverview } from "@/lib/generation-errors.server";
 import { loadStyleControls } from "@/lib/style-controls.server";
 import { ALL_STYLES, STYLE_LABELS } from "@/lib/styles";
 
@@ -33,6 +34,7 @@ export async function POST(request: NextRequest) {
     marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marRevenueRes, aprRevenueRes,
     aprShareKakaoRes, aprShareLinkRes, aprSaveRes, aprAuditionShareKakaoRes, aprAuditionShareLinkRes,
     styleControls,
+    generationErrorOverview,
   ] = await Promise.all([
     // metadata 포함해서 공유 이벤트의 style_id 집계 가능하도록
     supabase.from("user_events").select("event_type, metadata"),
@@ -57,6 +59,7 @@ export async function POST(request: NextRequest) {
     supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_share_kakao").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
     supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_share_link_copy").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
     loadStyleControls(),
+    getGenerationErrorOverview(),
   ]);
 
   if (usageRes.error || eventsRes.error) {
@@ -143,6 +146,7 @@ export async function POST(request: NextRequest) {
     byStyle,
     byStyleVariants,
     styleControls,
+    ...generationErrorOverview,
     totalUsers: usersRes.count ?? 0,
     uniqueLoggedInUsers,
     shareKakao: eventCounts["share_kakao"] ?? 0,

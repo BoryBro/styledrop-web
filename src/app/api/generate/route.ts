@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 import { addWatermark } from "@/lib/watermark";
+import { logGenerationError } from "@/lib/generation-errors.server";
 import { loadStyleControlMap } from "@/lib/style-controls.server";
 import { STYLE_LABELS } from "@/lib/styles";
 import {
@@ -2025,9 +2026,17 @@ export async function POST(request: NextRequest) {
     const parts = candidate?.content?.parts || [];
 
     // 이미지 없이 종료된 경우 원인 로그
+    const textParts = parts.filter(p => p.text).map(p => p.text).join(" ");
     if (!parts.some(p => p.inlineData)) {
-      const textParts = parts.filter(p => p.text).map(p => p.text).join(" ");
       console.error(`[generate] style=${style} finishReason=${finishReason} textResponse=${textParts || "(없음)"}`);
+      await logGenerationError({
+        styleId: style,
+        variant,
+        userId: session?.id,
+        errorType: "no_image",
+        finishReason: finishReason ?? null,
+        message: textParts || "No image generated",
+      });
     }
 
     for (const part of parts) {
@@ -2080,6 +2089,13 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("[generate] catch error:", message);
+    await logGenerationError({
+      styleId: style || "unknown",
+      variant,
+      userId: session?.id,
+      errorType: "exception",
+      message,
+    });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
