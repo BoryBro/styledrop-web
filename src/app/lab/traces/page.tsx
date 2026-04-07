@@ -348,40 +348,47 @@ function buildVisibleRegionLabels(clusters: TraceCluster[]): RegionLabel[] {
     }));
 }
 
-function buildVisibleDistrictLabels(traces: DisplayTrace[]): RegionLabel[] {
-  const activeKeys = new Set(
-    traces.map((trace) => `${normalizeSido(trace.sido)}|${normalizeRegionPart(trace.sigungu)}`),
+function isInVisibleBounds(
+  point: { x: number; y: number },
+  bounds: { minX: number; maxX: number; minY: number; maxY: number },
+  padding = 0,
+) {
+  return (
+    point.x >= bounds.minX - padding &&
+    point.x <= bounds.maxX + padding &&
+    point.y >= bounds.minY - padding &&
+    point.y <= bounds.maxY + padding
   );
-
-  const labels = districtMap
-    .filter((region) => {
-      const province = provinceMap.find((item) => item.code.slice(0, 2) === region.code.slice(0, 2));
-      return activeKeys.has(`${province?.label ?? ""}|${region.normalizedLabel}`);
-    })
-    .slice(0, 28)
-    .map((region) => ({
-      id: region.code,
-      x: region.centroid.x,
-      y: region.centroid.y,
-      shortLabel: region.shortLabel,
-    }));
-
-  return labels;
 }
 
-function buildVisibleDongLabels(traces: DisplayTrace[]): RegionLabel[] {
-  return traces
-    .filter((trace, index, list) => list.findIndex((item) => item.regionKey === trace.regionKey) === index)
-    .slice(0, 22)
-    .map((trace) => {
-      const shape = findDongShape(trace.sido, trace.sigungu, trace.dong);
-      return {
-        id: trace.regionKey,
-        x: shape?.centroid.x ?? trace.displayX,
-        y: shape?.centroid.y ?? trace.displayY,
-        shortLabel: normalizeRegionPart(trace.dong),
-      };
-    });
+function buildVisibleDistrictLabels(
+  bounds: { minX: number; maxX: number; minY: number; maxY: number },
+  zoom: number,
+) {
+  const visible = districtMap.filter((region) => isInVisibleBounds(region.centroid, bounds, 3));
+  const step = zoom >= 3 ? 1 : zoom >= 2.3 ? 2 : 3;
+
+  return visible.filter((_, index) => index % step === 0).map((region) => ({
+    id: region.code,
+    x: region.centroid.x,
+    y: region.centroid.y,
+    shortLabel: region.shortLabel,
+  }));
+}
+
+function buildVisibleDongLabels(
+  bounds: { minX: number; maxX: number; minY: number; maxY: number },
+  zoom: number,
+) {
+  const visible = dongMap.filter((region) => isInVisibleBounds(region.centroid, bounds, 1.2));
+  const step = zoom >= 5.2 ? 1 : zoom >= 4.6 ? 2 : zoom >= 4 ? 4 : 6;
+
+  return visible.filter((_, index) => index % step === 0).map((region) => ({
+    id: region.code,
+    x: region.centroid.x,
+    y: region.centroid.y,
+    shortLabel: region.shortLabel,
+  }));
 }
 
 function findContainingProvince(coordinates: [number, number]) {
@@ -453,12 +460,30 @@ function TraceMap({
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ id: number; startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+  const pointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const draggedRef = useRef(false);
-  const detailLevel = zoom >= 4 ? "emd" : zoom >= 1.9 ? "sigungu" : "sido";
+  const zoomRef = useRef(zoom);
+  const panRef = useRef(pan);
+  const detailLevel = zoom >= 3.6 ? "emd" : zoom >= 1.45 ? "sigungu" : "sido";
+  const visibleBounds = useMemo(() => {
+    const frame = mapFrameRef.current;
+    if (!frame) {
+      return { minX: 0, maxX: MAP_WIDTH, minY: 0, maxY: MAP_HEIGHT };
+    }
+
+    const rect = frame.getBoundingClientRect();
+    return {
+      minX: clamp((0 - pan.x) / (zoom * rect.width) * MAP_WIDTH, 0, MAP_WIDTH),
+      maxX: clamp((rect.width - pan.x) / (zoom * rect.width) * MAP_WIDTH, 0, MAP_WIDTH),
+      minY: clamp((0 - pan.y) / (zoom * rect.height) * MAP_HEIGHT, 0, MAP_HEIGHT),
+      maxY: clamp((rect.height - pan.y) / (zoom * rect.height) * MAP_HEIGHT, 0, MAP_HEIGHT),
+    };
+  }, [pan.x, pan.y, zoom]);
   const provinceLabels = useMemo(() => buildVisibleRegionLabels(clusters), [clusters]);
-  const districtLabels = useMemo(() => buildVisibleDistrictLabels(traces), [traces]);
-  const dongLabels = useMemo(() => buildVisibleDongLabels(traces), [traces]);
+  const districtLabels = useMemo(() => buildVisibleDistrictLabels(visibleBounds, zoom), [visibleBounds, zoom]);
+  const dongLabels = useMemo(() => buildVisibleDongLabels(visibleBounds, zoom), [visibleBounds, zoom]);
 
   const provinceCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -515,15 +540,49 @@ function TraceMap({
     [clampPan],
   );
 
-  const updateZoom = useCallback(
-    (delta: number) => {
-      setZoom((current) => {
-        const next = clamp(Number((current + delta).toFixed(2)), 1, 6);
-        setPan((prev) => clampPan(next, prev));
-        return next;
-      });
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
+    panRef.current = pan;
+  }, [pan]);
+
+  const applyZoomAtPoint = useCallback(
+    (targetZoom: number, clientX?: number, clientY?: number) => {
+      const frame = mapFrameRef.current;
+      const boundedZoom = clamp(Number(targetZoom.toFixed(2)), 1, 6);
+
+      if (!frame) {
+        setZoom(boundedZoom);
+        setPan((prev) => clampPan(boundedZoom, prev));
+        return;
+      }
+
+      const rect = frame.getBoundingClientRect();
+      const focalX = clientX !== undefined ? clientX - rect.left : rect.width / 2;
+      const focalY = clientY !== undefined ? clientY - rect.top : rect.height / 2;
+      const currentZoom = zoomRef.current;
+      const currentPan = panRef.current;
+      const svgX = (focalX - currentPan.x) / (currentZoom * rect.width) * MAP_WIDTH;
+      const svgY = (focalY - currentPan.y) / (currentZoom * rect.height) * MAP_HEIGHT;
+
+      setZoom(boundedZoom);
+      setPan(
+        clampPan(boundedZoom, {
+          x: focalX - (svgX / MAP_WIDTH) * rect.width * boundedZoom,
+          y: focalY - (svgY / MAP_HEIGHT) * rect.height * boundedZoom,
+        }),
+      );
     },
     [clampPan],
+  );
+
+  const updateZoom = useCallback(
+    (delta: number, clientX?: number, clientY?: number) => {
+      applyZoomAtPoint(zoomRef.current + delta, clientX, clientY);
+    },
+    [applyZoomAtPoint],
   );
 
   useEffect(() => {
@@ -585,14 +644,14 @@ function TraceMap({
           </button>
         )}
         <button
-          onClick={() => updateZoom(0.22)}
+          onClick={() => updateZoom(0.6)}
           className="h-10 w-10 rounded-2xl border border-white/10 bg-white/6 text-xl text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
           aria-label="지도 확대"
         >
           +
         </button>
         <button
-          onClick={() => updateZoom(-0.22)}
+          onClick={() => updateZoom(-0.6)}
           className="h-10 w-10 rounded-2xl border border-white/10 bg-white/6 text-xl text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
           aria-label="지도 축소"
         >
@@ -614,9 +673,19 @@ function TraceMap({
         className="relative aspect-[3/4] w-full touch-none cursor-grab active:cursor-grabbing"
         onWheel={(event) => {
           event.preventDefault();
-          updateZoom(event.deltaY < 0 ? 0.16 : -0.16);
+          updateZoom(event.deltaY < 0 ? 0.4 : -0.4, event.clientX, event.clientY);
         }}
         onPointerDown={(event) => {
+          pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (pointersRef.current.size === 2) {
+            const [first, second] = [...pointersRef.current.values()];
+            pinchRef.current = {
+              distance: Math.hypot(second.x - first.x, second.y - first.y),
+              zoom: zoomRef.current,
+            };
+            dragRef.current = null;
+            draggedRef.current = true;
+          }
           dragRef.current = {
             id: event.pointerId,
             startX: event.clientX,
@@ -628,6 +697,18 @@ function TraceMap({
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
         onPointerMove={(event) => {
+          if (pointersRef.current.has(event.pointerId)) {
+            pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          }
+          if (pointersRef.current.size === 2 && pinchRef.current) {
+            const [first, second] = [...pointersRef.current.values()];
+            const distance = Math.hypot(second.x - first.x, second.y - first.y);
+            const midX = (first.x + second.x) / 2;
+            const midY = (first.y + second.y) / 2;
+            const scale = distance / pinchRef.current.distance;
+            applyZoomAtPoint(pinchRef.current.zoom * scale, midX, midY);
+            return;
+          }
           const drag = dragRef.current;
           if (!drag || drag.id !== event.pointerId) return;
           if (Math.abs(event.clientX - drag.startX) > 4 || Math.abs(event.clientY - drag.startY) > 4) {
@@ -641,12 +722,18 @@ function TraceMap({
           );
         }}
         onPointerUp={(event) => {
+          pointersRef.current.delete(event.pointerId);
+          if (pointersRef.current.size < 2) {
+            pinchRef.current = null;
+          }
           if (dragRef.current?.id === event.pointerId) {
             dragRef.current = null;
             event.currentTarget.releasePointerCapture(event.pointerId);
           }
         }}
         onPointerCancel={() => {
+          pointersRef.current.clear();
+          pinchRef.current = null;
           dragRef.current = null;
         }}
         onClick={(event) => {
