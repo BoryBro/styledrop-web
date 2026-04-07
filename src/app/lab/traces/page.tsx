@@ -1,9 +1,17 @@
 "use client";
 
+import { geoMercator, geoPath } from "d3-geo";
 import Link from "next/link";
+import { feature } from "topojson-client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import koreaSidoTopology from "@tenqube/react-korea-bubble-map/dist/esm/sido-0af932a3.js";
 import { useAuth } from "@/hooks/useAuth";
-import { SIDO_OPTIONS } from "@/lib/lab-traces";
+import {
+  buildTraceJitter,
+  getSidoOption,
+  normalizeSido,
+  SIDO_OPTIONS,
+} from "@/lib/lab-traces";
 
 type Trace = {
   user_id: string;
@@ -15,6 +23,11 @@ type Trace = {
   regionKey: string;
   regionLabel: string;
   created_at: string | null;
+};
+
+type DisplayTrace = Trace & {
+  displayX: number;
+  displayY: number;
 };
 
 type TracePayload = {
@@ -35,6 +48,7 @@ type TracePayload = {
 type TraceCluster = {
   key: string;
   label: string;
+  sido: string;
   x: number;
   y: number;
   count: number;
@@ -47,12 +61,59 @@ type RegionLabel = {
   shortLabel: string;
 };
 
-const KOREA_MAIN_PATH =
-  "M51 6C59 6 67 10 72 16C76 20 79 25 79 31C82 37 82 43 80 48C83 55 82 62 79 67C81 73 80 80 76 86C72 92 66 97 59 101C55 103 51 105 49 109C47 113 42 115 38 113C34 111 32 106 33 101C27 96 23 89 22 81C18 74 17 66 19 58C17 51 17 44 19 36C20 29 24 22 30 16C35 11 42 8 48 7C49 7 50 6 51 6Z";
-const KOREA_JEJU_PATH =
-  "M22 106C25 104 30 103 35 103C38 105 38 108 35 110C31 112 26 112 22 111C20 109 20 107 22 106Z";
-const ULLEUNGDO_PATH =
-  "M84 52C85 51 87 51 88 52C89 54 88 56 86 56C84 56 83 54 84 52Z";
+type KoreaFeature = {
+  geometry: unknown;
+  properties: {
+    CODE: string;
+    KOR_NM: string;
+  };
+};
+
+type KoreaTopology = {
+  objects: {
+    sido: unknown;
+  };
+};
+
+const MAP_WIDTH = 100;
+const MAP_HEIGHT = 140;
+const MAP_PADDING = 8;
+
+const typedKoreaSidoTopology = koreaSidoTopology as KoreaTopology;
+
+const koreaFeatureCollection = feature(
+  typedKoreaSidoTopology as never,
+  typedKoreaSidoTopology.objects.sido as never,
+) as unknown as { features: KoreaFeature[] };
+
+const projection = geoMercator().fitExtent(
+  [
+    [MAP_PADDING, MAP_PADDING],
+    [MAP_WIDTH - MAP_PADDING, MAP_HEIGHT - MAP_PADDING],
+  ],
+  {
+    type: "FeatureCollection",
+    features: koreaFeatureCollection.features as never[],
+  } as never,
+);
+
+const pathBuilder = geoPath(projection);
+
+const provinceMap = koreaFeatureCollection.features.map((region) => {
+  const option = getSidoOption(region.properties.KOR_NM);
+  const centroid = pathBuilder.centroid(region as never);
+
+  return {
+    code: region.properties.CODE,
+    label: region.properties.KOR_NM,
+    shortLabel: option?.shortLabel ?? region.properties.KOR_NM.replace(/(특별시|광역시|특별자치시|특별자치도|도)$/g, ""),
+    path: pathBuilder(region as never) ?? "",
+    centroid: {
+      x: Number(centroid[0].toFixed(2)),
+      y: Number(centroid[1].toFixed(2)),
+    },
+  };
+});
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -90,22 +151,55 @@ function recomputeSummary(traces: Trace[]) {
   };
 }
 
-function buildClusters(traces: Trace[]): TraceCluster[] {
+function getProvinceSpread(sido: string) {
+  const normalized = normalizeSido(sido);
+  if (normalized === "서울특별시") return { x: 1.2, y: 1.4 };
+  if (normalized === "경기도") return { x: 2.2, y: 2.6 };
+  if (normalized === "강원특별자치도") return { x: 2.6, y: 3.1 };
+  if (normalized === "제주특별자치도") return { x: 1.1, y: 0.8 };
+  return { x: 1.8, y: 2.1 };
+}
+
+function buildDisplayTrace(trace: Trace): DisplayTrace {
+  const normalizedSido = normalizeSido(trace.sido);
+  const province = provinceMap.find((item) => item.label === normalizedSido);
+  const option = getSidoOption(normalizedSido);
+  const fallback = option?.anchor ?? { x: 50, y: 60 };
+  const baseX = province?.centroid.x ?? fallback.x;
+  const baseY = province?.centroid.y ?? fallback.y;
+  const spread = getProvinceSpread(normalizedSido);
+  const jitter = buildTraceJitter({
+    sido: trace.sido,
+    sigungu: trace.sigungu,
+    dong: trace.dong,
+    userId: trace.user_id,
+  });
+
+  return {
+    ...trace,
+    displayX: Number(clamp(baseX + jitter.x * spread.x, 6, MAP_WIDTH - 6).toFixed(2)),
+    displayY: Number(clamp(baseY + jitter.y * spread.y, 8, MAP_HEIGHT - 8).toFixed(2)),
+  };
+}
+
+function buildClusters(traces: DisplayTrace[]): TraceCluster[] {
   const clusters = new Map<string, TraceCluster>();
 
   traces.forEach((trace) => {
     const current = clusters.get(trace.regionKey);
     if (current) {
       current.count += 1;
-      current.x = Number(((current.x + trace.x) / 2).toFixed(2));
-      current.y = Number(((current.y + trace.y) / 2).toFixed(2));
+      current.x = Number(((current.x + trace.displayX) / 2).toFixed(2));
+      current.y = Number(((current.y + trace.displayY) / 2).toFixed(2));
       return;
     }
+
     clusters.set(trace.regionKey, {
       key: trace.regionKey,
       label: trace.regionLabel,
-      x: trace.x,
-      y: trace.y,
+      sido: normalizeSido(trace.sido),
+      x: trace.displayX,
+      y: trace.displayY,
       count: 1,
     });
   });
@@ -114,15 +208,17 @@ function buildClusters(traces: Trace[]): TraceCluster[] {
 }
 
 function buildVisibleRegionLabels(clusters: TraceCluster[]): RegionLabel[] {
-  const activeSidos = new Set(clusters.map((cluster) => cluster.label.split(" ")[0]));
-  const fallbackLabels = new Set(["서울", "경기", "강원", "경북", "경남", "전남", "전북", "부산", "제주"]);
+  const activeSidos = new Set(clusters.map((cluster) => cluster.sido));
+  const fallbackLabels = new Set(["서울특별시", "경기도", "강원특별자치도", "충청북도", "경상북도", "전북특별자치도", "전라남도", "경상남도", "제주특별자치도", "부산광역시"]);
 
-  return SIDO_OPTIONS.filter((region) => activeSidos.has(region.label) || fallbackLabels.has(region.shortLabel)).map((region) => ({
-    id: region.id,
-    x: region.anchor.x,
-    y: region.anchor.y,
-    shortLabel: region.shortLabel,
-  }));
+  return provinceMap
+    .filter((region) => activeSidos.has(region.label) || fallbackLabels.has(region.label))
+    .map((region) => ({
+      id: region.code,
+      x: region.centroid.x,
+      y: region.centroid.y,
+      shortLabel: region.shortLabel,
+    }));
 }
 
 function TraceMap({
@@ -131,32 +227,46 @@ function TraceMap({
   activeTrace,
   onPickTrace,
 }: {
-  traces: Trace[];
+  traces: DisplayTrace[];
   clusters: TraceCluster[];
-  activeTrace: Trace | null;
-  onPickTrace: (trace: Trace) => void;
+  activeTrace: DisplayTrace | null;
+  onPickTrace: (trace: DisplayTrace) => void;
 }) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ id: number; startX: number; startY: number; baseX: number; baseY: number } | null>(null);
   const regionLabels = useMemo(() => buildVisibleRegionLabels(clusters), [clusters]);
 
+  const provinceCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    traces.forEach((trace) => {
+      const key = normalizeSido(trace.sido);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+
+    return counts;
+  }, [traces]);
+
   const clampPan = useCallback((nextZoom: number, nextPan: { x: number; y: number }) => {
-    const limitX = (nextZoom - 1) * 140;
-    const limitY = (nextZoom - 1) * 175;
+    const limitX = (nextZoom - 1) * 120;
+    const limitY = (nextZoom - 1) * 160;
     return {
       x: clamp(nextPan.x, -limitX, limitX),
       y: clamp(nextPan.y, -limitY, limitY),
     };
   }, []);
 
-  const updateZoom = useCallback((delta: number) => {
-    setZoom((current) => {
-      const next = clamp(Number((current + delta).toFixed(2)), 1, 2.6);
-      setPan((prev) => clampPan(next, prev));
-      return next;
-    });
-  }, [clampPan]);
+  const updateZoom = useCallback(
+    (delta: number) => {
+      setZoom((current) => {
+        const next = clamp(Number((current + delta).toFixed(2)), 1, 2.8);
+        setPan((prev) => clampPan(next, prev));
+        return next;
+      });
+    },
+    [clampPan],
+  );
 
   return (
     <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#05070B] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
@@ -172,21 +282,21 @@ function TraceMap({
         style={{
           backgroundImage:
             "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
-          backgroundSize: "38px 38px",
+          backgroundSize: "34px 34px",
         }}
       />
 
       <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
         <button
-          onClick={() => updateZoom(0.2)}
-          className="h-10 w-10 rounded-2xl border border-white/10 bg-white/6 text-white text-xl shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+          onClick={() => updateZoom(0.22)}
+          className="h-10 w-10 rounded-2xl border border-white/10 bg-white/6 text-xl text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
           aria-label="지도 확대"
         >
           +
         </button>
         <button
-          onClick={() => updateZoom(-0.2)}
-          className="h-10 w-10 rounded-2xl border border-white/10 bg-white/6 text-white text-xl shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+          onClick={() => updateZoom(-0.22)}
+          className="h-10 w-10 rounded-2xl border border-white/10 bg-white/6 text-xl text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
           aria-label="지도 축소"
         >
           -
@@ -239,43 +349,57 @@ function TraceMap({
         }}
       >
         <svg
-          viewBox="0 0 100 120"
+          viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
           className="absolute inset-0 h-full w-full transition-transform duration-200"
           style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
         >
           <defs>
             <filter id="trace-blur">
-              <feGaussianBlur stdDeviation="2.8" />
+              <feGaussianBlur stdDeviation="2.2" />
             </filter>
           </defs>
 
-          <path d={KOREA_MAIN_PATH} fill="rgba(14,18,26,0.98)" stroke="rgba(255,255,255,0.10)" strokeWidth="0.7" />
-          <path d={KOREA_JEJU_PATH} fill="rgba(14,18,26,0.98)" stroke="rgba(255,255,255,0.10)" strokeWidth="0.55" />
-          <path d={ULLEUNGDO_PATH} fill="rgba(14,18,26,0.98)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.35" />
-          <path d={KOREA_MAIN_PATH} fill="none" stroke="rgba(107,226,197,0.05)" strokeWidth="2.4" />
+          {provinceMap.map((region) => {
+            const count = provinceCounts.get(region.label) ?? 0;
+            const activeAlpha = count === 0 ? 0 : Math.min(0.18 + count * 0.04, 0.42);
+
+            return (
+              <g key={region.code}>
+                <path d={region.path} fill="rgba(12,17,24,0.98)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.42" />
+                {count > 0 && (
+                  <path
+                    d={region.path}
+                    fill={`rgba(91, 224, 197, ${activeAlpha})`}
+                    stroke={`rgba(126, 245, 220, ${Math.min(activeAlpha + 0.1, 0.5)})`}
+                    strokeWidth="0.32"
+                  />
+                )}
+              </g>
+            );
+          })}
 
           {clusters.map((cluster) => {
-            const glowSize = 2.2 + Math.min(cluster.count, 9) * 1.15;
-            const opacity = Math.min(0.5, 0.12 + cluster.count * 0.06);
+            const glowSize = 1.8 + Math.min(cluster.count, 9) * 0.9;
+            const opacity = Math.min(0.45, 0.14 + cluster.count * 0.05);
 
             return (
               <g key={`${cluster.key}-glow`}>
-                <circle cx={cluster.x} cy={cluster.y} r={glowSize * 1.75} fill={`rgba(79, 151, 255, ${opacity * 0.24})`} filter="url(#trace-blur)" />
-                <circle cx={cluster.x} cy={cluster.y} r={glowSize * 0.95} fill={`rgba(67, 231, 184, ${opacity * 0.32})`} filter="url(#trace-blur)" />
+                <circle cx={cluster.x} cy={cluster.y} r={glowSize * 2.2} fill={`rgba(79, 151, 255, ${opacity * 0.18})`} filter="url(#trace-blur)" />
+                <circle cx={cluster.x} cy={cluster.y} r={glowSize * 1.18} fill={`rgba(67, 231, 184, ${opacity * 0.24})`} filter="url(#trace-blur)" />
               </g>
             );
           })}
 
           {regionLabels.map((region) => (
-            <g key={region.id} opacity="0.78">
-              <circle cx={region.x} cy={region.y} r="0.55" fill="rgba(255,255,255,0.16)" />
+            <g key={region.id} opacity="0.82">
+              <circle cx={region.x} cy={region.y} r="0.42" fill="rgba(255,255,255,0.18)" />
               <text
-                x={region.x + 1.4}
-                y={region.y - 1.2}
+                x={region.x + 1}
+                y={region.y - 1}
                 fill="rgba(255,255,255,0.28)"
-                fontSize="2.8"
+                fontSize="2.6"
                 fontWeight="700"
-                letterSpacing="0.05em"
+                letterSpacing="0.04em"
               >
                 {region.shortLabel}
               </text>
@@ -287,8 +411,22 @@ function TraceMap({
 
             return (
               <g key={`${trace.user_id}-${trace.regionKey}`} onClick={() => onPickTrace(trace)} style={{ cursor: "pointer" }}>
-                <circle cx={trace.x} cy={trace.y} r={isActive ? 1.45 : 0.72} fill={isActive ? "rgba(255,196,79,0.96)" : "rgba(255,255,255,0.9)"} />
-                {isActive && <circle cx={trace.x} cy={trace.y} r={2.45} fill="none" stroke="rgba(255,196,79,0.4)" strokeWidth="0.45" />}
+                <circle
+                  cx={trace.displayX}
+                  cy={trace.displayY}
+                  r={isActive ? 1.25 : 0.44}
+                  fill={isActive ? "rgba(255,196,79,0.98)" : "rgba(255,255,255,0.92)"}
+                />
+                {isActive && (
+                  <circle
+                    cx={trace.displayX}
+                    cy={trace.displayY}
+                    r={2.2}
+                    fill="none"
+                    stroke="rgba(255,196,79,0.44)"
+                    strokeWidth="0.34"
+                  />
+                )}
               </g>
             );
           })}
@@ -338,8 +476,12 @@ export default function TraceLabPage() {
     fetchPayload();
   }, [fetchPayload]);
 
-  const traces = payload?.traces ?? [];
-  const clusters = useMemo(() => buildClusters(traces), [traces]);
+  const displayTraces = useMemo(() => (payload?.traces ?? []).map(buildDisplayTrace), [payload?.traces]);
+  const activeDisplayTrace = useMemo(
+    () => displayTraces.find((trace) => trace.user_id === activeTrace?.user_id) ?? displayTraces[0] ?? null,
+    [activeTrace?.user_id, displayTraces],
+  );
+  const clusters = useMemo(() => buildClusters(displayTraces), [displayTraces]);
   const hotspotList = useMemo(() => [...clusters].sort((left, right) => right.count - left.count).slice(0, 5), [clusters]);
 
   const handleSubmit = async () => {
@@ -359,9 +501,7 @@ export default function TraceLabPage() {
         return;
       }
 
-      const nextTraces = data.alreadyJoined
-        ? traces
-        : [{ ...data.trace }, ...traces];
+      const nextTraces = data.alreadyJoined ? payload?.traces ?? [] : [{ ...data.trace }, ...(payload?.traces ?? [])];
       const nextPayload: TracePayload = {
         traces: nextTraces,
         summary: recomputeSummary(nextTraces),
@@ -408,8 +548,8 @@ export default function TraceLabPage() {
                 사람들이 남긴 흔적
               </h2>
               <p className="mt-4 max-w-xl text-[15px] leading-7 text-white/62 sm:text-[16px]">
-                한 번이라도 이미지를 만든 카카오 로그인 유저만 점 하나를 남길 수 있어요.
-                이 지도는 방문 수가 아니라, <span className="font-bold text-white/86">누적 참여자 수</span>를 보여줍니다.
+                한 번이라도 이미지를 만든 카카오 로그인 유저만 점 하나를 남길 수 있어요. 이 지도는 방문 수가 아니라,{" "}
+                <span className="font-bold text-white/86">누적 참여자 수</span>를 보여줍니다.
               </p>
             </div>
 
@@ -447,7 +587,7 @@ export default function TraceLabPage() {
                 흔적 지도를 불러오는 중...
               </div>
             ) : (
-              <TraceMap traces={traces} clusters={clusters} activeTrace={activeTrace} onPickTrace={setActiveTrace} />
+              <TraceMap traces={displayTraces} clusters={clusters} activeTrace={activeDisplayTrace} onPickTrace={setActiveTrace} />
             )}
           </section>
 
@@ -455,9 +595,7 @@ export default function TraceLabPage() {
             <div className="rounded-[30px] border border-white/10 bg-white/5 p-5">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/40">참여하기</p>
               <h3 className="mt-2 text-[24px] font-black tracking-[-0.04em] text-white">내 흔적 남기기</h3>
-              <p className="mt-3 text-[14px] leading-6 text-white/58">
-                별도 동의 페이지는 없어요. 여기서 버튼을 누르면 지도에 점 하나가 남습니다.
-              </p>
+              <p className="mt-3 text-[14px] leading-6 text-white/58">별도 동의 페이지는 없어요. 여기서 버튼을 누르면 지도에 점 하나가 남습니다.</p>
 
               {error && (
                 <div className="mt-4 rounded-[20px] border border-[#FF7A6A]/20 bg-[#FF7A6A]/10 px-4 py-3 text-[13px] font-semibold text-[#FFB2A8]">
@@ -548,14 +686,12 @@ export default function TraceLabPage() {
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/40">Hotspots</p>
               <h3 className="mt-2 text-[20px] font-black tracking-[-0.04em] text-white">가장 밝은 흔적</h3>
               <div className="mt-4 space-y-2">
-                {hotspotList.length === 0 && (
-                  <p className="text-[14px] leading-6 text-white/50">아직 첫 참여자를 기다리는 중이에요.</p>
-                )}
+                {hotspotList.length === 0 && <p className="text-[14px] leading-6 text-white/50">아직 첫 참여자를 기다리는 중이에요.</p>}
                 {hotspotList.map((cluster, index) => (
                   <button
                     key={cluster.key}
                     onClick={() => {
-                      const picked = traces.find((trace) => trace.regionKey === cluster.key) ?? null;
+                      const picked = displayTraces.find((trace) => trace.regionKey === cluster.key) ?? null;
                       if (picked) setActiveTrace(picked);
                     }}
                     className="flex w-full items-center justify-between rounded-[18px] border border-white/8 bg-black/18 px-4 py-3 text-left"
