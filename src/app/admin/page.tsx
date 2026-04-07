@@ -721,6 +721,13 @@ export default function AdminPage() {
             </span>
           )}
           <button
+            onClick={() => doLogin(password)}
+            disabled={isLoading || !password}
+            className="text-[13px] text-[#C9571A] hover:text-[#B34A12] disabled:text-gray-300 transition-colors"
+          >
+            {isLoading ? "새로고침 중..." : "새로고침"}
+          </button>
+          <button
             onClick={() => { setStats(null); setPassword(""); localStorage.removeItem("sd_admin_pw"); if (timerRef.current) clearInterval(timerRef.current); }}
             className="text-[13px] text-gray-500 hover:text-gray-900 transition-colors"
           >

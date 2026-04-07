@@ -17,7 +17,9 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_KEY!
   );
 
+  const nowIso = new Date().toISOString();
   const todayIso = new Date(Date.now() - 24 * 3600000).toISOString();
+  const currentMonthStartIso = "2026-04-01";
 
   const MAR_ACTUAL_API_COST = 16313; // 3월 Google 청구서 실측값 (세전)
   const APR_REFERENCE_BILLING = {
@@ -64,31 +66,31 @@ export async function POST(request: NextRequest) {
     supabase.from("users").select("id, nickname, created_at, last_login_at").order("created_at", { ascending: false }).limit(500),
     // 월별 스타일 변환
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
-    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
     // 월별 오디션 — audition_history 테이블 사용 (처음부터 기록됨)
     supabase.from("audition_history").select("id", { count: "exact", head: true }).gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
-    supabase.from("audition_history").select("id", { count: "exact", head: true }).gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    supabase.from("audition_history").select("id", { count: "exact", head: true }).gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
     // 월별 오디션 스틸컷 — style_usage의 audition 행
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).eq("style_id", "audition").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
-    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).eq("style_id", "audition").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    supabase.from("style_usage").select("style_id", { count: "exact", head: true }).eq("style_id", "audition").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
     // 4/1~4/7 실제 청구서 보정 기준
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", APR_REFERENCE_BILLING.from).lte("created_at", APR_REFERENCE_BILLING.to),
     supabase.from("audition_history").select("id", { count: "exact", head: true }).gte("created_at", APR_REFERENCE_BILLING.from).lte("created_at", APR_REFERENCE_BILLING.to),
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).eq("style_id", "audition").gte("created_at", APR_REFERENCE_BILLING.from).lte("created_at", APR_REFERENCE_BILLING.to),
     // 월별 매출
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
-    supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
     // 4월 공유/저장 이벤트 카운트
-    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "share_kakao").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
-    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "share_link_copy").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
-    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "save_image").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
-    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_share_kakao").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
-    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_share_link_copy").gte("created_at", "2026-04-01").lte("created_at", "2026-04-30T23:59:59"),
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "share_kakao").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "share_link_copy").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "save_image").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_share_kakao").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_share_link_copy").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
     hasGeminiBillingConfig()
       ? getGeminiBillingSnapshot({ from: "2026-03-01", to: "2026-03-31T23:59:59" }).catch(() => null)
       : Promise.resolve(null),
     hasGeminiBillingConfig()
-      ? getGeminiBillingSnapshot({ from: "2026-04-01", to: "2026-04-30T23:59:59" }).catch(() => null)
+      ? getGeminiBillingSnapshot({ from: currentMonthStartIso, to: nowIso }).catch(() => null)
       : Promise.resolve(null),
     loadStyleControls(),
     getGenerationErrorOverview(),
