@@ -336,7 +336,16 @@ function buildClusters(traces: DisplayTrace[]): TraceCluster[] {
 
 function buildVisibleRegionLabels(clusters: TraceCluster[]): RegionLabel[] {
   const activeSidos = new Set(clusters.map((cluster) => cluster.sido));
-  const fallbackLabels = new Set(["서울특별시", "경기도", "강원특별자치도", "충청북도", "경상북도", "전북특별자치도", "전라남도", "경상남도", "제주특별자치도", "부산광역시"]);
+  const fallbackLabels = new Set([
+    "서울특별시",
+    "부산광역시",
+    "대구광역시",
+    "인천광역시",
+    "광주광역시",
+    "대전광역시",
+    "울산광역시",
+    "제주특별자치도",
+  ]);
 
   return provinceMap
     .filter((region) => activeSidos.has(region.label) || fallbackLabels.has(region.label))
@@ -366,7 +375,7 @@ function buildVisibleDistrictLabels(
   zoom: number,
 ) {
   const visible = districtMap.filter((region) => isInVisibleBounds(region.centroid, bounds, 3));
-  const step = zoom >= 3 ? 1 : zoom >= 2.3 ? 2 : 3;
+  const step = zoom >= 3.8 ? 2 : zoom >= 3.1 ? 3 : zoom >= 2.5 ? 4 : 6;
 
   return visible.filter((_, index) => index % step === 0).map((region) => ({
     id: region.code,
@@ -381,7 +390,7 @@ function buildVisibleDongLabels(
   zoom: number,
 ) {
   const visible = dongMap.filter((region) => isInVisibleBounds(region.centroid, bounds, 1.2));
-  const step = zoom >= 5.2 ? 1 : zoom >= 4.6 ? 2 : zoom >= 4 ? 4 : 6;
+  const step = zoom >= 5.2 ? 2 : zoom >= 4.8 ? 3 : zoom >= 4.4 ? 5 : 8;
 
   return visible.filter((_, index) => index % step === 0).map((region) => ({
     id: region.code,
@@ -467,7 +476,10 @@ function TraceMap({
   const draggedRef = useRef(false);
   const zoomRef = useRef(zoom);
   const panRef = useRef(pan);
-  const detailLevel = zoom >= 3.6 ? "emd" : zoom >= 1.45 ? "sigungu" : "sido";
+  const detailLevel = zoom >= 4.1 ? "emd" : zoom >= 2.1 ? "sigungu" : "sido";
+  const showProvinceLabels = zoom < 2.25;
+  const showDistrictLabels = zoom >= 2.25 && zoom < 4.35;
+  const showDongLabels = zoom >= 4.35;
   const visibleBounds = useMemo(() => {
     const frame = mapFrameRef.current;
     if (!frame) {
@@ -890,7 +902,7 @@ function TraceMap({
                 );
               })}
 
-          {detailLevel === "sido" &&
+          {showProvinceLabels &&
             provinceLabels.map((region) => (
               <g key={region.id} opacity="0.82">
                 <circle cx={region.x} cy={region.y} r="0.42" fill="rgba(255,255,255,0.18)" />
@@ -898,7 +910,7 @@ function TraceMap({
                   x={region.x + 1}
                   y={region.y - 1}
                   fill="rgba(255,255,255,0.28)"
-                  fontSize="2.6"
+                  fontSize="3"
                   fontWeight="700"
                   letterSpacing="0.04em"
                 >
@@ -907,15 +919,15 @@ function TraceMap({
               </g>
             ))}
 
-          {detailLevel === "sigungu" &&
+          {showDistrictLabels &&
             districtLabels.map((region) => (
-              <g key={region.id} opacity="0.8">
+              <g key={region.id} opacity="0.76">
                 <circle cx={region.x} cy={region.y} r="0.22" fill="rgba(255,255,255,0.15)" />
                 <text
                   x={region.x + 0.55}
                   y={region.y - 0.55}
                   fill="rgba(255,255,255,0.24)"
-                  fontSize="1.2"
+                  fontSize="1.05"
                   fontWeight="700"
                   letterSpacing="0.03em"
                 >
@@ -924,9 +936,9 @@ function TraceMap({
               </g>
             ))}
 
-          {detailLevel === "emd" &&
+          {showDongLabels &&
             dongLabels.map((region) => (
-              <g key={region.id} opacity="0.72">
+              <g key={region.id} opacity="0.68">
                 <circle cx={region.x} cy={region.y} r="0.1" fill="rgba(255,255,255,0.12)" />
                 <text
                   x={region.x + 0.28}
