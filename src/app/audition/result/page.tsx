@@ -1471,12 +1471,12 @@ function AuditionResultInner() {
               {cardStudioLocked && (
                 <div className="absolute inset-x-[12%] top-[37%] z-[2] rounded-[22px] border border-white/14 bg-black/46 px-4 py-4 text-center text-white shadow-[0_16px_40px_rgba(0,0,0,0.28)] backdrop-blur-[2px]">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Card Locked</p>
-                  <p className="mt-2 text-[16px] font-black">원하는 사진을 선택해보세요</p>
+                  <p className="mt-2 text-[16px] font-black">사진 1장만 고르면</p>
                   <p
                     className="mt-2 text-[25px] leading-none tracking-[-0.03em]"
                     style={{ fontFamily: '"BMKkubulim", sans-serif', color: "#FFE26A" }}
                   >
-                    [{bestScene.genre}] 장르의 한 장면 나도 만들기!
+                    [{bestScene.genre}] 카드가 열려요
                   </p>
                 </div>
               )}
@@ -1622,8 +1622,8 @@ function AuditionResultInner() {
             <div className="mb-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[17px] font-black text-gray-900">원하는 사진을 선택해보세요</p>
-                  <p className="mt-1 text-[12px] leading-relaxed text-gray-500">씬 3장이나 앨범 사진 중 한 장으로 스틸컷을 만들 수 있어요.</p>
+                  <p className="text-[17px] font-black text-gray-900">스틸컷에 쓸 사진 선택</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-gray-500">씬 3장이나 앨범 사진 중 1장만 고르면 바로 생성할 수 있어요.</p>
                 </div>
                 <button
                   type="button"
@@ -1642,6 +1642,13 @@ function AuditionResultInner() {
                     <circle cx="9" cy="9" r="1.25" fill="currentColor"/>
                   </svg>
                 </button>
+              </div>
+
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-[11px] font-bold text-gray-400">현재 생성 장르</span>
+                <span className="rounded-full bg-[#FFF7F2] px-3 py-1 text-[11px] font-black text-[#C9571A]">
+                  {bestScene.genre}
+                </span>
               </div>
 
               <div className="mt-4 grid grid-cols-4 gap-2.5">
@@ -1712,19 +1719,12 @@ function AuditionResultInner() {
                   </div>
                 </button>
               </div>
-
-              <p
-                className="mt-4 text-center text-[24px] leading-none tracking-[-0.03em]"
-                style={{ fontFamily: '"BMKkubulim", sans-serif', color: "#C9571A" }}
-              >
-                [{bestScene.genre}] 장르의 한 장면 나도 만들기!
-              </p>
             </div>
 
             <div className="mb-5 flex flex-col gap-3">
               {[
-                { icon: "🎞️", text: "정면 얼굴 사진 기반 얼굴 보존" },
-                { icon: "🎨", text: "선택한 사진으로 현재 장르의 스틸컷 생성" },
+                { icon: "🎞️", text: "얼굴은 정면 사진 기준으로 자연스럽게 보정돼요" },
+                { icon: "🎨", text: "선택한 사진으로 현재 장르 한 장면을 만들어요" },
               ].map(item => (
                 <div key={item.text} className="flex items-center gap-3 px-1">
                   <span className="text-[15px] opacity-80">{item.icon}</span>
