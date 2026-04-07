@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import type { StyleControlState } from "@/lib/style-controls";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-const ADMIN_UI_VERSION = "v2.4.0-profit-clarity";
+const ADMIN_UI_VERSION = "v2.3.0-auto-insights";
 
 type Notice = { id: number; text: string; active: boolean };
 type UserItem = { id: string; nickname: string | null };
@@ -104,20 +104,18 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
   const STYLE_UNIT = 117;
   const AUDITION_UNIT = 468;
   const months = [
-    { key: "2026-03", label: "3월", note: "참고" },
-    { key: "2026-04", label: "4월", note: "현재" },
+    { key: "2026-03", label: "3월", note: "실측" },
+    { key: "2026-04", label: "4월", note: "추정" },
   ];
   const m = monthlyCosts?.[activeMonth];
   const isMar = activeMonth === "2026-03";
   const styleCost = isMar ? null : m ? m.styleCount * STYLE_UNIT : 0;
   const auditionCost = isMar ? null : m ? m.auditionCount * AUDITION_UNIT : 0;
   const profit = m ? m.revenue - m.apiCost : 0;
-  const costRatio = m && m.revenue > 0 ? Math.round((m.apiCost / m.revenue) * 100) : 0;
-  const profitRatio = m && m.revenue > 0 ? Math.round((profit / m.revenue) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">비용 · 매출 · 남는 돈</p>
+      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">API 비용 & 손익</p>
       <div className="flex gap-2">
         {months.map(({ key, label, note }) => (
           <button
@@ -133,58 +131,58 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
       </div>
       {m && (
         <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4 flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[15px] font-bold text-gray-900">
-                {activeMonth === "2026-04" ? "이번 달 손익 요약" : "3월 참고 손익"}
-              </p>
-              <p className="text-[12px] text-gray-500 mt-1">
-                매출에서 AI 비용만 뺀 금액입니다.
-              </p>
+          {/* 사용량 + 비용 분리 테이블 */}
+          <div>
+            <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-widest mb-2">호출 건수 · 비용</p>
+            <div className="flex flex-col">
+              {/* 헤더 */}
+              <div className="flex items-center py-1.5 border-b border-gray-100">
+                <span className="flex-1 text-[12px] text-gray-400">항목</span>
+                <span className="w-14 text-right text-[12px] text-gray-400">건수</span>
+                <span className="w-20 text-right text-[12px] text-gray-400">비용</span>
+              </div>
+              {/* 스타일 변환 행 */}
+              <div className="flex items-center py-2.5 border-b border-gray-100">
+                <span className="flex-1 text-[14px] text-gray-700 font-medium">스타일 카드</span>
+                <span className="w-14 text-right text-[15px] font-bold text-gray-900 tabular-nums">{m.styleCount}건</span>
+                <span className="w-20 text-right text-[14px] text-red-500 font-semibold tabular-nums">
+                  {isMar ? "—" : `-₩${(styleCost ?? 0).toLocaleString()}`}
+                </span>
+              </div>
+              {/* AI 오디션 행 */}
+              <div className="flex items-center py-2.5">
+                <span className="flex-1 text-[14px] text-gray-700 font-medium">AI 오디션</span>
+                <span className="w-14 text-right text-[15px] font-bold text-gray-900 tabular-nums">{m.auditionCount}건</span>
+                <span className="w-20 text-right text-[14px] text-red-500 font-semibold tabular-nums">
+                  {isMar ? "—" : `-₩${(auditionCost ?? 0).toLocaleString()}`}
+                </span>
+              </div>
             </div>
-            <span className="text-[11px] text-gray-400 whitespace-nowrap">
-              {isMar ? "실제 청구서 기준" : "운영 중 추정"}
-            </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <MiniCard label="들어온 돈" value={`₩${m.revenue.toLocaleString()}`} accent />
-            <MiniCard label="AI 비용" value={`₩${m.apiCost.toLocaleString()}`} />
-            <MiniCard label="남는 돈" value={`${profit >= 0 ? "+" : ""}₩${profit.toLocaleString()}`} accent={profit >= 0} />
-            <MiniCard label="AI 원가율" value={m.revenue > 0 ? `${costRatio}%` : "—"} />
-          </div>
-
-          <div className="rounded-xl bg-gray-50 border border-gray-200 px-3 py-3 flex flex-col gap-2">
+          {/* 손익 요약 */}
+          <div className="border-t border-gray-100 pt-3 flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-gray-500">스타일 카드</span>
-              <span className="text-[13px] font-bold text-gray-900 tabular-nums">
-                {m.styleCount}건
-                {!isMar && <span className="text-gray-500 font-medium"> · ₩{(styleCost ?? 0).toLocaleString()}</span>}
-              </span>
+              <span className="text-[14px] text-gray-500">총 API 비용</span>
+              <span className="text-[15px] font-bold text-red-500 tabular-nums">-₩{m.apiCost.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-gray-500">AI 오디션</span>
-              <span className="text-[13px] font-bold text-gray-900 tabular-nums">
-                {m.auditionCount}건
-                {!isMar && <span className="text-gray-500 font-medium"> · ₩{(auditionCost ?? 0).toLocaleString()}</span>}
-              </span>
+              <span className="text-[14px] text-gray-500">매출</span>
+              <span className="text-[15px] font-bold text-gray-900 tabular-nums">₩{m.revenue.toLocaleString()}</span>
             </div>
-            <div className="flex items-center justify-between pt-1 border-t border-gray-200">
-              <span className="text-[13px] text-gray-500">남는 비율</span>
-              <span className={`text-[13px] font-bold tabular-nums ${profit >= 0 ? "text-green-600" : "text-red-500"}`}>
-                {m.revenue > 0 ? `${profitRatio}%` : "—"}
+            <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+              <span className="text-[15px] font-bold text-gray-700">손익</span>
+              <span className={`text-[18px] font-extrabold tabular-nums ${profit >= 0 ? "text-green-600" : "text-red-500"}`}>
+                {profit >= 0 ? "+" : ""}₩{profit.toLocaleString()}
               </span>
             </div>
           </div>
 
-          <div className="text-[11px] text-gray-400 px-1 leading-relaxed">
-            <p>매출 = 결제 완료 금액 기준</p>
-            <p>AI 비용 = 생성 건수 기준 원가 계산</p>
+          <p className="text-[11px] text-gray-400 px-1">
             {isMar
-              ? <p>3월 비용은 Google 청구서 실측값 기준입니다.</p>
-              : <p>스타일 1회 약 ₩{STYLE_UNIT} · 오디션 1회 약 ₩{AUDITION_UNIT}로 계산합니다.</p>}
-            <p>이 숫자는 PG 수수료, 광고비, 인건비 제외 기준입니다.</p>
-          </div>
+              ? "* API 비용은 Google Cloud 청구서 실측값 (3/25~31, 세전) · 건별 단가 미분리"
+              : `* 스타일 ₩${STYLE_UNIT}/건 · 오디션 ₩${AUDITION_UNIT}/건 기준 추정`}
+          </p>
         </div>
       )}
     </div>
@@ -937,6 +935,41 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* API 비용 & 손익 (누적 역산) */}
+      {(() => {
+        const marBilling = 17944;
+        const marEstCalls = 320;
+        const costPerCall = Math.round(marBilling / marEstCalls);
+        const totalCost = stats.total * costPerCall;
+        const profit = stats.totalRevenue - totalCost;
+        const profitRatio = stats.totalRevenue > 0 ? Math.round((profit / stats.totalRevenue) * 100) : 0;
+        const breakEvenCalls = costPerCall > 0 ? Math.ceil(stats.totalRevenue / costPerCall) : 0;
+        return (
+          <Section title="API 비용 & 손익 (누적 역산)">
+            <Row label="3월 GCP 실청구액" value={`${marBilling.toLocaleString()}원`} note="VAT 포함" />
+            <Row label="역산 총 호출 (3월)" value={`약 ${marEstCalls}회`} note="로그 前 테스트 포함" />
+            <Row label="1회당 실측 비용" value={`약 ${costPerCall}원`} note={`₩${marBilling.toLocaleString()} ÷ ${marEstCalls}회`} highlight />
+            <Row label="로그 기록 호출 (누적)" value={`${stats.total.toLocaleString()}회`} />
+            <Row label="누적 API 지출 (추정)" value={`${totalCost.toLocaleString()}원`} note={`${stats.total}회 × ${costPerCall}원`} />
+            <Row label="총 결제 수익" value={`${stats.totalRevenue.toLocaleString()}원`} />
+            <div className="py-3 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500 text-[15px]">순이익</span>
+                <span className={`font-bold text-[17px] tabular-nums ${profit >= 0 ? "text-green-600" : "text-red-500"}`}>
+                  {profit >= 0 ? "+" : ""}{profit.toLocaleString()}원
+                  <span className="text-[13px] font-normal ml-1 opacity-60">({profitRatio}%)</span>
+                </span>
+              </div>
+            </div>
+            <Row
+              label="손익분기 누적 변환"
+              value={`${breakEvenCalls.toLocaleString()}회`}
+              note={stats.total >= breakEvenCalls ? "달성 ✓" : `${(breakEvenCalls - stats.total).toLocaleString()}회 남음`}
+            />
+          </Section>
+        );
+      })()}
 
       {/* 크레딧 조정 */}
       <div className="flex flex-col gap-1">
