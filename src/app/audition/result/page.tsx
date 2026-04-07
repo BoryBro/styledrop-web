@@ -1639,22 +1639,21 @@ function AuditionResultInner() {
         </div>
 
         {cardStudioLocked && (
-          <div className="-mt-3 rounded-b-[28px] bg-[#fbfbfd] px-5 pb-5 pt-8 shadow-[0_14px_28px_rgba(0,0,0,0.06)]">
-            <div className="mb-5">
+          <div className="-mt-3 rounded-b-[28px] bg-[#fbfbfd] px-5 pb-4 pt-4 shadow-[0_14px_28px_rgba(0,0,0,0.06)]">
+            <div>
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[24px] font-black tracking-[-0.04em] text-[#101218]">스틸컷에 쓸 사진 선택</p>
-                  <p className="mt-2 text-[14px] leading-[1.65] text-[#6e7280]">
+                  <p className="text-[21px] font-black tracking-[-0.04em] text-[#101218]">스틸컷에 쓸 사진 선택</p>
+                  <p className="mt-1.5 text-[13px] leading-[1.55] text-[#6e7280]">
                     씬 3장이나 앨범 사진 중 한 장만 고르면 바로 생성할 수 있어요.
                   </p>
-                  <div className="mt-4">
+                  <div className="mt-3">
                     <GenreMoodLine genre={bestScene.genre} />
                   </div>
                 </div>
               </div>
 
-              <div className="-mx-5 mt-4 overflow-x-auto px-5 pb-2 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex w-max gap-2.5 pr-5">
+              <div className="mt-3 grid grid-cols-4 gap-2">
                 {stillSourceOptions.map((option) => {
                   const selected = selectedStillSourceKey === option.key;
                   return (
@@ -1662,13 +1661,13 @@ function AuditionResultInner() {
                       key={option.key}
                       type="button"
                       onClick={() => setSelectedStillSourceKey(option.key)}
-                      className={`min-w-[82px] max-w-[82px] snap-start overflow-hidden rounded-[20px] bg-white text-left ring-1 transition-all ${
+                      className={`overflow-hidden rounded-[18px] bg-white text-left ring-1 transition-all ${
                         selected
                           ? "ring-[1.5px] ring-[#111827]/16 -translate-y-[1px]"
                           : "ring-black/[0.06] hover:ring-black/[0.12]"
                       }`}
                     >
-                      <div className="relative aspect-[0.76] overflow-hidden bg-[#f3f4f6]">
+                      <div className="relative aspect-[0.72] overflow-hidden bg-[#f3f4f6]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={option.image} alt={option.label} className="h-full w-full object-cover" />
                         {selected && (
@@ -1683,23 +1682,38 @@ function AuditionResultInner() {
                     </button>
                   );
                 })}
-                </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={() => stillFileInputRef.current?.click()}
-                className={`mt-3 inline-flex h-11 items-center justify-center gap-2 rounded-full px-4 text-[13px] font-bold transition-all ${
-                  selectedStillSourceKey === "album"
-                    ? "bg-[#111827] text-white shadow-[0_10px_24px_rgba(17,24,39,0.18)]"
-                    : "bg-white text-[#4b5563] ring-1 ring-black/[0.08] hover:ring-black/[0.14]"
-                }`}
-                aria-label="업로드"
-                title="업로드"
-              >
-                <span className="text-[15px] font-black leading-none" style={{ fontFamily: "var(--font-unbounded)" }}>U</span>
-                <span>{albumStillPhoto ? "업로드 사진 변경" : "사진 업로드"}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => stillFileInputRef.current?.click()}
+                  className={`overflow-hidden rounded-[18px] text-left transition-all ${
+                    selectedStillSourceKey === "album"
+                      ? "bg-[#111827] text-white shadow-[0_10px_24px_rgba(17,24,39,0.18)]"
+                      : "bg-white text-[#4b5563] ring-1 ring-black/[0.08] hover:ring-black/[0.14]"
+                  }`}
+                  aria-label="업로드"
+                  title="업로드"
+                >
+                  <div className="flex aspect-[0.72] flex-col items-center justify-center gap-2">
+                    {albumStillPhoto ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={albumStillPhoto} alt="업로드 사진" className="h-full w-full object-cover" />
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[20px] font-black leading-none" style={{ fontFamily: "var(--font-unbounded)" }}>U</span>
+                        <span className="text-[10px] font-bold">{albumStillPhoto ? "변경" : "업로드"}</span>
+                      </>
+                    )}
+                  </div>
+                  {!albumStillPhoto && (
+                    <div className="px-2.5 pb-2.5 pt-2">
+                      <p className="text-[11px] font-black">업로드</p>
+                    </div>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
