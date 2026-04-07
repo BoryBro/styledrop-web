@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { AUDITION_CONTROL_ID, type StyleControlState } from "@/lib/style-controls";
+import {
+  AUDITION_CONTROL_ID,
+  PERSONAL_COLOR_CONTROL_ID,
+  type StyleControlState,
+} from "@/lib/style-controls";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
 const ADMIN_UI_VERSION = "v2.7.0-audition-ops";
@@ -612,7 +616,14 @@ export default function AdminPage() {
   const shareTotal = stats.shareKakao + stats.shareLinkCopy;
   const shareRatio = stats.total > 0 ? Math.round((shareTotal / stats.total) * 100) : 0;
   const auditionControl = styleControls.find((row) => row.style_id === AUDITION_CONTROL_ID);
-  const cardStyleControls = styleControls.filter((row) => row.style_id !== AUDITION_CONTROL_ID);
+  const personalColorControl = styleControls.find((row) => row.style_id === PERSONAL_COLOR_CONTROL_ID);
+  const specialFeatureControls = [
+    auditionControl ? { title: "AI 오디션", control: auditionControl } : null,
+    personalColorControl ? { title: "퍼스널 컬러", control: personalColorControl } : null,
+  ].filter((item): item is { title: string; control: StyleControlState } => Boolean(item));
+  const cardStyleControls = styleControls.filter(
+    (row) => row.style_id !== AUDITION_CONTROL_ID && row.style_id !== PERSONAL_COLOR_CONTROL_ID
+  );
   const sortedStyleControls = [...cardStyleControls].sort((a, b) => {
     const aIssue = Number(!a.is_visible || !a.is_enabled);
     const bIssue = Number(!b.is_visible || !b.is_enabled);
@@ -866,45 +877,45 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {auditionControl && (
-                <div className="rounded-xl border border-[#F3D2BF] bg-[#FFF7F2] px-3 py-3">
+              {specialFeatureControls.map(({ title, control }) => (
+                <div key={control.style_id} className="rounded-xl border border-[#F3D2BF] bg-[#FFF7F2] px-3 py-3">
                   <div className="flex items-center gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-bold text-gray-900">AI 오디션</p>
+                      <p className="text-[13px] font-bold text-gray-900">{title}</p>
                       <p className="text-[11px] text-gray-500">
-                        {auditionControl.is_visible && auditionControl.is_enabled ? "실험실 진입 가능" : "현재 숨김 또는 중지"}
+                        {control.is_visible && control.is_enabled ? "실험실 진입 가능" : "현재 숨김 또는 중지"}
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button
-                        onClick={() => updateStyleControl(auditionControl.style_id, { is_visible: !auditionControl.is_visible })}
-                        disabled={styleSavingId === auditionControl.style_id}
+                        onClick={() => updateStyleControl(control.style_id, { is_visible: !control.is_visible })}
+                        disabled={styleSavingId === control.style_id}
                         className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
-                          auditionControl.is_visible
+                          control.is_visible
                             ? "bg-gray-900 text-white"
                             : "bg-white text-gray-600 border border-gray-300"
                         } disabled:opacity-50`}
                       >
-                        {auditionControl.is_visible ? "노출" : "숨김"}
+                        {control.is_visible ? "노출" : "숨김"}
                       </button>
                       <button
-                        onClick={() => updateStyleControl(auditionControl.style_id, { is_enabled: !auditionControl.is_enabled })}
-                        disabled={styleSavingId === auditionControl.style_id}
+                        onClick={() => updateStyleControl(control.style_id, { is_enabled: !control.is_enabled })}
+                        disabled={styleSavingId === control.style_id}
                         className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
-                          auditionControl.is_enabled
+                          control.is_enabled
                             ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]"
                             : "bg-white text-gray-600 border border-gray-300"
                         } disabled:opacity-50`}
                       >
-                        {auditionControl.is_enabled ? "생성" : "중지"}
+                        {control.is_enabled ? "생성" : "중지"}
                       </button>
                     </div>
                     <div className="w-10 text-right">
-                      {styleSavingId === auditionControl.style_id && <span className="text-[10px] text-gray-400">저장</span>}
+                      {styleSavingId === control.style_id && <span className="text-[10px] text-gray-400">저장</span>}
                     </div>
                   </div>
                 </div>
-              )}
+              ))}
 
               <div className="rounded-xl border border-gray-200 overflow-hidden">
                 {sortedStyleControls.map((control) => {

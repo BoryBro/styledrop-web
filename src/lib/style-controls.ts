@@ -1,4 +1,4 @@
-import { AUDITION_ENABLED } from "@/lib/feature-flags";
+import { AUDITION_ENABLED, PERSONAL_COLOR_LAB_ENABLED } from "@/lib/feature-flags";
 import { ALL_STYLES, type StyleDef } from "@/lib/styles";
 
 export type StyleControlRow = {
@@ -15,6 +15,8 @@ export type StyleControlState = StyleControlRow & {
 
 export const AUDITION_CONTROL_ID = "audition";
 export const AUDITION_CONTROL_NAME = "AI 오디션";
+export const PERSONAL_COLOR_CONTROL_ID = "personal-color";
+export const PERSONAL_COLOR_CONTROL_NAME = "퍼스널 컬러";
 
 function buildFeatureControls(): StyleControlState[] {
   return [
@@ -23,6 +25,14 @@ function buildFeatureControls(): StyleControlState[] {
       style_name: AUDITION_CONTROL_NAME,
       is_visible: AUDITION_ENABLED,
       is_enabled: AUDITION_ENABLED,
+      disabled_reason: null,
+      updated_at: null,
+    },
+    {
+      style_id: PERSONAL_COLOR_CONTROL_ID,
+      style_name: PERSONAL_COLOR_CONTROL_NAME,
+      is_visible: PERSONAL_COLOR_LAB_ENABLED,
+      is_enabled: PERSONAL_COLOR_LAB_ENABLED,
       disabled_reason: null,
       updated_at: null,
     },

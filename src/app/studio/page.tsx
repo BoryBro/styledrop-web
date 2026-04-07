@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
 import { PERSONAL_COLOR_LAB_ENABLED } from "@/lib/feature-flags";
-import { applyStyleControl, type StyleControlState } from "@/lib/style-controls";
+import {
+  PERSONAL_COLOR_CONTROL_ID,
+  applyStyleControl,
+  resolveFeatureControlState,
+  type StyleControlState,
+} from "@/lib/style-controls";
 import { ALL_STYLES } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
@@ -130,7 +135,13 @@ export default function Studio() {
     return styleOrder[a.id] - styleOrder[b.id];
   });
   const showAuditionLab = !isAuditionLoading && isAuditionVisible && isAuditionEnabled;
-  const showLabSection = showAuditionLab || PERSONAL_COLOR_LAB_ENABLED;
+  const personalColorControl = resolveFeatureControlState(
+    styleControls[PERSONAL_COLOR_CONTROL_ID],
+    PERSONAL_COLOR_LAB_ENABLED
+  );
+  const showPersonalColorLab = personalColorControl.is_visible;
+  const isPersonalColorEnabled = personalColorControl.is_enabled;
+  const showLabSection = showAuditionLab || showPersonalColorLab;
 
   const scrollToSection = useCallback((section: StudioSectionTab) => {
     const target = section === "cards" ? generalCardsSectionRef.current : labSectionRef.current;
@@ -180,6 +191,15 @@ export default function Studio() {
       sessionStorage.setItem("sd_variant", "default");
       fileInputRef.current?.click();
     }
+  };
+
+  const handlePersonalColorClick = () => {
+    if (!isPersonalColorEnabled) {
+      showToast("현재 점검 중입니다. 잠시 후 다시 확인해주세요.");
+      return;
+    }
+
+    router.push("/personal-color");
   };
 
   // 카메라 가이드 — 스트림 시작/정리
@@ -601,8 +621,12 @@ export default function Studio() {
                   </Link>
                 )}
 
-                {PERSONAL_COLOR_LAB_ENABLED && (
-                  <Link href="/personal-color" className="block mb-4 active:scale-[0.97] transition-transform">
+                {showPersonalColorLab && (
+                  <button
+                    type="button"
+                    onClick={handlePersonalColorClick}
+                    className="block w-full mb-4 text-left active:scale-[0.97] transition-transform"
+                  >
                     <div
                       className="relative overflow-hidden rounded-2xl border border-[#DDE4F0]/10 bg-[#0C1018]"
                       style={{ aspectRatio: "4/3" }}
@@ -635,11 +659,11 @@ export default function Studio() {
                       >
                         AI Personal Color
                       </span>
-                      <span
+                    <span
                         className="rounded-full border border-white/15 px-2.5 py-0.5 text-[10px] font-bold tracking-widest text-white/35 uppercase"
                         style={{ fontFamily: '"Unbounded", sans-serif' }}
                       >
-                        FREE
+                        {isPersonalColorEnabled ? "FREE" : "PAUSED"}
                       </span>
                     </div>
 
@@ -698,8 +722,19 @@ export default function Studio() {
                         </svg>
                       </div>
                     </div>
+
+                    {!isPersonalColorEnabled && (
+                      <>
+                        <div className="absolute inset-0 bg-[#07101C]/62" />
+                        <div className="absolute inset-0 z-30 flex items-center justify-center">
+                          <span className="rounded-full border border-white/18 bg-black/35 px-4 py-2 text-[13px] font-bold text-white backdrop-blur-md">
+                            현재 점검 중
+                          </span>
+                        </div>
+                      </>
+                    )}
                     </div>
-                  </Link>
+                  </button>
                 )}
               </div>
             </>

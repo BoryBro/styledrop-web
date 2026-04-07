@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { usePersonalColorAvailability } from "@/hooks/usePersonalColorAvailability";
 import { ALL_STYLES } from "@/lib/styles";
 import {
   analyzePersonalColor,
@@ -271,6 +272,11 @@ async function resizeImageFile(file: File) {
 
 export default function PersonalColorPage() {
   const router = useRouter();
+  const {
+    isLoading: isPersonalColorLoading,
+    isVisible: isPersonalColorVisible,
+    isEnabled: isPersonalColorEnabled,
+  } = usePersonalColorAvailability();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -407,6 +413,57 @@ export default function PersonalColorPage() {
   const pendingStyle = pendingStyleId
     ? ALL_STYLES.find((style) => style.id === pendingStyleId) ?? null
     : null;
+
+  if (isPersonalColorLoading) {
+    return (
+      <main className="min-h-screen bg-[#F5F7FC] text-[#131A2A]">
+        <div className="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center px-4 py-10">
+          <div className="rounded-[28px] border border-[#DCE2EF] bg-white px-6 py-8 text-center shadow-[0_20px_60px_rgba(12,18,32,0.06)]">
+            <span className="mx-auto inline-flex h-11 w-11 animate-spin rounded-full border-[3px] border-[#DDE4F2] border-t-[#315EFB]" />
+            <p className="mt-4 text-[15px] font-semibold text-[#465067]">퍼스널 컬러 실험실 상태를 확인 중이에요</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!isPersonalColorVisible || !isPersonalColorEnabled) {
+    return (
+      <main className="min-h-screen bg-[#F5F7FC] text-[#131A2A]">
+        <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 pb-14 pt-5 sm:px-6">
+          <header className="mb-5 flex items-center justify-between">
+            <Link href="/studio" className="flex items-center gap-2 text-[14px] font-semibold text-[#465067]">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M11.25 4.5L6.75 9L11.25 13.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              실험실로 돌아가기
+            </Link>
+            <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold tracking-[0.14em] text-[#6E7890] shadow-sm">
+              PERSONAL COLOR LAB
+            </span>
+          </header>
+
+          <section className="rounded-[32px] border border-[#DCE2EF] bg-white px-6 py-8 shadow-[0_30px_80px_rgba(12,18,32,0.08)] sm:px-7 sm:py-9">
+            <p className="text-[12px] font-bold uppercase tracking-[0.24em] text-[#C9571A]">AI Personal Color</p>
+            <h1 className="mt-3 text-[32px] font-black leading-[1.08] tracking-[-0.04em] text-[#111827]">
+              지금은 잠시
+              <br />
+              점검 중이에요
+            </h1>
+            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#677084]">
+              어드민에서 현재 퍼스널 컬러 실험실 진입 또는 생성을 중지한 상태입니다. 잠시 후 다시 확인해주세요.
+            </p>
+            <Link
+              href="/studio"
+              className="mt-6 inline-flex items-center justify-center rounded-[20px] bg-[#121A2A] px-5 py-3 text-[15px] font-bold text-white"
+            >
+              Studio로 돌아가기
+            </Link>
+          </section>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#F5F7FC] text-[#131A2A]">
