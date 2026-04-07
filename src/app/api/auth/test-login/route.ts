@@ -6,14 +6,16 @@ import { createClient } from "@supabase/supabase-js";
 
 const TEST_KAKAO_ID = 9999999901;
 const TEST_NICKNAME = "테스트계정";
+const REVIEWER_LOGIN_ID = process.env.TEST_LOGIN_ID ?? "styledrop-review";
 
-export async function GET(request: NextRequest) {
-  const pw = new URL(request.url).searchParams.get("pw");
+function isAuthorized(pw: string | null, loginId?: string | null) {
+  const expectedPassword = process.env.TEST_LOGIN_PASSWORD ?? process.env.ADMIN_PASSWORD;
+  if (!expectedPassword || pw !== expectedPassword) return false;
+  if (loginId === undefined || loginId === null) return true;
+  return loginId === REVIEWER_LOGIN_ID;
+}
 
-  if (!process.env.ADMIN_PASSWORD || pw !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+async function createTestLoginResponse(request: NextRequest) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_KEY!
@@ -39,7 +41,7 @@ export async function GET(request: NextRequest) {
   ).toString("base64");
 
   const origin = new URL(request.url).origin;
-  const response = NextResponse.redirect(`${origin}/shop`);
+  const response = NextResponse.redirect(`${origin}/shop`, { status: 303 });
   response.cookies.set("sd_session", session, {
     httpOnly: true,
     secure: true,
@@ -48,4 +50,27 @@ export async function GET(request: NextRequest) {
   });
 
   return response;
+}
+
+export async function GET(request: NextRequest) {
+  const pw = new URL(request.url).searchParams.get("pw");
+
+  if (!isAuthorized(pw)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  return createTestLoginResponse(request);
+}
+
+export async function POST(request: NextRequest) {
+  const formData = await request.formData();
+  const loginId = String(formData.get("loginId") ?? "");
+  const password = String(formData.get("password") ?? "");
+
+  if (!isAuthorized(password, loginId)) {
+    const origin = new URL(request.url).origin;
+    return NextResponse.redirect(`${origin}/reviewer-login?error=1`, { status: 303 });
+  }
+
+  return createTestLoginResponse(request);
 }
