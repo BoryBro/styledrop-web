@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     ? usageWithVariant
     : await supabase.from("style_usage").select("style_id, style_name, user_id");
 
-  const [eventsRes, usersRes, todayUsageRes, paymentsRes, todayPaymentsRes, userListRes,
+  const [eventsRes, todayEventsRes, usersRes, todayUsageRes, todayUsageRowsRes, paymentsRes, todayPaymentsRes, userListRes,
     marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marRevenueRes, aprRevenueRes,
     aprShareKakaoRes, aprShareLinkRes, aprSaveRes, aprAuditionShareKakaoRes, aprAuditionShareLinkRes,
     styleControls,
@@ -38,8 +38,10 @@ export async function POST(request: NextRequest) {
   ] = await Promise.all([
     // metadata 포함해서 공유 이벤트의 style_id 집계 가능하도록
     supabase.from("user_events").select("event_type, metadata"),
+    supabase.from("user_events").select("event_type, metadata").gte("created_at", todayIso),
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
+    supabase.from("style_usage").select("style_id").gte("created_at", todayIso),
     supabase.from("payments").select("id, amount, credits, user_id, status, created_at").order("created_at", { ascending: false }),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
     supabase.from("users").select("id, nickname").order("created_at", { ascending: false }).limit(500),
@@ -75,6 +77,8 @@ export async function POST(request: NextRequest) {
 
   const usage = usageRes.data ?? [];
   const events = eventsRes.data ?? [];
+  const todayEvents = todayEventsRes.data ?? [];
+  const todayUsageRows = todayUsageRowsRes.data ?? [];
 
   // 전체 / 스타일별
   const total = usage.length;
@@ -95,6 +99,12 @@ export async function POST(request: NextRequest) {
     style_name: v.style_name,
     count: v.count,
   })).sort((a, b) => b.count - a.count);
+
+  const todayStyleCounts: Record<string, number> = {};
+  for (const row of todayUsageRows) {
+    if (!validStyleIds.has(row.style_id)) continue;
+    todayStyleCounts[row.style_id] = (todayStyleCounts[row.style_id] ?? 0) + 1;
+  }
 
   // 스타일별 베리에이션 집계
   const byStyleVariants: Record<string, Record<string, number>> = {};
@@ -139,6 +149,24 @@ export async function POST(request: NextRequest) {
     total: v.kakao + v.link,
   })).sort((a, b) => b.total - a.total);
 
+  const todayStyleEvents: Record<string, { kakao: number; link: number; save: number }> = {};
+  for (const e of todayEvents) {
+    const styleId = (e.metadata as { style_id?: string } | null)?.style_id;
+    if (!styleId || !validStyleIds.has(styleId)) continue;
+
+    if (!todayStyleEvents[styleId]) {
+      todayStyleEvents[styleId] = { kakao: 0, link: 0, save: 0 };
+    }
+
+    if (e.event_type === "share_kakao") {
+      todayStyleEvents[styleId].kakao++;
+    } else if (e.event_type === "share_link_copy") {
+      todayStyleEvents[styleId].link++;
+    } else if (e.event_type === "save_image") {
+      todayStyleEvents[styleId].save++;
+    }
+  }
+
   const stylePerformanceList = byStyle.map((style) => {
     const event = styleEvents[style.style_id] ?? { kakao: 0, link: 0, save: 0 };
     const shareCount = event.kakao + event.link;
@@ -154,6 +182,24 @@ export async function POST(request: NextRequest) {
       shareRate,
     };
   });
+
+  const stylePerformance24hList = Object.entries(todayStyleCounts)
+    .map(([style_id, count]) => {
+      const event = todayStyleEvents[style_id] ?? { kakao: 0, link: 0, save: 0 };
+      const shareCount = event.kakao + event.link;
+      const saveRate = count > 0 ? Math.round((event.save / count) * 100) : 0;
+      const shareRate = count > 0 ? Math.round((shareCount / count) * 100) : 0;
+      return {
+        style_id,
+        style_name: STYLE_LABELS[style_id] ?? style_id,
+        count,
+        saveCount: event.save,
+        shareCount,
+        saveRate,
+        shareRate,
+      };
+    })
+    .sort((a, b) => b.count - a.count);
 
   return NextResponse.json({
     userList: userListRes.data ?? [],
@@ -175,6 +221,7 @@ export async function POST(request: NextRequest) {
     saveImage: eventCounts["save_image"] ?? 0,
     shareByStyleList,
     stylePerformanceList,
+    stylePerformance24hList,
     transformEvents: eventCounts["transform"] ?? 0,
     auditionShareKakao: eventCounts["audition_share_kakao"] ?? 0,
     auditionShareLinkCopy: eventCounts["audition_share_link_copy"] ?? 0,

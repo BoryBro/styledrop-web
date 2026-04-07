@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import type { StyleControlState } from "@/lib/style-controls";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-const ADMIN_UI_VERSION = "v2.3.0-auto-insights";
+const ADMIN_UI_VERSION = "v2.2.0-style-performance";
 
 type Notice = { id: number; text: string; active: boolean };
 type UserItem = { id: string; nickname: string | null };
@@ -35,15 +35,6 @@ type Stats = {
   generationErrorSummary: GenerationErrorSummary[];
   recentGenerationErrors: RecentGenerationError[];
   stylePerformanceList: {
-    style_id: string;
-    style_name: string;
-    count: number;
-    saveCount: number;
-    shareCount: number;
-    saveRate: number;
-    shareRate: number;
-  }[];
-  stylePerformance24hList: {
     style_id: string;
     style_name: string;
     count: number;
@@ -497,69 +488,6 @@ export default function AdminPage() {
     if (usageB !== usageA) return usageB - usageA;
     return a.style_name.localeCompare(b.style_name, "ko");
   });
-  const errorMap = new Map(stats.generationErrorSummary.map((item) => [item.style_id, item]));
-  const perf24hMap = new Map(stats.stylePerformance24hList.map((item) => [item.style_id, item]));
-  const lowSaveSet = new Set(
-    stats.stylePerformance24hList
-      .filter((item) => item.count >= 5)
-      .sort((a, b) => {
-        if (a.saveRate !== b.saveRate) return a.saveRate - b.saveRate;
-        return b.count - a.count;
-      })
-      .slice(0, 3)
-      .map((item) => item.style_id)
-  );
-  const highShareSet = new Set(
-    stats.stylePerformance24hList
-      .filter((item) => item.count >= 5 && item.shareCount > 0)
-      .sort((a, b) => {
-        if (b.shareRate !== a.shareRate) return b.shareRate - a.shareRate;
-        return b.shareCount - a.shareCount;
-      })
-      .slice(0, 3)
-      .map((item) => item.style_id)
-  );
-  const issueIds = new Set(
-    stats.stylePerformanceList
-      .filter((item) => {
-        const control = styleControls.find((row) => row.style_id === item.style_id);
-        const perf24h = perf24hMap.get(item.style_id);
-        const hasControlIssue = !!control && (!control.is_visible || !control.is_enabled);
-        const hasError = (errorMap.get(item.style_id)?.errorCount ?? 0) > 0;
-        const lowSaveIssue = !!perf24h && perf24h.count >= 5 && perf24h.saveRate <= 15;
-        return hasControlIssue || hasError || lowSaveIssue;
-      })
-      .map((item) => item.style_id)
-  );
-  const highlightedProblems = stats.stylePerformanceList
-    .filter((item) => issueIds.has(item.style_id))
-    .sort((a, b) => {
-      const controlA = styleControls.find((row) => row.style_id === a.style_id);
-      const controlB = styleControls.find((row) => row.style_id === b.style_id);
-      const controlIssueA = Number(!!controlA && (!controlA.is_visible || !controlA.is_enabled));
-      const controlIssueB = Number(!!controlB && (!controlB.is_visible || !controlB.is_enabled));
-      if (controlIssueB !== controlIssueA) return controlIssueB - controlIssueA;
-      const errorA = errorMap.get(a.style_id)?.errorCount ?? 0;
-      const errorB = errorMap.get(b.style_id)?.errorCount ?? 0;
-      if (errorB !== errorA) return errorB - errorA;
-      const saveA = perf24hMap.get(a.style_id)?.saveRate ?? 999;
-      const saveB = perf24hMap.get(b.style_id)?.saveRate ?? 999;
-      if (saveA !== saveB) return saveA - saveB;
-      return b.count - a.count;
-    })
-    .slice(0, 3);
-  const highlightedLowSave = stats.stylePerformance24hList
-    .filter((item) => lowSaveSet.has(item.style_id))
-    .slice(0, 3);
-  const highlightedHighShare = stats.stylePerformance24hList
-    .filter((item) => highShareSet.has(item.style_id))
-    .slice(0, 3);
-  const sortedStylePerformance = [...stats.stylePerformanceList].sort((a, b) => {
-    const aIssue = Number(issueIds.has(a.style_id));
-    const bIssue = Number(issueIds.has(b.style_id));
-    if (bIssue !== aIssue) return bIssue - aIssue;
-    return b.count - a.count;
-  });
 
   return (
     <main className="w-full max-w-sm mx-auto px-4 py-10 flex flex-col gap-6 bg-gray-50 min-h-screen">
@@ -746,74 +674,6 @@ export default function AdminPage() {
                 </div>
               );
             })}
-          </div>
-        </div>
-      </div>
-
-      {/* 자동 하이라이트 */}
-      <div className="flex flex-col gap-1">
-        <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">자동 하이라이트 (24시간)</p>
-        <div className="grid grid-cols-1 gap-2">
-          <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
-            <p className="text-[12px] font-bold text-red-500 mb-2">주의 필요</p>
-            {highlightedProblems.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {highlightedProblems.map((item) => {
-                  const control = styleControls.find((row) => row.style_id === item.style_id);
-                  const perf24h = perf24hMap.get(item.style_id);
-                  const error = errorMap.get(item.style_id);
-                  const reason = !control?.is_visible
-                    ? "숨김 상태"
-                    : control?.is_enabled === false
-                      ? "생성 중지"
-                      : (error?.errorCount ?? 0) > 0
-                        ? `오류 ${error?.errorCount}건`
-                        : perf24h
-                          ? `저장률 ${perf24h.saveRate}%`
-                          : "확인 필요";
-                  return (
-                    <div key={item.style_id} className="flex items-center justify-between gap-2">
-                      <span className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</span>
-                      <span className="text-[11px] text-red-500 font-semibold whitespace-nowrap">{reason}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-[13px] text-gray-500">특이사항 없음</p>
-            )}
-          </div>
-
-          <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
-            <p className="text-[12px] font-bold text-[#C9571A] mb-2">공유 강세</p>
-            {highlightedHighShare.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {highlightedHighShare.map((item) => (
-                  <div key={item.style_id} className="flex items-center justify-between gap-2">
-                    <span className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</span>
-                    <span className="text-[11px] text-[#C9571A] font-semibold whitespace-nowrap">공유율 {item.shareRate}%</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[13px] text-gray-500">아직 공유 데이터 부족</p>
-            )}
-          </div>
-
-          <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
-            <p className="text-[12px] font-bold text-gray-700 mb-2">저장 약세</p>
-            {highlightedLowSave.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {highlightedLowSave.map((item) => (
-                  <div key={item.style_id} className="flex items-center justify-between gap-2">
-                    <span className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</span>
-                    <span className="text-[11px] text-gray-600 font-semibold whitespace-nowrap">저장률 {item.saveRate}%</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[13px] text-gray-500">아직 저장 데이터 부족</p>
-            )}
           </div>
         </div>
       </div>
@@ -1055,33 +915,21 @@ export default function AdminPage() {
 
       {/* 스타일별 */}
       <Section title="스타일별 성과">
-        {sortedStylePerformance.length === 0 ? (
+        {stats.stylePerformanceList.length === 0 ? (
           <p className="text-gray-400 text-[15px] py-4">데이터 없음</p>
         ) : (
-          sortedStylePerformance.map((s) => {
+          stats.stylePerformanceList.map((s) => {
             const variants = STYLE_VARIANTS[s.style_id];
             const errorItem = stats.generationErrorSummary.find((item) => item.style_id === s.style_id);
-            const perf24h = perf24hMap.get(s.style_id);
-            const isProblem = issueIds.has(s.style_id);
-            const isHighShare = highShareSet.has(s.style_id);
-            const isLowSave = lowSaveSet.has(s.style_id);
             return (
               <div key={s.style_id} className="py-3 border-b border-gray-100 last:border-0">
                 <div className="flex items-center justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-gray-800 text-[14px] font-bold truncate">{s.style_name}</span>
-                      {isProblem && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-500 border border-red-200">문제</span>}
-                      {isHighShare && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]">공유강세</span>}
-                      {isLowSave && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">저장약세</span>}
-                    </div>
-                  </div>
+                  <span className="text-gray-800 text-[14px] font-bold">{s.style_name}</span>
                   <span className="text-gray-900 font-bold text-[14px]">{s.count}회</span>
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-gray-500">
                   <span>저장 {s.saveCount} · {s.saveRate}%</span>
                   <span>공유 {s.shareCount} · {s.shareRate}%</span>
-                  {perf24h && <span>24h 저장 {perf24h.saveRate}% · 공유 {perf24h.shareRate}%</span>}
                   {errorItem && (
                     <span className="text-red-500 font-semibold">오류 {errorItem.errorCount} · {errorItem.errorRate}%</span>
                   )}
