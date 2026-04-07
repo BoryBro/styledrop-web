@@ -3,7 +3,7 @@
 import { geoContains, geoMercator, geoPath } from "d3-geo";
 import Link from "next/link";
 import { feature } from "topojson-client";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import koreaEmdTopology from "@tenqube/react-korea-bubble-map/dist/esm/emd-64475e77.js";
 import koreaSidoTopology from "@tenqube/react-korea-bubble-map/dist/esm/sido-0af932a3.js";
 import koreaSigunguTopology from "@tenqube/react-korea-bubble-map/dist/esm/sigungu-3878911c.js";
@@ -443,7 +443,6 @@ function TraceMap({
   canRemoveMyTrace,
   removing,
   onRemoveMyTrace,
-  participationOverlay,
 }: {
   traces: DisplayTrace[];
   clusters: TraceCluster[];
@@ -457,7 +456,6 @@ function TraceMap({
   canRemoveMyTrace: boolean;
   removing: boolean;
   onRemoveMyTrace: () => void;
-  participationOverlay?: ReactNode;
 }) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -523,11 +521,18 @@ function TraceMap({
   }, [traces]);
 
   const clampPan = useCallback((nextZoom: number, nextPan: { x: number; y: number }) => {
-    const limitX = (nextZoom - 1) * 120;
-    const limitY = (nextZoom - 1) * 160;
+    const frame = mapFrameRef.current;
+    if (!frame) return nextPan;
+
+    const rect = frame.getBoundingClientRect();
+    const scaledWidth = rect.width * nextZoom;
+    const scaledHeight = rect.height * nextZoom;
+    const minX = Math.min(0, rect.width - scaledWidth);
+    const minY = Math.min(0, rect.height - scaledHeight);
+
     return {
-      x: clamp(nextPan.x, -limitX, limitX),
-      y: clamp(nextPan.y, -limitY, limitY),
+      x: clamp(nextPan.x, minX, 0),
+      y: clamp(nextPan.y, minY, 0),
     };
   }, []);
 
@@ -1031,11 +1036,6 @@ function TraceMap({
         </svg>
       </div>
 
-      {participationOverlay && (
-        <div className="absolute bottom-4 left-4 right-4 z-20 sm:right-auto sm:w-[340px]">
-          {participationOverlay}
-        </div>
-      )}
     </div>
   );
 }
@@ -1633,9 +1633,9 @@ export default function TraceLabPage() {
                 canRemoveMyTrace={Boolean(!loading && user && payload?.me.alreadyJoined)}
                 removing={removing}
                 onRemoveMyTrace={handleRemoveMyTrace}
-                participationOverlay={participationOverlay}
               />
             )}
+            {participationOverlay && <div className="mt-4">{participationOverlay}</div>}
           </section>
 
           <aside className="flex flex-col gap-4">
