@@ -6,6 +6,340 @@ import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 
 type Scores = { 이해도: number; 표정연기: number; 창의성: number; 몰입도: number };
 
+const PHYSIO_FACE_TYPES = ["둥근형", "각진형", "달걀형", "역삼각형", "판별불가"] as const;
+const PHYSIO_ARCHETYPES = [
+  "카리스마 주인공형",
+  "냉철한 악역형",
+  "순수 서브주인공형",
+  "반전 매력형",
+  "멜로 감성형",
+  "독립영화 감성형",
+  "인생 조연형",
+  "카리스마 조연형",
+  "판별불가",
+] as const;
+const PHYSIO_ALLOWED_GENRES = [
+  "멜로",
+  "스릴러",
+  "일상",
+  "공포",
+  "코미디",
+  "액션",
+  "판타지",
+  "범죄",
+  "로맨스",
+  "심리",
+  "판별불가",
+] as const;
+
+const PHYSIO_FACE_TYPE_COPY: Record<string, { screenImpression: string; featureReadings: string[] }> = {
+  둥근형: {
+    screenImpression: "광대보다 볼과 턱의 곡선이 먼저 읽혀서 화면에 친화감과 온기가 붙는다.",
+    featureReadings: [
+      "눈: 둥글게 열린 눈매가 경계심보다 공감대를 먼저 만든다.",
+      "코·입: 코끝과 입매가 부드럽게 이어져 감정이 무리 없이 전달된다.",
+      "턱·얼굴형: 턱선이 완만하게 마무리돼 압박감보다 인간적인 결이 남는다.",
+    ],
+  },
+  각진형: {
+    screenImpression: "이마와 턱선의 직선이 먼저 잡혀서 화면 중심축이 단단하게 선다.",
+    featureReadings: [
+      "눈: 시선이 곧고 흔들림이 적어 결단력 있는 인물로 읽힌다.",
+      "코·입: 코선과 입매가 단단하게 묶여 짧은 대사도 강하게 꽂힌다.",
+      "턱·얼굴형: 각진 턱선이 캐릭터의 추진력과 버티는 힘을 먼저 만든다.",
+    ],
+  },
+  달걀형: {
+    screenImpression: "전체 비율이 고르게 이어져서 카메라 각도가 바뀌어도 인상이 크게 무너지지 않는다.",
+    featureReadings: [
+      "눈: 눈매가 과하게 치우치지 않아 장르에 따라 다른 온도로 읽힐 여지가 크다.",
+      "코·입: 코·입 비율이 안정적이라 과장 없이도 감정선이 자연스럽게 연결된다.",
+      "턱·얼굴형: 얼굴 전체 밸런스가 좋아 특정 장르에만 갇히지 않는 구조다.",
+    ],
+  },
+  역삼각형: {
+    screenImpression: "이마와 광대 쪽이 먼저 읽혀 시선이 위에서 걸리고 장면에 긴장감이 생긴다.",
+    featureReadings: [
+      "눈: 눈매의 각과 시선 집중도가 살아 있어 차분해도 서늘한 결이 남는다.",
+      "코·입: 코선과 입매가 선명하게 정리되면 이성적이고 계산적인 인상으로 묶인다.",
+      "턱·얼굴형: 턱이 가늘게 떨어져 부드러움보다 예민하고 현대적인 인상이 먼저 선다.",
+    ],
+  },
+};
+
+const PHYSIO_ARCHETYPE_COPY: Record<
+  string,
+  {
+    reason: string;
+    castingFrame: string;
+    strengths: string[];
+    weaknesses: string[];
+    bestGenre: string;
+    verdict: string;
+  }
+> = {
+  "카리스마 주인공형": {
+    reason: "이마와 턱선의 중심축이 단단하고 시선이 곧게 서 있어서 장면의 리더 포지션이 자연스럽게 잡힌다. 얼굴 구조만으로도 주인공 혹은 정면 승부형 캐릭터의 무게가 실린다.",
+    castingFrame: "무리하게 힘주지 않아도 중심을 잡는 주인공, 팀 리더, 혹은 정면 승부형 라이벌 포지션이 먼저 떠오른다.",
+    strengths: [
+      "이마와 턱선의 축이 단단해서 화면에 인물이 뜨는 순간 중심이 바로 선다.",
+      "시선이 곧게 잡히면 액션·정치·범죄물에서 리더 포지션 설득력이 빠르게 붙는다.",
+      "단호한 얼굴 구조 덕분에 대사가 짧아도 캐릭터의 결심이 크게 읽힌다.",
+    ],
+    weaknesses: [
+      "인상이 단단해서 가벼운 청춘물이나 순한 코미디에서는 거리가 생길 수 있다.",
+      "표정을 조금만 굳혀도 차갑게 읽혀 감성 장면은 연기로 더 풀어줘야 한다.",
+    ],
+    bestGenre: "액션",
+    verdict: "이 얼굴은 억지로 순하게 포장하기보다 중심을 잡는 주인공이나 강한 라이벌 포지션으로 밀 때 가장 살아난다.",
+  },
+  "냉철한 악역형": {
+    reason: "눈매의 긴장감과 윤곽의 날이 함께 읽혀 온화함보다 서늘한 통제력이 먼저 남는다. 그래서 선한 주인공보다 계산이 빠른 빌런, 형사, 전략가 프레임이 더 자연스럽다.",
+    castingFrame: "초반부터 분위기를 바꾸는 빌런, 냉정한 형사, 혹은 속내를 숨긴 전략가 캐릭터가 먼저 잡힌다.",
+    strengths: [
+      "눈매와 윤곽이 만들어내는 긴장감이 범죄·심리·스릴러 장르에서 별도 설명 없이 힘을 만든다.",
+      "표정을 크게 쓰지 않아도 서늘한 집중감이 남아 긴장 씬 유지력이 좋다.",
+      "상대 배우 옆에 서기만 해도 관계의 위계가 생기는 타입이라 라이벌 포지션에 강하다.",
+    ],
+    weaknesses: [
+      "첫인상이 날카로워서 순한 멜로나 생활 코미디에서는 시청자와 거리감이 생길 수 있다.",
+      "차가운 이미지로 굳어질 위험이 있어 따뜻한 장면은 눈빛 온도 조절이 필수다.",
+    ],
+    bestGenre: "범죄",
+    verdict: "이 얼굴은 억지로 무해하게 보이려 하기보다 서늘한 텐션이 필요한 범죄·심리 쪽에서 밀어붙일 때 가장 설득력이 생긴다.",
+  },
+  "순수 서브주인공형": {
+    reason: "눈과 턱선에서 경계심보다 부드러운 신뢰가 먼저 읽혀 관객이 감정 이입하기 쉽다. 화면을 세게 장악하기보다 주인공 곁에서 정서를 받쳐주는 역할에 힘이 붙는 구조다.",
+    castingFrame: "주인공의 감정을 받아주는 조력자, 첫사랑, 혹은 상처를 품은 서브주인공 결이 가장 먼저 떠오른다.",
+    strengths: [
+      "눈매에서 먼저 공감대가 형성돼 로맨스·청춘물에서 감정 진입이 빠르다.",
+      "부드러운 윤곽 덕분에 상대 배우와 붙었을 때 장면의 온도를 안정적으로 맞춰준다.",
+      "선한 인상 자체가 캐릭터의 진정성과 보호본능을 만들어준다.",
+    ],
+    weaknesses: [
+      "강한 주도권 싸움이 필요한 장면에서는 존재감이 약하게 읽힐 수 있다.",
+      "너무 무해하게만 보이면 역할이 평평해질 수 있어 반전 포인트를 연기로 심어줘야 한다.",
+    ],
+    bestGenre: "로맨스",
+    verdict: "이 얼굴은 앞에서 밀어붙이는 타입보다 감정을 받아주고 관객을 끌어들이는 서브주인공 결로 갈 때 가장 오래 남는다.",
+  },
+  "반전 매력형": {
+    reason: "전체 인상은 부드럽거나 무난한데 일부 선에서 예상 못 한 날이 걸려 한 번 더 시선이 머문다. 그래서 처음 읽힌 이미지와 다른 결을 뒤늦게 보여주는 반전형 캐릭터에 특히 강하다.",
+    castingFrame: "처음엔 평범해 보여도 장면이 쌓일수록 무게가 붙는 반전형 조연, 이중 결의 인물, 혹은 미스터리 캐릭터가 먼저 떠오른다.",
+    strengths: [
+      "첫인상과 다른 결이 숨어 있어 심리·스릴러 장르에서 반전 장치로 잘 먹힌다.",
+      "부드러움과 날카로움이 같이 읽혀 감독이 캐릭터 폭을 설계하기 좋은 얼굴이다.",
+      "씬이 쌓일수록 존재감이 커지는 타입이라 후반부 임팩트에 강하다.",
+    ],
+    weaknesses: [
+      "첫인상이 일정하지 않아 캐릭터 설정이 약하면 오히려 애매하게 보일 수 있다.",
+      "반전을 살리려면 초반 인상 설계가 중요해서 연기 톤이 흔들리면 효과가 줄어든다.",
+    ],
+    bestGenre: "심리",
+    verdict: "이 얼굴은 한 번에 다 보여주기보다 평범한 척하다가 뒤늦게 결을 드러내는 반전형 캐릭터로 갈 때 진짜 맛이 난다.",
+  },
+  "멜로 감성형": {
+    reason: "눈빛과 입매에서 감정이 비교적 빠르게 읽혀 차가운 설명보다 정서가 먼저 전해진다. 그래서 멜로, 상실, 그리움 같은 감정선이 중심인 장르에서 얼굴 자체가 이미 서사를 돕는다.",
+    castingFrame: "정서가 먼저 스며드는 멜로 주연, 상처를 품은 상대역, 혹은 감정선이 긴 캐릭터 프레임이 자연스럽다.",
+    strengths: [
+      "눈빛에서 감정이 빨리 읽혀 멜로와 정서극에서 관객 동기화가 쉽다.",
+      "입매와 시선의 온도가 부드럽게 이어져 슬픔·그리움·미련 같은 감정에 강하다.",
+      "표정을 크게 쓰지 않아도 감정 잔향이 남아 클로즈업 버티는 힘이 있다.",
+    ],
+    weaknesses: [
+      "감성 결이 강해서 범죄·액션처럼 밀어붙이는 장르에서는 힘이 약하게 보일 수 있다.",
+      "무게감은 있지만 칼 같은 결단형 캐릭터는 연기 쪽 보완이 더 필요하다.",
+    ],
+    bestGenre: "멜로",
+    verdict: "이 얼굴은 감정을 숨기기보다 오래 끌고 가는 멜로와 정서극에서 가장 크게 힘을 쓴다.",
+  },
+  "독립영화 감성형": {
+    reason: "얼굴 전체가 특정 장르 클리셰에 강하게 묶이지 않아 현실적인 캐릭터를 담기에 좋다. 과장보다는 일상성과 미세한 감정 변화가 쌓일수록 더 설득력이 생기는 구조다.",
+    castingFrame: "생활 밀착형 주인공, 현실적인 청춘, 혹은 서사를 조용히 끌고 가는 독립영화 중심 인물이 먼저 떠오른다.",
+    strengths: [
+      "과장 없는 얼굴 구조라 일상극·휴먼드라마에서 현실감이 크게 살아난다.",
+      "분장이나 톤 변화에 과하게 튀지 않아 감독이 원하는 질감으로 밀기 좋다.",
+      "클로즈업보다 누적 서사에 강해 작품 전체 분위기를 안정적으로 받친다.",
+    ],
+    weaknesses: [
+      "강한 첫인상 승부에서는 상대적으로 임팩트가 약하게 느껴질 수 있다.",
+      "대중적인 상업 장르에서는 개성을 스스로 더 만들어줘야 기억에 남는다.",
+    ],
+    bestGenre: "일상",
+    verdict: "이 얼굴은 화려한 장르 장치보다 현실 밀착형 서사에서 오래 볼수록 힘이 붙는 타입이다.",
+  },
+  "인생 조연형": {
+    reason: "얼굴의 요소가 과하게 튀지 않아 인물을 방해하지 않고 장면 안에 자연스럽게 녹아든다. 그래서 주인공을 받쳐주거나 극의 체온을 만드는 조연 포지션에서 안정감이 크다.",
+    castingFrame: "생활감 있는 조력자, 믿음직한 친구, 혹은 작품의 체온을 잡아주는 조연 프레임이 먼저 떠오른다.",
+    strengths: [
+      "과하지 않은 균형감 덕분에 어떤 작품에도 무리 없이 녹아드는 안정성이 크다.",
+      "상대 배우를 해치지 않으면서 장면 온도를 정리해주는 조연 역할에 강하다.",
+      "관객이 거부감 없이 받아들이는 얼굴이라 생활극과 코미디에서 활용 폭이 넓다.",
+    ],
+    weaknesses: [
+      "강한 한방 인상은 약해 첫 등장 임팩트만으로 기억을 남기기는 어렵다.",
+      "얼굴이 캐릭터를 대신 설명해주지 않아서 습관·말투·템포 설계가 더 중요하다.",
+    ],
+    bestGenre: "일상",
+    verdict: "이 얼굴은 주인공을 압도하기보다 작품 전체를 자연스럽게 살리는 조연 포지션에서 가장 빛이 난다.",
+  },
+  "카리스마 조연형": {
+    reason: "강한 결은 있는데 중심 주인공보다는 씬마다 훅 치고 들어오는 인상으로 읽힌다. 그래서 짧게 등장해도 기억에 남는 라이벌, 행동대장, 신스틸러 조연에 힘이 실린다.",
+    castingFrame: "주인공 옆에서 더 선명하게 남는 라이벌 조연, 행동대장, 혹은 짧게 등장해도 씬을 가져가는 포지션이 먼저 떠오른다.",
+    strengths: [
+      "한 장면 안에서 빠르게 분위기를 바꾸는 힘이 있어 범죄·스릴러 조연에 강하다.",
+      "윤곽과 시선의 텐션이 살아 있어 대사가 적어도 기억에 남는 타입이다.",
+      "주인공 옆에서 장면을 훔쳐 가는 신스틸러 결이 자연스럽게 붙는다.",
+    ],
+    weaknesses: [
+      "얼굴 힘이 센 편이라 정적인 생활극이나 순한 로맨스에서는 다소 과하게 보일 수 있다.",
+      "주연으로 길게 끌면 부담스럽게 읽힐 수 있어 톤 조절이 중요하다.",
+    ],
+    bestGenre: "스릴러",
+    verdict: "이 얼굴은 모든 장면을 혼자 끌기보다 짧게 등장해도 씬을 훔치는 조연 포지션에서 가장 강하다.",
+  },
+};
+
+const PHYSIO_FACE_TYPE_ALIASES: Array<[RegExp, string]> = [
+  [/둥근|원형|원만/, "둥근형"],
+  [/각진|사각|사다리꼴|턱이 발달/, "각진형"],
+  [/달걀|타원|oval|균형/, "달걀형"],
+  [/역삼각|v라인|이마가 턱보다 넓/, "역삼각형"],
+];
+
+const PHYSIO_ARCHETYPE_ALIASES: Array<[RegExp, string]> = [
+  [/카리스마.*주인공|권력의 중심/, "카리스마 주인공형"],
+  [/냉철한 악역|서늘한 두뇌파 빌런|날 선 전략가/, "냉철한 악역형"],
+  [/순수.*서브주인공|첫사랑 조작단|우당탕탕 성장캐/, "순수 서브주인공형"],
+  [/반전 매력|맑은 눈의 광인/, "반전 매력형"],
+  [/멜로 감성|사연 있는 복수귀/, "멜로 감성형"],
+  [/독립영화 감성|도화지형 생활연기 장인/, "독립영화 감성형"],
+  [/인생 조연|신뢰의 인간국밥/, "인생 조연형"],
+  [/카리스마 조연|미스터리 조력자/, "카리스마 조연형"],
+];
+
+const PHYSIO_GENRE_ALIASES: Array<[RegExp, string]> = [
+  [/멜로/, "멜로"],
+  [/스릴러|느와르|추리/, "스릴러"],
+  [/일상|드라마|휴먼|생활/, "일상"],
+  [/공포|호러|오컬트/, "공포"],
+  [/코미디|시트콤|로코/, "코미디"],
+  [/액션|스포츠|복수극/, "액션"],
+  [/판타지|이세계|어드벤처/, "판타지"],
+  [/범죄|첩보|정치|법정|재벌|사이버 범죄/, "범죄"],
+  [/로맨스|첫사랑|청춘 로맨스/, "로맨스"],
+  [/심리|미스터리|사이코/, "심리"],
+];
+
+const PHYSIO_BANNED_PATTERN = /(못생|흉한|팔자|박복|재수\s?없|성격이|성질이|인성이|운명|사주|더럽다|빈티)/;
+
+function normalizeText(value: unknown) {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function matchAllowedValue(
+  raw: string,
+  allowed: readonly string[],
+  aliases: Array<[RegExp, string]>,
+  fallback = "판별불가"
+) {
+  if (allowed.includes(raw)) return raw;
+  for (const [pattern, nextValue] of aliases) {
+    if (pattern.test(raw)) return nextValue;
+  }
+  return fallback;
+}
+
+function cleanPhysioField(value: unknown, fallback: string) {
+  const text = normalizeText(value);
+  if (!text) return fallback;
+  if (PHYSIO_BANNED_PATTERN.test(text)) return fallback;
+  return text;
+}
+
+function normalizePhysioList(value: unknown, count: number, fallbacks: string[]) {
+  const rawList = Array.isArray(value) ? value.map((item) => normalizeText(item)).filter(Boolean) : [];
+  const cleaned = rawList.map((item, index) => cleanPhysioField(item, fallbacks[index] ?? fallbacks[fallbacks.length - 1] ?? "")).filter(Boolean);
+  const merged = cleaned.slice(0, count);
+  for (const item of fallbacks) {
+    if (merged.length >= count) break;
+    merged.push(item);
+  }
+  return merged.slice(0, count);
+}
+
+function normalizePhysiognomyOutput(physiognomy: Record<string, unknown>) {
+  const faceType = matchAllowedValue(
+    normalizeText(physiognomy.face_type),
+    PHYSIO_FACE_TYPES,
+    PHYSIO_FACE_TYPE_ALIASES
+  );
+  const archetype = matchAllowedValue(
+    normalizeText(physiognomy.archetype),
+    PHYSIO_ARCHETYPES,
+    PHYSIO_ARCHETYPE_ALIASES
+  );
+  const faceTypeCopy = PHYSIO_FACE_TYPE_COPY[faceType];
+  const archetypeCopy = PHYSIO_ARCHETYPE_COPY[archetype];
+  const bestGenre = matchAllowedValue(
+    normalizeText(physiognomy.best_genre),
+    PHYSIO_ALLOWED_GENRES,
+    PHYSIO_GENRE_ALIASES,
+    archetypeCopy?.bestGenre ?? "판별불가"
+  );
+
+  const fallbackArchetypeReason =
+    faceType === "판별불가" || archetype === "판별불가"
+      ? "정면 얼굴 구조가 충분히 읽히지 않아 아키타입 판정을 보류했습니다."
+      : archetypeCopy?.reason ?? "정면 얼굴 구조를 기준으로 화면 인상과 캐스팅 포지션을 종합해 현재 아키타입으로 판정했습니다.";
+
+  return {
+    ...physiognomy,
+    face_type: faceType,
+    archetype,
+    archetype_reason: cleanPhysioField(physiognomy.archetype_reason, fallbackArchetypeReason),
+    screen_impression: cleanPhysioField(
+      physiognomy.screen_impression,
+      faceTypeCopy?.screenImpression ?? "정면 얼굴 구조가 충분히 읽히지 않아 화면 인상을 판독하지 못했습니다."
+    ),
+    casting_frame: cleanPhysioField(
+      physiognomy.casting_frame,
+      archetypeCopy?.castingFrame ?? "정면 얼굴 구조가 선명한 사진이어야 캐스팅 프레임을 읽을 수 있습니다."
+    ),
+    feature_readings: normalizePhysioList(
+      physiognomy.feature_readings,
+      3,
+      faceTypeCopy?.featureReadings ?? [
+        "눈: 현재 사진에서는 눈매 구조를 안정적으로 읽기 어렵습니다.",
+        "코·입: 현재 사진에서는 코선과 입매를 안정적으로 읽기 어렵습니다.",
+        "턱·얼굴형: 현재 사진에서는 턱선과 얼굴 윤곽을 안정적으로 읽기 어렵습니다.",
+      ]
+    ),
+    strengths: normalizePhysioList(
+      physiognomy.strengths,
+      3,
+      archetypeCopy?.strengths ?? [
+        "정면 얼굴 구조가 충분히 선명할 때 더 정확한 장점 판독이 가능합니다.",
+        "현재 사진만으로는 화면 장악력을 안정적으로 읽기 어렵습니다.",
+        "조명과 각도가 정리된 정면 사진일수록 배역 적합도를 더 정확히 볼 수 있습니다.",
+      ]
+    ),
+    weaknesses: normalizePhysioList(
+      physiognomy.weaknesses,
+      2,
+      archetypeCopy?.weaknesses ?? [
+        "현재 사진으로는 타입캐스트 위험을 구체적으로 읽기 어렵습니다.",
+        "정면 얼굴 구조가 더 선명해야 장르 한계를 정확히 짚을 수 있습니다.",
+      ]
+    ),
+    best_genre: bestGenre,
+    verdict: cleanPhysioField(
+      physiognomy.verdict,
+      archetypeCopy?.verdict ?? "정면 얼굴 사진을 다시 확보하면 이 얼굴이 어떤 장르에서 힘을 쓰는지 더 정확히 읽어낼 수 있습니다."
+    ),
+  };
+}
+
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
   try {
     const cookie = request.cookies.get("sd_session")?.value;
@@ -64,32 +398,63 @@ ${flavor === "spicy" ? `- 욕설은 친한 친구한테 하듯 자연스럽게. 
 - 친절한 칭찬 금지. 반드시 뼈 있는 한 마디 포함.
 
 ━━━ [②] 관상학 분석 ━━━
-반드시 4번 사진(관상 전용 정면 사진)만 보고 아래 항목을 분석해.
-1~3번 연기 사진은 관상 판정 근거로 쓰지 마.
-4번 사진에 단일 인물의 정면 얼굴이 선명하게 보이지 않으면 관상 판정을 멈추고 "판별불가"로 응답해.
+관상 분석은 사람의 성격·인성·운명·가치를 판정하는 작업이 아니다.
+반드시 4번 사진(관상 전용 정면 사진)만 보고, 정면 얼굴 구조를 "화면 인상 + 캐스팅 언어"로 번역해.
+1~3번 연기 사진은 관상 판정 근거로 절대 쓰지 마.
 
-얼굴 특징 분석:
-- 이마: 넓고 높은지(지성·리더십) / 좁거나 낮은지(실행력·현실적)
-- 눈: 크고 생기있는지(감정표현·주인공형) / 날카롭고 좁은지(냉철·악역형) / 눈꼬리 방향(올라감=카리스마, 내려감=온화)
-- 눈썹: 진하고 또렷한지(의지력) / 옅은지(유연함)
-- 코: 높고 뚜렷한지(자존심·카리스마) / 콧볼 넓은지(현실·재물운) / 낮은지(겸손·서포터형)
-- 입·입술: 두꺼운지(표현력·열정) / 얇은지(냉정·결단력) / 큰지(리더십)
-- 광대뼈: 높은지(카리스마·권력) / 낮은지(온화·친화력)
-- 턱: 각진지(의지·강인함) / 둥근지(협력·온화) / 뾰족한지(예민·섬세)
-- 전체 얼굴형: 둥근형(친화·감성) / 각진형(카리스마·의지) / 달걀형(균형·지성) / 역삼각형(날카로움·분석)
+분석 순서를 반드시 지켜:
+1. 사진 유효성 검증
+- 단일 인물인지
+- 정면에 가까운지
+- 얼굴이 프레임을 충분히 채우는지
+- 눈, 코, 입, 턱선이 모두 읽히는지
+- 위 조건 하나라도 부족하면 analysis_status를 retry_required로 두고 관상 판정을 멈춰.
 
-캐릭터 아키타입 판정 (하나 선택):
-- "카리스마 주인공형" — 넓은 이마 + 강한 눈빛 + 뚜렷한 코
-- "냉철한 악역형" — 날카로운 눈 + 높은 광대 + 각진 턱
-- "순수 서브주인공형" — 큰 눈 + 온화한 인상 + 둥근 턱
-- "반전 매력형" — 선해 보이는데 날카로운 부분 있음
-- "멜로 감성형" — 눈꼬리 내려감 + 감성적인 눈빛 + 부드러운 선
-- "독립영화 감성형" — 독특하고 개성 있는 조합
-- "인생 조연형" — 균형잡혔지만 주인공 아우라는 없음 (독설 포인트)
-- "카리스마 조연형" — 강한 인상이지만 주인공보다는 조연
+2. 거시 구조 판독
+- face_type은 반드시 아래 4개 중 하나만 선택:
+  둥근형 / 각진형 / 달걀형 / 역삼각형
+- 이마 대 턱 비율, 광대 존재감, 턱 마무리감, 전체 윤곽으로 판정해.
+- 사다리꼴, V라인, 타원형 같은 다른 이름을 쓰지 말고 위 4개로만 통일해.
 
-관상학 말투: 친한 친구한테 솔직하게 말하는 전문가 톤.
-장점은 진지하게 인정, 단점은 가볍게 찌르기 (심한 욕설 없이, 대신 뼈있게).
+3. 핵심 3축 판독
+- 눈
+- 코·입
+- 턱·얼굴형
+- feature_readings는 정확히 3문장만.
+- 각 문장은 반드시 "실제로 보이는 특징 + 카메라에서 읽히는 인상" 순서로 써.
+
+4. 아키타입 판정
+archetype은 반드시 아래 8개 중 하나만 선택:
+- "카리스마 주인공형"
+- "냉철한 악역형"
+- "순수 서브주인공형"
+- "반전 매력형"
+- "멜로 감성형"
+- "독립영화 감성형"
+- "인생 조연형"
+- "카리스마 조연형"
+
+관상 분석 작성 규칙:
+- 헤어, 옷, 배경, 조명 연출, 과장된 표정은 근거로 삼지 말고 얼굴 구조를 우선해.
+- "좋은 얼굴 / 나쁜 얼굴" 판단 금지.
+- 외모 비하 금지.
+- 장점과 약점은 모두 캐스팅 관점으로 번역해.
+- weaknesses는 단점 비하가 아니라 "타입캐스트 위험", "장르 한계", "보완 포인트"로 써.
+- screen_impression은 화면에 떴을 때 가장 먼저 읽히는 인상 1문장.
+- casting_frame은 감독이 바로 떠올릴 배역 결 1문장.
+- strengths는 정확히 3개. 얼굴 특징 + 화면 효과 + 유리한 배역/장르를 같이 써.
+- weaknesses는 정확히 2개. 차갑다/무섭다 같은 단정 대신 어떤 장르에서 거리감이 생기는지 써.
+- best_genre는 반드시 이 목록 중 하나만 선택:
+  멜로 / 스릴러 / 일상 / 공포 / 코미디 / 액션 / 판타지 / 범죄 / 로맨스 / 심리
+- verdict는 한 문장. 이 얼굴을 어떤 배역/장르로 밀어야 하는지 총평해.
+
+금지 표현:
+- 못생겼다 / 흉하다 / 팔자가 세다 / 박복하다 / 재수 없다 / 성격이 나쁘다 / 운명이 세다
+- 대신 "화면에서 차갑게 읽힌다", "순한 멜로보다 범죄·심리 쪽에서 힘이 붙는다"처럼 캐스팅 언어로 번역해.
+
+관상학 말투:
+- 친한 친구한테 말하듯 솔직하지만, 결과는 감독의 캐스팅 코멘트처럼 들려야 해.
+- 장점은 진지하게 인정하고, 약점은 뼈 있게 말하되 외모 비하로 읽히면 안 된다.
 ${personality && personality.length > 0 ? `
 ━━━ [③] 성향 밸런스 게임 결과 ━━━
 유저가 10가지 선택 질문에 답했어. 각 항목은 "A 선택" 또는 "B 선택" 형태야.
@@ -148,14 +513,14 @@ JSON만 출력. 한국어, style_prompt만 영어:
     },
     "face_type": "[얼굴형 한 단어: 둥근형/각진형/달걀형/역삼각형 중 하나. 정면 얼굴 판독 불가면 판별불가]",
     "archetype": "[캐릭터 아키타입 한 문장: 위 8가지 중 하나. 판독 불가면 판별불가]",
-    "archetype_reason": "[아키타입 판정 이유. 얼굴의 어떤 특징이 그렇게 만드는지 구체적으로. 2문장. 판독 불가면 왜 판독 불가인지 설명]",
-    "screen_impression": "[성격 단정 말고 화면 첫인상/카메라 인상 1문장. 예: '눈보다 턱선이 먼저 읽혀서 차가운 집중감이 생긴다.']",
-    "casting_frame": "[캐스팅할 때 먼저 떠오르는 역할 결 1문장. 예: '주인공보다 강한 조연, 혹은 초반부터 시선 끄는 라이벌 톤.']",
-    "feature_readings": ["[눈: 실제 특징 + 읽히는 인상]", "[코/입: 실제 특징 + 읽히는 인상]", "[턱/얼굴형: 실제 특징 + 읽히는 인상]"],
-    "strengths": ["[관상학적 강점 1 — 구체적인 얼굴 특징 + 그게 어떤 배역에 유리한지. 판독 불가면 정면 얼굴이 선명하지 않아 강점 판독 불가라고 명시]", "[강점 2]", "[강점 3]"],
-    "weaknesses": ["[관상학적 약점 1 — 뼈있게 찌르되 심한 욕 없이. 판독 불가면 현재 사진으로는 눈·코·입·턱 구조 판독이 어렵다고 명시]", "[약점 2]"],
-    "best_genre": "[이 얼굴에 가장 어울리는 장르 한 단어. 판독 불가면 판별불가]",
-    "verdict": "[관상 총평 한 문장. 판독 불가면 정면 얼굴 사진으로 다시 촬영하라고 솔직하게 말할 것.]"
+    "archetype_reason": "[아키타입 판정 이유. 얼굴의 어떤 구조가 그렇게 읽히는지 구체적으로 연결. 정확히 2문장. 판독 불가면 왜 판독 불가인지 설명]",
+    "screen_impression": "[성격 단정 말고 화면 첫인상/카메라 인상 1문장. 예: '이마보다 턱선이 먼저 읽혀서 화면 중심축이 단단하게 선다.']",
+    "casting_frame": "[감독 입장에서 먼저 떠오르는 배역 결 1문장. 예: '주인공보다 라이벌 조연, 혹은 초반부터 텐션을 만드는 형사 톤이 먼저 잡힌다.']",
+    "feature_readings": ["[눈: 실제 특징 + 읽히는 인상]", "[코·입: 실제 특징 + 읽히는 인상]", "[턱·얼굴형: 실제 특징 + 읽히는 인상]"],
+    "strengths": ["[얼굴 특징 + 화면 효과 + 유리한 배역/장르까지 포함한 강점 1. 판독 불가면 정면 얼굴이 선명하지 않아 강점 판독 불가라고 명시]", "[강점 2]", "[강점 3]"],
+    "weaknesses": ["[타입캐스트 위험/장르 한계/보완 포인트 1. 비하 금지. 판독 불가면 현재 사진으로는 눈·코·입·턱 구조 판독이 어렵다고 명시]", "[약점 2]"],
+    "best_genre": "[이 얼굴에 가장 어울리는 장르 한 단어. 반드시 멜로/스릴러/일상/공포/코미디/액션/판타지/범죄/로맨스/심리 중 하나. 판독 불가면 판별불가]",
+    "verdict": "[관상 총평 한 문장. 이 얼굴을 어떤 장르/배역으로 밀어야 하는지 제안형 문장. 판독 불가면 정면 얼굴 사진으로 다시 촬영하라고 솔직하게 말할 것.]"
   }${personality && personality.length > 0 ? `,
   "personality_summary": "[성향 분석 결과 한 문장. 관상과 연결해서 이 사람이 어떤 배우 기질을 가졌는지 날카롭게. 친구에게 말하듯.]"` : ""}
 }`;
@@ -773,6 +1138,8 @@ export async function POST(request: NextRequest) {
     const result = JSON.parse(cleaned);
 
     if (result?.physiognomy && typeof result.physiognomy === "object") {
+      result.physiognomy = normalizePhysiognomyOutput(result.physiognomy as Record<string, unknown>);
+
       const validation = result.physiognomy.validation ?? {};
       const validationFailed =
         validation.face_visible === false ||
@@ -812,6 +1179,8 @@ export async function POST(request: NextRequest) {
         result.physiognomy.verdict = reason.includes("다시")
           ? reason
           : `${reason} 정면 얼굴 사진으로 다시 촬영해주세요.`;
+      } else {
+        result.physiognomy = normalizePhysiognomyOutput(result.physiognomy as Record<string, unknown>);
       }
     }
 
