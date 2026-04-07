@@ -367,12 +367,6 @@ function avgScore(scores: Scores) {
   return Math.round(SCORE_LABELS.reduce((s, l) => s + (scores[l] ?? 0), 0) / 4);
 }
 
-function gradeLabel(score: number) {
-  if (score >= 80) return { label: "합격", color: "#22c55e" };
-  if (score >= 60) return { label: "보류", color: "#f97316" };
-  return { label: "불합격", color: "#ef4444" };
-}
-
 function clamp(n: number, min: number, max: number) {
   return Math.min(Math.max(n, min), max);
 }
@@ -842,6 +836,8 @@ function AuditionResultInner() {
   const [result, setResult] = useState<AuditionResult | null>(null);
   const [userPhotos, setUserPhotos] = useState<string[]>([]);
   const [stillImage, setStillImage] = useState<string | null>(null);
+  const [albumStillPhoto, setAlbumStillPhoto] = useState<string | null>(null);
+  const [selectedStillSourceKey, setSelectedStillSourceKey] = useState<string>("");
   const [bestSceneIdx, setBestSceneIdx] = useState<number>(0);
   const [genres, setGenres] = useState<GenreMeta[]>([]);
   const [phase, setPhase] = useState<Phase>("generating");
@@ -865,6 +861,7 @@ function AuditionResultInner() {
   const [historyShareId, setHistoryShareId] = useState<string | null | undefined>(undefined);
   const cachedShareId = useRef<string | null>(null);
   const stillImageRef = useRef<string | null>(null);
+  const stillFileInputRef = useRef<HTMLInputElement | null>(null);
   const cardStageRef = useRef<HTMLDivElement | null>(null);
   const draggingStickerIdRef = useRef<string | null>(null);
   const activeStickerPointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
@@ -1035,6 +1032,20 @@ function AuditionResultInner() {
   }, []);
 
   useEffect(() => {
+    setSelectedStillSourceKey((prev) => {
+      if (prev === "album" && albumStillPhoto) return prev;
+      if (prev.startsWith("scene-")) {
+        const idx = Number(prev.replace("scene-", ""));
+        if (userPhotos[idx]) return prev;
+      }
+      if (userPhotos[bestSceneIdx]) return `scene-${bestSceneIdx}`;
+      const fallbackIdx = userPhotos.findIndex(Boolean);
+      if (fallbackIdx >= 0) return `scene-${fallbackIdx}`;
+      return albumStillPhoto ? "album" : "";
+    });
+  }, [albumStillPhoto, bestSceneIdx, userPhotos]);
+
+  useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
       if (!cardStageRef.current) return;
       const rect = cardStageRef.current.getBoundingClientRect();
@@ -1169,6 +1180,25 @@ function AuditionResultInner() {
     return data.id as string;
   }, [buildShareRequestPayload]);
 
+  const handleAlbumStillPhotoChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("이미지 파일만 선택할 수 있어요.");
+      return;
+    }
+
+    try {
+      const payload = await blobToBase64Payload(file);
+      const dataUrl = `data:${file.type || "image/jpeg"};base64,${payload}`;
+      setAlbumStillPhoto(dataUrl);
+      setSelectedStillSourceKey("album");
+    } catch {
+      alert("앨범 사진을 불러오지 못했어요. 다시 선택해주세요.");
+    }
+  }, []);
+
   // 스틸컷 생성 (시작 패키지에 포함)
   const handleGenerateStill = async () => {
     if (isGeneratingStill || !result) return;
@@ -1181,10 +1211,20 @@ function AuditionResultInner() {
       : userPhotos;
     const photoPayloads = await Promise.all(photos.map((photo) => srcToBase64Payload(photo)));
     const base64List = photoPayloads.filter((payload): payload is string => Boolean(payload));
+    const selectedSourceImage =
+      selectedStillSourceKey === "album"
+        ? albumStillPhoto
+        : selectedStillSourceKey.startsWith("scene-")
+          ? userPhotos[Number(selectedStillSourceKey.replace("scene-", ""))] ?? null
+          : userPhotos[bestSceneIdx] ?? null;
+    const selectedStillSourcePayload = await srcToBase64Payload(selectedSourceImage);
     const physioPayload = physioPhoto && physioPhoto !== LOCAL_PHYSIO_FALLBACK
       ? await srcToBase64Payload(physioPhoto)
       : null;
-    if (base64List.length === 0 && !physioPayload) return;
+    if (!selectedStillSourcePayload && base64List.length === 0 && !physioPayload) {
+      alert("스틸컷에 사용할 사진을 먼저 선택해주세요.");
+      return;
+    }
     setIsGeneratingStill(true);
     try {
       const shareId = await ensureShareId();
@@ -1194,7 +1234,7 @@ function AuditionResultInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           shareId,
-          image: physioPayload ?? base64List[bestSceneIdx] ?? base64List[0],
+          image: selectedStillSourcePayload ?? physioPayload ?? base64List[bestSceneIdx] ?? base64List[0],
           physioImage: physioPayload,
           mimeType: "image/jpeg",
           stylePrompt: result.scenes[bestSceneIdx].style_prompt,
@@ -1219,7 +1259,7 @@ function AuditionResultInner() {
           genres: genreRaw ? JSON.parse(genreRaw) : genres,
           bestSceneIdx,
           stillImageBase64: data.image,
-          userPhotoBase64: photoPayloads[bestSceneIdx] ?? base64List[0] ?? null,
+          userPhotoBase64: selectedStillSourcePayload ?? photoPayloads[bestSceneIdx] ?? base64List[0] ?? null,
           userPhotosBase64: photoPayloads,
         }),
       }).catch(() => {});
@@ -1324,7 +1364,6 @@ function AuditionResultInner() {
   const physio = result.physiognomy;
   const bestScene = result.scenes[bestSceneIdx];
   const overallAvg = Math.round(result.scenes.reduce((s, sc) => s + avgScore(sc.scores), 0) / result.scenes.length);
-  const grade = gradeLabel(overallAvg);
   const physioNeedsRetry = Boolean(
     physio && (
       physio.analysis_status === "retry_required" ||
@@ -1340,9 +1379,28 @@ function AuditionResultInner() {
   const archetypeGuide = physio && !physioNeedsRetry ? ARCHETYPE_GUIDE[physio.archetype] : null;
   const selectedCardTheme = CARD_THEMES.find(theme => theme.id === selectedCardThemeId) ?? CARD_THEMES[0];
   const cardStudioLocked = !stillImage;
-  const baseCardPhoto = userPhotos[bestSceneIdx] ?? physioPhoto ?? null;
+  const stillSourceOptions = userPhotos
+    .map((photo, index) => (
+      photo
+        ? {
+            key: `scene-${index}`,
+            image: photo,
+            label: `씬 ${index + 1}`,
+            subLabel: result.scenes[index]?.genre ?? "",
+          }
+        : null
+    ))
+    .filter((item): item is { key: string; image: string; label: string; subLabel: string } => Boolean(item));
+  const selectedStillSourceImage =
+    selectedStillSourceKey === "album"
+      ? albumStillPhoto
+      : selectedStillSourceKey.startsWith("scene-")
+        ? userPhotos[Number(selectedStillSourceKey.replace("scene-", ""))] ?? null
+        : userPhotos[bestSceneIdx] ?? albumStillPhoto ?? null;
+  const baseCardPhoto = selectedStillSourceImage ?? userPhotos[bestSceneIdx] ?? physioPhoto ?? null;
   const cardPreviewImage = stillImage ?? baseCardPhoto;
   const cardTitle = genreCardTitle(bestScene.genre);
+  const overallScoreColor = scoreColor(overallAvg);
   const actingScore = avgScore(bestScene.scores);
   const emotionalRangeScore = bestScene.scores["표정연기"] ?? 0;
   const screenPresenceScore = bestScene.scores["몰입도"] ?? 0;
@@ -1382,6 +1440,13 @@ function AuditionResultInner() {
       </div>
 
       <div className="mx-auto w-full max-w-[380px]">
+        <input
+          ref={stillFileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAlbumStillPhotoChange}
+        />
         <div
           ref={cardStageRef}
           className="relative w-full aspect-[677/938] overflow-hidden rounded-[40px] shadow-[0_26px_70px_rgba(0,0,0,0.16)] select-none"
@@ -1406,12 +1471,12 @@ function AuditionResultInner() {
               {cardStudioLocked && (
                 <div className="absolute inset-x-[12%] top-[37%] z-[2] rounded-[22px] border border-white/14 bg-black/46 px-4 py-4 text-center text-white shadow-[0_16px_40px_rgba(0,0,0,0.28)] backdrop-blur-[2px]">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Card Locked</p>
-                  <p className="mt-2 text-[16px] font-black">AI 스틸컷 생성 후 카드 오픈</p>
+                  <p className="mt-2 text-[16px] font-black">원하는 사진을 선택해보세요</p>
                   <p
                     className="mt-2 text-[25px] leading-none tracking-[-0.03em]"
                     style={{ fontFamily: '"BMKkubulim", sans-serif', color: "#FFE26A" }}
                   >
-                    나도 이 카드 열어볼래
+                    [{bestScene.genre}] 장르의 한 장면 나도 만들기!
                   </p>
                 </div>
               )}
@@ -1554,10 +1619,112 @@ function AuditionResultInner() {
 
         {cardStudioLocked && (
           <div className="-mt-3 rounded-b-[28px] bg-white px-5 pb-5 pt-8 shadow-[0_14px_28px_rgba(0,0,0,0.06)]">
+            <div className="mb-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[17px] font-black text-gray-900">원하는 사진을 선택해보세요</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-gray-500">씬 3장이나 앨범 사진 중 한 장으로 스틸컷을 만들 수 있어요.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => stillFileInputRef.current?.click()}
+                  className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border transition-colors ${
+                    selectedStillSourceKey === "album"
+                      ? "border-[#C9571A] bg-[#FFF7F2] text-[#C9571A]"
+                      : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  }`}
+                  aria-label="앨범에서 선택"
+                  title="앨범에서 선택"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z" stroke="currentColor" strokeWidth="1.8"/>
+                    <path d="M8 13.5l2.4-2.4a1 1 0 0 1 1.4 0l1.2 1.2a1 1 0 0 0 1.4 0L16 11l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="9" cy="9" r="1.25" fill="currentColor"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mt-4 grid grid-cols-4 gap-2.5">
+                {stillSourceOptions.map((option) => {
+                  const selected = selectedStillSourceKey === option.key;
+                  return (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => setSelectedStillSourceKey(option.key)}
+                      className={`overflow-hidden rounded-[18px] border text-left transition-all ${
+                        selected
+                          ? "border-[#C9571A] shadow-[0_0_0_2px_rgba(201,87,26,0.12)]"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="relative aspect-[3/4] bg-gray-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={option.image} alt={option.label} className="h-full w-full object-cover" />
+                        {selected && (
+                          <span className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#C9571A] text-[11px] font-black text-white">
+                            ✓
+                          </span>
+                        )}
+                      </div>
+                      <div className="px-2 py-2">
+                        <p className="text-[11px] font-black text-gray-900">{option.label}</p>
+                        <p className="mt-0.5 truncate text-[10px] font-medium text-gray-500">{option.subLabel}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => stillFileInputRef.current?.click()}
+                  className={`overflow-hidden rounded-[18px] border text-left transition-all ${
+                    selectedStillSourceKey === "album"
+                      ? "border-[#C9571A] shadow-[0_0_0_2px_rgba(201,87,26,0.12)]"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="relative aspect-[3/4] bg-gray-50">
+                    {albumStillPhoto ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={albumStillPhoto} alt="앨범 선택 사진" className="h-full w-full object-cover" />
+                        {selectedStillSourceKey === "album" && (
+                          <span className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#C9571A] text-[11px] font-black text-white">
+                            ✓
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center gap-2 text-gray-400">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                          <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z" stroke="currentColor" strokeWidth="1.8"/>
+                          <path d="M8 13.5l2.4-2.4a1 1 0 0 1 1.4 0l1.2 1.2a1 1 0 0 0 1.4 0L16 11l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                          <circle cx="9" cy="9" r="1.25" fill="currentColor"/>
+                        </svg>
+                        <span className="text-[10px] font-bold">앨범 선택</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="px-2 py-2">
+                    <p className="text-[11px] font-black text-gray-900">앨범</p>
+                    <p className="mt-0.5 text-[10px] font-medium text-gray-500">{albumStillPhoto ? "선택 완료" : "새 사진 고르기"}</p>
+                  </div>
+                </button>
+              </div>
+
+              <p
+                className="mt-4 text-center text-[24px] leading-none tracking-[-0.03em]"
+                style={{ fontFamily: '"BMKkubulim", sans-serif', color: "#C9571A" }}
+              >
+                [{bestScene.genre}] 장르의 한 장면 나도 만들기!
+              </p>
+            </div>
+
             <div className="mb-5 flex flex-col gap-3">
               {[
                 { icon: "🎞️", text: "정면 얼굴 사진 기반 얼굴 보존" },
-                { icon: "🎨", text: "최고 점수 씬 장르의 영화적 연출" },
+                { icon: "🎨", text: "선택한 사진으로 현재 장르의 스틸컷 생성" },
               ].map(item => (
                 <div key={item.text} className="flex items-center gap-3 px-1">
                   <span className="text-[15px] opacity-80">{item.icon}</span>
@@ -1706,21 +1873,18 @@ function AuditionResultInner() {
             />
           </div>
 
-          {/* 종합점수 + 등급 + 아키타입 */}
-          <div className="bg-gray-50 rounded-2xl px-5 py-5 mb-4 flex items-center gap-4">
+          {/* 종합점수 + 아키타입 */}
+          <div className="mb-4 flex items-end justify-between gap-4 px-1">
             <div className="flex-1">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">종합 점수</p>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-[60px] font-black leading-none tabular-nums" style={{ color: grade.color }}>{overallAvg}</span>
+                <span className="text-[52px] font-black leading-none tabular-nums" style={{ color: overallScoreColor }}>{overallAvg}</span>
                 <span className="text-[15px] font-bold text-gray-400">/ 100</span>
               </div>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <span className="text-[15px] font-black px-3.5 py-1.5 rounded-full border-2" style={{ color: grade.color, borderColor: grade.color }}>
-                {grade.label}
-              </span>
+            <div className="flex flex-col items-end gap-1">
               {physio && (
-                <span className="text-[12px] font-black text-gray-900 bg-gray-200 rounded-full px-3 py-1">{physio.archetype}</span>
+                <span className="text-[12px] font-semibold text-gray-500">{physio.archetype}</span>
               )}
             </div>
           </div>
