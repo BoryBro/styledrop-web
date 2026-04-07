@@ -1198,71 +1198,6 @@ export default function AdminPage() {
             <MiniCard label="오늘 가입" value={`${stats.todaySignupCount}명`} />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">가입 유저 목록</p>
-            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-3">
-                <input
-                  type="text"
-                  value={userListSearch}
-                  onChange={(e) => setUserListSearch(e.target.value)}
-                  placeholder="닉네임 또는 ID 검색..."
-                  className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
-                />
-                <span className="text-[11px] text-gray-400 whitespace-nowrap">최근 가입순</span>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 overflow-hidden">
-                {filteredUsers.length === 0 ? (
-                  <div className="px-3 py-4 text-[13px] text-gray-500">검색 결과 없음</div>
-                ) : (
-                  filteredUsers.slice(0, 100).map((user) => (
-                    <div key={user.id} className="px-3 py-3 border-b border-gray-100 last:border-0 flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <p className="text-[14px] font-bold text-gray-900 truncate">{user.nickname ?? "닉네임 없음"}</p>
-                          <button
-                            type="button"
-                            onClick={() => toggleUserIdVisibility(user.id)}
-                            className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-700"
-                            aria-label={visibleUserIds.includes(user.id) ? "ID 숨기기" : "ID 보기"}
-                            title={visibleUserIds.includes(user.id) ? "ID 숨기기" : "ID 보기"}
-                          >
-                            {visibleUserIds.includes(user.id) ? (
-                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                <path d="M1.5 8s2.2-4 6.5-4 6.5 4 6.5 4-2.2 4-6.5 4-6.5-4-6.5-4Z" stroke="currentColor" strokeWidth="1.4"/>
-                                <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4"/>
-                                <path d="M2 14L14 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-                              </svg>
-                            ) : (
-                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                <path d="M1.5 8s2.2-4 6.5-4 6.5 4 6.5 4-2.2 4-6.5 4-6.5-4-6.5-4Z" stroke="currentColor" strokeWidth="1.4"/>
-                                <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4"/>
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                        {visibleUserIds.includes(user.id) && (
-                          <p className="text-[11px] text-gray-400 font-mono mt-1 break-all">{user.id}</p>
-                        )}
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-[11px] text-gray-500">가입 {formatDateTime(user.created_at)}</p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">
-                          최근 로그인 {user.last_login_at ? relativeTime(user.last_login_at) : "—"}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {filteredUsers.length > 100 && (
-                <p className="text-[11px] text-gray-400 px-1">검색 결과가 많아 최근 100명만 보여주고 있어요.</p>
-              )}
-            </div>
-          </div>
-
           {/* 크레딧 조정 */}
           <div className="flex flex-col gap-1">
             <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">크레딧 조정</p>
@@ -1344,6 +1279,72 @@ export default function AdminPage() {
               {creditMsg && <p className={`text-[13px] text-center ${creditMsg.startsWith("✓") ? "text-[#C9571A]" : "text-red-500"}`}>{creditMsg}</p>}
             </div>
           </div>
+
+          <div className="flex flex-col gap-1">
+            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">가입 유저 목록</p>
+            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <input
+                  type="text"
+                  value={userListSearch}
+                  onChange={(e) => setUserListSearch(e.target.value)}
+                  placeholder="닉네임 또는 ID 검색..."
+                  className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
+                />
+                <span className="text-[11px] text-gray-400 whitespace-nowrap">최근 가입순</span>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 overflow-hidden">
+                {filteredUsers.length === 0 ? (
+                  <div className="px-3 py-4 text-[13px] text-gray-500">검색 결과 없음</div>
+                ) : (
+                  filteredUsers.slice(0, 100).map((user) => (
+                    <div key={user.id} className="px-3 py-3 border-b border-gray-100 last:border-0 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="text-[14px] font-bold text-gray-900 truncate">{user.nickname ?? "닉네임 없음"}</p>
+                          <button
+                            type="button"
+                            onClick={() => toggleUserIdVisibility(user.id)}
+                            className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-700"
+                            aria-label={visibleUserIds.includes(user.id) ? "ID 숨기기" : "ID 보기"}
+                            title={visibleUserIds.includes(user.id) ? "ID 숨기기" : "ID 보기"}
+                          >
+                            {visibleUserIds.includes(user.id) ? (
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path d="M1.5 8s2.2-4 6.5-4 6.5 4 6.5 4-2.2 4-6.5 4-6.5-4-6.5-4Z" stroke="currentColor" strokeWidth="1.4"/>
+                                <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4"/>
+                                <path d="M2 14L14 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                              </svg>
+                            ) : (
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                <path d="M1.5 8s2.2-4 6.5-4 6.5 4 6.5 4-2.2 4-6.5 4-6.5-4-6.5-4Z" stroke="currentColor" strokeWidth="1.4"/>
+                                <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4"/>
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                        {visibleUserIds.includes(user.id) && (
+                          <p className="text-[11px] text-gray-400 font-mono mt-1 break-all">{user.id}</p>
+                        )}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-[11px] text-gray-500">가입 {formatDateTime(user.created_at)}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          최근 로그인 {user.last_login_at ? relativeTime(user.last_login_at) : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {filteredUsers.length > 100 && (
+                <p className="text-[11px] text-gray-400 px-1">검색 결과가 많아 최근 100명만 보여주고 있어요.</p>
+              )}
+            </div>
+          </div>
+
         </>
       )}
 
