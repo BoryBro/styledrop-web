@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import {
   AUDITION_CONTROL_ID,
   PERSONAL_COLOR_CONTROL_ID,
+  applyStyleControl,
   type StyleControlState,
 } from "@/lib/style-controls";
+import { ALL_STYLES } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
 const ADMIN_UI_VERSION = "v2.7.0-audition-ops";
@@ -690,11 +692,42 @@ export default function AdminPage() {
   const highlightedHighShare = stats.stylePerformance24hList
     .filter((item) => highShareSet.has(item.style_id))
     .slice(0, 3);
-  const sortedStylePerformance = [...stats.stylePerformanceList].sort((a, b) => {
-    const aIssue = Number(issueIds.has(a.style_id));
-    const bIssue = Number(issueIds.has(b.style_id));
-    if (bIssue !== aIssue) return bIssue - aIssue;
-    return b.count - a.count;
+  const styleControlMap = Object.fromEntries(styleControls.map((row) => [row.style_id, row]));
+  const usageMap = new Map(stats.byStyle.map((item) => [item.style_id, item.count]));
+  const performanceMap = new Map(stats.stylePerformanceList.map((item) => [item.style_id, item]));
+  const baseVisibleStyles = ALL_STYLES
+    .map((style) => applyStyleControl(style, styleControlMap[style.id]))
+    .filter((style) => !style.hidden);
+  const baseStyleOrder = baseVisibleStyles.reduce<Record<string, number>>((acc, style, index) => {
+    acc[style.id] = index;
+    return acc;
+  }, {});
+  const sortedVisibleStyles = [...baseVisibleStyles].sort((a, b) => {
+    const aHasOptions = (STYLE_VARIANTS[a.id]?.length ?? 0) > 1;
+    const bHasOptions = (STYLE_VARIANTS[b.id]?.length ?? 0) > 1;
+
+    if (a.popular && b.popular) {
+      const usageDiff = (usageMap.get(b.id) ?? 0) - (usageMap.get(a.id) ?? 0);
+      if (usageDiff !== 0) return usageDiff;
+      return baseStyleOrder[a.id] - baseStyleOrder[b.id];
+    }
+    if (a.popular) return -1;
+    if (b.popular) return 1;
+    if (aHasOptions && !bHasOptions) return -1;
+    if (!aHasOptions && bHasOptions) return 1;
+    return baseStyleOrder[a.id] - baseStyleOrder[b.id];
+  });
+  const sortedStylePerformance = sortedVisibleStyles.map((style) => {
+    const perf = performanceMap.get(style.id);
+    return perf ?? {
+      style_id: style.id,
+      style_name: style.name,
+      count: 0,
+      saveCount: 0,
+      shareCount: 0,
+      saveRate: 0,
+      shareRate: 0,
+    };
   });
   const filteredUsers = stats.userList.filter((user) => {
     if (!userListSearch) return true;
