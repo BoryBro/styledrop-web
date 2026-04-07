@@ -483,7 +483,9 @@ const QUIZ_QUESTIONS = [
 function AuditionSoloInner() {
   const searchParams = useSearchParams();
   const fromIntro = searchParams?.get("from_intro") === "1";
+  const initialFlavor = searchParams?.get("flavor") === "spicy" ? "spicy" : "mild";
   const [phase, setPhase] = useState<Phase>("loading");
+  const [flavor, setFlavor] = useState<"spicy" | "mild">(initialFlavor);
   const [selectedGenres, setSelectedGenres] = useState<GenreId[]>([]);
   const [stepCues, setStepCues] = useState<string[]>([]);
   const [stepIdx, setStepIdx] = useState(0);
@@ -506,6 +508,10 @@ function AuditionSoloInner() {
   const physioCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const router = useRouter();
   const { user, loading: authLoading, login } = useAuth();
+
+  useEffect(() => {
+    setFlavor(searchParams?.get("flavor") === "spicy" ? "spicy" : "mild");
+  }, [searchParams]);
 
   // 카테고리별 1문제씩 랜덤 추출 (총 10개)
   const quizQuestions = useMemo(() => {
@@ -599,6 +605,7 @@ function AuditionSoloInner() {
         physioImage: physioCapture?.base64 ?? images[0],
         genres: genreLabels,
         cues: stepCues,
+        flavor,
         personality: personalityAnswers.map((item, idx) => `Q${idx + 1}. [${item.category}] ${item.question} -> ${item.choice}: ${item.answer}`),
       }),
     }).then(async res => {
@@ -645,7 +652,7 @@ function AuditionSoloInner() {
         setPhase("error");
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [captures]);
+  }, [captures, flavor]);
 
   const startCapture = useCallback(() => {
     const cues = selectedGenres.map(g => pickRandomCue(g));
@@ -823,8 +830,8 @@ function AuditionSoloInner() {
             <p className="text-[11px] font-bold text-gray-400 tracking-widest uppercase">오디션 전 확인사항</p>
             <ul className="flex flex-col gap-2.5">
               <li className="flex items-start gap-2.5">
-                <span className="text-[14px] shrink-0 mt-0.5">🌶️</span>
-                <p className="text-[13px] text-gray-600 leading-snug">매운맛/순한맛에 따라 평가 강도가 달라집니다. 상처받지 말고 재미로 봐주세요</p>
+                <span className="text-[14px] shrink-0 mt-0.5">🗣️</span>
+                <p className="text-[13px] text-gray-600 leading-snug">독설은 유지되고, 아래 설정에 따라 욕설 포함 여부만 달라집니다.</p>
               </li>
               <li className="flex items-start gap-2.5">
                 <span className="text-[14px] shrink-0 mt-0.5">📸</span>
@@ -835,6 +842,30 @@ function AuditionSoloInner() {
                 <p className="text-[13px] text-gray-600 leading-snug">시작 시 5크레딧이 바로 소모되며, 스틸컷 생성까지 포함된 패키지입니다</p>
               </li>
             </ul>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setFlavor("mild")}
+                className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
+                  flavor === "mild" ? "border-[#315EFB] bg-[#F5F8FF]" : "border-gray-200 bg-white"
+                }`}
+              >
+                <p className="text-[14px] font-bold text-gray-900">욕설 제외 독설형</p>
+                <p className="text-[12px] text-gray-500 mt-1">비꼼과 조롱은 유지하고 욕설만 제외합니다.</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFlavor("spicy")}
+                className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
+                  flavor === "spicy" ? "border-[#C9571A] bg-[#FFF7F2]" : "border-gray-200 bg-white"
+                }`}
+              >
+                <p className="text-[14px] font-bold text-gray-900">욕설 포함 독설형</p>
+                <p className="text-[12px] text-gray-500 mt-1">독설에 욕설까지 포함될 수 있어요.</p>
+              </button>
+            </div>
+
             <label className="flex items-center gap-3 mt-1 cursor-pointer select-none" onClick={() => setAgreed(v => !v)}>
               <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${agreed ? "bg-black border-black" : "border-gray-300 bg-white"}`}>
                 {agreed && <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}

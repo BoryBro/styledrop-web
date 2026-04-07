@@ -167,6 +167,7 @@ function CardCarousel() {
 export default function AuditionIntroPage() {
   const router = useRouter();
   const { isLoading: isAuditionLoading, isEnabled: isAuditionEnabled } = useAuditionAvailability();
+  const [flavor, setFlavor] = useState<"spicy" | "mild">("mild");
   const typed = useTypewriter([
     "AI 오디션",
     "배역을 찾아드려요.",
@@ -462,6 +463,58 @@ export default function AuditionIntroPage() {
               </li>
             ))}
           </ul>
+
+          <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4 flex flex-col gap-3">
+            <div>
+              <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.25em] mb-1">결과 말투 설정</p>
+              <p className="text-[14px] font-bold text-gray-900">독설 강도는 유지하고 욕설 포함 여부만 고를 수 있어요</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFlavor("mild")}
+              className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
+                flavor === "mild"
+                  ? "border-[#315EFB] bg-[#F5F8FF]"
+                  : "border-gray-200 bg-white"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                  flavor === "mild" ? "border-[#315EFB]" : "border-gray-300"
+                }`}>
+                  {flavor === "mild" && <div className="h-2.5 w-2.5 rounded-full bg-[#315EFB]" />}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-bold text-gray-900">욕설 제외 독설형</p>
+                  <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">비꼼, 조롱, 독설은 유지하고 직접적인 욕설만 빼서 결과를 보여줍니다.</p>
+                </div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFlavor("spicy")}
+              className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
+                flavor === "spicy"
+                  ? "border-[#C9571A] bg-[#FFF7F2]"
+                  : "border-gray-200 bg-white"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                  flavor === "spicy" ? "border-[#C9571A]" : "border-gray-300"
+                }`}>
+                  {flavor === "spicy" && <div className="h-2.5 w-2.5 rounded-full bg-[#C9571A]" />}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-bold text-gray-900">욕설 포함 독설형</p>
+                  <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">독설에 욕설까지 포함될 수 있어요. 표현 수위가 더 세게 느껴질 수 있습니다.</p>
+                </div>
+              </div>
+            </button>
+          </div>
+
           <label className="flex items-center gap-3 mt-2 cursor-pointer select-none" onClick={() => setAgreed(v => !v)}>
             <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all ${agreed ? "bg-black border-black scale-110" : "border-gray-300 bg-white"}`}>
               {agreed && <svg width="13" height="11" viewBox="0 0 13 11" fill="none"><path d="M1.5 5.5l3.5 3.5L11.5 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
@@ -480,7 +533,7 @@ export default function AuditionIntroPage() {
         style={{ opacity: showCta ? 1 : 0, transform: showCta ? 'translateY(0)' : 'translateY(20px)', pointerEvents: showCta ? 'auto' : 'none' }}
       >
         <button
-          onClick={() => router.push("/audition/solo?from_intro=1")}
+          onClick={() => router.push(`/audition/solo?from_intro=1&flavor=${flavor}`)}
           disabled={!agreed}
           className="w-full py-4 rounded-2xl font-black text-[17px] flex items-center justify-center gap-3 transition-all active:scale-[0.97]"
           style={{
