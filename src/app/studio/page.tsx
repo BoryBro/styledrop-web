@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
-import { PERSONAL_COLOR_LAB_ENABLED } from "@/lib/feature-flags";
+import { PERSONAL_COLOR_LAB_ENABLED, TRACE_LAB_ENABLED } from "@/lib/feature-flags";
 import {
   PERSONAL_COLOR_CONTROL_ID,
   applyStyleControl,
@@ -141,7 +141,7 @@ export default function Studio() {
   );
   const showPersonalColorLab = personalColorControl.is_visible;
   const isPersonalColorEnabled = personalColorControl.is_enabled;
-  const showLabSection = showAuditionLab || showPersonalColorLab;
+  const showLabSection = showAuditionLab || showPersonalColorLab || TRACE_LAB_ENABLED;
 
   const scrollToSection = useCallback((section: StudioSectionTab) => {
     const target = section === "cards" ? generalCardsSectionRef.current : labSectionRef.current;
@@ -735,6 +735,134 @@ export default function Studio() {
                     )}
                     </div>
                   </button>
+                )}
+
+                {TRACE_LAB_ENABLED && (
+                  <Link href="/lab/traces" className="block mb-4 active:scale-[0.97] transition-transform">
+                    <div
+                      className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#06080D]"
+                      style={{ aspectRatio: "4/3" }}
+                    >
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          background:
+                            "radial-gradient(circle at 24% 22%, rgba(87,182,255,0.20) 0%, transparent 30%), radial-gradient(circle at 78% 74%, rgba(91,233,196,0.16) 0%, transparent 32%), linear-gradient(180deg, rgba(5,8,13,1) 0%, rgba(9,12,19,1) 100%)",
+                        }}
+                      />
+                      <div
+                        className="absolute inset-0 opacity-40"
+                        style={{
+                          backgroundImage:
+                            "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+                          backgroundSize: "26px 26px",
+                        }}
+                      />
+
+                      {[
+                        { x: "18%", y: "26%", size: 10, opacity: 0.45 },
+                        { x: "34%", y: "38%", size: 8, opacity: 0.32 },
+                        { x: "60%", y: "44%", size: 12, opacity: 0.58 },
+                        { x: "71%", y: "68%", size: 14, opacity: 0.7 },
+                        { x: "43%", y: "76%", size: 9, opacity: 0.38 },
+                      ].map((dot, index) => (
+                        <div
+                          key={index}
+                          className="absolute rounded-full"
+                          style={{
+                            left: dot.x,
+                            top: dot.y,
+                            width: dot.size,
+                            height: dot.size,
+                            background: `radial-gradient(circle, rgba(255,255,255,0.96) 0%, rgba(107,226,197,${dot.opacity}) 42%, rgba(107,226,197,0) 100%)`,
+                            boxShadow: `0 0 ${dot.size * 2.4}px rgba(107,226,197,${dot.opacity})`,
+                          }}
+                        />
+                      ))}
+
+                      <span
+                        className="absolute bottom-0 right-0 select-none font-unbounded font-black text-white/[0.03]"
+                        style={{
+                          fontSize: "clamp(48px, 14vw, 88px)",
+                          letterSpacing: "-4px",
+                          lineHeight: 1,
+                        }}
+                      >
+                        TRACE
+                      </span>
+
+                      <div className="absolute left-5 right-5 top-5 z-10 flex items-center justify-between">
+                        <span
+                          className="font-unbounded font-medium uppercase tracking-[0.18em] text-[#6BE2C5]"
+                          style={{ fontSize: "clamp(9px, 2.4vw, 11px)" }}
+                        >
+                          Experimental Map
+                        </span>
+                        <span
+                          className="rounded-full border border-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white/35"
+                          style={{ fontFamily: '"Unbounded", sans-serif' }}
+                        >
+                          LIVE
+                        </span>
+                      </div>
+
+                      <div className="absolute left-[6%] right-[12%] top-[24%] z-10">
+                        <div className="mb-3 flex items-center gap-2">
+                          <span className="h-[2px] w-6 bg-[#6BE2C5]" />
+                          <span
+                            className="font-unbounded uppercase tracking-[0.08em] text-white/42"
+                            style={{ fontSize: "clamp(10px, 2.6vw, 13px)" }}
+                          >
+                            Quiet Signals
+                          </span>
+                        </div>
+                        <span
+                          className="leading-[0.92] text-white"
+                          style={{
+                            fontFamily: '"BMKkubulim", sans-serif',
+                            fontSize: "clamp(42px, 13vw, 72px)",
+                            letterSpacing: "-1px",
+                          }}
+                        >
+                          흔적 지도
+                        </span>
+                      </div>
+
+                      <div className="absolute left-[6%] right-[6%] top-[64%] z-10">
+                        <p
+                          className="leading-snug text-white/58"
+                          style={{ fontFamily: '"Pretendard", sans-serif', fontSize: "clamp(11px, 2.8vw, 13px)", fontWeight: 500 }}
+                        >
+                          카카오 로그인 유저가 실험실에 남긴 점 하나가
+                          <br />
+                          <span className="text-white/34">조용히 한국 지도 위에 쌓입니다</span>
+                        </p>
+                      </div>
+
+                      <div className="absolute bottom-[6%] left-[6%] right-[6%] z-20 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="rounded-full border border-white/10 px-2.5 py-1 text-white/45"
+                            style={{ fontFamily: '"Pretendard", sans-serif', fontSize: "clamp(10px, 2.5vw, 12px)" }}
+                          >
+                            계정당 1회
+                          </span>
+                          <span
+                            className="rounded-full border border-[#6BE2C5]/40 px-2.5 py-1 font-bold text-[#6BE2C5]"
+                            style={{ fontFamily: '"Unbounded", sans-serif', fontSize: "clamp(9px, 2.2vw, 11px)" }}
+                          >
+                            DOT MAP
+                          </span>
+                        </div>
+
+                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#6BE2C5]">
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 8h10M9 4l4 4-4 4" stroke="#05110E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
                 )}
               </div>
             </>
