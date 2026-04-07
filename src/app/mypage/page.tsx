@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -544,9 +545,15 @@ export default function MyPage() {
               onClick={handleInstallApp}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#C9571A] px-4 py-3.5 text-[15px] font-bold text-white transition-colors hover:bg-[#B34A12]"
             >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                <path d="M9 2.5v7.5M9 10l-3-3M9 10l3-3M3 12.5v1a1.5 1.5 0 001.5 1.5h9A1.5 1.5 0 0015 13.5v-1" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-[9px] border border-white/20 bg-white/10 shadow-[0_6px_18px_rgba(0,0,0,0.18)]">
+                <Image
+                  src="/apple-icon"
+                  alt=""
+                  width={28}
+                  height={28}
+                  className="h-full w-full object-cover"
+                />
+              </span>
               {isStandalone ? "이미 홈 화면에서 실행 중" : "StyleDrop 홈 화면에 바로가기 추가"}
             </button>
           </section>
