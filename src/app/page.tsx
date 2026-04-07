@@ -9,7 +9,6 @@ type User = { id: string; nickname: string | null; profileImage: string | null }
 export default function Home() {
   const [isAgreed, setIsAgreed] = useState(false);
   const [shaking, setShaking] = useState(false);
-  const [logoError, setLogoError] = useState(false);
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -209,7 +208,7 @@ export default function Home() {
         </p>
         <p className="text-[10px] text-white/28 mt-1 leading-relaxed">
           상호: 핑거 · 대표자: 문지환 · 사업자등록번호: 707-79-00261<br/>
-          주소: 대전광역시 서구 동서대로1030번길 8-6(내동)
+          주소: 대전광역시 서구 동서대로1030번길 8-6(내동) · 연락처: 010-5838-9960
         </p>
       </footer>
     </main>
