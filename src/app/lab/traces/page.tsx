@@ -462,6 +462,7 @@ function TraceMap({
   const dragRef = useRef<{ id: number; startX: number; startY: number; baseX: number; baseY: number } | null>(null);
   const pointersRef = useRef(new Map<number, { x: number; y: number }>());
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+  const touchPinchRef = useRef<{ distance: number; zoom: number } | null>(null);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const draggedRef = useRef(false);
   const zoomRef = useRef(zoom);
@@ -671,9 +672,35 @@ function TraceMap({
       <div
         ref={mapFrameRef}
         className="relative aspect-[3/4] w-full touch-none cursor-grab active:cursor-grabbing"
+        style={{ touchAction: "none" }}
         onWheel={(event) => {
           event.preventDefault();
           updateZoom(event.deltaY < 0 ? 0.4 : -0.4, event.clientX, event.clientY);
+        }}
+        onTouchStart={(event) => {
+          if (event.touches.length === 2) {
+            const [first, second] = Array.from(event.touches);
+            touchPinchRef.current = {
+              distance: Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY),
+              zoom: zoomRef.current,
+            };
+            draggedRef.current = true;
+          }
+        }}
+        onTouchMove={(event) => {
+          if (event.touches.length !== 2 || !touchPinchRef.current) return;
+          if (event.cancelable) event.preventDefault();
+          const [first, second] = Array.from(event.touches);
+          const distance = Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
+          const midX = (first.clientX + second.clientX) / 2;
+          const midY = (first.clientY + second.clientY) / 2;
+          const scale = distance / touchPinchRef.current.distance;
+          applyZoomAtPoint(touchPinchRef.current.zoom * scale, midX, midY);
+        }}
+        onTouchEnd={(event) => {
+          if (event.touches.length < 2) {
+            touchPinchRef.current = null;
+          }
         }}
         onPointerDown={(event) => {
           pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
@@ -1378,6 +1405,11 @@ export default function TraceLabPage() {
                 />
               </div>
 
+              <div className="rounded-[14px] border border-white/8 bg-white/[0.03] px-3 py-2">
+                <p className="text-[11px] font-black tracking-[-0.02em] text-white/86">공개 옵션</p>
+                <p className="mt-0.5 text-[11px] leading-5 text-white/42">기본은 비공개예요. 원할 때만 이미지나 인스타를 보여줄 수 있어요.</p>
+              </div>
+
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
                 <label className="flex items-center justify-between gap-3 rounded-[14px] border border-white/8 bg-white/[0.03] px-3 py-2 text-[11px] text-white/68">
                   <div className="min-w-0">
@@ -1518,11 +1550,14 @@ export default function TraceLabPage() {
           </section>
 
           <aside className="flex flex-col gap-4">
-            {activePublicTrace && (
-              <div className="rounded-[30px] border border-white/10 bg-white/5 p-5">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/40">Selected Trace</p>
-                <h3 className="mt-2 text-[18px] font-black tracking-[-0.04em] text-white">{activePublicTrace.regionLabel}</h3>
-                <p className="mt-1 text-[13px] text-white/45">선택한 흔적에서 공개한 정보만 보여줘요.</p>
+            <div className="rounded-[30px] border border-white/10 bg-white/5 p-5">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/40">Selected Trace</p>
+              <h3 className="mt-2 text-[18px] font-black tracking-[-0.04em] text-white">
+                {activeDisplayTrace?.regionLabel ?? "선택한 흔적"}
+              </h3>
+              {!activeDisplayTrace ? (
+                <p className="mt-2 text-[13px] leading-6 text-white/45">지도에서 점을 누르면, 공개된 이미지나 인스타가 여기 보여요.</p>
+              ) : activePublicTrace ? (
                 <div className="mt-4 space-y-3">
                   {activePublicTrace.publicImageUrl && (
                     <div className="overflow-hidden rounded-[22px] border border-white/10 bg-black/16">
@@ -1536,12 +1571,15 @@ export default function TraceLabPage() {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="mt-2 text-[13px] leading-6 text-white/45">이 흔적은 아직 공개된 이미지나 인스타 정보가 없어요.</p>
+              )}
+            </div>
 
             <div className="rounded-[30px] border border-white/10 bg-white/5 p-5">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/40">Hotspots</p>
               <h3 className="mt-2 text-[20px] font-black tracking-[-0.04em] text-white">많이 남은 흔적</h3>
+              <p className="mt-1 text-[12px] text-white/42">누르면 그 지역으로 바로 이동해요.</p>
               <div className="mt-4 space-y-2">
                 {hotspotList.length === 0 && <p className="text-[14px] leading-6 text-white/50">아직 첫 참여자를 기다리는 중이에요.</p>}
                 {hotspotList.slice(0, 4).map((cluster, index) => (
