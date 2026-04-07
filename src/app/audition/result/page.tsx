@@ -56,17 +56,16 @@ function TypingCastingTitle({ role, speed = 42 }: { role: string; speed?: number
 function GenreMoodLine({ genre }: { genre: string }) {
   return (
     <div
-      className="whitespace-pre-line leading-[1.2] text-gray-900"
+      className="leading-[1.2] text-gray-900"
       style={{ fontFamily: '"Pretendard", sans-serif' }}
     >
-      <span className="text-[15px] font-[400] text-[#5f6472]">지금 열리는 장르는{"\n"}</span>
       <span
         className="text-[24px] leading-[1.05]"
         style={{ fontFamily: '"BMKkubulim", sans-serif', color: "#315EFB" }}
       >
-        &apos;{genre}&apos;
+        [{genre}]
       </span>
-      <span className="text-[15px] font-[400] text-[#5f6472]"> 입니다.</span>
+      <span className="text-[15px] font-[400] text-[#5f6472]"> 한 장면으로 만들게요.</span>
       <span
         className="ml-1 inline-block h-[18px] w-[2px] translate-y-[1px] align-middle bg-[#C9571A]"
         style={{ animation: "casting-caret 1s step-end infinite" }}
@@ -1455,7 +1454,7 @@ function AuditionResultInner() {
     <section className="py-10 border-b border-gray-100">
       <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Card Studio</p>
       <p className="text-[22px] font-black text-gray-900 mb-2">결과 카드 만들기</p>
-      <p className="text-[13px] text-gray-500 mb-4">결과는 자동 저장되고 24시간 동안 다시 볼 수 있어요. 스틸컷은 1회 포함입니다.</p>
+      <p className="text-[13px] text-gray-500 mb-4">결과는 자동 저장되고 24시간 동안 다시 볼 수 있어요.</p>
       <div className="mb-5">
         <CardSampleMarquee />
       </div>
@@ -1593,7 +1592,16 @@ function AuditionResultInner() {
                     disabled={Boolean(stillImageRef.current)}
                     className="w-full rounded-[18px] bg-[#C9571A] px-4 py-4 text-[16px] font-bold text-white shadow-[0_16px_36px_rgba(201,87,26,0.34)] transition-colors hover:bg-[#B34A12] flex items-center justify-center gap-2 disabled:bg-[#9A9A9A] disabled:shadow-none disabled:cursor-not-allowed"
                   >
-                    {stillImageRef.current ? "스틸컷 생성 완료" : "스틸컷 이미지 생성"}
+                    {stillImageRef.current ? (
+                      "스틸컷 생성 완료"
+                    ) : (
+                      <>
+                        <span className="rounded-full bg-white/18 px-2.5 py-1 text-[10px] font-black tracking-[-0.02em] text-white ring-1 ring-white/18">
+                          1회 생성 가능
+                        </span>
+                        <span>스틸컷 이미지 생성</span>
+                      </>
+                    )}
                   </button>
                 )}
               </div>
@@ -1664,9 +1672,6 @@ function AuditionResultInner() {
                           </span>
                         )}
                       </div>
-                      <div className="px-2.5 pb-2.5 pt-2">
-                        <p className="text-[11px] font-black text-[#111827]">{option.label}</p>
-                      </div>
                     </button>
                   );
                 })}
@@ -1690,26 +1695,27 @@ function AuditionResultInner() {
                       </>
                     ) : (
                       <>
-                        <span className="text-[20px] font-black leading-none" style={{ fontFamily: "var(--font-unbounded)" }}>U</span>
-                        <span className="text-[10px] font-bold">{albumStillPhoto ? "변경" : "업로드"}</span>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M12 16V8.2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M8.9 11.4 12 8.2l3.1 3.2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M6.5 18.5h11" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                        </svg>
                       </>
                     )}
                   </div>
                   {!albumStillPhoto && (
-                    <div className="px-2.5 pb-2.5 pt-2">
-                      <p className="text-[11px] font-black">업로드</p>
-                    </div>
+                    <div className="sr-only">업로드</div>
                   )}
                 </button>
               </div>
 
               <div className="mt-4 flex items-start gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[21px] font-black tracking-[-0.04em] text-[#101218]">스틸컷에 쓸 사진 선택</p>
-                  <p className="mt-1.5 text-[13px] leading-[1.55] text-[#6e7280]">
-                    씬 3장이나 앨범 사진 중 한 장만 고르면 바로 생성할 수 있어요.
+                <div className="min-w-0 flex-1 text-center">
+                  <p className="text-[15px] font-medium leading-[1.28] tracking-[-0.02em] text-[#5f6472]">어떤 사진으로 스틸컷을 만들까요?</p>
+                  <p className="mt-1 text-[15px] font-bold leading-[1.28] tracking-[-0.02em] text-[#5f6472]">
+                    씬 3장 또는 업로드 사진 중 1장을 고르세요.
                   </p>
-                  <div className="mt-3">
+                  <div className="mt-3 flex justify-center">
                     <GenreMoodLine genre={bestScene.genre} />
                   </div>
                 </div>
@@ -1883,83 +1889,43 @@ function AuditionResultInner() {
           <p className="text-[22px] font-black text-gray-900 mb-5">씬별 연기 분석</p>
 
           {result.personality_summary && (
-            <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
-              <div className="px-5 py-4 bg-[#FFF7F2] border-b border-[#C9571A]/10">
-                <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.24em] mb-2">Balance Game</p>
-                <p className="text-[17px] font-black text-gray-900 leading-snug">
-                  {result.personality_summary}
-                </p>
-                <p className="mt-2 text-[13px] leading-relaxed text-gray-600">
-                  {balanceFunSummary}
-                </p>
-              </div>
-              <div className="px-5 py-4 grid grid-cols-1 gap-3">
-                {personalityAnswers.length > 0 && (
-                  <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-4">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-3">성향 좌표</p>
-                    <div className="relative mx-auto h-[180px] w-full max-w-[240px] rounded-2xl border border-gray-200 bg-white">
-                      <div className="absolute left-1/2 top-3 bottom-3 w-px -translate-x-1/2 bg-gray-200" />
-                      <div className="absolute left-3 right-3 top-1/2 h-px -translate-y-1/2 bg-gray-200" />
-                      <div className="absolute left-3 top-3 text-[11px] font-bold text-gray-400">신중형</div>
-                      <div className="absolute right-3 top-3 text-[11px] font-bold text-gray-400">직진형</div>
-                      <div className="absolute left-3 bottom-3 text-[11px] font-bold text-gray-400">안정형</div>
-                      <div className="absolute right-3 bottom-3 text-[11px] font-bold text-gray-400">주도형</div>
-                      <div
-                        className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#C9571A] shadow-[0_6px_18px_rgba(201,87,26,0.35)]"
-                        style={{
-                          left: `${balanceAxes.xScore}%`,
-                          top: `${100 - balanceAxes.yScore}%`,
-                        }}
-                      />
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <div className="rounded-xl bg-white px-3 py-3 border border-gray-100">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">X축</p>
-                        <p className="text-[14px] font-black text-gray-900">{balanceAxes.xLabel}</p>
-                      </div>
-                      <div className="rounded-xl bg-white px-3 py-3 border border-gray-100">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Y축</p>
-                        <p className="text-[14px] font-black text-gray-900">{balanceAxes.yLabel}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">잘 먹힌 씬</p>
-                  <p className="text-[15px] font-black text-gray-900">
-                    {GENRE_EMOJIS[bestScene.genre] ?? "🎬"} {bestScene.genre}
-                  </p>
-                  <p className="mt-1 text-[12px] text-gray-600">감정선을 숨기기보다 바로 드러내는 톤이 이번 씬에서 가장 자연스럽게 붙었습니다.</p>
-                </div>
-                <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">추천 배역 톤</p>
-                  <p className="text-[15px] font-black text-gray-900">{bestToneLabel}</p>
-                  <p className="mt-1 text-[12px] text-gray-600">{bestScene.assigned_role} 같은 결이 지금 결과에서 제일 잘 받아졌어요.</p>
-                </div>
-                <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">덜 맞은 결</p>
-                  <p className="text-[15px] font-black text-gray-900">
-                    {GENRE_EMOJIS[weakestScene.genre] ?? "🎬"} {weakestScene.genre}
-                  </p>
-                  <p className="mt-1 text-[12px] text-gray-600">숨기거나 계산해야 하는 톤은 이번 결과에서 상대적으로 덜 설득력 있게 읽혔습니다.</p>
-                </div>
-                {personalityAnswers.length > 0 && (
-                  <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">근거가 된 선택</p>
-                    <div className="flex flex-col gap-2">
-                      {[...balanceAxes.xEvidence, ...balanceAxes.yEvidence].slice(0, 3).map((item, index) => (
-                        <div key={`${item.category}-${index}`} className="rounded-lg bg-white border border-gray-100 px-3 py-2">
-                          <p className="text-[11px] font-black text-[#C9571A] mb-1">{item.category}</p>
-                          <p className="text-[12px] font-medium leading-snug text-gray-700">{item.question}</p>
-                          <p className="mt-1 text-[12px] font-black text-gray-900">{item.choice}: {item.answer}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            <div className="rounded-2xl border border-[#C9571A]/15 bg-[#FFF9F5] px-5 py-4 mb-6">
+              <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.24em] mb-2">Acting Tone</p>
+              <p className="text-[17px] font-black text-gray-900 leading-snug">
+                {result.personality_summary}
+              </p>
+              <p className="mt-2 text-[13px] leading-relaxed text-gray-600">
+                {balanceFunSummary}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="rounded-full bg-white px-3 py-1.5 text-[12px] font-bold text-gray-700 ring-1 ring-black/[0.06]">{balanceAxes.xLabel}</span>
+                <span className="rounded-full bg-white px-3 py-1.5 text-[12px] font-bold text-gray-700 ring-1 ring-black/[0.06]">{balanceAxes.yLabel}</span>
+                <span className="rounded-full bg-white px-3 py-1.5 text-[12px] font-bold text-gray-900 ring-1 ring-black/[0.06]">{bestToneLabel}</span>
               </div>
             </div>
           )}
+
+          <div className="grid grid-cols-1 gap-3 mb-6">
+            <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">제일 잘 붙은 장르</p>
+              <p className="text-[15px] font-black text-gray-900">
+                {GENRE_EMOJIS[bestScene.genre] ?? "🎬"} {bestScene.genre}
+              </p>
+              <p className="mt-1 text-[12px] text-gray-600">{bestScene.assigned_role} 같은 결이 이번 결과에서 가장 자연스럽게 붙었어요.</p>
+            </div>
+            <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">지금 밀어야 할 배역</p>
+              <p className="text-[15px] font-black text-gray-900">{bestToneLabel}</p>
+              <p className="mt-1 text-[12px] text-gray-600">강하게 밀어붙이기보다 지금 잘 받은 결을 더 선명하게 키우는 쪽이 좋습니다.</p>
+            </div>
+            <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">아직 약한 장르</p>
+              <p className="text-[15px] font-black text-gray-900">
+                {GENRE_EMOJIS[weakestScene.genre] ?? "🎬"} {weakestScene.genre}
+              </p>
+              <p className="mt-1 text-[12px] text-gray-600">숨기거나 계산해야 하는 톤은 이번 테스트에서 상대적으로 덜 설득력 있게 읽혔습니다.</p>
+            </div>
+          </div>
 
           {/* 씬 탭 */}
           <div className="flex gap-2 mb-6">
@@ -1983,6 +1949,7 @@ function AuditionResultInner() {
           {(() => {
             const scene = result.scenes[activeSceneTab];
             const sa = avgScore(scene.scores);
+            const sceneQuickRead = scene.emotion_read || scene.direction_fit || "이번 씬은 표정을 더 선명하게 밀어붙일수록 살아나는 타입이에요.";
             return (
               <div className="flex flex-col gap-4">
                 {/* 씬 헤더 — 장르 + 큐 + 점수 */}
@@ -2018,48 +1985,63 @@ function AuditionResultInner() {
                 <div className="flex gap-3">
                   <div className="w-[3px] rounded-full bg-gray-200 flex-shrink-0 self-stretch" />
                   <div>
-                    <p className="text-[10px] font-black text-[#C9571A] tracking-widest uppercase mb-1.5">감독 평가</p>
+                    <p className="text-[10px] font-black text-[#C9571A] tracking-widest uppercase mb-1.5">감독 한마디</p>
                     <p className="text-[14px] text-gray-800 leading-relaxed">{scene.critique}</p>
                   </div>
                 </div>
 
-                {(scene.direction_fit || scene.emotion_read) && (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {scene.direction_fit && (
-                      <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">지시문 적합도</p>
-                        <p className="text-[13px] font-semibold text-gray-900 leading-relaxed">{scene.direction_fit}</p>
-                      </div>
-                    )}
-                    {scene.emotion_read && (
-                      <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">실제 읽힌 감정</p>
-                        <p className="text-[13px] font-semibold text-gray-900 leading-relaxed">{scene.emotion_read}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">이번 씬 포인트</p>
+                  <p className="text-[14px] font-semibold text-gray-900 leading-relaxed">{sceneQuickRead}</p>
+                </div>
 
-                {Array.isArray(scene.evidence_points) && scene.evidence_points.length > 0 && (
-                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">근거 포인트</p>
-                    <div className="flex flex-col gap-2">
-                      {scene.evidence_points.slice(0, 3).map((point, index) => (
-                        <div key={`${point}-${index}`} className="rounded-xl border border-gray-100 bg-white px-3 py-2.5">
-                          <p className="text-[13px] font-medium text-gray-800 leading-snug">{point}</p>
+                <details className="group rounded-2xl border border-gray-200 bg-gray-50">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5">
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">자세히 보기</p>
+                      <p className="text-[13px] font-semibold text-gray-900">근거 포인트와 세부 점수 보기</p>
+                    </div>
+                    <span className="text-[18px] font-black text-gray-400 transition-transform group-open:rotate-45">+</span>
+                  </summary>
+                  <div className="border-t border-gray-200 px-4 py-4 flex flex-col gap-4">
+                    {(scene.direction_fit || scene.emotion_read) && (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {scene.direction_fit && (
+                          <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">지시문 적합도</p>
+                            <p className="text-[13px] font-semibold text-gray-900 leading-relaxed">{scene.direction_fit}</p>
+                          </div>
+                        )}
+                        {scene.emotion_read && (
+                          <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">실제 읽힌 감정</p>
+                            <p className="text-[13px] font-semibold text-gray-900 leading-relaxed">{scene.emotion_read}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {Array.isArray(scene.evidence_points) && scene.evidence_points.length > 0 && (
+                      <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">근거 포인트</p>
+                        <div className="flex flex-col gap-2">
+                          {scene.evidence_points.slice(0, 3).map((point, index) => (
+                            <div key={`${point}-${index}`} className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+                              <p className="text-[13px] font-medium text-gray-800 leading-snug">{point}</p>
+                            </div>
+                          ))}
                         </div>
+                      </div>
+                    )}
+
+                    <div className="bg-white rounded-2xl px-4 py-4 flex flex-col gap-3 border border-gray-200">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">세부 점수</p>
+                      {SCORE_LABELS.map(label => (
+                        <ScoreBar key={label} label={label} value={scene.scores[label] ?? 0} />
                       ))}
                     </div>
                   </div>
-                )}
-
-                {/* 점수 바 */}
-                <div className="bg-gray-50 rounded-2xl px-4 py-4 flex flex-col gap-3">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">세부 점수</p>
-                  {SCORE_LABELS.map(label => (
-                    <ScoreBar key={label} label={label} value={scene.scores[label] ?? 0} />
-                  ))}
-                </div>
+                </details>
               </div>
             );
           })()}
