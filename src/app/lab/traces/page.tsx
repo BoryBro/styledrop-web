@@ -4,11 +4,14 @@ import { geoMercator, geoPath } from "d3-geo";
 import Link from "next/link";
 import { feature } from "topojson-client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import koreaEmdTopology from "@tenqube/react-korea-bubble-map/dist/esm/emd-64475e77.js";
 import koreaSidoTopology from "@tenqube/react-korea-bubble-map/dist/esm/sido-0af932a3.js";
+import koreaSigunguTopology from "@tenqube/react-korea-bubble-map/dist/esm/sigungu-3878911c.js";
 import { useAuth } from "@/hooks/useAuth";
 import {
   buildTraceJitter,
   getSidoOption,
+  normalizeRegionPart,
   normalizeSido,
   SIDO_OPTIONS,
 } from "@/lib/lab-traces";
@@ -71,7 +74,19 @@ type KoreaFeature = {
 
 type KoreaTopology = {
   objects: {
-    sido: unknown;
+    [key: string]: unknown;
+  };
+};
+
+type RegionShape = {
+  code: string;
+  label: string;
+  normalizedLabel: string;
+  shortLabel: string;
+  path: string;
+  centroid: {
+    x: number;
+    y: number;
   };
 };
 
@@ -80,10 +95,22 @@ const MAP_HEIGHT = 140;
 const MAP_PADDING = 8;
 
 const typedKoreaSidoTopology = koreaSidoTopology as KoreaTopology;
+const typedKoreaSigunguTopology = koreaSigunguTopology as KoreaTopology;
+const typedKoreaEmdTopology = koreaEmdTopology as KoreaTopology;
 
 const koreaFeatureCollection = feature(
   typedKoreaSidoTopology as never,
   typedKoreaSidoTopology.objects.sido as never,
+) as unknown as { features: KoreaFeature[] };
+
+const koreaSigunguFeatureCollection = feature(
+  typedKoreaSigunguTopology as never,
+  typedKoreaSigunguTopology.objects.sigungu as never,
+) as unknown as { features: KoreaFeature[] };
+
+const koreaEmdFeatureCollection = feature(
+  typedKoreaEmdTopology as never,
+  typedKoreaEmdTopology.objects.emd as never,
 ) as unknown as { features: KoreaFeature[] };
 
 const projection = geoMercator().fitExtent(
@@ -99,21 +126,26 @@ const projection = geoMercator().fitExtent(
 
 const pathBuilder = geoPath(projection);
 
-const provinceMap = koreaFeatureCollection.features.map((region) => {
-  const option = getSidoOption(region.properties.KOR_NM);
-  const centroid = pathBuilder.centroid(region as never);
+function buildRegionShape(featureItem: KoreaFeature) {
+  const option = getSidoOption(featureItem.properties.KOR_NM);
+  const centroid = pathBuilder.centroid(featureItem as never);
 
   return {
-    code: region.properties.CODE,
-    label: region.properties.KOR_NM,
-    shortLabel: option?.shortLabel ?? region.properties.KOR_NM.replace(/(특별시|광역시|특별자치시|특별자치도|도)$/g, ""),
-    path: pathBuilder(region as never) ?? "",
+    code: featureItem.properties.CODE,
+    label: featureItem.properties.KOR_NM,
+    normalizedLabel: normalizeRegionPart(featureItem.properties.KOR_NM),
+    shortLabel: option?.shortLabel ?? featureItem.properties.KOR_NM.replace(/(특별시|광역시|특별자치시|특별자치도|도)$/g, ""),
+    path: pathBuilder(featureItem as never) ?? "",
     centroid: {
       x: Number(centroid[0].toFixed(2)),
       y: Number(centroid[1].toFixed(2)),
     },
   };
-});
+}
+
+const provinceMap = koreaFeatureCollection.features.map(buildRegionShape);
+const districtMap = koreaSigunguFeatureCollection.features.map(buildRegionShape);
+const dongMap = koreaEmdFeatureCollection.features.map(buildRegionShape);
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -160,13 +192,55 @@ function getProvinceSpread(sido: string) {
   return { x: 1.8, y: 2.1 };
 }
 
+function findProvinceShape(sido: string) {
+  const normalizedSido = normalizeSido(sido);
+  return provinceMap.find((item) => item.label === normalizedSido) ?? null;
+}
+
+function findDistrictShape(sido: string, sigungu: string) {
+  const province = findProvinceShape(sido);
+  const normalizedSigungu = normalizeRegionPart(sigungu);
+  if (!province || !normalizedSigungu) return null;
+
+  const provincePrefix = province.code.slice(0, 2);
+  return (
+    districtMap.find(
+      (item) => item.normalizedLabel === normalizedSigungu && item.code.slice(0, 2) === provincePrefix,
+    ) ?? null
+  );
+}
+
+function findDongShape(sido: string, sigungu: string, dong: string) {
+  const district = findDistrictShape(sido, sigungu);
+  const province = findProvinceShape(sido);
+  const normalizedDong = normalizeRegionPart(dong);
+  if (!normalizedDong) return null;
+
+  if (district) {
+    const districtPrefix = district.code.slice(0, 5);
+    const matched = dongMap.find(
+      (item) => item.normalizedLabel === normalizedDong && item.code.slice(0, 5) === districtPrefix,
+    );
+    if (matched) return matched;
+  }
+
+  if (!province) return null;
+  const provincePrefix = province.code.slice(0, 2);
+  return dongMap.find(
+    (item) => item.normalizedLabel === normalizedDong && item.code.slice(0, 2) === provincePrefix,
+  ) ?? null;
+}
+
 function buildDisplayTrace(trace: Trace): DisplayTrace {
   const normalizedSido = normalizeSido(trace.sido);
-  const province = provinceMap.find((item) => item.label === normalizedSido);
+  const province = findProvinceShape(normalizedSido);
+  const district = findDistrictShape(normalizedSido, trace.sigungu);
+  const dong = findDongShape(normalizedSido, trace.sigungu, trace.dong);
   const option = getSidoOption(normalizedSido);
   const fallback = option?.anchor ?? { x: 50, y: 60 };
-  const baseX = province?.centroid.x ?? fallback.x;
-  const baseY = province?.centroid.y ?? fallback.y;
+  const exactBase = dong?.centroid ?? district?.centroid ?? province?.centroid ?? fallback;
+  const baseX = exactBase.x;
+  const baseY = exactBase.y;
   const spread = getProvinceSpread(normalizedSido);
   const jitter = buildTraceJitter({
     sido: trace.sido,
@@ -174,11 +248,12 @@ function buildDisplayTrace(trace: Trace): DisplayTrace {
     dong: trace.dong,
     userId: trace.user_id,
   });
+  const useJitter = !dong;
 
   return {
     ...trace,
-    displayX: Number(clamp(baseX + jitter.x * spread.x, 6, MAP_WIDTH - 6).toFixed(2)),
-    displayY: Number(clamp(baseY + jitter.y * spread.y, 8, MAP_HEIGHT - 8).toFixed(2)),
+    displayX: Number(clamp(baseX + (useJitter ? jitter.x * spread.x : 0), 6, MAP_WIDTH - 6).toFixed(2)),
+    displayY: Number(clamp(baseY + (useJitter ? jitter.y * spread.y : 0), 8, MAP_HEIGHT - 8).toFixed(2)),
   };
 }
 
@@ -236,6 +311,7 @@ function TraceMap({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ id: number; startX: number; startY: number; baseX: number; baseY: number } | null>(null);
   const regionLabels = useMemo(() => buildVisibleRegionLabels(clusters), [clusters]);
+  const detailLevel = zoom >= 4 ? "emd" : zoom >= 1.9 ? "sigungu" : "sido";
 
   const provinceCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -243,6 +319,27 @@ function TraceMap({
     traces.forEach((trace) => {
       const key = normalizeSido(trace.sido);
       counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+
+    return counts;
+  }, [traces]);
+
+  const districtCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    traces.forEach((trace) => {
+      const key = `${normalizeSido(trace.sido)}|${normalizeRegionPart(trace.sigungu)}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+
+    return counts;
+  }, [traces]);
+
+  const dongCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    traces.forEach((trace) => {
+      counts.set(trace.regionKey, (counts.get(trace.regionKey) ?? 0) + 1);
     });
 
     return counts;
@@ -260,7 +357,7 @@ function TraceMap({
   const updateZoom = useCallback(
     (delta: number) => {
       setZoom((current) => {
-        const next = clamp(Number((current + delta).toFixed(2)), 1, 2.8);
+        const next = clamp(Number((current + delta).toFixed(2)), 1, 6);
         setPan((prev) => clampPan(next, prev));
         return next;
       });
@@ -359,12 +456,13 @@ function TraceMap({
             </filter>
           </defs>
 
-          {provinceMap.map((region) => {
-            const count = provinceCounts.get(region.label) ?? 0;
-            const activeAlpha = count === 0 ? 0 : Math.min(0.18 + count * 0.04, 0.42);
+          {detailLevel === "sido" &&
+            provinceMap.map((region) => {
+              const count = provinceCounts.get(region.label) ?? 0;
+              const activeAlpha = count === 0 ? 0 : Math.min(0.18 + count * 0.04, 0.42);
 
-            return (
-              <g key={region.code}>
+              return (
+                <g key={region.code}>
                 <path d={region.path} fill="rgba(12,17,24,0.98)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.42" />
                 {count > 0 && (
                   <path
@@ -375,8 +473,52 @@ function TraceMap({
                   />
                 )}
               </g>
-            );
-          })}
+              );
+            })}
+
+          {detailLevel === "sigungu" &&
+            districtMap.map((region) => {
+              const province = provinceMap.find((item) => item.code.slice(0, 2) === region.code.slice(0, 2));
+              const count = districtCounts.get(`${province?.label ?? ""}|${region.normalizedLabel}`) ?? 0;
+              const activeAlpha = count === 0 ? 0 : Math.min(0.14 + count * 0.05, 0.38);
+
+              return (
+                <g key={region.code}>
+                  <path d={region.path} fill="rgba(11,15,21,0.98)" stroke="rgba(255,255,255,0.10)" strokeWidth="0.18" />
+                  {count > 0 && (
+                    <path
+                      d={region.path}
+                      fill={`rgba(91, 224, 197, ${activeAlpha})`}
+                      stroke={`rgba(126, 245, 220, ${Math.min(activeAlpha + 0.08, 0.44)})`}
+                      strokeWidth="0.14"
+                    />
+                  )}
+                </g>
+              );
+            })}
+
+          {detailLevel === "emd" &&
+            dongMap.map((region) => {
+              const count = [...dongCounts.entries()].find(([key]) => {
+                const parts = key.split("|");
+                return parts.at(-1) === region.normalizedLabel && parts[0].slice(0, 2) === region.code.slice(0, 2);
+              })?.[1] ?? 0;
+              const activeAlpha = count === 0 ? 0 : Math.min(0.12 + count * 0.06, 0.34);
+
+              return (
+                <g key={region.code}>
+                  <path d={region.path} fill="rgba(10,13,18,0.98)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.06" />
+                  {count > 0 && (
+                    <path
+                      d={region.path}
+                      fill={`rgba(91, 224, 197, ${activeAlpha})`}
+                      stroke={`rgba(126, 245, 220, ${Math.min(activeAlpha + 0.06, 0.38)})`}
+                      strokeWidth="0.05"
+                    />
+                  )}
+                </g>
+              );
+            })}
 
           {clusters.map((cluster) => {
             const glowSize = 1.8 + Math.min(cluster.count, 9) * 0.9;
@@ -390,21 +532,22 @@ function TraceMap({
             );
           })}
 
-          {regionLabels.map((region) => (
-            <g key={region.id} opacity="0.82">
-              <circle cx={region.x} cy={region.y} r="0.42" fill="rgba(255,255,255,0.18)" />
-              <text
-                x={region.x + 1}
-                y={region.y - 1}
-                fill="rgba(255,255,255,0.28)"
-                fontSize="2.6"
-                fontWeight="700"
-                letterSpacing="0.04em"
-              >
-                {region.shortLabel}
-              </text>
-            </g>
-          ))}
+          {detailLevel === "sido" &&
+            regionLabels.map((region) => (
+              <g key={region.id} opacity="0.82">
+                <circle cx={region.x} cy={region.y} r="0.42" fill="rgba(255,255,255,0.18)" />
+                <text
+                  x={region.x + 1}
+                  y={region.y - 1}
+                  fill="rgba(255,255,255,0.28)"
+                  fontSize="2.6"
+                  fontWeight="700"
+                  letterSpacing="0.04em"
+                >
+                  {region.shortLabel}
+                </text>
+              </g>
+            ))}
 
           {traces.map((trace) => {
             const isActive = activeTrace?.user_id === trace.user_id;
