@@ -15,6 +15,11 @@ export default function ReviewerLoginPage() {
           <p className="mt-2 text-[14px] leading-relaxed text-white/55 break-keep">
             카카오페이 심사용 테스트 계정 로그인 페이지입니다. 아이디와 비밀번호를 입력하면 충전 테스트 계정으로 바로 접속됩니다.
           </p>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-[#0A0A0A] px-4 py-3 text-[13px] text-white/70">
+            아이디: <span className="font-bold text-white">styldrop</span>
+            <br />
+            비밀번호: <span className="font-bold text-white">9960</span>
+          </div>
         </div>
 
         {hasError && (
@@ -35,7 +40,8 @@ export default function ReviewerLoginPage() {
               autoComplete="username"
               required
               className="h-12 w-full rounded-2xl border border-white/10 bg-[#0A0A0A] px-4 text-[15px] text-white outline-none transition focus:border-[#C9571A]/50"
-              placeholder="아이디 입력"
+              placeholder="styldrop"
+              defaultValue="styldrop"
             />
           </div>
 

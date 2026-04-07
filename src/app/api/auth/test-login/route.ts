@@ -6,11 +6,11 @@ import { createClient } from "@supabase/supabase-js";
 
 const TEST_KAKAO_ID = 9999999901;
 const TEST_NICKNAME = "테스트계정";
-const REVIEWER_LOGIN_ID = process.env.TEST_LOGIN_ID ?? "styledrop-review";
+const REVIEWER_LOGIN_ID = "styldrop";
+const REVIEWER_LOGIN_PASSWORD = "9960";
 
 function isAuthorized(pw: string | null, loginId?: string | null) {
-  const expectedPassword = process.env.TEST_LOGIN_PASSWORD ?? process.env.ADMIN_PASSWORD;
-  if (!expectedPassword || pw !== expectedPassword) return false;
+  if (pw !== REVIEWER_LOGIN_PASSWORD) return false;
   if (loginId === undefined || loginId === null) return true;
   return loginId === REVIEWER_LOGIN_ID;
 }
