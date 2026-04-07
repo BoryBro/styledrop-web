@@ -375,22 +375,7 @@ function buildVisibleDistrictLabels(
   zoom: number,
 ) {
   const visible = districtMap.filter((region) => isInVisibleBounds(region.centroid, bounds, 3));
-  const step = zoom >= 3.8 ? 2 : zoom >= 3.1 ? 3 : zoom >= 2.5 ? 4 : 6;
-
-  return visible.filter((_, index) => index % step === 0).map((region) => ({
-    id: region.code,
-    x: region.centroid.x,
-    y: region.centroid.y,
-    shortLabel: region.shortLabel,
-  }));
-}
-
-function buildVisibleDongLabels(
-  bounds: { minX: number; maxX: number; minY: number; maxY: number },
-  zoom: number,
-) {
-  const visible = dongMap.filter((region) => isInVisibleBounds(region.centroid, bounds, 1.2));
-  const step = zoom >= 5.2 ? 2 : zoom >= 4.8 ? 3 : zoom >= 4.4 ? 5 : 8;
+  const step = zoom >= 4.6 ? 2 : zoom >= 3.8 ? 3 : zoom >= 3.1 ? 5 : 8;
 
   return visible.filter((_, index) => index % step === 0).map((region) => ({
     id: region.code,
@@ -471,15 +456,15 @@ function TraceMap({
   const dragRef = useRef<{ id: number; startX: number; startY: number; baseX: number; baseY: number } | null>(null);
   const pointersRef = useRef(new Map<number, { x: number; y: number }>());
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
+  const touchDragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
   const touchPinchRef = useRef<{ distance: number; zoom: number } | null>(null);
   const mapFrameRef = useRef<HTMLDivElement | null>(null);
   const draggedRef = useRef(false);
   const zoomRef = useRef(zoom);
   const panRef = useRef(pan);
   const detailLevel = zoom >= 4.1 ? "emd" : zoom >= 2.1 ? "sigungu" : "sido";
-  const showProvinceLabels = zoom < 2.25;
-  const showDistrictLabels = zoom >= 2.25 && zoom < 4.35;
-  const showDongLabels = zoom >= 4.35;
+  const showProvinceLabels = zoom < 2.4;
+  const showDistrictLabels = zoom >= 2.8;
   const visibleBounds = useMemo(() => {
     const frame = mapFrameRef.current;
     if (!frame) {
@@ -496,7 +481,6 @@ function TraceMap({
   }, [pan.x, pan.y, zoom]);
   const provinceLabels = useMemo(() => buildVisibleRegionLabels(clusters), [clusters]);
   const districtLabels = useMemo(() => buildVisibleDistrictLabels(visibleBounds, zoom), [visibleBounds, zoom]);
-  const dongLabels = useMemo(() => buildVisibleDongLabels(visibleBounds, zoom), [visibleBounds, zoom]);
 
   const provinceCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -600,21 +584,23 @@ function TraceMap({
 
   useEffect(() => {
     if (!previewTrace) return;
-    const nextZoom = zoom < 2.2 ? 2.2 : zoom;
+    const currentZoom = zoomRef.current;
+    const nextZoom = currentZoom < 2.2 ? 2.2 : currentZoom;
     const centeredPan = computeCenteredPan(previewTrace.displayX, previewTrace.displayY, nextZoom);
     if (!centeredPan) return;
     setZoom(nextZoom);
     setPan(centeredPan);
-  }, [computeCenteredPan, previewTrace?.displayX, previewTrace?.displayY, previewTrace?.regionKey, zoom]);
+  }, [computeCenteredPan, previewTrace?.displayX, previewTrace?.displayY, previewTrace?.regionKey]);
 
   useEffect(() => {
     if (previewTrace || !activeTrace) return;
-    const nextZoom = zoom < 2 ? 2 : zoom;
+    const currentZoom = zoomRef.current;
+    const nextZoom = currentZoom < 2 ? 2 : currentZoom;
     const centeredPan = computeCenteredPan(activeTrace.displayX, activeTrace.displayY, nextZoom);
     if (!centeredPan) return;
     setZoom(nextZoom);
     setPan(centeredPan);
-  }, [activeTrace?.displayX, activeTrace?.displayY, activeTrace?.user_id, computeCenteredPan, previewTrace, zoom]);
+  }, [activeTrace?.displayX, activeTrace?.displayY, activeTrace?.user_id, computeCenteredPan, previewTrace]);
 
   return (
     <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#05070B] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
@@ -690,31 +676,71 @@ function TraceMap({
           updateZoom(event.deltaY < 0 ? 0.4 : -0.4, event.clientX, event.clientY);
         }}
         onTouchStart={(event) => {
+          if (event.touches.length === 1) {
+            const [touch] = Array.from(event.touches);
+            touchDragRef.current = {
+              startX: touch.clientX,
+              startY: touch.clientY,
+              baseX: panRef.current.x,
+              baseY: panRef.current.y,
+            };
+            draggedRef.current = false;
+          }
           if (event.touches.length === 2) {
             const [first, second] = Array.from(event.touches);
             touchPinchRef.current = {
               distance: Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY),
               zoom: zoomRef.current,
             };
+            touchDragRef.current = null;
             draggedRef.current = true;
           }
         }}
         onTouchMove={(event) => {
           if (event.touches.length !== 2 || !touchPinchRef.current) return;
+          if (event.touches.length === 2) {
+            if (event.cancelable) event.preventDefault();
+            const [first, second] = Array.from(event.touches);
+            const distance = Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
+            const midX = (first.clientX + second.clientX) / 2;
+            const midY = (first.clientY + second.clientY) / 2;
+            const scale = distance / touchPinchRef.current.distance;
+            applyZoomAtPoint(touchPinchRef.current.zoom * scale, midX, midY);
+            return;
+          }
+        }}
+        onTouchMoveCapture={(event) => {
+          if (event.touches.length !== 1 || touchPinchRef.current || !touchDragRef.current) return;
+          const [touch] = Array.from(event.touches);
           if (event.cancelable) event.preventDefault();
-          const [first, second] = Array.from(event.touches);
-          const distance = Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
-          const midX = (first.clientX + second.clientX) / 2;
-          const midY = (first.clientY + second.clientY) / 2;
-          const scale = distance / touchPinchRef.current.distance;
-          applyZoomAtPoint(touchPinchRef.current.zoom * scale, midX, midY);
+          if (Math.abs(touch.clientX - touchDragRef.current.startX) > 4 || Math.abs(touch.clientY - touchDragRef.current.startY) > 4) {
+            draggedRef.current = true;
+          }
+          setPan(
+            clampPan(zoomRef.current, {
+              x: touchDragRef.current.baseX + (touch.clientX - touchDragRef.current.startX),
+              y: touchDragRef.current.baseY + (touch.clientY - touchDragRef.current.startY),
+            }),
+          );
         }}
         onTouchEnd={(event) => {
           if (event.touches.length < 2) {
             touchPinchRef.current = null;
           }
+          if (event.touches.length === 1) {
+            const [touch] = Array.from(event.touches);
+            touchDragRef.current = {
+              startX: touch.clientX,
+              startY: touch.clientY,
+              baseX: panRef.current.x,
+              baseY: panRef.current.y,
+            };
+          } else if (event.touches.length === 0) {
+            touchDragRef.current = null;
+          }
         }}
         onPointerDown={(event) => {
+          if (event.pointerType === "touch") return;
           pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
           if (pointersRef.current.size === 2) {
             const [first, second] = [...pointersRef.current.values()];
@@ -724,6 +750,8 @@ function TraceMap({
             };
             dragRef.current = null;
             draggedRef.current = true;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            return;
           }
           dragRef.current = {
             id: event.pointerId,
@@ -736,6 +764,7 @@ function TraceMap({
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
         onPointerMove={(event) => {
+          if (event.pointerType === "touch") return;
           if (pointersRef.current.has(event.pointerId)) {
             pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
           }
@@ -761,6 +790,7 @@ function TraceMap({
           );
         }}
         onPointerUp={(event) => {
+          if (event.pointerType === "touch") return;
           pointersRef.current.delete(event.pointerId);
           if (pointersRef.current.size < 2) {
             pinchRef.current = null;
@@ -930,22 +960,6 @@ function TraceMap({
                   fontSize="1.05"
                   fontWeight="700"
                   letterSpacing="0.03em"
-                >
-                  {region.shortLabel}
-                </text>
-              </g>
-            ))}
-
-          {showDongLabels &&
-            dongLabels.map((region) => (
-              <g key={region.id} opacity="0.68">
-                <circle cx={region.x} cy={region.y} r="0.1" fill="rgba(255,255,255,0.12)" />
-                <text
-                  x={region.x + 0.28}
-                  y={region.y - 0.25}
-                  fill="rgba(255,255,255,0.18)"
-                  fontSize="0.72"
-                  fontWeight="700"
                 >
                   {region.shortLabel}
                 </text>
