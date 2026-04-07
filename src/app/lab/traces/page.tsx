@@ -682,44 +682,21 @@ export default function TraceLabPage() {
 
       <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
         <section className="mb-6 rounded-[32px] border border-white/10 bg-[linear-gradient(145deg,#0A0D12_0%,#101720_100%)] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.28)] sm:p-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#6BE2C5]/80">People Leave Traces</p>
-              <h2 className="mt-3 text-[34px] font-black leading-[0.96] tracking-[-0.05em] text-white sm:text-[48px]">
-                StyleDrop에
-                <br />
-                사람들이 남긴 흔적
-              </h2>
-              <p className="mt-4 max-w-xl text-[15px] leading-7 text-white/62 sm:text-[16px]">
-                한 번이라도 이미지를 만든 카카오 로그인 유저만 점 하나를 남길 수 있어요. 이 지도는 방문 수가 아니라,{" "}
-                <span className="font-bold text-white/86">누적 참여자 수</span>를 보여줍니다.
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/38">참여자</p>
+              <p className="mt-2 text-[28px] font-black tracking-[-0.04em] text-white">{payload?.summary.totalParticipants ?? 0}</p>
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/38">지역</p>
+              <p className="mt-2 text-[28px] font-black tracking-[-0.04em] text-white">{payload?.summary.totalRegions ?? 0}</p>
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/38">가장 밝은 흔적</p>
+              <p className="mt-2 text-[18px] font-black leading-6 tracking-[-0.04em] text-white">
+                {payload?.summary.hottestRegion?.label ?? "아직 첫 흔적을 기다리는 중"}
               </p>
             </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/38">참여자</p>
-                <p className="mt-2 text-[28px] font-black tracking-[-0.04em] text-white">{payload?.summary.totalParticipants ?? 0}</p>
-              </div>
-              <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/38">지역</p>
-                <p className="mt-2 text-[28px] font-black tracking-[-0.04em] text-white">{payload?.summary.totalRegions ?? 0}</p>
-              </div>
-              <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/38">가장 밝은 흔적</p>
-                <p className="mt-2 text-[18px] font-black leading-6 tracking-[-0.04em] text-white">
-                  {payload?.summary.hottestRegion?.label ?? "아직 첫 흔적을 기다리는 중"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            {["얼굴 공개 없음", "계정당 1회", "점 1개 = 참여자 1명"].map((item) => (
-              <span key={item} className="rounded-full border border-white/10 bg-white/6 px-3 py-2 text-[12px] font-bold text-white/70">
-                {item}
-              </span>
-            ))}
           </div>
         </section>
 
