@@ -1618,25 +1618,33 @@ function AuditionResultInner() {
         </div>
 
         {cardStudioLocked && (
-          <div className="-mt-3 rounded-b-[28px] bg-white px-5 pb-5 pt-8 shadow-[0_14px_28px_rgba(0,0,0,0.06)]">
+          <div className="-mt-3 rounded-b-[28px] bg-[#fbfbfd] px-5 pb-5 pt-8 shadow-[0_14px_28px_rgba(0,0,0,0.06)]">
             <div className="mb-5">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[17px] font-black text-gray-900">스틸컷에 쓸 사진 선택</p>
-                  <p className="mt-1 text-[12px] leading-relaxed text-gray-500">씬 3장이나 앨범 사진 중 1장만 고르면 바로 생성할 수 있어요.</p>
+                <div className="min-w-0">
+                  <p className="text-[24px] font-black tracking-[-0.04em] text-[#101218]">스틸컷에 쓸 사진 선택</p>
+                  <p className="mt-2 text-[14px] leading-[1.65] text-[#6e7280]">
+                    씬 3장이나 앨범 사진 중 한 장만 고르면 바로 생성할 수 있어요.
+                  </p>
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 shadow-[0_6px_16px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.04]">
+                    <span className="text-[11px] font-semibold text-[#8b90a0]">현재 생성 장르</span>
+                    <span className="rounded-full bg-[#f4f5f7] px-2.5 py-1 text-[11px] font-bold text-[#111827]">
+                      {bestScene.genre}
+                    </span>
+                  </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => stillFileInputRef.current?.click()}
-                  className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border transition-colors ${
+                  className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.05] transition-all ${
                     selectedStillSourceKey === "album"
-                      ? "border-[#C9571A] bg-[#FFF7F2] text-[#C9571A]"
-                      : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                      ? "text-[#111827] ring-[1.5px] ring-[#111827]/12"
+                      : "text-[#8b90a0] hover:text-[#4b5563]"
                   }`}
                   aria-label="앨범에서 선택"
                   title="앨범에서 선택"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
                     <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z" stroke="currentColor" strokeWidth="1.8"/>
                     <path d="M8 13.5l2.4-2.4a1 1 0 0 1 1.4 0l1.2 1.2a1 1 0 0 0 1.4 0L16 11l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                     <circle cx="9" cy="9" r="1.25" fill="currentColor"/>
@@ -1644,14 +1652,7 @@ function AuditionResultInner() {
                 </button>
               </div>
 
-              <div className="mt-3 flex items-center gap-2">
-                <span className="text-[11px] font-bold text-gray-400">현재 생성 장르</span>
-                <span className="rounded-full bg-[#FFF7F2] px-3 py-1 text-[11px] font-black text-[#C9571A]">
-                  {bestScene.genre}
-                </span>
-              </div>
-
-              <div className="mt-4 grid grid-cols-4 gap-2.5">
+              <div className="-mx-1 mt-5 flex gap-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {stillSourceOptions.map((option) => {
                   const selected = selectedStillSourceKey === option.key;
                   return (
@@ -1659,24 +1660,24 @@ function AuditionResultInner() {
                       key={option.key}
                       type="button"
                       onClick={() => setSelectedStillSourceKey(option.key)}
-                      className={`overflow-hidden rounded-[18px] border text-left transition-all ${
+                      className={`min-w-[104px] snap-start overflow-hidden rounded-[26px] bg-white text-left shadow-[0_10px_24px_rgba(15,23,42,0.06)] ring-1 transition-all ${
                         selected
-                          ? "border-[#C9571A] shadow-[0_0_0_2px_rgba(201,87,26,0.12)]"
-                          : "border-gray-200 hover:border-gray-300"
+                          ? "ring-[#111827]/14 shadow-[0_14px_30px_rgba(15,23,42,0.10)]"
+                          : "ring-black/[0.06] hover:ring-black/[0.12]"
                       }`}
                     >
-                      <div className="relative aspect-[3/4] bg-gray-100">
+                      <div className="relative aspect-[0.78] overflow-hidden bg-[#f3f4f6]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={option.image} alt={option.label} className="h-full w-full object-cover" />
                         {selected && (
-                          <span className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#C9571A] text-[11px] font-black text-white">
+                          <span className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#111827] text-[11px] font-black text-white shadow-[0_6px_12px_rgba(17,24,39,0.24)]">
                             ✓
                           </span>
                         )}
                       </div>
-                      <div className="px-2 py-2">
-                        <p className="text-[11px] font-black text-gray-900">{option.label}</p>
-                        <p className="mt-0.5 truncate text-[10px] font-medium text-gray-500">{option.subLabel}</p>
+                      <div className="px-3 pb-3 pt-2.5">
+                        <p className="text-[12px] font-black text-[#111827]">{option.label}</p>
+                        <p className="mt-1 truncate text-[11px] font-medium text-[#8b90a0]">{option.subLabel}</p>
                       </div>
                     </button>
                   );
@@ -1685,50 +1686,52 @@ function AuditionResultInner() {
                 <button
                   type="button"
                   onClick={() => stillFileInputRef.current?.click()}
-                  className={`overflow-hidden rounded-[18px] border text-left transition-all ${
+                  className={`min-w-[104px] snap-start overflow-hidden rounded-[26px] bg-white text-left shadow-[0_10px_24px_rgba(15,23,42,0.06)] ring-1 transition-all ${
                     selectedStillSourceKey === "album"
-                      ? "border-[#C9571A] shadow-[0_0_0_2px_rgba(201,87,26,0.12)]"
-                      : "border-gray-200 hover:border-gray-300"
+                      ? "ring-[#111827]/14 shadow-[0_14px_30px_rgba(15,23,42,0.10)]"
+                      : "ring-black/[0.06] hover:ring-black/[0.12]"
                   }`}
                 >
-                  <div className="relative aspect-[3/4] bg-gray-50">
+                  <div className="relative aspect-[0.78] overflow-hidden bg-[#f5f6f8]">
                     {albumStillPhoto ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={albumStillPhoto} alt="앨범 선택 사진" className="h-full w-full object-cover" />
                         {selectedStillSourceKey === "album" && (
-                          <span className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#C9571A] text-[11px] font-black text-white">
+                          <span className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#111827] text-[11px] font-black text-white shadow-[0_6px_12px_rgba(17,24,39,0.24)]">
                             ✓
                           </span>
                         )}
                       </>
                     ) : (
-                      <div className="flex h-full flex-col items-center justify-center gap-2 text-gray-400">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                          <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z" stroke="currentColor" strokeWidth="1.8"/>
-                          <path d="M8 13.5l2.4-2.4a1 1 0 0 1 1.4 0l1.2 1.2a1 1 0 0 0 1.4 0L16 11l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                          <circle cx="9" cy="9" r="1.25" fill="currentColor"/>
-                        </svg>
-                        <span className="text-[10px] font-bold">앨범 선택</span>
+                      <div className="flex h-full flex-col items-center justify-center gap-3 text-[#a1a7b3]">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-[0_8px_20px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.04]">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z" stroke="currentColor" strokeWidth="1.8"/>
+                            <path d="M8 13.5l2.4-2.4a1 1 0 0 1 1.4 0l1.2 1.2a1 1 0 0 0 1.4 0L16 11l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                            <circle cx="9" cy="9" r="1.25" fill="currentColor"/>
+                          </svg>
+                        </div>
+                        <span className="text-[11px] font-semibold">앨범에서 선택</span>
                       </div>
                     )}
                   </div>
-                  <div className="px-2 py-2">
-                    <p className="text-[11px] font-black text-gray-900">앨범</p>
-                    <p className="mt-0.5 text-[10px] font-medium text-gray-500">{albumStillPhoto ? "선택 완료" : "새 사진 고르기"}</p>
+                  <div className="px-3 pb-3 pt-2.5">
+                    <p className="text-[12px] font-black text-[#111827]">앨범</p>
+                    <p className="mt-1 text-[11px] font-medium text-[#8b90a0]">{albumStillPhoto ? "새 사진으로 변경" : "새 사진 고르기"}</p>
                   </div>
                 </button>
               </div>
             </div>
 
-            <div className="mb-5 flex flex-col gap-3">
+            <div className="space-y-2.5">
               {[
                 { icon: "🎞️", text: "얼굴은 정면 사진 기준으로 자연스럽게 보정돼요" },
                 { icon: "🎨", text: "선택한 사진으로 현재 장르 한 장면을 만들어요" },
               ].map(item => (
-                <div key={item.text} className="flex items-center gap-3 px-1">
-                  <span className="text-[15px] opacity-80">{item.icon}</span>
-                  <p className="text-[13px] text-gray-700 font-medium tracking-[-0.01em]">{item.text}</p>
+                <div key={item.text} className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)] ring-1 ring-black/[0.04]">
+                  <span className="text-[16px] opacity-80">{item.icon}</span>
+                  <p className="text-[13px] font-medium tracking-[-0.01em] text-[#3f4653]">{item.text}</p>
                 </div>
               ))}
             </div>
