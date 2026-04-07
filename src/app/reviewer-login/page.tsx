@@ -1,8 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function ReviewerLoginPage() {
+function ReviewerLoginContent() {
   const searchParams = useSearchParams();
   const hasError = searchParams.get("error") === "1";
 
@@ -69,5 +70,13 @@ export default function ReviewerLoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ReviewerLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <ReviewerLoginContent />
+    </Suspense>
   );
 }
