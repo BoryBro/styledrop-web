@@ -686,19 +686,23 @@ export default function TraceLabPage() {
           <div className="pointer-events-none absolute -left-10 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-[#66E6C9]/10 blur-3xl" />
           <div className="pointer-events-none absolute right-0 top-0 h-20 w-28 rounded-full bg-[#5A8FFF]/10 blur-3xl" />
 
-          <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span className="text-[11px] font-bold tracking-[-0.02em] text-white/42">참여자</span>
-              <span className="text-[24px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.06em] text-white">{payload?.summary.totalParticipants ?? 0}</span>
+          <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2 sm:flex-nowrap sm:gap-x-4">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="text-[12px] font-semibold tracking-[-0.02em] text-white/42">참여자</span>
+              <span className="text-[22px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.06em] text-white">
+                {payload?.summary.totalParticipants ?? 0}
+              </span>
             </div>
-            <div className="hidden h-6 w-px shrink-0 bg-gradient-to-b from-transparent via-white/12 to-transparent sm:block" />
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span className="text-[11px] font-bold tracking-[-0.02em] text-white/42">지역</span>
-              <span className="text-[24px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.06em] text-white">{payload?.summary.totalRegions ?? 0}</span>
+            <span className="text-white/18">/</span>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="text-[12px] font-semibold tracking-[-0.02em] text-white/42">지역</span>
+              <span className="text-[22px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.06em] text-white">
+                {payload?.summary.totalRegions ?? 0}
+              </span>
             </div>
-            <div className="hidden h-6 w-px shrink-0 bg-gradient-to-b from-transparent via-white/12 to-transparent sm:block" />
-            <div className="flex min-w-0 flex-1 items-center gap-3 sm:justify-end">
-              <span className="shrink-0 text-[11px] font-bold tracking-[-0.02em] text-white/42">가장 밝은 흔적</span>
+            <span className="text-white/18">/</span>
+            <div className="flex min-w-0 items-center gap-2 sm:flex-1">
+              <span className="shrink-0 text-[12px] font-semibold tracking-[-0.02em] text-white/42">가장 밝은 흔적</span>
               <span className="truncate text-[15px] font-semibold tracking-[-0.04em] text-white/92">
                 {payload?.summary.hottestRegion?.label ?? "아직 첫 흔적을 기다리는 중"}
               </span>
