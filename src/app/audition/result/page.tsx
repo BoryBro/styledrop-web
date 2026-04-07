@@ -163,6 +163,74 @@ function buildStillCacheSignature(result: AuditionResult) {
   return result.scenes.map(scene => `${scene.genre}:${scene.assigned_role}`).join("|");
 }
 
+function restoreLocalAuditionResult({
+  raw,
+  imagesRaw,
+  genreRaw,
+  physioRaw,
+  personalityRaw,
+  stillRaw,
+  stillSignatureRaw,
+  setResult,
+  setGenres,
+  setPhysioPhoto,
+  setPersonalityAnswers,
+  setUserPhotos,
+  setStillImage,
+  setBestSceneIdx,
+  setErrorMsg,
+  setPhase,
+  stillImageRef,
+}: {
+  raw: string;
+  imagesRaw: string | null;
+  genreRaw: string | null;
+  physioRaw: string | null;
+  personalityRaw: string | null;
+  stillRaw: string | null;
+  stillSignatureRaw: string | null;
+  setResult: (result: AuditionResult | null) => void;
+  setGenres: (genres: GenreMeta[]) => void;
+  setPhysioPhoto: (photo: string | null) => void;
+  setPersonalityAnswers: (answers: PersonalityAnswer[]) => void;
+  setUserPhotos: (photos: string[]) => void;
+  setStillImage: (image: string | null) => void;
+  setBestSceneIdx: (index: number) => void;
+  setErrorMsg: (message: string | null) => void;
+  setPhase: (phase: Phase) => void;
+  stillImageRef: React.MutableRefObject<string | null>;
+}) {
+  const parsed: AuditionResult = JSON.parse(raw);
+  const currentStillSignature = buildStillCacheSignature(parsed);
+  const restoredStillImage =
+    stillRaw && stillSignatureRaw === currentStillSignature
+      ? stillRaw
+      : null;
+
+  stillImageRef.current = restoredStillImage;
+  setStillImage(restoredStillImage);
+  setResult(parsed);
+  if (genreRaw) setGenres(JSON.parse(genreRaw));
+  else setGenres([]);
+  if (physioRaw) setPhysioPhoto(physioRaw);
+  else setPhysioPhoto(LOCAL_PHYSIO_FALLBACK);
+  if (personalityRaw) setPersonalityAnswers(JSON.parse(personalityRaw));
+  else setPersonalityAnswers([]);
+
+  const photos: string[] = imagesRaw ? JSON.parse(imagesRaw) : [];
+  setUserPhotos(photos);
+
+  const bestIdx = parsed.scenes.reduce((best, scene, i) => {
+    const a = SCORE_LABELS.reduce((s, l) => s + (scene.scores?.[l] ?? 0), 0) / 4;
+    const b = SCORE_LABELS.reduce((s, l) => s + (parsed.scenes[best].scores?.[l] ?? 0), 0) / 4;
+    return a > b ? i : best;
+  }, 0);
+
+  setBestSceneIdx(bestIdx);
+  setErrorMsg(null);
+  setPhase("ready");
+}
+
 // ── 상수 ──────────────────────────────────────────────────────────
 const GENRE_EMOJIS: Record<string, string> = {
   멜로: "💔", 스릴러: "🔪", 일상: "😐", 공포: "👻", 코미디: "😂", 액션: "💥",
@@ -809,7 +877,7 @@ function AuditionResultInner() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setHistoryShareId(params.get("history_share"));
+    setHistoryShareId(params.get("history_share") ?? sessionStorage.getItem("sd_au_share_id"));
   }, []);
 
   // 분석 결과 로드 (무료 — 스틸컷 자동 생성 안 함)
@@ -878,13 +946,6 @@ function AuditionResultInner() {
       }
     };
 
-    if (historyShareId) {
-      void loadHistoryResult(historyShareId);
-      return () => {
-        cancelled = true;
-      };
-    }
-
     const raw = sessionStorage.getItem("sd_au_result");
     const imagesRaw = sessionStorage.getItem("sd_au_images");
     const genreRaw = sessionStorage.getItem("sd_au_genres");
@@ -892,6 +953,43 @@ function AuditionResultInner() {
     const personalityRaw = sessionStorage.getItem("sd_au_personality");
     const stillRaw = sessionStorage.getItem("sd_au_still");
     const stillSignatureRaw = sessionStorage.getItem("sd_au_still_sig");
+
+    if (historyShareId && raw) {
+      try {
+        cachedShareId.current = historyShareId;
+        restoreLocalAuditionResult({
+          raw,
+          imagesRaw,
+          genreRaw,
+          physioRaw,
+          personalityRaw,
+          stillRaw,
+          stillSignatureRaw,
+          setResult,
+          setGenres,
+          setPhysioPhoto,
+          setPersonalityAnswers,
+          setUserPhotos,
+          setStillImage,
+          setBestSceneIdx,
+          setErrorMsg,
+          setPhase,
+          stillImageRef,
+        });
+        return () => {
+          cancelled = true;
+        };
+      } catch {
+        // 서버 기록으로 fallback
+      }
+    }
+
+    if (historyShareId) {
+      void loadHistoryResult(historyShareId);
+      return () => {
+        cancelled = true;
+      };
+    }
 
     if (!raw) {
       router.replace("/audition/solo");
@@ -901,34 +999,26 @@ function AuditionResultInner() {
     }
 
     try {
-      const parsed: AuditionResult = JSON.parse(raw);
       cachedShareId.current = null;
-      const currentStillSignature = buildStillCacheSignature(parsed);
-      const restoredStillImage =
-        stillRaw && stillSignatureRaw === currentStillSignature
-          ? stillRaw
-          : null;
-      stillImageRef.current = restoredStillImage;
-      setStillImage(restoredStillImage);
-      setResult(parsed);
-      if (genreRaw) setGenres(JSON.parse(genreRaw));
-      else setGenres([]);
-      if (physioRaw) setPhysioPhoto(physioRaw);
-      else setPhysioPhoto(LOCAL_PHYSIO_FALLBACK);
-      if (personalityRaw) setPersonalityAnswers(JSON.parse(personalityRaw));
-      else setPersonalityAnswers([]);
-
-      const photos: string[] = imagesRaw ? JSON.parse(imagesRaw) : [];
-      setUserPhotos(photos);
-
-      const bestIdx = parsed.scenes.reduce((best, scene, i) => {
-        const a = SCORE_LABELS.reduce((s, l) => s + (scene.scores?.[l] ?? 0), 0) / 4;
-        const b = SCORE_LABELS.reduce((s, l) => s + (parsed.scenes[best].scores?.[l] ?? 0), 0) / 4;
-        return a > b ? i : best;
-      }, 0);
-      setBestSceneIdx(bestIdx);
-      setErrorMsg(null);
-      setPhase("ready");
+      restoreLocalAuditionResult({
+        raw,
+        imagesRaw,
+        genreRaw,
+        physioRaw,
+        personalityRaw,
+        stillRaw,
+        stillSignatureRaw,
+        setResult,
+        setGenres,
+        setPhysioPhoto,
+        setPersonalityAnswers,
+        setUserPhotos,
+        setStillImage,
+        setBestSceneIdx,
+        setErrorMsg,
+        setPhase,
+        stillImageRef,
+      });
     } catch {
       router.replace("/audition/solo");
     }
@@ -1075,12 +1165,17 @@ function AuditionResultInner() {
       throw new Error(data.error ?? "공유 링크 생성 실패");
     }
     cachedShareId.current = data.id;
+    sessionStorage.setItem("sd_au_share_id", data.id);
     return data.id as string;
   }, [buildShareRequestPayload]);
 
   // 스틸컷 생성 (시작 패키지에 포함)
   const handleGenerateStill = async () => {
     if (isGeneratingStill || !result) return;
+    if (stillImageRef.current) {
+      alert("스틸컷은 1회만 생성할 수 있어요.");
+      return;
+    }
     const photos: string[] = sessionStorage.getItem("sd_au_images")
       ? JSON.parse(sessionStorage.getItem("sd_au_images")!)
       : userPhotos;
@@ -1092,11 +1187,13 @@ function AuditionResultInner() {
     if (base64List.length === 0 && !physioPayload) return;
     setIsGeneratingStill(true);
     try {
+      const shareId = await ensureShareId();
       const genreRaw = sessionStorage.getItem("sd_au_genres");
       const res = await fetch("/api/audition/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          shareId,
           image: physioPayload ?? base64List[bestSceneIdx] ?? base64List[0],
           physioImage: physioPayload,
           mimeType: "image/jpeg",
@@ -1104,7 +1201,6 @@ function AuditionResultInner() {
           scenes: result.scenes,
           genreMeta: genres,
           physiognomy: result.physiognomy ?? null,
-          promptTemplateId: "thriller 2",
         }),
       });
       const data = await res.json();
@@ -1118,6 +1214,7 @@ function AuditionResultInner() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          shareId,
           result,
           genres: genreRaw ? JSON.parse(genreRaw) : genres,
           bestSceneIdx,
@@ -1407,9 +1504,10 @@ function AuditionResultInner() {
                   <button
                     type="button"
                     onClick={handleGenerateStill}
-                    className="w-full rounded-[18px] bg-[#C9571A] px-4 py-4 text-[16px] font-bold text-white shadow-[0_16px_36px_rgba(201,87,26,0.34)] transition-colors hover:bg-[#B34A12] flex items-center justify-center gap-2"
+                    disabled={Boolean(stillImageRef.current)}
+                    className="w-full rounded-[18px] bg-[#C9571A] px-4 py-4 text-[16px] font-bold text-white shadow-[0_16px_36px_rgba(201,87,26,0.34)] transition-colors hover:bg-[#B34A12] flex items-center justify-center gap-2 disabled:bg-[#9A9A9A] disabled:shadow-none disabled:cursor-not-allowed"
                   >
-                    스틸컷 이미지 생성
+                    {stillImageRef.current ? "스틸컷 생성 완료" : "스틸컷 이미지 생성"}
                   </button>
                 )}
               </div>

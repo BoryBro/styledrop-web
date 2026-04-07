@@ -36,21 +36,24 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ ok: true }); // 비로그인은 무시
 
   try {
-    const { result, genres, bestSceneIdx, stillImageBase64, userPhotoBase64, userPhotosBase64 } = await request.json();
+    const { shareId: incomingShareId, result, genres, bestSceneIdx, stillImageBase64, userPhotoBase64, userPhotosBase64 } = await request.json();
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_KEY!
     );
 
-    const shareId = `au_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const isUpdate = typeof incomingShareId === "string" && incomingShareId.trim().length > 0;
+    const shareId = isUpdate
+      ? incomingShareId.trim()
+      : `au_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
     // 스틸컷 + 사용자 사진 3장 병렬 업로드
     const uploadJpeg = async (b64: string, path: string): Promise<string | null> => {
       const buf = Buffer.from(b64, "base64");
       const { error } = await supabase.storage
         .from("shared-images")
-        .upload(path, buf, { contentType: "image/jpeg", upsert: false });
+        .upload(path, buf, { contentType: "image/jpeg", upsert: isUpdate });
       if (error) return null;
       return supabase.storage.from("shared-images").getPublicUrl(path).data.publicUrl;
     };
@@ -64,6 +67,35 @@ export async function POST(request: NextRequest) {
     ]);
 
     const userPhotosJson = userPhotoUrls.length > 0 ? userPhotoUrls : null;
+
+    if (isUpdate) {
+      const shareUpdatePayload: Record<string, unknown> = {};
+      if (result) shareUpdatePayload.result_json = result;
+      if (genres) shareUpdatePayload.genres_json = genres;
+      if (typeof bestSceneIdx === "number") shareUpdatePayload.best_scene_idx = bestSceneIdx;
+      if (userPhotoUrl) shareUpdatePayload.user_photo_url = userPhotoUrl;
+      if (stillImageUrl) shareUpdatePayload.still_image_url = stillImageUrl;
+      if (userPhotosJson) shareUpdatePayload.user_photos_json = userPhotosJson;
+
+      if (Object.keys(shareUpdatePayload).length > 0) {
+        await supabase
+          .from("audition_shares")
+          .update(shareUpdatePayload)
+          .eq("id", shareId);
+      }
+
+      const historyUpdatePayload: Record<string, unknown> = {};
+      if (stillImageUrl) historyUpdatePayload.still_image_url = stillImageUrl;
+      if (Object.keys(historyUpdatePayload).length > 0) {
+        await supabase
+          .from("audition_history")
+          .update(historyUpdatePayload)
+          .eq("share_id", shareId)
+          .eq("user_id", session.id);
+      }
+
+      return NextResponse.json({ ok: true, shareId });
+    }
 
     // audition_shares 저장 (공유 URL 생성용)
     await supabase.from("audition_shares").insert({

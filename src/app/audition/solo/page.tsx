@@ -42,6 +42,10 @@ const GENRES = [
 ] as const;
 
 type GenreId = typeof GENRES[number]["id"];
+type ScoreMap = Partial<Record<"이해도" | "표정연기" | "창의성" | "몰입도", number>>;
+type AnalyzeResult = {
+  scenes: Array<{ assigned_role?: string; scores?: ScoreMap }>;
+};
 
 const CUES: Record<GenreId, string[]> = {
   melo: [
@@ -391,6 +395,16 @@ function pickRandomCue(genreId: GenreId): string {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+function getBestSceneIndex(result: AnalyzeResult) {
+  return result.scenes.reduce((best, scene, index) => {
+    const current = (["이해도", "표정연기", "창의성", "몰입도"] as const)
+      .reduce((sum, label) => sum + (scene.scores?.[label] ?? 0), 0) / 4;
+    const bestScore = (["이해도", "표정연기", "창의성", "몰입도"] as const)
+      .reduce((sum, label) => sum + (result.scenes[best]?.scores?.[label] ?? 0), 0) / 4;
+    return current > bestScore ? index : best;
+  }, 0);
+}
+
 const VIDEO_CONSTRAINTS = { width: 720, height: 720, facingMode: "user" };
 
 type CaptureItem = { base64: string; dataUrl: string };
@@ -594,14 +608,37 @@ function AuditionSoloInner() {
     });
 
     Promise.all([fetchResult, minWait])
-      .then(([data]) => {
+      .then(async ([data]) => {
+        const bestSceneIdx = getBestSceneIndex(data as AnalyzeResult);
+        let shareId: string | null = null;
+        try {
+          const historyResponse = await fetch("/api/audition/history", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              result: data,
+              genres: genreMeta,
+              bestSceneIdx,
+              userPhotoBase64: images[bestSceneIdx] ?? images[0] ?? null,
+              userPhotosBase64: images,
+            }),
+          });
+          const historyData = await historyResponse.json().catch(() => null);
+          if (historyResponse.ok && historyData?.shareId) {
+            shareId = historyData.shareId;
+          }
+        } catch {
+          shareId = null;
+        }
+
         sessionStorage.setItem("sd_au_result", JSON.stringify(data));
         sessionStorage.setItem("sd_au_preview", previewDataUrl);
         sessionStorage.setItem("sd_au_genres", JSON.stringify(genreMeta));
         sessionStorage.setItem("sd_au_images", JSON.stringify(captures.map(c => c.dataUrl)));
         if (physioCapture) sessionStorage.setItem("sd_au_physio", physioCapture.dataUrl);
         sessionStorage.setItem("sd_au_personality", JSON.stringify(personalityAnswers));
-        router.push("/audition/result");
+        if (shareId) sessionStorage.setItem("sd_au_share_id", shareId);
+        router.push(shareId ? `/audition/result?history_share=${encodeURIComponent(shareId)}` : "/audition/result");
       })
       .catch(err => {
         setErrorMsg(err.message ?? "감독님이 자리를 비웠습니다. 다시 시도해주세요.");

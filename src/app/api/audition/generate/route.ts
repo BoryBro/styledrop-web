@@ -28,7 +28,45 @@ type GeneratePhysiognomy = {
   casting_frame?: string;
 };
 
-type GeneratePromptTemplateId = "thriller 2";
+type GeneratePromptTemplateId =
+  | "action"
+  | "comedy"
+  | "crime"
+  | "daily"
+  | "fantasy"
+  | "horror"
+  | "melo"
+  | "psycho"
+  | "romance"
+  | "thriller"
+  | "thriller 2";
+
+const TEMPLATE_BY_GENRE: Record<string, GeneratePromptTemplateId> = {
+  액션: "action",
+  코미디: "comedy",
+  범죄: "crime",
+  일상: "daily",
+  판타지: "fantasy",
+  공포: "horror",
+  멜로: "melo",
+  심리: "psycho",
+  로맨스: "romance",
+  스릴러: "thriller 2",
+};
+
+const VALID_TEMPLATE_IDS = new Set<GeneratePromptTemplateId>([
+  "action",
+  "comedy",
+  "crime",
+  "daily",
+  "fantasy",
+  "horror",
+  "melo",
+  "psycho",
+  "romance",
+  "thriller",
+  "thriller 2",
+]);
 
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
   try {
@@ -89,6 +127,13 @@ async function loadPromptTemplate(templateId: GeneratePromptTemplateId) {
   return content.trim();
 }
 
+function resolvePromptTemplateId(templateId: unknown, genre: string) {
+  if (typeof templateId === "string" && VALID_TEMPLATE_IDS.has(templateId as GeneratePromptTemplateId)) {
+    return templateId as GeneratePromptTemplateId;
+  }
+  return TEMPLATE_BY_GENRE[genre] ?? null;
+}
+
 export async function POST(request: NextRequest) {
   const session = parseSession(request);
   const now = Date.now();
@@ -122,6 +167,7 @@ export async function POST(request: NextRequest) {
     const {
       image,
       physioImage,
+      shareId,
       mimeType,
       stylePrompt,
       scenes,
@@ -163,8 +209,9 @@ export async function POST(request: NextRequest) {
     });
 
     let promptText = defaultPromptText;
-    if (promptTemplateId === "thriller 2") {
-      const templatePrompt = await loadPromptTemplate("thriller 2");
+    const resolvedTemplateId = resolvePromptTemplateId(promptTemplateId, clampText(bestScene.genre, 32));
+    if (resolvedTemplateId) {
+      const templatePrompt = await loadPromptTemplate(resolvedTemplateId);
       const sceneCueLine = clampText(bestGenreMeta.cue, 120);
       const roleLine = clampText(bestScene.assigned_role, 48);
       promptText = [
@@ -176,6 +223,21 @@ export async function POST(request: NextRequest) {
 
     if (!promptText) {
       return NextResponse.json({ error: "스틸컷 생성용 장르 정보가 부족합니다." }, { status: 400 });
+    }
+
+    if (typeof shareId === "string" && shareId.trim()) {
+      const { data: shareRow } = await createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_KEY!
+      )
+        .from("audition_shares")
+        .select("id, still_image_url")
+        .eq("id", shareId.trim())
+        .maybeSingle();
+
+      if (shareRow?.still_image_url) {
+        return NextResponse.json({ error: "스틸컷은 1회만 생성할 수 있어요." }, { status: 409 });
+      }
     }
 
     // ── Mock 모드: API 호출 없이 원본 이미지를 그대로 반환 ─────────────
