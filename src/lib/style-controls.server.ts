@@ -1,14 +1,16 @@
 import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
-import { ALL_STYLES } from "@/lib/styles";
 import {
+  AUDITION_CONTROL_ID,
   buildDefaultStyleControls,
   mergeStyleControls,
+  resolveFeatureControlState,
   styleControlsToMap,
   type StyleControlRow,
   type StyleControlState,
 } from "@/lib/style-controls";
+import { AUDITION_ENABLED } from "@/lib/feature-flags";
 
 function getSupabase() {
   return createClient(
@@ -47,9 +49,14 @@ export async function loadStyleControlMap() {
   return styleControlsToMap(rows);
 }
 
+export async function loadAuditionFeatureControl() {
+  const controlMap = await loadStyleControlMap();
+  return resolveFeatureControlState(controlMap[AUDITION_CONTROL_ID], AUDITION_ENABLED);
+}
+
 export async function saveStyleControls(rows: StyleControlRow[]) {
   const supabase = getSupabase();
-  const validIds = new Set(ALL_STYLES.map((style) => style.id));
+  const validIds = new Set(buildDefaultStyleControls().map((style) => style.style_id));
 
   const normalized = rows
     .filter((row) => validIds.has(row.style_id))

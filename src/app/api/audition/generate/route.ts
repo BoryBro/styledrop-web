@@ -4,6 +4,7 @@ import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { addWatermark } from "@/lib/watermark";
+import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 import {
   GUEST_LIMIT, WINDOW_MS,
   GUEST_COOKIE,
@@ -135,6 +136,11 @@ function resolvePromptTemplateId(templateId: unknown, genre: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const auditionControl = await loadAuditionFeatureControl();
+  if (!auditionControl.is_enabled) {
+    return NextResponse.json({ error: "AI 오디션이 현재 비공개 상태입니다." }, { status: 503 });
+  }
+
   const session = parseSession(request);
   const now = Date.now();
 

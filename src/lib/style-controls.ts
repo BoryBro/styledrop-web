@@ -1,3 +1,4 @@
+import { AUDITION_ENABLED } from "@/lib/feature-flags";
 import { ALL_STYLES, type StyleDef } from "@/lib/styles";
 
 export type StyleControlRow = {
@@ -12,15 +13,34 @@ export type StyleControlState = StyleControlRow & {
   style_name: string;
 };
 
+export const AUDITION_CONTROL_ID = "audition";
+export const AUDITION_CONTROL_NAME = "AI 오디션";
+
+function buildFeatureControls(): StyleControlState[] {
+  return [
+    {
+      style_id: AUDITION_CONTROL_ID,
+      style_name: AUDITION_CONTROL_NAME,
+      is_visible: AUDITION_ENABLED,
+      is_enabled: AUDITION_ENABLED,
+      disabled_reason: null,
+      updated_at: null,
+    },
+  ];
+}
+
 export function buildDefaultStyleControls(): StyleControlState[] {
-  return ALL_STYLES.map((style) => ({
-    style_id: style.id,
-    style_name: style.name,
-    is_visible: !style.hidden,
-    is_enabled: style.active,
-    disabled_reason: null,
-    updated_at: null,
-  }));
+  return [
+    ...ALL_STYLES.map((style) => ({
+      style_id: style.id,
+      style_name: style.name,
+      is_visible: !style.hidden,
+      is_enabled: style.active,
+      disabled_reason: null,
+      updated_at: null,
+    })),
+    ...buildFeatureControls(),
+  ];
 }
 
 export function mergeStyleControls(rows: StyleControlRow[] = []): StyleControlState[] {
@@ -41,6 +61,16 @@ export function mergeStyleControls(rows: StyleControlRow[] = []): StyleControlSt
 
 export function styleControlsToMap(rows: StyleControlState[]): Record<string, StyleControlState> {
   return Object.fromEntries(rows.map((row) => [row.style_id, row]));
+}
+
+export function resolveFeatureControlState(
+  control: Pick<StyleControlState, "is_visible" | "is_enabled"> | undefined,
+  fallbackEnabled: boolean
+) {
+  return {
+    is_visible: control?.is_visible ?? fallbackEnabled,
+    is_enabled: control?.is_enabled ?? fallbackEnabled,
+  };
 }
 
 export function applyStyleControl(style: StyleDef, control?: Pick<StyleControlState, "is_visible" | "is_enabled">): StyleDef {

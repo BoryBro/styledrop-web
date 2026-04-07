@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AUDITION_ENABLED } from "@/lib/feature-flags";
+import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 
 type Scores = { 이해도: number; 표정연기: number; 창의성: number; 몰입도: number };
 type SceneResult = { genre: string; critique: string; assigned_role: string; scores: Scores };
@@ -35,7 +35,8 @@ async function getShare(id: string) {
 }
 
 export default async function AuditionSharePage({ params }: { params: Promise<{ id: string }> }) {
-  if (!AUDITION_ENABLED) notFound();
+  const auditionControl = await loadAuditionFeatureControl();
+  if (!auditionControl.is_enabled) notFound();
 
   const { id } = await params;
   const share = await getShare(id);

@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useId } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AUDITION_ENABLED } from "@/lib/feature-flags";
+import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
 import { analyzePhysioPhoto, getPhysioPointMap } from "@/lib/physio-face";
 
 function TypingCastingTitle({ role, speed = 42 }: { role: string; speed?: number }) {
@@ -1376,7 +1376,7 @@ function AuditionResultInner() {
     <section className="py-10 border-b border-gray-100">
       <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Card Studio</p>
       <p className="text-[22px] font-black text-gray-900 mb-2">결과 카드 만들기</p>
-      <p className="text-[13px] text-gray-500 mb-4">스틸컷 생성부터 카드 꾸미기까지 이 섹션 안에서 바로 조정합니다.</p>
+      <p className="text-[13px] text-gray-500 mb-4">결과는 자동 저장되고 24시간 동안 다시 볼 수 있어요. 스틸컷은 1회 포함입니다.</p>
       <div className="mb-5">
         <CardSampleMarquee />
       </div>
@@ -2137,7 +2137,8 @@ function AuditionResultInner() {
         {/* ══ SECTION 6: 공유 CTA ═══════════════════════════ */}
         <section className="pt-10 pb-4">
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Share</p>
-          <p className="text-[22px] font-black text-gray-900 mb-6">결과 공유하기</p>
+          <p className="text-[22px] font-black text-gray-900 mb-2">결과 공유하기</p>
+          <p className="text-[13px] text-gray-500 mb-6">공유 링크도 24시간 동안 다시 열 수 있어요.</p>
 
           <div className="flex flex-col gap-3">
             <button
@@ -2237,14 +2238,15 @@ function AuditionResultInner() {
 
 export default function AuditionResult() {
   const router = useRouter();
+  const { isLoading: isAuditionLoading, isEnabled: isAuditionEnabled } = useAuditionAvailability();
 
   useEffect(() => {
-    if (!AUDITION_ENABLED) {
+    if (!isAuditionLoading && !isAuditionEnabled) {
       router.replace("/studio");
     }
-  }, [router]);
+  }, [isAuditionEnabled, isAuditionLoading, router]);
 
-  if (!AUDITION_ENABLED) return null;
+  if (isAuditionLoading || !isAuditionEnabled) return null;
 
   return <AuditionResultInner />;
 }

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { AUDITION_ENABLED } from "@/lib/feature-flags";
+import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
 import { getGuestHistory, type GuestHistoryItem } from "@/lib/guest-history";
 import { STYLE_LABELS, VISIBLE_STYLE_IDS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
@@ -67,6 +67,7 @@ function categoryExpiry(items: { created_at: string }[]): { label: string; class
 
 export default function MyPage() {
   const { user, loading, logout } = useAuth();
+  const { isVisible: isAuditionVisible, isEnabled: isAuditionEnabled } = useAuditionAvailability();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [guestHistory, setGuestHistory] = useState<GuestHistoryItem[]>([]);
   const [auditionHistory, setAuditionHistory] = useState<AuditionHistoryItem[]>([]);
@@ -81,6 +82,7 @@ export default function MyPage() {
   const [isStandalone, setIsStandalone] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const showAuditionHistory = isAuditionVisible && isAuditionEnabled;
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -97,7 +99,7 @@ export default function MyPage() {
     const requests: Promise<void>[] = [
       fetch("/api/history").then(r => r.json()).then(d => setHistory(d.history ?? [])).catch(() => {}),
     ];
-    if (AUDITION_ENABLED) {
+    if (showAuditionHistory) {
       requests.push(
         fetch("/api/audition/history").then(r => r.json()).then(d => setAuditionHistory(d.history ?? [])).catch(() => {})
       );
@@ -107,7 +109,7 @@ export default function MyPage() {
       .then(r => r.json())
       .then(d => setCredits(d.credits ?? 0))
       .catch(() => {});
-  }, [user, loading]);
+  }, [user, loading, showAuditionHistory]);
 
   useEffect(() => {
     const standalone = window.matchMedia("(display-mode: standalone)").matches
@@ -384,11 +386,11 @@ export default function MyPage() {
             </div>
 
             {/* AI 오디션 기록 */}
-            {AUDITION_ENABLED && auditionHistory.length > 0 && (
+            {showAuditionHistory && auditionHistory.length > 0 && (
               <div>
                 <div className="flex items-baseline gap-2 mb-4 px-1">
                   <h2 className="text-[16px] font-bold text-white">AI 오디션 기록</h2>
-                  <span className="text-[12px] text-[#555]">24시간 보관</span>
+                  <span className="text-[12px] text-[#555]">자동 저장 · 24시간 보관</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {auditionHistory.map(item => {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 
 function parseSession(request: NextRequest): { id: string } | null {
   try {
@@ -10,6 +11,11 @@ function parseSession(request: NextRequest): { id: string } | null {
 }
 
 export async function GET(request: NextRequest) {
+  const auditionControl = await loadAuditionFeatureControl();
+  if (!auditionControl.is_enabled) {
+    return NextResponse.json({ error: "AI 오디션이 현재 비공개 상태입니다." }, { status: 503 });
+  }
+
   const session = parseSession(request);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -32,6 +38,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const auditionControl = await loadAuditionFeatureControl();
+  if (!auditionControl.is_enabled) {
+    return NextResponse.json({ error: "AI 오디션이 현재 비공개 상태입니다." }, { status: 503 });
+  }
+
   const session = parseSession(request);
   if (!session) return NextResponse.json({ ok: true }); // 비로그인은 무시
 

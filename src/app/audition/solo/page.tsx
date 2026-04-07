@@ -7,7 +7,7 @@ import Link from "next/link";
 import type ReactWebcam from "react-webcam";
 import type { WebcamProps } from "react-webcam";
 import { useAuth } from "@/hooks/useAuth";
-import { AUDITION_ENABLED } from "@/lib/feature-flags";
+import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
 import { analyzePhysioPhoto, type PhysioPhotoCheck } from "@/lib/physio-face";
 
 // SSR 비활성화 — react-webcam은 브라우저 전용
@@ -1419,14 +1419,15 @@ function AuditionSoloInner() {
 
 export default function AuditionSolo() {
   const router = useRouter();
+  const { isLoading: isAuditionLoading, isEnabled: isAuditionEnabled } = useAuditionAvailability();
 
   useEffect(() => {
-    if (!AUDITION_ENABLED) {
+    if (!isAuditionLoading && !isAuditionEnabled) {
       router.replace("/studio");
     }
-  }, [router]);
+  }, [isAuditionEnabled, isAuditionLoading, router]);
 
-  if (!AUDITION_ENABLED) return null;
+  if (isAuditionLoading || !isAuditionEnabled) return null;
 
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#0A0A0A]" />}>

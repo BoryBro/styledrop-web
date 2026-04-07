@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getAvailableCredits } from "@/lib/credits.server";
+import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 
 type Scores = { 이해도: number; 표정연기: number; 창의성: number; 몰입도: number };
 
@@ -573,6 +574,11 @@ function mockScores(): Scores {
 }
 
 export async function POST(request: NextRequest) {
+  const auditionControl = await loadAuditionFeatureControl();
+  if (!auditionControl.is_enabled) {
+    return NextResponse.json({ error: "AI 오디션이 현재 비공개 상태입니다." }, { status: 503 });
+  }
+
   const session = parseSession(request);
   let refundedOnError = false;
   let deductedCredits = 0;

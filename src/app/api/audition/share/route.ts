@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 
 export async function GET(request: NextRequest) {
+  const auditionControl = await loadAuditionFeatureControl();
+  if (!auditionControl.is_enabled) {
+    return NextResponse.json({ error: "AI 오디션이 현재 비공개 상태입니다." }, { status: 503 });
+  }
+
   const id = request.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
@@ -22,6 +28,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auditionControl = await loadAuditionFeatureControl();
+    if (!auditionControl.is_enabled) {
+      return NextResponse.json({ error: "AI 오디션이 현재 비공개 상태입니다." }, { status: 503 });
+    }
+
     const { result, genres, bestSceneIdx, userPhotoBase64, userPhotosBase64, stillImageBase64 } = await request.json();
 
     const supabase = createClient(
