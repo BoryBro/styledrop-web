@@ -1822,38 +1822,38 @@ export default function TraceLabPage() {
           ))}
         </datalist>
 
-        <section className="mb-6 overflow-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(135deg,rgba(18,24,33,0.82)_0%,rgba(12,17,24,0.66)_48%,rgba(16,27,34,0.74)_100%)] px-4 py-3 shadow-[0_22px_54px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl sm:px-5">
+        <section className="mb-5 overflow-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(135deg,rgba(18,24,33,0.82)_0%,rgba(12,17,24,0.66)_48%,rgba(16,27,34,0.74)_100%)] px-4 py-3 shadow-[0_22px_54px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl sm:px-5">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
           <div className="pointer-events-none absolute -left-10 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-[#66E6C9]/10 blur-3xl" />
           <div className="pointer-events-none absolute right-0 top-0 h-20 w-28 rounded-full bg-[#5A8FFF]/10 blur-3xl" />
 
           <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2 sm:flex-nowrap sm:gap-x-4">
             <div className="flex min-w-0 items-center gap-1.5">
-              <span className="text-[15px] font-semibold tracking-[-0.03em] text-white/52">참여자</span>
-              <span className="text-[15px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.04em] text-[#C9571A]">
+              <span className="text-[14px] font-semibold tracking-[-0.03em] text-white/52">참여자</span>
+              <span className="text-[14px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.04em] text-[#C9571A]">
                 {payload?.summary.totalParticipants ?? 0}
               </span>
             </div>
             <span className="text-white/18">/</span>
             <div className="flex min-w-0 items-center gap-1.5">
-              <span className="text-[15px] font-semibold tracking-[-0.03em] text-white/52">지역</span>
-              <span className="text-[15px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.04em] text-[#C9571A]">
+              <span className="text-[14px] font-semibold tracking-[-0.03em] text-white/52">지역</span>
+              <span className="text-[14px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.04em] text-[#C9571A]">
                 {payload?.summary.totalRegions ?? 0}
               </span>
             </div>
             <span className="text-white/18">/</span>
             <div className="flex min-w-0 items-center gap-2 sm:flex-1">
-              <span className="shrink-0 text-[15px] font-semibold tracking-[-0.03em] text-white/52">가장 밝은 흔적</span>
-              <span className="truncate text-[15px] font-semibold tracking-[-0.03em] text-white/92">
+              <span className="shrink-0 text-[14px] font-semibold tracking-[-0.03em] text-white/52">가장 밝은 흔적</span>
+              <span className="truncate text-[14px] font-semibold tracking-[-0.03em] text-white/92">
                 {payload?.summary.hottestRegion?.label ?? "아직 첫 흔적을 기다리는 중"}
               </span>
             </div>
           </div>
-        </section>
 
-        {cityHotspots.length > 0 && (
-          <section className="mb-3 overflow-x-auto">
-            <div className="flex min-w-max items-center gap-4 px-1">
+          {cityHotspots.length > 0 && (
+            <div className="relative mt-2.5 overflow-x-auto border-t border-white/8 pt-2.5">
+              <div className="flex min-w-max items-center gap-4 px-0.5">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/32">hotspots</span>
               {cityHotspots.map((hotspot, index) => (
                 <button
                   key={hotspot.sido}
@@ -1872,8 +1872,9 @@ export default function TraceLabPage() {
                 </button>
               ))}
             </div>
-          </section>
-        )}
+            </div>
+          )}
+        </section>
 
         <div className="grid gap-6">
           <section>
