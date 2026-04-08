@@ -304,6 +304,28 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/Cinematic_horseback-before.jpg?v=1",
     afterImg: "/thumbnails/Cinematic_horseback-after.jpg?v=1",
   },
+  {
+    id: "dreamy-wildflower",
+    name: "꽃밭 뒤돌아본 나",
+    desc: "들꽃 가득한 여름 꽃밭에서 뒤돌아본 로맨틱 아웃도어 에디토리얼 컷",
+    bgColor: "#acb6db",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Dreamy_wildflower-before.jpg?v=1",
+    afterImg: "/thumbnails/Dreamy_wildflower-after.jpg?v=1",
+  },
+  {
+    id: "dreamy-celebratory",
+    name: "빛 쏟아진 순간",
+    desc: "햇살과 컨페티가 번지는 코트야드에서 포착된 드리미 셀레브레이션 포트레이트",
+    bgColor: "#324957",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Dreamy_celebratory-before.jpg?v=1",
+    afterImg: "/thumbnails/Dreamy_celebratory-after.jpg?v=1",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */

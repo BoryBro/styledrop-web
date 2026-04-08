@@ -1999,9 +1999,341 @@ OUTPUT TARGET:
   - #b4a077
   - #30331d
   - #eee7c5
-  - #9f8e69
-  - #90774f
+- #9f8e69
+- #90774f
 - Looks like a genuine high-end outdoor fashion editorial photograph, not AI-generated`
+  },
+  "dreamy-wildflower": {
+    "default": `Transform this photo into a dreamy wildflower field portrait.
+
+This must look like a real high-resolution romantic outdoor editorial photograph captured in a lush field of pale pink wildflowers under bright daylight — calm, wistful, summery, and authentic. Not fantasy illustration. Not painterly. Not cartoonish. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the uploaded person's exact facial features: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable identity
+- Keep the same gentle, contemplative, model-like expression and gaze direction unless the uploaded photo naturally requires only a minimal adjustment
+- CRITICAL: The face must feel naturally integrated into the scene — same lighting direction, same contrast, same skin texture, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted onto a different body
+- Match the head, neck, collarbone, skin tone, and body posture seamlessly into the scene
+- Apply the same warm natural daylight tone uniformly across the face and body
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Preserve realistic pores, lip texture, subtle under-eye structure, and believable skin variation
+- The final floral-field styling must adapt naturally to the uploaded person regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and hairline
+- Maintain a real photographed portrait feel, not an over-generated fantasy face
+- Do not over-smooth the face or erase unique facial details
+- The portrait should feel like a real outdoor editorial image with natural optical softness in the foreground only
+- The face should remain the main sharp focal area of the image
+
+HAIR:
+- Keep the hairstyle naturally recognizable to the uploaded person
+- Long hair flowing softly in the breeze if naturally plausible, or adapt the original hairstyle gently while preserving recognizability
+- Hair should feel airy, summery, and lightly wind-touched
+- No fantasy hair design
+- No overbuilt salon styling
+- No wig-like texture
+
+STYLING / OUTFIT:
+- Backless thin-strapped yellow lace dress
+- Fine floral lace texture
+- The dress should feel delicate, summery, and romantic
+- One bare shoulder visible
+- A small yellow blossom resting near the collarbone
+- The outfit should harmonize with the surrounding flowers and field palette
+- No fantasy princess costume
+- No harsh fashion-editorial severity
+- No random wardrobe substitution unrelated to the described look
+
+SCENE:
+- Lush field of blooming pale pink wildflowers
+- Bright daylight sky
+- Subject framed from behind and slightly to the side
+- Head turned back toward the camera
+- The setting should feel open, airy, and naturally beautiful
+- Background sky with soft gradients of blue and fluffy clouds
+- Foreground flowers softly blurred into dreamy bokeh
+- The environment should feel summery, romantic, and slightly wistful
+
+POSE:
+- Low-angle full-body to three-quarter portrait feeling with strong environmental depth
+- Subject seen from behind and slightly in profile
+- Head turned back toward the camera
+- Gentle, contemplative posture
+- Bare shoulder exposed naturally
+- The pose should feel graceful, spontaneous, and editorial without looking stiff
+
+COMPOSITION:
+- Low-angle wide shot
+- Dynamic wide-lens depth between blurred near flowers and distant sky
+- Subject placed prominently against the field and sky
+- Foreground flowers rendered as soft dreamy blur
+- The turned-back face should remain the emotional focal point
+- The shot should feel open, expansive, and cinematic in a real photographic way
+
+LIGHTING:
+- Natural sunlight
+- Warm diffuse highlights
+- Bright but soft summer illumination
+- No flash
+- No fantasy glow
+- Light should feel fresh, outdoor, and naturally flattering
+- The highlights should gently lift the skin, lace texture, flowers, and hair
+- Muted natural shadows only
+
+PHOTO STYLE:
+- High-resolution modern digital photograph
+- Sharp around the subject
+- Ethereal softness in the foreground flowers
+- Real optical depth and wide-lens perspective
+- No HDR exaggeration
+- No painterly texture
+- No artificial composite look
+- No obvious AI texture
+- The image should feel like a genuine high-end romantic outdoor editorial photograph
+
+CAMERA / LENS:
+- Wide-angle lens, approximately 24mm to 35mm full-frame equivalent
+- Low-angle viewpoint
+- Strong depth exaggeration between near flowers and distant background
+- Real optical rendering only, not fake blur
+- Subject sharp, foreground flowers softly out of focus
+- Natural spatial depth and airy environmental perspective
+
+COLOR:
+- Dominant palette of pastel pinks, warm yellows, soft greens, and crisp sky blue
+- Preserve and visibly reflect these core palette references:
+  - #dedbe8
+  - #cdccdf
+  - #8f6e50
+  - #795d41
+  - #a28264
+  - #caab99
+  - #d9c1bb
+  - #5d4f34
+  - #acb6db
+  - #3d462d
+  - #252b21
+  - #b59281
+  - #849aca
+  - #5c85b7
+  - #baa171
+- The palette should feel warm, airy, summery, romantic, and softly luminous
+- No muddy grading
+- No harsh oversaturation
+
+MOOD:
+- Calm
+- Romantic
+- Slightly wistful
+- Summery
+- Gentle
+- Airy
+- Editorial
+- The beauty should come from the open field, turned-back pose, wind-touched hair, soft flowers, and preserved identity of the subject
+
+STRICT RULES:
+- Preserve the uploaded person's exact face identity strongly
+- Keep the low-angle wide-shot feeling
+- Keep the from-behind, head-turned-back pose logic
+- Keep the pale pink wildflower field
+- Keep the yellow lace dress and exposed shoulder
+- Keep the yellow blossom near the collarbone
+- Do not turn it into fantasy or fairy-tale imagery
+- Do not make the face overly animated or porcelain
+- Keep the image wearable, current, human, and photographic
+
+OUTPUT TARGET:
+- Ultra-realistic dreamy wildflower field portrait
+- Same recognizable person
+- Low-angle wide shot, pale pink wildflower field, yellow lace dress, turned-back pose, blue sky with soft clouds
+- Foreground floral bokeh, summery daylight, wistful romantic mood
+- Must visibly reflect these core palette references:
+  - #dedbe8
+  - #cdccdf
+  - #8f6e50
+  - #795d41
+  - #a28264
+  - #caab99
+  - #d9c1bb
+  - #5d4f34
+  - #acb6db
+  - #3d462d
+  - #252b21
+  - #b59281
+- #849aca
+- #5c85b7
+- #baa171
+- Looks like a genuine high-end outdoor romantic editorial photograph, not AI-generated`
+  },
+  "dreamy-celebratory": {
+    "default": `Transform the uploaded photo into a dreamy celebratory portrait.
+
+This must look like a real high-resolution digital photograph — luminous, jubilant, whimsical, and authentic, but with a much stronger bright dreamy filter layered over the entire image. The result should feel heavily light-washed, glowing, hazy, sparkly, softly overexposed, and atmospherically diffused in a photographic way. Not fantasy illustration. Not painterly. Not cartoonish. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the original subject's face with the uploaded user's face
+- Preserve the uploaded user's exact facial identity, bone structure, eye shape, nose, lips, jawline, proportions, skin texture, and instantly recognizable likeness
+- The final result must adapt naturally whether the uploaded user is male or female
+- Keep the uploaded user fully recognizable as the same person
+- CRITICAL: The face must feel naturally integrated into the scene with matching lighting direction, contrast, skin detail, and overall image sharpness
+- The face must NOT look pasted onto a different body
+- Match the neck, face, skin tone, and facial perspective seamlessly into the body and scene
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Preserve recognizable facial identity even under a heavy dreamy filter
+- The face should remain real and human beneath the glow, bloom, haze, and light spread
+
+HAIR:
+- Preserve the uploaded user's exact hairstyle from the original photo
+- Keep the same haircut, length, silhouette, texture, parting, bangs, hairline, color, and overall styling cues
+- Do NOT restyle the hair into a different feminine, masculine, longer, shorter, wavier, or more editorial hairstyle
+- The hairstyle must remain clearly recognizable as the user's real hair from the uploaded image
+- Only allow minimal natural movement caused by the pose, sunlight, and atmosphere
+- Fine strands may softly dissolve into the dreamy light haze, but the hairstyle itself must not change
+
+POSE / EXPRESSION:
+- Eye-level, slightly high-angle medium shot
+- Subject leaning back and raising the face blissfully toward the sun
+- Eyes closed
+- Expression of serene delight
+- Body language should feel open, light, and joyfully immersed in the moment
+
+CLOTHING:
+- Preserve the uploaded user's exact clothing from the original photo
+- Keep the same outfit type, colors, fabric behavior, fit, layering, and styling cues from the uploaded image
+- Do NOT replace the outfit with the Fair Isle sweater, skirt, or any generated wardrobe
+- The clothing must remain clearly recognizable as the user's original outfit while being naturally integrated into the dreamy celebratory scene
+- Fabric should catch soft glowing highlights, haze, and light bloom naturally
+- Keep wrinkles, folds, seams, and material behavior consistent with the real uploaded clothing
+- If only a partial outfit is visible in the uploaded photo, infer the rest conservatively so the final clothing remains faithful to the original look
+- No fantasy costume elements
+- No random wardrobe substitution
+
+SCENE:
+- Tiled stone courtyard
+- Strong shaft of natural light entering from the upper right
+- Distinct geometric shadows across the ground
+- Scattered metallic confetti and sparkles floating in the air
+- Confetti should reflect sunlight and create glittering starbursts and prismatic bokeh between the subject, the ground, and the lens
+- The setting should feel ethereal, celebratory, and sunlit
+
+LIGHTING:
+- Bright natural sunlight
+- Sparkling highlights on the skin
+- Clear, crisp light behavior on the face, clothing, and confetti
+- Sunlight should emphasize the luminous and dreamlike atmosphere
+- Light should feel clean, vibrant, and real
+- Add much stronger bloom and halation around bright areas
+- Let highlights spread softly outward into the surrounding air
+- Allow bright confetti reflections to flare and shimmer more strongly
+- Introduce a washed, milky light veil across the whole frame
+- Bright areas may feel softly overexposed in a beautiful photographic way
+- Whites, creams, silvers, and skin highlights should glow noticeably
+
+FILTER / DREAM EFFECT:
+- Apply a strong bright dreamy filter across the whole result
+- The image should feel heavily diffused, glowy, and softly radiant
+- Add visible light bloom, highlight bleed, halation, haze, and luminous overexposure
+- Add a slightly milky white veil over the frame, as if shot through heavy diffusion glass or a dreamy mist filter
+- Include subtle analog-like noise or fine grain so the image does not feel clean-AI or plasticky
+- Add slight light spill, soft flare, and gentle washed highlight rolloff
+- Let sparkles and confetti produce stronger starburst glints and dreamy scattered reflections
+- Reduce harsh edge clarity and lower global micro-contrast
+- The image should feel soft, creamy, filtered, and expensive rather than digitally sharp
+- The dreamy effect must feel photographic and optical, not like a fake app filter
+- Avoid crisp AI sheen
+- Avoid hyper-clean digital rendering
+- The final result should feel like a real photo shot through strong diffusion with bright post-processed glow
+
+PHOTO STYLE:
+- High-resolution digital camera or premium smartphone image quality
+- Moderate depth of field
+- Subject remains the main focal point
+- Falling confetti may blur and catch highlights naturally
+- Strong filter-like post-processing is allowed
+- Add slight analog-style noise and soft textural grain
+- Add blooming highlights, soft focus, glow haze, and light bleed
+- Reduce clean digital sharpness
+- The result should feel less synthetic and more like an actual overfiltered dreamy photograph
+- Real photographic rendering only, not painterly or artificial
+
+COLOR:
+- Dominant cool blues and silvers
+- Accents of cream and faint peach
+- Preserve and visibly reflect these core palette references:
+  - #324957
+  - #2a363e
+  - #355666
+  - #c8c6be
+  - #d7d5cb
+  - #1d1f1e
+  - #192531
+  - #888b90
+  - #6b757d
+  - #556167
+  - #b4b3ae
+  - #a19d9b
+  - #957568
+  - #f4f4ee
+  - #5c4c42
+- Let the palette feel brighter, milkier, and more light-flooded
+- Slight lifting of whites and pale tones is encouraged
+- Keep the blues, silvers, creams, and faint peach tones softly glowing rather than clinically crisp
+
+MOOD:
+- Dreamlike
+- Jubilant
+- Whimsical
+- Ethereal
+- Celebratory
+- Light-filled
+- Emotionally open and radiant
+- Intensely glowy and sparkling
+- Softly surreal in a photographic way
+
+STRICT RULES:
+- The uploaded user's face must replace the original subject's face
+- This must work naturally whether the uploaded user is male or female
+- The uploaded user's clothing must remain the same as in the uploaded photo
+- The uploaded user's hairstyle must remain the same as in the uploaded photo
+- Do not substitute or redesign the outfit
+- Do not restyle, lengthen, shorten, recolor, or change the hair
+- Keep the uploaded user clearly recognizable
+- Do not make the face look pasted on
+- Do not change the basic shot, confetti, courtyard, or lighting concept
+- Do not turn it into fantasy illustration or cartoon styling
+- Do not keep the result too digitally sharp or clinically clean
+- Avoid obvious AI image clarity
+- Prioritize heavy dreamy filter atmosphere, soft haze, light bloom, slight noise, and bright glowing diffusion
+
+OUTPUT TARGET:
+- Ultra-realistic dreamy celebratory portrait
+- Same recognizable uploaded user
+- Same original outfit from the uploaded photo
+- Same original hairstyle from the uploaded photo
+- Sunlit stone courtyard, metallic confetti, sparkling highlights, dreamy jubilant mood
+- Strong bright dreamy filter with heavy bloom, haze, glow, light spill, soft overexposure, slight analog noise, and luminous sparkle
+- Must visibly reflect these core palette references:
+  - #324957
+  - #2a363e
+  - #355666
+  - #c8c6be
+  - #d7d5cb
+  - #1d1f1e
+  - #192531
+  - #888b90
+  - #6b757d
+  - #556167
+  - #b4b3ae
+  - #a19d9b
+  - #957568
+  - #f4f4ee
+  - #5c4c42`
   },
 };
 
@@ -2038,6 +2370,8 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "transit-station-security": { "default": [] },
   "luxury-bedroom-bag": { "default": [] },
   "cinematic-horseback": { "default": [] },
+  "dreamy-wildflower": { "default": [] },
+  "dreamy-celebratory": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
