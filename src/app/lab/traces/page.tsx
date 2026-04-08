@@ -505,6 +505,8 @@ function TraceMap({
   }, [pan.x, pan.y, zoom]);
   const provinceLabels = useMemo(() => buildVisibleRegionLabels(clusters), [clusters]);
   const districtLabels = useMemo(() => buildVisibleDistrictLabels(visibleBounds, zoom), [visibleBounds, zoom]);
+  const provinceFontSize = useMemo(() => (3.2 / Math.pow(Math.max(zoom, 1), 1.35)).toFixed(2), [zoom]);
+  const districtFontSize = useMemo(() => (1.2 / Math.pow(Math.max(zoom, 1), 1.12)).toFixed(2), [zoom]);
   const activePopupPosition = useMemo(() => {
     if (!activePublicTrace || !frameSize.width || !frameSize.height) return null;
 
@@ -984,9 +986,10 @@ function TraceMap({
                   x={region.x + 1}
                   y={region.y - 1}
                   fill="rgba(255,255,255,0.28)"
-                  fontSize="3"
+                  fontSize={provinceFontSize}
                   fontWeight="700"
                   letterSpacing="0.04em"
+                  style={{ userSelect: "none", WebkitUserSelect: "none" }}
                 >
                   {region.shortLabel}
                 </text>
@@ -1001,9 +1004,10 @@ function TraceMap({
                   x={region.x + 0.55}
                   y={region.y - 0.55}
                   fill="rgba(255,255,255,0.24)"
-                  fontSize="1.05"
+                  fontSize={districtFontSize}
                   fontWeight="700"
                   letterSpacing="0.03em"
+                  style={{ userSelect: "none", WebkitUserSelect: "none" }}
                 >
                   {region.shortLabel}
                 </text>
@@ -1013,7 +1017,9 @@ function TraceMap({
           {traces.map((trace) => {
             const isActive = !previewTrace && activeTrace?.user_id === trace.user_id;
             const shouldPulse = pulseUserId === trace.user_id;
-            const squareSize = isActive ? 0.18 : 0.045;
+            const squareSize = (isActive ? 0.32 : 0.18) / Math.max(zoom, 1);
+            const hitAreaSize = 1.9 / Math.max(zoom, 1);
+            const ringSize = 0.62 / Math.max(zoom, 1);
 
             return (
               <g
@@ -1025,6 +1031,13 @@ function TraceMap({
                 style={{ cursor: "pointer" }}
               >
                 <rect
+                  x={trace.displayX - hitAreaSize / 2}
+                  y={trace.displayY - hitAreaSize / 2}
+                  width={hitAreaSize}
+                  height={hitAreaSize}
+                  fill="transparent"
+                />
+                <rect
                   x={trace.displayX - squareSize / 2}
                   y={trace.displayY - squareSize / 2}
                   width={squareSize}
@@ -1033,25 +1046,45 @@ function TraceMap({
                 />
                 {shouldPulse && (
                   <rect
-                    x={trace.displayX - 0.09}
-                    y={trace.displayY - 0.09}
-                    width={0.18}
-                    height={0.18}
+                    x={trace.displayX - 0.16 / Math.max(zoom, 1)}
+                    y={trace.displayY - 0.16 / Math.max(zoom, 1)}
+                    width={0.32 / Math.max(zoom, 1)}
+                    height={0.32 / Math.max(zoom, 1)}
                     fill="rgba(255,196,79,0.28)"
                   >
-                    <animate attributeName="x" values={`${trace.displayX - 0.09};${trace.displayX - 0.45};${trace.displayX - 0.09}`} dur="1.15s" repeatCount="1" />
-                    <animate attributeName="y" values={`${trace.displayY - 0.09};${trace.displayY - 0.45};${trace.displayY - 0.09}`} dur="1.15s" repeatCount="1" />
-                    <animate attributeName="width" values="0.18;0.9;0.18" dur="1.15s" repeatCount="1" />
-                    <animate attributeName="height" values="0.18;0.9;0.18" dur="1.15s" repeatCount="1" />
+                    <animate
+                      attributeName="x"
+                      values={`${trace.displayX - 0.16 / Math.max(zoom, 1)};${trace.displayX - 0.54 / Math.max(zoom, 1)};${trace.displayX - 0.16 / Math.max(zoom, 1)}`}
+                      dur="1.15s"
+                      repeatCount="1"
+                    />
+                    <animate
+                      attributeName="y"
+                      values={`${trace.displayY - 0.16 / Math.max(zoom, 1)};${trace.displayY - 0.54 / Math.max(zoom, 1)};${trace.displayY - 0.16 / Math.max(zoom, 1)}`}
+                      dur="1.15s"
+                      repeatCount="1"
+                    />
+                    <animate
+                      attributeName="width"
+                      values={`${0.32 / Math.max(zoom, 1)};${1.08 / Math.max(zoom, 1)};${0.32 / Math.max(zoom, 1)}`}
+                      dur="1.15s"
+                      repeatCount="1"
+                    />
+                    <animate
+                      attributeName="height"
+                      values={`${0.32 / Math.max(zoom, 1)};${1.08 / Math.max(zoom, 1)};${0.32 / Math.max(zoom, 1)}`}
+                      dur="1.15s"
+                      repeatCount="1"
+                    />
                     <animate attributeName="opacity" values="0.42;0;0" dur="1.15s" repeatCount="1" />
                   </rect>
                 )}
                 {isActive && (
                   <rect
-                    x={trace.displayX - 0.22}
-                    y={trace.displayY - 0.22}
-                    width={0.44}
-                    height={0.44}
+                    x={trace.displayX - ringSize / 2}
+                    y={trace.displayY - ringSize / 2}
+                    width={ringSize}
+                    height={ringSize}
                     fill="none"
                     stroke="rgba(255,196,79,0.44)"
                     strokeWidth="0.12"
@@ -1064,30 +1097,50 @@ function TraceMap({
           {previewTrace && (
             <g key={`preview-${previewTrace.regionKey}`} style={{ pointerEvents: "none" }}>
               <rect
-                x={previewTrace.displayX - 0.12}
-                y={previewTrace.displayY - 0.12}
-                width={0.24}
-                height={0.24}
+                x={previewTrace.displayX - 0.2 / Math.max(zoom, 1)}
+                y={previewTrace.displayY - 0.2 / Math.max(zoom, 1)}
+                width={0.4 / Math.max(zoom, 1)}
+                height={0.4 / Math.max(zoom, 1)}
                 fill="rgba(255,196,79,0.98)"
               />
               <rect
-                x={previewTrace.displayX - 0.14}
-                y={previewTrace.displayY - 0.14}
-                width={0.28}
-                height={0.28}
+                x={previewTrace.displayX - 0.25 / Math.max(zoom, 1)}
+                y={previewTrace.displayY - 0.25 / Math.max(zoom, 1)}
+                width={0.5 / Math.max(zoom, 1)}
+                height={0.5 / Math.max(zoom, 1)}
                 fill="rgba(255,196,79,0.22)"
               >
-                <animate attributeName="x" values={`${previewTrace.displayX - 0.14};${previewTrace.displayX - 0.55};${previewTrace.displayX - 0.14}`} dur="1.1s" repeatCount="1" />
-                <animate attributeName="y" values={`${previewTrace.displayY - 0.14};${previewTrace.displayY - 0.55};${previewTrace.displayY - 0.14}`} dur="1.1s" repeatCount="1" />
-                <animate attributeName="width" values="0.28;1.1;0.28" dur="1.1s" repeatCount="1" />
-                <animate attributeName="height" values="0.28;1.1;0.28" dur="1.1s" repeatCount="1" />
+                <animate
+                  attributeName="x"
+                  values={`${previewTrace.displayX - 0.25 / Math.max(zoom, 1)};${previewTrace.displayX - 0.55 / Math.max(zoom, 1)};${previewTrace.displayX - 0.25 / Math.max(zoom, 1)}`}
+                  dur="1.1s"
+                  repeatCount="1"
+                />
+                <animate
+                  attributeName="y"
+                  values={`${previewTrace.displayY - 0.25 / Math.max(zoom, 1)};${previewTrace.displayY - 0.55 / Math.max(zoom, 1)};${previewTrace.displayY - 0.25 / Math.max(zoom, 1)}`}
+                  dur="1.1s"
+                  repeatCount="1"
+                />
+                <animate
+                  attributeName="width"
+                  values={`${0.5 / Math.max(zoom, 1)};${1.1 / Math.max(zoom, 1)};${0.5 / Math.max(zoom, 1)}`}
+                  dur="1.1s"
+                  repeatCount="1"
+                />
+                <animate
+                  attributeName="height"
+                  values={`${0.5 / Math.max(zoom, 1)};${1.1 / Math.max(zoom, 1)};${0.5 / Math.max(zoom, 1)}`}
+                  dur="1.1s"
+                  repeatCount="1"
+                />
                 <animate attributeName="opacity" values="0.38;0;0" dur="1.1s" repeatCount="1" />
               </rect>
               <rect
-                x={previewTrace.displayX - 0.22}
-                y={previewTrace.displayY - 0.22}
-                width={0.44}
-                height={0.44}
+                x={previewTrace.displayX - 0.34 / Math.max(zoom, 1)}
+                y={previewTrace.displayY - 0.34 / Math.max(zoom, 1)}
+                width={0.68 / Math.max(zoom, 1)}
+                height={0.68 / Math.max(zoom, 1)}
                 fill="none"
                 stroke="rgba(255,196,79,0.44)"
                 strokeWidth="0.12"
