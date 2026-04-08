@@ -398,6 +398,16 @@ function buildVisibleDistrictLabels(
     }));
 }
 
+function formatOrdinalRank(value: number) {
+  const mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
+  const mod10 = value % 10;
+  if (mod10 === 1) return `${value}st`;
+  if (mod10 === 2) return `${value}nd`;
+  if (mod10 === 3) return `${value}rd`;
+  return `${value}th`;
+}
+
 function findContainingProvince(coordinates: [number, number]) {
   const featureItem = koreaFeatureCollection.features.find((item) => geoContains(item as never, coordinates));
   if (!featureItem) return null;
@@ -439,6 +449,7 @@ function TraceMap({
   traces,
   clusters,
   activeTrace,
+  activePublicTrace,
   previewTrace,
   pulseUserId,
   onPickTrace,
@@ -452,6 +463,7 @@ function TraceMap({
   traces: DisplayTrace[];
   clusters: TraceCluster[];
   activeTrace: DisplayTrace | null;
+  activePublicTrace: DisplayTrace | null;
   previewTrace: DisplayTrace | null;
   pulseUserId: string | null;
   onPickTrace: (trace: DisplayTrace) => void;
@@ -464,6 +476,7 @@ function TraceMap({
 }) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [frameSize, setFrameSize] = useState({ width: 0, height: 0 });
   const dragRef = useRef<{ id: number; startX: number; startY: number; baseX: number; baseY: number } | null>(null);
   const pointersRef = useRef(new Map<number, { x: number; y: number }>());
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
@@ -492,6 +505,19 @@ function TraceMap({
   }, [pan.x, pan.y, zoom]);
   const provinceLabels = useMemo(() => buildVisibleRegionLabels(clusters), [clusters]);
   const districtLabels = useMemo(() => buildVisibleDistrictLabels(visibleBounds, zoom), [visibleBounds, zoom]);
+  const activePopupPosition = useMemo(() => {
+    if (!activePublicTrace || !frameSize.width || !frameSize.height) return null;
+
+    const pointX = (activePublicTrace.displayX / MAP_WIDTH) * frameSize.width * zoom + pan.x;
+    const pointY = (activePublicTrace.displayY / MAP_HEIGHT) * frameSize.height * zoom + pan.y;
+    const popupWidth = activePublicTrace.publicImageUrl ? 122 : 104;
+    const popupHeight = activePublicTrace.publicImageUrl && activePublicTrace.instagramHandle ? 128 : activePublicTrace.publicImageUrl ? 108 : 60;
+
+    return {
+      left: clamp(pointX + 10, 10, Math.max(10, frameSize.width - popupWidth - 10)),
+      top: clamp(pointY - popupHeight - 10, 10, Math.max(10, frameSize.height - popupHeight - 10)),
+    };
+  }, [activePublicTrace, frameSize.height, frameSize.width, pan.x, pan.y, zoom]);
 
   const provinceCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -552,6 +578,24 @@ function TraceMap({
   useEffect(() => {
     panRef.current = pan;
   }, [pan]);
+
+  useEffect(() => {
+    const frame = mapFrameRef.current;
+    if (!frame) return;
+
+    const syncSize = () => {
+      setFrameSize({
+        width: frame.clientWidth,
+        height: frame.clientHeight,
+      });
+    };
+
+    syncSize();
+    const observer = new ResizeObserver(syncSize);
+    observer.observe(frame);
+
+    return () => observer.disconnect();
+  }, []);
 
   const applyZoomAtPoint = useCallback(
     (targetZoom: number, clientX?: number, clientY?: number) => {
@@ -650,20 +694,20 @@ function TraceMap({
             </svg>
           </button>
         )}
-        <button
-          onClick={() => updateZoom(0.6)}
-          className="h-10 w-10 rounded-2xl border border-white/10 bg-white/6 text-xl text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
-          aria-label="지도 확대"
-        >
-          +
-        </button>
-        <button
-          onClick={() => updateZoom(-0.6)}
-          className="h-10 w-10 rounded-2xl border border-white/10 bg-white/6 text-xl text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
-          aria-label="지도 축소"
-        >
-          -
-        </button>
+        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/6 px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
+          <span className="text-[11px] font-bold text-white/38">1x</span>
+          <input
+            type="range"
+            min="1"
+            max="10"
+            step="0.1"
+            value={zoom}
+            onChange={(event) => applyZoomAtPoint(Number(event.target.value))}
+            className="h-2 w-24 accent-white"
+            aria-label="지도 확대 슬라이더"
+          />
+          <span className="text-[11px] font-bold text-white/72">{zoom.toFixed(1)}x</span>
+        </div>
         <button
           onClick={() => {
             setZoom(1);
@@ -841,6 +885,7 @@ function TraceMap({
         <svg
           viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
           className="absolute inset-0 h-full w-full"
+          preserveAspectRatio="xMidYMid meet"
           style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0" }}
         >
           <defs>
@@ -954,26 +999,38 @@ function TraceMap({
           {traces.map((trace) => {
             const isActive = !previewTrace && activeTrace?.user_id === trace.user_id;
             const shouldPulse = pulseUserId === trace.user_id;
+            const squareSize = isActive ? 0.32 : 0.12;
 
             return (
               <g key={`${trace.user_id}-${trace.regionKey}`} onClick={() => onPickTrace(trace)} style={{ cursor: "pointer" }}>
-                <circle
-                  cx={trace.displayX}
-                  cy={trace.displayY}
-                  r={isActive ? 0.38 : 0.08}
+                <rect
+                  x={trace.displayX - squareSize / 2}
+                  y={trace.displayY - squareSize / 2}
+                  width={squareSize}
+                  height={squareSize}
                   fill={isActive ? "rgba(255,196,79,0.98)" : "rgba(255,255,255,0.92)"}
                 />
                 {shouldPulse && (
-                  <circle cx={trace.displayX} cy={trace.displayY} r={0.38} fill="rgba(255,196,79,0.28)">
-                    <animate attributeName="r" values="0.38;1.8;0.38" dur="1.15s" repeatCount="1" />
+                  <rect
+                    x={trace.displayX - 0.16}
+                    y={trace.displayY - 0.16}
+                    width={0.32}
+                    height={0.32}
+                    fill="rgba(255,196,79,0.28)"
+                  >
+                    <animate attributeName="x" values={`${trace.displayX - 0.16};${trace.displayX - 0.9};${trace.displayX - 0.16}`} dur="1.15s" repeatCount="1" />
+                    <animate attributeName="y" values={`${trace.displayY - 0.16};${trace.displayY - 0.9};${trace.displayY - 0.16}`} dur="1.15s" repeatCount="1" />
+                    <animate attributeName="width" values="0.32;1.8;0.32" dur="1.15s" repeatCount="1" />
+                    <animate attributeName="height" values="0.32;1.8;0.32" dur="1.15s" repeatCount="1" />
                     <animate attributeName="opacity" values="0.42;0;0" dur="1.15s" repeatCount="1" />
-                  </circle>
+                  </rect>
                 )}
                 {isActive && (
-                  <circle
-                    cx={trace.displayX}
-                    cy={trace.displayY}
-                    r={0.72}
+                  <rect
+                    x={trace.displayX - 0.42}
+                    y={trace.displayY - 0.42}
+                    width={0.84}
+                    height={0.84}
                     fill="none"
                     stroke="rgba(255,196,79,0.44)"
                     strokeWidth="0.12"
@@ -985,20 +1042,31 @@ function TraceMap({
 
           {previewTrace && (
             <g key={`preview-${previewTrace.regionKey}`} style={{ pointerEvents: "none" }}>
-              <circle
-                cx={previewTrace.displayX}
-                cy={previewTrace.displayY}
-                r={0.42}
+              <rect
+                x={previewTrace.displayX - 0.18}
+                y={previewTrace.displayY - 0.18}
+                width={0.36}
+                height={0.36}
                 fill="rgba(255,196,79,0.98)"
               />
-              <circle cx={previewTrace.displayX} cy={previewTrace.displayY} r={0.5} fill="rgba(255,196,79,0.22)">
-                <animate attributeName="r" values="0.5;2.1;0.5" dur="1.1s" repeatCount="1" />
+              <rect
+                x={previewTrace.displayX - 0.25}
+                y={previewTrace.displayY - 0.25}
+                width={0.5}
+                height={0.5}
+                fill="rgba(255,196,79,0.22)"
+              >
+                <animate attributeName="x" values={`${previewTrace.displayX - 0.25};${previewTrace.displayX - 1.05};${previewTrace.displayX - 0.25}`} dur="1.1s" repeatCount="1" />
+                <animate attributeName="y" values={`${previewTrace.displayY - 0.25};${previewTrace.displayY - 1.05};${previewTrace.displayY - 0.25}`} dur="1.1s" repeatCount="1" />
+                <animate attributeName="width" values="0.5;2.1;0.5" dur="1.1s" repeatCount="1" />
+                <animate attributeName="height" values="0.5;2.1;0.5" dur="1.1s" repeatCount="1" />
                 <animate attributeName="opacity" values="0.38;0;0" dur="1.1s" repeatCount="1" />
-              </circle>
-              <circle
-                cx={previewTrace.displayX}
-                cy={previewTrace.displayY}
-                r={0.85}
+              </rect>
+              <rect
+                x={previewTrace.displayX - 0.42}
+                y={previewTrace.displayY - 0.42}
+                width={0.84}
+                height={0.84}
                 fill="none"
                 stroke="rgba(255,196,79,0.44)"
                 strokeWidth="0.12"
@@ -1007,6 +1075,22 @@ function TraceMap({
           )}
         </svg>
       </div>
+
+      {activePublicTrace && activePopupPosition && (
+        <div
+          className="pointer-events-none absolute z-20 w-[122px] overflow-hidden rounded-[18px] border border-white/12 bg-[rgba(8,11,16,0.88)] shadow-[0_18px_40px_rgba(0,0,0,0.32)] backdrop-blur-xl"
+          style={{ left: activePopupPosition.left, top: activePopupPosition.top }}
+        >
+          {activePublicTrace.publicImageUrl ? (
+            <img src={activePublicTrace.publicImageUrl} alt="" className="aspect-[4/5] w-full object-cover" />
+          ) : null}
+          {activePublicTrace.instagramHandle ? (
+            <div className="px-3 py-2 text-[11px] font-bold text-white/88">
+              @{activePublicTrace.instagramHandle}
+            </div>
+          ) : null}
+        </div>
+      )}
 
     </div>
   );
@@ -1114,7 +1198,22 @@ export default function TraceLabPage() {
     });
   }, [form.dong, form.instagramHandle, form.shareImage, form.shareInstagram, form.sido, form.sigungu, payload?.me.alreadyJoined, selectedImage?.result_image_url, user]);
   const clusters = useMemo(() => buildClusters(displayTraces), [displayTraces]);
-  const hotspotList = useMemo(() => [...clusters].sort((left, right) => right.count - left.count).slice(0, 5), [clusters]);
+  const cityHotspots = useMemo(() => {
+    const counts = new Map<string, { sido: string; label: string; count: number }>();
+
+    displayTraces.forEach((trace) => {
+      const sido = normalizeSido(trace.sido);
+      const label = getSidoOption(sido)?.shortLabel ?? sido;
+      const current = counts.get(sido);
+      if (current) {
+        current.count += 1;
+        return;
+      }
+      counts.set(sido, { sido, label, count: 1 });
+    });
+
+    return [...counts.values()].sort((left, right) => right.count - left.count).slice(0, 3);
+  }, [displayTraces]);
   const districtSuggestions = useMemo(() => getDistrictSuggestions(form.sido), [form.sido]);
   const dongSuggestions = useMemo(() => getDongSuggestions(form.sido, form.sigungu), [form.sido, form.sigungu]);
 
@@ -1462,7 +1561,13 @@ export default function TraceLabPage() {
                       setForm((current) => ({
                         ...current,
                         shareInstagram: event.target.checked,
-                        instagramHandle: event.target.checked ? current.instagramHandle : "",
+                        instagramHandle: event.target.checked
+                          ? current.instagramHandle.startsWith("@")
+                            ? current.instagramHandle
+                            : current.instagramHandle
+                              ? `@${current.instagramHandle.replace(/^@+/, "")}`
+                              : "@"
+                          : "",
                       }))
                     }
                     className="h-4 w-4 accent-[#6BE2C5]"
@@ -1513,9 +1618,17 @@ export default function TraceLabPage() {
               {form.shareInstagram && (
                 <input
                   value={form.instagramHandle}
-                  onChange={(event) => setForm((current) => ({ ...current, instagramHandle: event.target.value.replace(/\s+/g, "") }))}
+                  onChange={(event) =>
+                    setForm((current) => {
+                      const raw = event.target.value.replace(/\s+/g, "");
+                      const cleaned = raw.replace(/^@+/, "");
+                      return {
+                        ...current,
+                        instagramHandle: raw === "" ? "@" : `@${cleaned}`,
+                      };
+                    })
+                  }
                   autoComplete="off"
-                  placeholder="@instagram_id"
                   className="h-10 w-full rounded-[14px] border border-white/10 bg-[#0D1117]/88 px-3 text-[12px] font-semibold text-white placeholder:text-white/24 outline-none"
                 />
               )}
@@ -1581,7 +1694,32 @@ export default function TraceLabPage() {
           </div>
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_360px]">
+        {cityHotspots.length > 0 && (
+          <section className="mb-4 overflow-x-auto">
+            <div className="flex min-w-max items-center gap-3 rounded-[20px] border border-white/10 bg-white/[0.04] px-4 py-3">
+              {cityHotspots.map((hotspot, index) => (
+                <button
+                  key={hotspot.sido}
+                  onClick={() => {
+                    const picked = displayTraces.find((trace) => normalizeSido(trace.sido) === hotspot.sido) ?? null;
+                    if (picked) {
+                      setActiveTrace(picked);
+                      setPulseUserId(picked.user_id);
+                    }
+                  }}
+                  className="flex items-center gap-2 rounded-full border border-white/8 bg-black/16 px-3 py-2 text-left transition hover:border-white/14 hover:bg-black/24"
+                >
+                  <span className="text-[11px] font-black uppercase tracking-[0.08em] text-[#6BE2C5]">
+                    {formatOrdinalRank(index + 1)}
+                  </span>
+                  <span className="text-[14px] font-bold text-white">{hotspot.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <div className="grid gap-6">
           <section>
             {loadingState ? (
               <div className="flex aspect-[3/4] items-center justify-center rounded-[34px] border border-white/10 bg-white/5 text-white/55">
@@ -1592,6 +1730,7 @@ export default function TraceLabPage() {
                 traces={displayTraces}
                 clusters={clusters}
                 activeTrace={activeDisplayTrace}
+                activePublicTrace={activePublicTrace}
                 previewTrace={previewDisplayTrace}
                 pulseUserId={pulseUserId}
                 onPickTrace={setActiveTrace}
@@ -1609,67 +1748,6 @@ export default function TraceLabPage() {
             )}
             {participationOverlay && <div className="mt-4">{participationOverlay}</div>}
           </section>
-
-          <aside className="flex flex-col gap-4">
-            <div className="rounded-[30px] border border-white/10 bg-white/5 p-5">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/40">Selected Trace</p>
-              <h3 className="mt-2 text-[18px] font-black tracking-[-0.04em] text-white">
-                {activeDisplayTrace?.regionLabel ?? "선택한 흔적"}
-              </h3>
-              {!activeDisplayTrace ? (
-                <p className="mt-2 text-[13px] leading-6 text-white/45">지도에서 점을 누르면, 공개된 이미지나 인스타가 여기 보여요.</p>
-              ) : activePublicTrace ? (
-                <div className="mt-4 space-y-3">
-                  {activePublicTrace.publicImageUrl && (
-                    <div className="overflow-hidden rounded-[22px] border border-white/10 bg-black/16">
-                      <img src={activePublicTrace.publicImageUrl} alt="" className="aspect-[4/5] w-full object-cover" />
-                    </div>
-                  )}
-                  {activePublicTrace.instagramHandle && (
-                    <div className="rounded-[18px] border border-white/10 bg-black/18 px-4 py-3">
-                      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/38">Instagram</p>
-                      <p className="mt-1 text-[15px] font-bold text-white">@{activePublicTrace.instagramHandle}</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="mt-2 text-[13px] leading-6 text-white/45">이 흔적은 아직 공개된 이미지나 인스타 정보가 없어요.</p>
-              )}
-            </div>
-
-            <div className="rounded-[30px] border border-white/10 bg-white/5 p-5">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/40">Hotspots</p>
-              <h3 className="mt-2 text-[20px] font-black tracking-[-0.04em] text-white">많이 남은 흔적</h3>
-              <p className="mt-1 text-[12px] text-white/42">누르면 그 지역으로 바로 이동해요.</p>
-              <div className="mt-4 space-y-2">
-                {hotspotList.length === 0 && <p className="text-[14px] leading-6 text-white/50">아직 첫 참여자를 기다리는 중이에요.</p>}
-                {hotspotList.slice(0, 4).map((cluster, index) => (
-                  <button
-                    key={cluster.key}
-                    onClick={() => {
-                      const picked = displayTraces.find((trace) => trace.regionKey === cluster.key) ?? null;
-                      if (picked) {
-                        setActiveTrace(picked);
-                        setPulseUserId(picked.user_id);
-                      }
-                    }}
-                    className="flex w-full items-center justify-between rounded-[18px] border border-white/8 bg-black/18 px-4 py-3 text-left transition hover:border-white/14 hover:bg-black/24"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/8 text-[12px] font-black text-white/70">
-                        {index + 1}
-                      </span>
-                      <div>
-                        <p className="text-[14px] font-bold text-white">{cluster.label}</p>
-                        <p className="text-[12px] text-white/42">눌러서 이 지역으로 보기</p>
-                      </div>
-                    </div>
-                    <span className="text-[13px] font-black text-[#6BE2C5]">{cluster.count}명</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </aside>
         </div>
 
         {toastMessage && (
