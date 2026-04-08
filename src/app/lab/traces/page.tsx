@@ -2,7 +2,7 @@
 
 import { geoContains, geoMercator, geoPath } from "d3-geo";
 import Link from "next/link";
-import { feature } from "topojson-client";
+import { feature, mesh } from "topojson-client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import koreaEmdTopology from "@tenqube/react-korea-bubble-map/dist/esm/emd-64475e77.js";
 import koreaSidoTopology from "@tenqube/react-korea-bubble-map/dist/esm/sido-0af932a3.js";
@@ -126,6 +126,18 @@ const koreaEmdFeatureCollection = feature(
   typedKoreaEmdTopology.objects.emd as never,
 ) as unknown as { features: KoreaFeature[] };
 
+const koreaSidoMesh = mesh(
+  typedKoreaSidoTopology as never,
+  typedKoreaSidoTopology.objects.sido as never,
+  (left, right) => left !== right,
+) as never;
+
+const koreaSigunguMesh = mesh(
+  typedKoreaSigunguTopology as never,
+  typedKoreaSigunguTopology.objects.sigungu as never,
+  (left, right) => left !== right,
+) as never;
+
 const projection = geoMercator().fitExtent(
   [
     [MAP_PADDING, MAP_PADDING],
@@ -138,6 +150,8 @@ const projection = geoMercator().fitExtent(
 );
 
 const pathBuilder = geoPath(projection);
+const koreaSidoMeshPath = pathBuilder(koreaSidoMesh) ?? "";
+const koreaSigunguMeshPath = pathBuilder(koreaSigunguMesh) ?? "";
 
 function buildRegionShape(featureItem: KoreaFeature) {
   const option = getSidoOption(featureItem.properties.KOR_NM);
@@ -945,16 +959,14 @@ function TraceMap({
 
               return (
                 <g key={region.code}>
-                <path d={region.path} fill="rgba(12,17,24,0.98)" stroke="rgba(255,255,255,0.10)" strokeWidth="0.24" />
-                {count > 0 && (
-                  <path
-                    d={region.path}
-                    fill={`rgba(91, 224, 197, ${activeAlpha})`}
-                    stroke={`rgba(126, 245, 220, ${Math.min(activeAlpha + 0.1, 0.5)})`}
-                    strokeWidth="0.18"
-                  />
-                )}
-              </g>
+                  <path d={region.path} fill="rgba(12,17,24,0.98)" />
+                  {count > 0 && (
+                    <path
+                      d={region.path}
+                      fill={`rgba(91, 224, 197, ${activeAlpha})`}
+                    />
+                  )}
+                </g>
               );
             })}
 
@@ -966,18 +978,38 @@ function TraceMap({
 
               return (
                 <g key={region.code}>
-                  <path d={region.path} fill="rgba(11,15,21,0.98)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.10" />
+                  <path d={region.path} fill="rgba(11,15,21,0.98)" />
                   {count > 0 && (
                     <path
                       d={region.path}
                       fill={`rgba(91, 224, 197, ${activeAlpha})`}
-                      stroke={`rgba(126, 245, 220, ${Math.min(activeAlpha + 0.08, 0.44)})`}
-                      strokeWidth="0.08"
                     />
                   )}
                 </g>
               );
             })}
+
+          {detailLevel === "sido" && (
+            <path
+              d={koreaSidoMeshPath}
+              fill="none"
+              stroke="rgba(255,255,255,0.11)"
+              strokeWidth="0.16"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          )}
+
+          {detailLevel === "sigungu" && (
+            <path
+              d={koreaSigunguMeshPath}
+              fill="none"
+              stroke="rgba(255,255,255,0.095)"
+              strokeWidth="0.07"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          )}
 
           {zoom <= 1.65 &&
             clusters
