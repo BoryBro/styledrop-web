@@ -534,6 +534,21 @@ function TraceMap({
     const px = zoom < 5.5 ? 18 : zoom < 7 ? 15 : 12;
     return screenPxToSvg(px).toFixed(2);
   }, [screenPxToSvg, zoom]);
+  const activePopupPosition = useMemo(() => {
+    if (!activePublicTrace || !frameSize.width || !frameSize.height) return null;
+
+    const hasImage = Boolean(activePublicTrace.publicImageUrl);
+    const hasInstagram = Boolean(activePublicTrace.instagramHandle);
+    const popupWidth = hasImage ? 72 : 88;
+    const popupHeight = hasImage ? (hasInstagram ? 92 : 72) : 26;
+    const pointX = (activePublicTrace.displayX / MAP_WIDTH) * frameSize.width * zoom + pan.x;
+    const pointY = (activePublicTrace.displayY / MAP_HEIGHT) * frameSize.height * zoom + pan.y;
+
+    return {
+      left: clamp(pointX - popupWidth / 2, 8, Math.max(8, frameSize.width - popupWidth - 8)),
+      top: clamp(pointY - popupHeight - 12, 8, Math.max(8, frameSize.height - popupHeight - 8)),
+    };
+  }, [activePublicTrace, frameSize.height, frameSize.width, pan.x, pan.y, zoom]);
   const provinceCounts = useMemo(() => {
     const counts = new Map<string, number>();
 
@@ -615,7 +630,7 @@ function TraceMap({
   const applyZoomAtPoint = useCallback(
     (targetZoom: number, clientX?: number, clientY?: number) => {
       const frame = mapFrameRef.current;
-      const boundedZoom = clamp(Number(targetZoom.toFixed(2)), 1, 10);
+      const boundedZoom = clamp(Number(targetZoom.toFixed(2)), 1, 20);
 
       if (!frame) {
         setZoom(boundedZoom);
@@ -717,7 +732,7 @@ function TraceMap({
           <input
             type="range"
             min="1"
-            max="10"
+            max="20"
             step="0.1"
             value={zoom}
             onChange={(event) => applyZoomAtPoint(Number(event.target.value))}
@@ -739,7 +754,7 @@ function TraceMap({
 
       <div
         ref={mapFrameRef}
-        className="relative aspect-[3/4] w-full touch-none select-none cursor-grab active:cursor-grabbing"
+        className="relative aspect-square w-full touch-none select-none cursor-grab active:cursor-grabbing"
         style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
         onWheel={(event) => {
           event.preventDefault();
@@ -881,7 +896,7 @@ function TraceMap({
             return;
           }
 
-          if (activePublicTrace) {
+          if (activeTrace) {
             onPickTrace(null);
             return;
           }
@@ -930,13 +945,13 @@ function TraceMap({
 
               return (
                 <g key={region.code}>
-                <path d={region.path} fill="rgba(12,17,24,0.98)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.42" />
+                <path d={region.path} fill="rgba(12,17,24,0.98)" stroke="rgba(255,255,255,0.10)" strokeWidth="0.24" />
                 {count > 0 && (
                   <path
                     d={region.path}
                     fill={`rgba(91, 224, 197, ${activeAlpha})`}
                     stroke={`rgba(126, 245, 220, ${Math.min(activeAlpha + 0.1, 0.5)})`}
-                    strokeWidth="0.32"
+                    strokeWidth="0.18"
                   />
                 )}
               </g>
@@ -951,13 +966,13 @@ function TraceMap({
 
               return (
                 <g key={region.code}>
-                  <path d={region.path} fill="rgba(11,15,21,0.98)" stroke="rgba(255,255,255,0.10)" strokeWidth="0.18" />
+                  <path d={region.path} fill="rgba(11,15,21,0.98)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.10" />
                   {count > 0 && (
                     <path
                       d={region.path}
                       fill={`rgba(91, 224, 197, ${activeAlpha})`}
                       stroke={`rgba(126, 245, 220, ${Math.min(activeAlpha + 0.08, 0.44)})`}
-                      strokeWidth="0.14"
+                      strokeWidth="0.08"
                     />
                   )}
                 </g>
@@ -1169,39 +1184,32 @@ function TraceMap({
         </svg>
       </div>
 
-      {activePublicTrace && (
-        <div className="pointer-events-none absolute inset-x-4 bottom-4 z-20 flex justify-center">
-          <div className="pointer-events-auto flex w-full max-w-[188px] overflow-hidden rounded-[18px] border border-white/12 bg-[rgba(8,11,16,0.9)] shadow-[0_18px_40px_rgba(0,0,0,0.34)] backdrop-blur-xl">
+      {activePublicTrace && activePopupPosition && (
+        <div
+          className="pointer-events-none absolute z-20"
+          style={{ left: activePopupPosition.left, top: activePopupPosition.top }}
+        >
+          <div className="pointer-events-auto flex flex-col items-center gap-1.5">
             {activePublicTrace.publicImageUrl ? (
-              <img src={activePublicTrace.publicImageUrl} alt="" className="h-[88px] w-[70px] shrink-0 object-cover" />
-            ) : (
-              <div className="flex h-[88px] w-[70px] shrink-0 items-center justify-center bg-white/[0.04] text-[10px] font-black uppercase tracking-[0.12em] text-white/30">
-                TRACE
-              </div>
-            )}
-            <div className="relative min-w-0 flex-1 px-3 py-2.5">
               <button
                 type="button"
                 onClick={() => onPickTrace(null)}
-                className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-black/38 text-[11px] font-black text-white/78"
+                className="overflow-hidden rounded-[10px] border border-white/12 bg-[rgba(8,11,16,0.92)] shadow-[0_14px_32px_rgba(0,0,0,0.34)]"
                 aria-label="선택 해제"
               >
-                ×
+                <img src={activePublicTrace.publicImageUrl} alt="" className="h-[72px] w-[72px] object-cover" />
               </button>
-              <p className="pr-6 text-[11px] font-black uppercase tracking-[0.12em] text-white/34">
-                {activePublicTrace.publicImageUrl ? "Selected Trace" : "Private Trace"}
-              </p>
-              <p className="mt-1 line-clamp-2 pr-5 text-[12px] font-bold leading-4 text-white/90">
-                {activePublicTrace.regionLabel}
-              </p>
-              {activePublicTrace.instagramHandle ? (
-                <p className="mt-2 text-[11px] font-bold text-[#6BE2C5]">@{activePublicTrace.instagramHandle}</p>
-              ) : (
-                <p className="mt-2 text-[11px] leading-4 text-white/46">
-                  공개된 인스타 없이 남긴 흔적이에요.
-                </p>
-              )}
-            </div>
+            ) : null}
+            {activePublicTrace.instagramHandle ? (
+              <button
+                type="button"
+                onClick={() => onPickTrace(null)}
+                className="max-w-[112px] truncate rounded-full border border-white/10 bg-[rgba(8,11,16,0.9)] px-2 py-1 text-[10px] font-bold text-[#6BE2C5] shadow-[0_10px_24px_rgba(0,0,0,0.28)]"
+                aria-label="선택 해제"
+              >
+                @{activePublicTrace.instagramHandle}
+              </button>
+            ) : null}
           </div>
         </div>
       )}
@@ -1500,7 +1508,10 @@ export default function TraceLabPage() {
         ? payload.me.trace.regionLabel
         : previewDisplayTrace?.regionLabel ?? "시 / 구 / 동을 고르거나 자동 입력";
   const canQuickSubmit = Boolean(user && payload?.me.eligible && !payload?.me.alreadyJoined && previewDisplayTrace);
-  const activePublicTrace = activeDisplayTrace;
+  const activePublicTrace =
+    activeDisplayTrace && (activeDisplayTrace.publicImageUrl || activeDisplayTrace.instagramHandle)
+      ? activeDisplayTrace
+      : null;
   const myDisplayTrace = useMemo(
     () => displayTraces.find((trace) => trace.user_id === payload?.me.trace?.user_id) ?? null,
     [displayTraces, payload?.me.trace?.user_id],
@@ -1809,8 +1820,8 @@ export default function TraceLabPage() {
         </section>
 
         {cityHotspots.length > 0 && (
-          <section className="mb-4 overflow-x-auto">
-            <div className="flex min-w-max items-center gap-3 rounded-[20px] border border-white/10 bg-white/[0.04] px-4 py-3">
+          <section className="mb-3 overflow-x-auto">
+            <div className="flex min-w-max items-center gap-4 px-1">
               {cityHotspots.map((hotspot, index) => (
                 <button
                   key={hotspot.sido}
@@ -1821,12 +1832,11 @@ export default function TraceLabPage() {
                       setPulseUserId(picked.user_id);
                     }
                   }}
-                  className="flex items-center gap-2 rounded-full border border-white/8 bg-black/16 px-3 py-2 text-left transition hover:border-white/14 hover:bg-black/24"
+                  className="text-left text-[11px] font-semibold tracking-[-0.02em] text-white/62 transition hover:text-white/88"
                 >
-                  <span className="text-[11px] font-black uppercase tracking-[0.08em] text-[#6BE2C5]">
-                    {formatOrdinalRank(index + 1)}
-                  </span>
-                  <span className="text-[14px] font-bold text-white">{hotspot.label}</span>
+                  <span className="text-[#6BE2C5]">{formatOrdinalRank(index + 1)}</span>{" "}
+                  <span className="text-white/84">{hotspot.label}</span>{" "}
+                  <span className="text-white/42">{hotspot.count}명</span>
                 </button>
               ))}
             </div>
@@ -1836,7 +1846,7 @@ export default function TraceLabPage() {
         <div className="grid gap-6">
           <section>
             {loadingState ? (
-              <div className="flex aspect-[3/4] items-center justify-center rounded-[34px] border border-white/10 bg-white/5 text-white/55">
+              <div className="flex aspect-square items-center justify-center rounded-[34px] border border-white/10 bg-white/5 text-white/55">
                 흔적 지도를 불러오는 중...
               </div>
             ) : (
