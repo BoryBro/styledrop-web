@@ -382,15 +382,20 @@ function buildVisibleDistrictLabels(
   bounds: { minX: number; maxX: number; minY: number; maxY: number },
   zoom: number,
 ) {
-  const visible = districtMap.filter((region) => isInVisibleBounds(region.centroid, bounds, 3));
-  const step = zoom >= 4.6 ? 2 : zoom >= 3.8 ? 3 : zoom >= 3.1 ? 5 : 8;
+  if (zoom < 4.5) return [];
 
-  return visible.filter((_, index) => index % step === 0).map((region) => ({
-    id: region.code,
-    x: region.centroid.x,
-    y: region.centroid.y,
-    shortLabel: region.shortLabel,
-  }));
+  const visible = districtMap.filter((region) => isInVisibleBounds(region.centroid, bounds, 3));
+  const step = zoom >= 7.2 ? 2 : zoom >= 6 ? 3 : 5;
+
+  return visible
+    .filter((_, index) => index % step === 0)
+    .slice(0, zoom >= 7.2 ? 28 : zoom >= 6 ? 20 : 12)
+    .map((region) => ({
+      id: region.code,
+      x: region.centroid.x,
+      y: region.centroid.y,
+      shortLabel: region.shortLabel,
+    }));
 }
 
 function findContainingProvince(coordinates: [number, number]) {
@@ -468,9 +473,9 @@ function TraceMap({
   const draggedRef = useRef(false);
   const zoomRef = useRef(zoom);
   const panRef = useRef(pan);
-  const detailLevel = zoom >= 4.1 ? "emd" : zoom >= 2.1 ? "sigungu" : "sido";
-  const showProvinceLabels = zoom < 2.4;
-  const showDistrictLabels = zoom >= 2.8;
+  const detailLevel = zoom >= 4 ? "sigungu" : "sido";
+  const showProvinceLabels = zoom < 3.6;
+  const showDistrictLabels = zoom >= 4.8;
   const visibleBounds = useMemo(() => {
     const frame = mapFrameRef.current;
     if (!frame) {
@@ -505,16 +510,6 @@ function TraceMap({
     traces.forEach((trace) => {
       const key = `${normalizeSido(trace.sido)}|${normalizeRegionPart(trace.sigungu)}`;
       counts.set(key, (counts.get(key) ?? 0) + 1);
-    });
-
-    return counts;
-  }, [traces]);
-
-  const dongCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-
-    traces.forEach((trace) => {
-      counts.set(trace.regionKey, (counts.get(trace.regionKey) ?? 0) + 1);
     });
 
     return counts;
@@ -561,7 +556,7 @@ function TraceMap({
   const applyZoomAtPoint = useCallback(
     (targetZoom: number, clientX?: number, clientY?: number) => {
       const frame = mapFrameRef.current;
-      const boundedZoom = clamp(Number(targetZoom.toFixed(2)), 1, 6);
+      const boundedZoom = clamp(Number(targetZoom.toFixed(2)), 1, 10);
 
       if (!frame) {
         setZoom(boundedZoom);
@@ -686,7 +681,7 @@ function TraceMap({
         style={{ touchAction: "none" }}
         onWheel={(event) => {
           event.preventDefault();
-          updateZoom(event.deltaY < 0 ? 0.4 : -0.4, event.clientX, event.clientY);
+          updateZoom(event.deltaY < 0 ? 0.55 : -0.55, event.clientX, event.clientY);
         }}
         onTouchStart={(event) => {
           if (event.touches.length === 1) {
@@ -845,7 +840,7 @@ function TraceMap({
       >
         <svg
           viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
-          className="absolute inset-0 h-full w-full transition-transform duration-500 ease-out"
+          className="absolute inset-0 h-full w-full"
           style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0" }}
         >
           <defs>
@@ -889,29 +884,6 @@ function TraceMap({
                       fill={`rgba(91, 224, 197, ${activeAlpha})`}
                       stroke={`rgba(126, 245, 220, ${Math.min(activeAlpha + 0.08, 0.44)})`}
                       strokeWidth="0.14"
-                    />
-                  )}
-                </g>
-              );
-            })}
-
-          {detailLevel === "emd" &&
-            dongMap.map((region) => {
-              const count = [...dongCounts.entries()].find(([key]) => {
-                const parts = key.split("|");
-                return parts.at(-1) === region.normalizedLabel && parts[0].slice(0, 2) === region.code.slice(0, 2);
-              })?.[1] ?? 0;
-              const activeAlpha = count === 0 ? 0 : Math.min(0.12 + count * 0.06, 0.34);
-
-              return (
-                <g key={region.code}>
-                  <path d={region.path} fill="rgba(10,13,18,0.98)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.06" />
-                  {count > 0 && (
-                    <path
-                      d={region.path}
-                      fill={`rgba(91, 224, 197, ${activeAlpha})`}
-                      stroke={`rgba(126, 245, 220, ${Math.min(activeAlpha + 0.06, 0.38)})`}
-                      strokeWidth="0.05"
                     />
                   )}
                 </g>
