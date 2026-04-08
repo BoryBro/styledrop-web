@@ -540,7 +540,7 @@ function TraceMap({
     const hasImage = Boolean(activePublicTrace.publicImageUrl);
     const hasInstagram = Boolean(activePublicTrace.instagramHandle);
     const popupWidth = hasImage ? 72 : 88;
-    const popupHeight = hasImage ? (hasInstagram ? 92 : 72) : 26;
+    const popupHeight = hasImage ? (hasInstagram ? 92 : 72) : 28;
     const pointX = (activePublicTrace.displayX / MAP_WIDTH) * frameSize.width * zoom + pan.x;
     const pointY = (activePublicTrace.displayY / MAP_HEIGHT) * frameSize.height * zoom + pan.y;
 
