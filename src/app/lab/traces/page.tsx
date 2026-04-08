@@ -534,20 +534,6 @@ function TraceMap({
     const px = zoom < 5.5 ? 18 : zoom < 7 ? 15 : 12;
     return screenPxToSvg(px).toFixed(2);
   }, [screenPxToSvg, zoom]);
-  const activePopupPosition = useMemo(() => {
-    if (!activePublicTrace || !frameSize.width || !frameSize.height) return null;
-
-    const pointX = (activePublicTrace.displayX / MAP_WIDTH) * frameSize.width * zoom + pan.x;
-    const pointY = (activePublicTrace.displayY / MAP_HEIGHT) * frameSize.height * zoom + pan.y;
-    const popupWidth = activePublicTrace.publicImageUrl ? 122 : 132;
-    const popupHeight = activePublicTrace.publicImageUrl && activePublicTrace.instagramHandle ? 128 : activePublicTrace.publicImageUrl ? 108 : 92;
-
-    return {
-      left: clamp(pointX + 10, 10, Math.max(10, frameSize.width - popupWidth - 10)),
-      top: clamp(pointY - popupHeight - 10, 10, Math.max(10, frameSize.height - popupHeight - 10)),
-    };
-  }, [activePublicTrace, frameSize.height, frameSize.width, pan.x, pan.y, zoom]);
-
   const provinceCounts = useMemo(() => {
     const counts = new Map<string, number>();
 
@@ -1051,6 +1037,12 @@ function TraceMap({
             return (
               <g
                 key={`${trace.user_id}-${trace.regionKey}`}
+                onPointerDown={(event) => {
+                  event.stopPropagation();
+                }}
+                onTouchStart={(event) => {
+                  event.stopPropagation();
+                }}
                 onClick={(event) => {
                   event.stopPropagation();
                   onPickTrace(isActive ? null : trace);
@@ -1177,33 +1169,40 @@ function TraceMap({
         </svg>
       </div>
 
-      {activePublicTrace && activePopupPosition && (
-        <div
-          className="absolute z-20 overflow-hidden rounded-[18px] border border-white/12 bg-[rgba(8,11,16,0.88)] shadow-[0_18px_40px_rgba(0,0,0,0.32)] backdrop-blur-xl"
-          style={{ left: activePopupPosition.left, top: activePopupPosition.top, width: activePublicTrace.publicImageUrl ? 122 : 132 }}
-        >
-          <button
-            type="button"
-            onClick={() => onPickTrace(null)}
-            className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-black/42 text-[11px] font-black text-white/82"
-            aria-label="선택 해제"
-          >
-            ×
-          </button>
-          {activePublicTrace.publicImageUrl ? (
-            <img src={activePublicTrace.publicImageUrl} alt="" className="aspect-[4/5] w-full object-cover" />
-          ) : (
-            <div className="px-3 py-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">Private Trace</p>
-              <p className="mt-1 text-[12px] font-bold leading-5 text-white/90">{activePublicTrace.regionLabel}</p>
-              <p className="mt-1 text-[11px] leading-4 text-white/46">공개된 사진이나 인스타 없이 점만 남긴 흔적이에요.</p>
+      {activePublicTrace && (
+        <div className="pointer-events-none absolute inset-x-4 bottom-4 z-20 flex justify-center">
+          <div className="pointer-events-auto flex w-full max-w-[188px] overflow-hidden rounded-[18px] border border-white/12 bg-[rgba(8,11,16,0.9)] shadow-[0_18px_40px_rgba(0,0,0,0.34)] backdrop-blur-xl">
+            {activePublicTrace.publicImageUrl ? (
+              <img src={activePublicTrace.publicImageUrl} alt="" className="h-[88px] w-[70px] shrink-0 object-cover" />
+            ) : (
+              <div className="flex h-[88px] w-[70px] shrink-0 items-center justify-center bg-white/[0.04] text-[10px] font-black uppercase tracking-[0.12em] text-white/30">
+                TRACE
+              </div>
+            )}
+            <div className="relative min-w-0 flex-1 px-3 py-2.5">
+              <button
+                type="button"
+                onClick={() => onPickTrace(null)}
+                className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-black/38 text-[11px] font-black text-white/78"
+                aria-label="선택 해제"
+              >
+                ×
+              </button>
+              <p className="pr-6 text-[11px] font-black uppercase tracking-[0.12em] text-white/34">
+                {activePublicTrace.publicImageUrl ? "Selected Trace" : "Private Trace"}
+              </p>
+              <p className="mt-1 line-clamp-2 pr-5 text-[12px] font-bold leading-4 text-white/90">
+                {activePublicTrace.regionLabel}
+              </p>
+              {activePublicTrace.instagramHandle ? (
+                <p className="mt-2 text-[11px] font-bold text-[#6BE2C5]">@{activePublicTrace.instagramHandle}</p>
+              ) : (
+                <p className="mt-2 text-[11px] leading-4 text-white/46">
+                  공개된 인스타 없이 남긴 흔적이에요.
+                </p>
+              )}
             </div>
-          )}
-          {activePublicTrace.instagramHandle ? (
-            <div className="px-3 py-2 text-[11px] font-bold text-white/88">
-              @{activePublicTrace.instagramHandle}
-            </div>
-          ) : null}
+          </div>
         </div>
       )}
 
