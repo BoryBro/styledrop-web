@@ -43,6 +43,35 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
   );
 }
 
+function PixelTraceTriggerIcon() {
+  return (
+    <div className="relative z-10 h-6 w-6" style={{ imageRendering: "pixelated" }}>
+      <svg viewBox="0 0 16 16" className="h-full w-full drop-shadow-[0_0_12px_rgba(255,118,184,0.55)]">
+        <g className="trace-pixel-sprite">
+          <rect x="4" y="2" width="3" height="2" fill="#FFB2D8" />
+          <rect x="9" y="2" width="3" height="2" fill="#FFB2D8" />
+          <rect x="3" y="4" width="4" height="2" fill="#FF90C7" />
+          <rect x="9" y="4" width="4" height="2" fill="#FF90C7" />
+          <rect x="3" y="6" width="10" height="2" fill="#FF6FB8" />
+          <rect x="4" y="8" width="8" height="2" fill="#FF5AAE" />
+          <rect x="5" y="10" width="6" height="2" fill="#F2479F" />
+          <rect x="6" y="12" width="4" height="2" fill="#E33690" />
+          <rect x="5" y="3" width="1" height="1" fill="#FFF2FA" />
+          <rect x="10" y="3" width="1" height="1" fill="#FFF2FA" />
+          <rect x="2" y="4" width="1" height="3" fill="#5B1C3C" />
+          <rect x="13" y="4" width="1" height="3" fill="#5B1C3C" />
+          <rect x="4" y="13" width="1" height="1" fill="#5B1C3C" />
+          <rect x="11" y="13" width="1" height="1" fill="#5B1C3C" />
+        </g>
+      </svg>
+      <span className="trace-heart-spark absolute -right-0.5 top-0 h-[3px] w-[3px] bg-[#FFD8EE]" />
+      <span className="trace-heart-spark-delayed absolute left-0.5 top-1 h-[2px] w-[2px] bg-[#FFC7E5]" />
+      <span className="trace-heart-spark-soft absolute bottom-0.5 right-1 h-[2px] w-[2px] bg-[#FFF1F8]" />
+      <span className="absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle,rgba(255,117,185,0.28)_0%,rgba(255,117,185,0)_72%)]" />
+    </div>
+  );
+}
+
 export default function Studio() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -324,6 +353,29 @@ export default function Studio() {
           0%, 100% { opacity: 0.3; transform: scale(0.92); }
           50% { opacity: 0.7; transform: scale(1.18); }
         }
+        @keyframes tracePixelFloat {
+          0%, 100% { transform: translate3d(0, 0, 0); }
+          25% { transform: translate3d(-0.5px, -1.5px, 0); }
+          50% { transform: translate3d(0.5px, -3px, 0); }
+          75% { transform: translate3d(-0.5px, -1.5px, 0); }
+        }
+        @keyframes traceHeartSpark {
+          0%, 100% { opacity: 0.28; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.45); }
+        }
+        .trace-pixel-sprite {
+          animation: tracePixelFloat 1.6s steps(2, end) infinite;
+          transform-origin: center;
+        }
+        .trace-heart-spark {
+          animation: traceHeartSpark 1.15s steps(2, end) infinite;
+        }
+        .trace-heart-spark-delayed {
+          animation: traceHeartSpark 1.45s steps(2, end) infinite reverse;
+        }
+        .trace-heart-spark-soft {
+          animation: traceHeartSpark 1.8s steps(2, end) infinite;
+        }
       `}</style>
       <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
 
@@ -342,13 +394,7 @@ export default function Studio() {
                   className="pointer-events-none absolute inset-0 rounded-full border border-[#6BE2C5]/28"
                   style={{ animation: "traceGlow 2.2s ease-in-out infinite" }}
                 />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/trace-map-trigger.png"
-                  alt=""
-                  className="relative z-10 h-6 w-6 object-contain"
-                  draggable={false}
-                />
+                <PixelTraceTriggerIcon />
                 <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#FFE082]" style={{ animation: "blink 1.3s step-end infinite" }} />
               </Link>
             )}
