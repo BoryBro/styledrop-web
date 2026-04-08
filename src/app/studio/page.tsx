@@ -335,19 +335,20 @@ export default function Studio() {
               <Link
                 href="/lab/traces"
                 aria-label="실험실 흔적 지도"
-                className="relative flex h-8 items-center justify-center rounded-full border border-[#C9571A]/18 bg-[#120E0C] px-3 shadow-[0_0_18px_rgba(201,87,26,0.14)]"
+                className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#6BE2C5]/20 bg-[#071110] shadow-[0_0_20px_rgba(107,226,197,0.14)]"
                 style={{ animation: "tracePulse 2.2s ease-in-out infinite" }}
               >
                 <span
-                  className="pointer-events-none absolute inset-0 rounded-full border border-[#C9571A]/30"
+                  className="pointer-events-none absolute inset-0 rounded-full border border-[#6BE2C5]/28"
                   style={{ animation: "traceGlow 2.2s ease-in-out infinite" }}
                 />
-                <span
-                  className="relative z-10 text-[13px] leading-none text-[#F1B089]"
-                  style={{ fontFamily: '"BMKkubulim", sans-serif' }}
-                >
-                  여기 눌러봐
-                </span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/trace-map-trigger.png"
+                  alt=""
+                  className="relative z-10 h-6 w-6 object-contain"
+                  draggable={false}
+                />
                 <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#FFE082]" style={{ animation: "blink 1.3s step-end infinite" }} />
               </Link>
             )}
