@@ -293,6 +293,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/Luxury_bedroom-before.jpg?v=1",
     afterImg: "/thumbnails/Luxury_bedroom-after.jpg?v=1",
   },
+  {
+    id: "cinematic-horseback",
+    name: "백마탄 나",
+    desc: "푸른 하늘 아래 백마 위에 앉은 시네마틱 패션 에디토리얼 포트레이트",
+    bgColor: "#335b70",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Cinematic_horseback-before.jpg?v=1",
+    afterImg: "/thumbnails/Cinematic_horseback-after.jpg?v=1",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */

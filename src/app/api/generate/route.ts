@@ -1826,9 +1826,182 @@ OUTPUT TARGET:
   - #575544
   - #049c58
   - #ece1cd
-  - #e5c9af
-  - #352d25
+- #e5c9af
+- #352d25
 - Looks like a genuine high-end candid smartphone fashion-lifestyle photo, not AI-generated`
+  },
+  "cinematic-horseback": {
+    "default": `Transform this photo into a cinematic horseback fashion portrait.
+
+This must look like a real high-resolution fashion-editorial photograph captured outdoors on rolling grassy hills under a clear blue sky — elegant, dramatic, luxurious, romantic, and authentic. Not fantasy art. Not painterly. Not fairy-tale illustration. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the person's exact facial features: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable identity
+- Keep the same calm, poised, model-like expression and gaze direction unless the uploaded photo naturally requires only a minimal adjustment
+- CRITICAL: The face must feel naturally integrated into the horseback scene — same lighting direction, same contrast, same skin texture, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted onto the rider
+- Match the head, neck, hairline, skin tone, and body posture seamlessly into the scene
+- Apply the same direct natural daylight tone uniformly across the face and body
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Preserve realistic pores, lip texture, subtle under-eye structure, and believable skin variation
+- The final horseback-fashion styling must adapt naturally to the uploaded person regardless of gender while preserving the same recognizable identity
+
+HAIR — MUST CHANGE COMPLETELY:
+- Do NOT preserve the original hairstyle under any circumstances
+- Replace with long, dark, voluminous hair appropriate to the scene
+- Hair should feel elegant, slightly wind-touched, and naturally full
+- The hair must read as luxurious and editorial while still remaining physically believable
+- No fantasy hair design
+- No overbuilt salon exaggeration
+- No wig-like texture
+- No artificial polish
+
+CLOTHING:
+- Extravagant off-white or ivory gown with dramatic ruffle shoulders
+- Voluminous sculptural skirt
+- Lustrous pleated fabric with rich dimensional texture
+- Cascading layers of fabric spilling down the horse's flank and toward the grass
+- Bare legs subtly visible beneath the dress
+- Platform sandals visible beneath the hem
+- The outfit should feel luxurious, romantic, and high-fashion
+- No fantasy princess costume
+- No medieval costume elements
+- No random wardrobe substitution unrelated to the described look
+
+SCENE:
+- Open grassy hillside landscape
+- Uneven green slope with scattered tufts of wildflowers
+- Rolling hills in the background
+- Open blue sky with light cloud dappling
+- Subject seated elegantly atop a white horse with subtle gray speckles
+- The horse stands alert and composed on the hillside
+- The environment should feel expansive, free, romantic, and editorial
+- No urban elements
+- No fantasy castle backdrop
+- No surreal environmental effects
+
+POSE:
+- Low-angle full-body portrait in vertical orientation
+- Subject seated upright and regal on the horse
+- Composed posture with calm shoulders and elongated torso
+- The rider should feel statuesque, serene, and naturally balanced
+- The horse and rider must feel physically connected and believable
+- The dress should drape dramatically while preserving realistic weight and gravity
+
+HORSE:
+- White horse with subtle gray speckles
+- Realistic anatomy, natural musculature, and calm alert stance
+- Natural mane texture and believable facial detail
+- Strength and serenity should both be visible in the horse's posture
+- The rider must sit naturally with realistic balance and contact
+- No fantasy unicorn styling
+- No ornamental costume tack unless extremely minimal and realistic
+
+PHOTOGRAPH QUALITY:
+- High-resolution modern digital fashion photograph
+- Slight golden-hour warmth layered into otherwise bright direct daylight
+- Crisp shadows and clean sunlit detail
+- Clear, premium editorial sharpness in the face, dress texture, and horse anatomy
+- Natural outdoor contrast
+- No HDR exaggeration
+- No painterly softness
+- No artificial composite look
+- No obvious AI texture
+- The image should feel like a real luxury fashion shoot captured outdoors
+
+LIGHTING:
+- Natural direct sunlight
+- Clear crisp shadows
+- Bright highlights across the dress folds, skin, and horse musculature
+- Light should emphasize the lustrous pleated fabric and the horse's form
+- No flash
+- No fantasy glow
+- No moody artificial lighting
+- Light should feel open-air, refined, and photographic
+
+CAMERA / LENS:
+- Wide-angle lens with a slightly low viewpoint
+- Approximately 28mm to 40mm full-frame equivalent
+- Vertical full-body editorial framing
+- Slightly low camera angle to emphasize the statuesque presence of both rider and horse
+- Natural perspective with elegant environmental depth
+- Moderate depth of field keeping rider and horse sharply readable while allowing distant hills to soften slightly
+- Real optical rendering only, not fake blur
+
+COLOR:
+- Dominant palette of:
+  - clean whites and ivory tones
+  - lush greens
+  - deep blue sky
+  - natural warm skin tones
+- Slight golden-hour warmth over the scene
+- Preserve and visibly reflect these core palette references:
+  - #335b70
+  - #5c592d
+  - #3f6779
+  - #494925
+  - #75663c
+  - #dfd6b1
+  - #5c7c85
+  - #d2c69e
+  - #c3b48b
+  - #060f18
+  - #b4a077
+  - #30331d
+  - #eee7c5
+  - #9f8e69
+  - #90774f
+- Keep the palette clean, editorial, romantic, and sunlit
+- No muddy grading
+- No fantasy pastel wash
+- No harsh oversaturation
+
+MOOD:
+- Romantic
+- Free
+- Elegant
+- Luxurious
+- Cinematic
+- Dreamlike in a photographic way
+- Calm, powerful, and editorial
+- The beauty of the image should come from the real outdoor setting, the horse, the dress silhouette, and the preserved identity of the rider
+
+STRICT RULES:
+- Keep the face identity exact
+- Keep the white horse with subtle gray speckles realistic
+- Keep the extravagant pleated off-white gown with ruffle shoulders
+- Keep the low-angle vertical full-body composition
+- Keep the grassy hillside, wildflower tufts, rolling hills, and open blue sky
+- Keep the platform sandals and visible bare legs if naturally visible
+- Do not turn it into fantasy or fairy-tale imagery
+- Do not make it painterly
+- Do not lose physical realism in the rider-horse interaction
+- Do not make the fashion styling look like costume cosplay
+
+OUTPUT TARGET:
+- Ultra-realistic cinematic horseback fashion portrait
+- Same recognizable person
+- White speckled horse, dramatic pleated off-white gown, rolling green hills, cloud-dappled blue sky, direct sunlight with slight golden warmth
+- Low-angle vertical full-body editorial composition
+- Must visibly reflect these core palette references:
+  - #335b70
+  - #5c592d
+  - #3f6779
+  - #494925
+  - #75663c
+  - #dfd6b1
+  - #5c7c85
+  - #d2c69e
+  - #c3b48b
+  - #060f18
+  - #b4a077
+  - #30331d
+  - #eee7c5
+  - #9f8e69
+  - #90774f
+- Looks like a genuine high-end outdoor fashion editorial photograph, not AI-generated`
   },
 };
 
@@ -1864,6 +2037,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "existential-studio": { "default": [] },
   "transit-station-security": { "default": [] },
   "luxury-bedroom-bag": { "default": [] },
+  "cinematic-horseback": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
