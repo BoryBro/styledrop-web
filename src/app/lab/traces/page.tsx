@@ -466,7 +466,7 @@ function TraceMap({
   activePublicTrace: DisplayTrace | null;
   previewTrace: DisplayTrace | null;
   pulseUserId: string | null;
-  onPickTrace: (trace: DisplayTrace) => void;
+  onPickTrace: (trace: DisplayTrace | null) => void;
   onSelectLocation: (region: { sido: string; sigungu: string; dong: string }) => void;
   canFocusMyTrace: boolean;
   onFocusMyTrace: () => void;
@@ -655,7 +655,10 @@ function TraceMap({
   }, [activeTrace?.displayX, activeTrace?.displayY, activeTrace?.user_id, computeCenteredPan, previewTrace]);
 
   return (
-    <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#05070B] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+    <div
+      className="relative select-none overflow-hidden rounded-[34px] border border-white/10 bg-[#05070B] shadow-[0_30px_80px_rgba(0,0,0,0.35)]"
+      style={{ userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
+    >
       <div
         className="absolute inset-0"
         style={{
@@ -721,8 +724,8 @@ function TraceMap({
 
       <div
         ref={mapFrameRef}
-        className="relative aspect-[3/4] w-full touch-none cursor-grab active:cursor-grabbing"
-        style={{ touchAction: "none" }}
+        className="relative aspect-[3/4] w-full touch-none select-none cursor-grab active:cursor-grabbing"
+        style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
         onWheel={(event) => {
           event.preventDefault();
           updateZoom(event.deltaY < 0 ? 0.55 : -0.55, event.clientX, event.clientY);
@@ -863,6 +866,11 @@ function TraceMap({
             return;
           }
 
+          if (activePublicTrace) {
+            onPickTrace(null);
+            return;
+          }
+
           const frame = mapFrameRef.current;
           if (!frame) return;
 
@@ -886,7 +894,13 @@ function TraceMap({
           viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
           className="absolute inset-0 h-full w-full"
           preserveAspectRatio="xMidYMid meet"
-          style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0" }}
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transformOrigin: "0 0",
+            userSelect: "none",
+            WebkitUserSelect: "none",
+            WebkitTouchCallout: "none",
+          }}
         >
           <defs>
             <filter id="trace-blur">
@@ -964,7 +978,7 @@ function TraceMap({
 
           {showProvinceLabels &&
             provinceLabels.map((region) => (
-              <g key={region.id} opacity="0.82">
+              <g key={region.id} opacity="0.82" pointerEvents="none">
                 <circle cx={region.x} cy={region.y} r="0.42" fill="rgba(255,255,255,0.18)" />
                 <text
                   x={region.x + 1}
@@ -981,7 +995,7 @@ function TraceMap({
 
           {showDistrictLabels &&
             districtLabels.map((region) => (
-              <g key={region.id} opacity="0.76">
+              <g key={region.id} opacity="0.76" pointerEvents="none">
                 <circle cx={region.x} cy={region.y} r="0.22" fill="rgba(255,255,255,0.15)" />
                 <text
                   x={region.x + 0.55}
@@ -999,10 +1013,17 @@ function TraceMap({
           {traces.map((trace) => {
             const isActive = !previewTrace && activeTrace?.user_id === trace.user_id;
             const shouldPulse = pulseUserId === trace.user_id;
-            const squareSize = isActive ? 0.32 : 0.12;
+            const squareSize = isActive ? 0.18 : 0.045;
 
             return (
-              <g key={`${trace.user_id}-${trace.regionKey}`} onClick={() => onPickTrace(trace)} style={{ cursor: "pointer" }}>
+              <g
+                key={`${trace.user_id}-${trace.regionKey}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onPickTrace(isActive ? null : trace);
+                }}
+                style={{ cursor: "pointer" }}
+              >
                 <rect
                   x={trace.displayX - squareSize / 2}
                   y={trace.displayY - squareSize / 2}
@@ -1012,25 +1033,25 @@ function TraceMap({
                 />
                 {shouldPulse && (
                   <rect
-                    x={trace.displayX - 0.16}
-                    y={trace.displayY - 0.16}
-                    width={0.32}
-                    height={0.32}
+                    x={trace.displayX - 0.09}
+                    y={trace.displayY - 0.09}
+                    width={0.18}
+                    height={0.18}
                     fill="rgba(255,196,79,0.28)"
                   >
-                    <animate attributeName="x" values={`${trace.displayX - 0.16};${trace.displayX - 0.9};${trace.displayX - 0.16}`} dur="1.15s" repeatCount="1" />
-                    <animate attributeName="y" values={`${trace.displayY - 0.16};${trace.displayY - 0.9};${trace.displayY - 0.16}`} dur="1.15s" repeatCount="1" />
-                    <animate attributeName="width" values="0.32;1.8;0.32" dur="1.15s" repeatCount="1" />
-                    <animate attributeName="height" values="0.32;1.8;0.32" dur="1.15s" repeatCount="1" />
+                    <animate attributeName="x" values={`${trace.displayX - 0.09};${trace.displayX - 0.45};${trace.displayX - 0.09}`} dur="1.15s" repeatCount="1" />
+                    <animate attributeName="y" values={`${trace.displayY - 0.09};${trace.displayY - 0.45};${trace.displayY - 0.09}`} dur="1.15s" repeatCount="1" />
+                    <animate attributeName="width" values="0.18;0.9;0.18" dur="1.15s" repeatCount="1" />
+                    <animate attributeName="height" values="0.18;0.9;0.18" dur="1.15s" repeatCount="1" />
                     <animate attributeName="opacity" values="0.42;0;0" dur="1.15s" repeatCount="1" />
                   </rect>
                 )}
                 {isActive && (
                   <rect
-                    x={trace.displayX - 0.42}
-                    y={trace.displayY - 0.42}
-                    width={0.84}
-                    height={0.84}
+                    x={trace.displayX - 0.22}
+                    y={trace.displayY - 0.22}
+                    width={0.44}
+                    height={0.44}
                     fill="none"
                     stroke="rgba(255,196,79,0.44)"
                     strokeWidth="0.12"
@@ -1043,30 +1064,30 @@ function TraceMap({
           {previewTrace && (
             <g key={`preview-${previewTrace.regionKey}`} style={{ pointerEvents: "none" }}>
               <rect
-                x={previewTrace.displayX - 0.18}
-                y={previewTrace.displayY - 0.18}
-                width={0.36}
-                height={0.36}
+                x={previewTrace.displayX - 0.12}
+                y={previewTrace.displayY - 0.12}
+                width={0.24}
+                height={0.24}
                 fill="rgba(255,196,79,0.98)"
               />
               <rect
-                x={previewTrace.displayX - 0.25}
-                y={previewTrace.displayY - 0.25}
-                width={0.5}
-                height={0.5}
+                x={previewTrace.displayX - 0.14}
+                y={previewTrace.displayY - 0.14}
+                width={0.28}
+                height={0.28}
                 fill="rgba(255,196,79,0.22)"
               >
-                <animate attributeName="x" values={`${previewTrace.displayX - 0.25};${previewTrace.displayX - 1.05};${previewTrace.displayX - 0.25}`} dur="1.1s" repeatCount="1" />
-                <animate attributeName="y" values={`${previewTrace.displayY - 0.25};${previewTrace.displayY - 1.05};${previewTrace.displayY - 0.25}`} dur="1.1s" repeatCount="1" />
-                <animate attributeName="width" values="0.5;2.1;0.5" dur="1.1s" repeatCount="1" />
-                <animate attributeName="height" values="0.5;2.1;0.5" dur="1.1s" repeatCount="1" />
+                <animate attributeName="x" values={`${previewTrace.displayX - 0.14};${previewTrace.displayX - 0.55};${previewTrace.displayX - 0.14}`} dur="1.1s" repeatCount="1" />
+                <animate attributeName="y" values={`${previewTrace.displayY - 0.14};${previewTrace.displayY - 0.55};${previewTrace.displayY - 0.14}`} dur="1.1s" repeatCount="1" />
+                <animate attributeName="width" values="0.28;1.1;0.28" dur="1.1s" repeatCount="1" />
+                <animate attributeName="height" values="0.28;1.1;0.28" dur="1.1s" repeatCount="1" />
                 <animate attributeName="opacity" values="0.38;0;0" dur="1.1s" repeatCount="1" />
               </rect>
               <rect
-                x={previewTrace.displayX - 0.42}
-                y={previewTrace.displayY - 0.42}
-                width={0.84}
-                height={0.84}
+                x={previewTrace.displayX - 0.22}
+                y={previewTrace.displayY - 0.22}
+                width={0.44}
+                height={0.44}
                 fill="none"
                 stroke="rgba(255,196,79,0.44)"
                 strokeWidth="0.12"
@@ -1078,9 +1099,17 @@ function TraceMap({
 
       {activePublicTrace && activePopupPosition && (
         <div
-          className="pointer-events-none absolute z-20 w-[122px] overflow-hidden rounded-[18px] border border-white/12 bg-[rgba(8,11,16,0.88)] shadow-[0_18px_40px_rgba(0,0,0,0.32)] backdrop-blur-xl"
+          className="absolute z-20 w-[122px] overflow-hidden rounded-[18px] border border-white/12 bg-[rgba(8,11,16,0.88)] shadow-[0_18px_40px_rgba(0,0,0,0.32)] backdrop-blur-xl"
           style={{ left: activePopupPosition.left, top: activePopupPosition.top }}
         >
+          <button
+            type="button"
+            onClick={() => onPickTrace(null)}
+            className="absolute right-1.5 top-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-black/42 text-[11px] font-black text-white/82"
+            aria-label="선택 해제"
+          >
+            ×
+          </button>
           {activePublicTrace.publicImageUrl ? (
             <img src={activePublicTrace.publicImageUrl} alt="" className="aspect-[4/5] w-full object-cover" />
           ) : null}
