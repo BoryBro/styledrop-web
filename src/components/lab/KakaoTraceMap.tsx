@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type GeoDisplayTrace = {
   user_id: string;
@@ -160,12 +160,12 @@ export default function KakaoTraceMap({
     return counts;
   }, [traces]);
 
-  // 축소 시 hotspot glow: 3개 이상 닷이 있는 지역의 클러스터 중심
+  // 축소 시 hotspot glow: 5개 이상 닷이 있는 지역의 클러스터 중심
   const hotspots = useMemo(() => {
     const map = new Map<string, { x: number; y: number; count: number; key: string }>();
     dotPositions.forEach(({ trace, x, y }) => {
       const count = regionCounts.get(trace.regionKey) ?? 1;
-      if (count < 3) return;
+      if (count < 5) return;
       const existing = map.get(trace.regionKey);
       if (existing) {
         existing.x = (existing.x + x) / 2;
@@ -356,25 +356,25 @@ export default function KakaoTraceMap({
             0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
             50% { transform: translate(-50%, -50%) scale(1.9); opacity: 0.4; }
           }
-          /* tier 0: 1~2개 */
+          /* tier 0: 1~4개 — 작은 원점 */
           @keyframes dotGlow {
-            0%, 100% { box-shadow: 0 0 4px 1px rgba(0,255,200,0.85), 0 0 10px 2px rgba(0,255,200,0.35); }
-            50%       { box-shadow: 0 0 7px 2px rgba(0,255,200,1),    0 0 18px 5px rgba(0,255,200,0.55); }
+            0%, 100% { box-shadow: 0 0 3px 1px rgba(0,255,200,0.7), 0 0 8px 2px rgba(0,255,200,0.28); }
+            50%       { box-shadow: 0 0 6px 2px rgba(0,255,200,0.95), 0 0 14px 4px rgba(0,255,200,0.45); }
           }
-          /* tier 1: 3~4개 */
+          /* tier 1: 5~14개 — 원점 + 얇은 링 */
           @keyframes dotGlowMed {
-            0%, 100% { box-shadow: 0 0 6px 2px rgba(0,255,200,1), 0 0 16px 4px rgba(0,255,200,0.55); }
-            50%       { box-shadow: 0 0 11px 4px rgba(0,255,200,1), 0 0 30px 8px rgba(0,255,200,0.8); }
+            0%, 100% { box-shadow: 0 0 5px 2px rgba(0,255,200,1), 0 0 14px 4px rgba(0,255,200,0.5); }
+            50%       { box-shadow: 0 0 9px 3px rgba(0,255,200,1), 0 0 26px 7px rgba(0,255,200,0.75); }
           }
-          /* tier 2: 5~9개 */
+          /* tier 2: 15~29개 — 원점 + 굵은 링 */
           @keyframes dotGlowHigh {
-            0%, 100% { box-shadow: 0 0 8px 3px rgba(0,255,200,1), 0 0 22px 6px rgba(0,255,200,0.65); }
-            50%       { box-shadow: 0 0 16px 6px rgba(0,255,200,1), 0 0 44px 14px rgba(0,255,200,0.9); }
+            0%, 100% { box-shadow: 0 0 7px 3px rgba(0,255,200,1), 0 0 20px 6px rgba(0,255,200,0.6); }
+            50%       { box-shadow: 0 0 14px 5px rgba(0,255,200,1), 0 0 40px 12px rgba(0,255,200,0.88); }
           }
-          /* tier 3: 10개 이상 */
+          /* tier 3: 30개 이상 — 다이아몬드 */
           @keyframes dotGlowMax {
-            0%, 100% { box-shadow: 0 0 10px 4px rgba(0,255,200,1), 0 0 28px 8px rgba(0,255,200,0.75), 0 0 55px 16px rgba(0,255,200,0.35); }
-            50%       { box-shadow: 0 0 18px 7px rgba(0,255,200,1), 0 0 55px 18px rgba(0,255,200,1),   0 0 90px 28px rgba(0,255,200,0.55); }
+            0%, 100% { box-shadow: 0 0 9px 4px rgba(0,255,200,1), 0 0 24px 8px rgba(0,255,200,0.7), 0 0 50px 14px rgba(0,255,200,0.3); }
+            50%       { box-shadow: 0 0 16px 6px rgba(0,255,200,1), 0 0 50px 16px rgba(0,255,200,0.95), 0 0 80px 26px rgba(0,255,200,0.5); }
           }
           @keyframes dotGlowActive {
             0%, 100% { box-shadow: 0 0 5px 1px rgba(255,230,0,0.9), 0 0 14px 2px rgba(255,230,0,0.45); }
@@ -389,19 +389,104 @@ export default function KakaoTraceMap({
           const isActive = activeTrace?.user_id === trace.user_id;
           const isPulse = pulseUserId === trace.user_id;
           const count = regionCounts.get(trace.regionKey) ?? 1;
-          const tier = count >= 10 ? 3 : count >= 5 ? 2 : count >= 3 ? 1 : 0;
-          const dotSize = isActive ? 8 : tier >= 2 ? 7 : 6;
+          // 새 티어 기준: 1~4 / 5~14 / 15~29 / 30+
+          const tier = count >= 30 ? 3 : count >= 15 ? 2 : count >= 5 ? 1 : 0;
+          const color = isActive ? "#FFE600" : "#00FFC8";
+          const glowRGB = isActive ? "255,230,0" : "0,255,200";
           const glowAnim = isPulse
             ? "traceDotPulse 1.1s ease-out 1"
             : isActive
               ? "dotGlowActive 1.4s ease-in-out infinite"
               : tier === 3
-                ? "dotGlowMax 0.85s ease-in-out infinite"
+                ? "dotGlowMax 0.9s ease-in-out infinite"
                 : tier === 2
-                  ? "dotGlowHigh 1.15s ease-in-out infinite"
+                  ? "dotGlowHigh 1.2s ease-in-out infinite"
                   : tier === 1
-                    ? "dotGlowMed 1.55s ease-in-out infinite"
-                    : "dotGlow 2s ease-in-out infinite";
+                    ? "dotGlowMed 1.7s ease-in-out infinite"
+                    : "dotGlow 2.5s ease-in-out infinite";
+
+          // 티어별 닷 모양
+          let dotContent: ReactNode;
+          if (tier === 3) {
+            // 다이아몬드 (30개+)
+            dotContent = (
+              <span style={{
+                display: "block",
+                width: isActive ? 12 : 10,
+                height: isActive ? 12 : 10,
+                background: color,
+                transform: "rotate(45deg)",
+                outline: "1px solid rgba(0,0,0,0.55)",
+                outlineOffset: "0px",
+                animation: glowAnim,
+              }} />
+            );
+          } else if (tier === 2) {
+            // 굵은 링 + 원점 (15~29개)
+            dotContent = (
+              <span style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                border: `2px solid rgba(${glowRGB},0.65)`,
+                flexShrink: 0,
+              }}>
+                <span style={{
+                  display: "block",
+                  width: isActive ? 9 : 7,
+                  height: isActive ? 9 : 7,
+                  background: color,
+                  borderRadius: "50%",
+                  outline: "1px solid rgba(0,0,0,0.45)",
+                  outlineOffset: "0px",
+                  animation: glowAnim,
+                }} />
+              </span>
+            );
+          } else if (tier === 1) {
+            // 얇은 링 + 원점 (5~14개)
+            dotContent = (
+              <span style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 16,
+                height: 16,
+                borderRadius: "50%",
+                border: `1px solid rgba(${glowRGB},0.35)`,
+                flexShrink: 0,
+              }}>
+                <span style={{
+                  display: "block",
+                  width: isActive ? 8 : 6,
+                  height: isActive ? 8 : 6,
+                  background: color,
+                  borderRadius: "50%",
+                  outline: "1px solid rgba(0,0,0,0.45)",
+                  outlineOffset: "0px",
+                  animation: glowAnim,
+                }} />
+              </span>
+            );
+          } else {
+            // 작은 원점 (1~4개)
+            dotContent = (
+              <span style={{
+                display: "block",
+                width: isActive ? 8 : 5,
+                height: isActive ? 8 : 5,
+                background: color,
+                borderRadius: "50%",
+                outline: "1px solid rgba(0,0,0,0.45)",
+                outlineOffset: "0px",
+                animation: glowAnim,
+              }} />
+            );
+          }
+
           return (
             <button
               key={trace.user_id}
@@ -411,8 +496,8 @@ export default function KakaoTraceMap({
               style={{
                 left: x,
                 top: y,
-                width: 26,
-                height: 26,
+                width: 28,
+                height: 28,
                 transform: "translate(-50%, -50%)",
                 display: "flex",
                 alignItems: "center",
@@ -424,18 +509,7 @@ export default function KakaoTraceMap({
               }}
               onClick={() => onPickTrace(isActive ? null : trace)}
             >
-              <span
-                style={{
-                  display: "block",
-                  width: dotSize,
-                  height: dotSize,
-                  background: isActive ? "#FFE600" : "#00FFC8",
-                  borderRadius: "50%",
-                  outline: "1px solid rgba(0,0,0,0.5)",
-                  outlineOffset: "0px",
-                  animation: glowAnim,
-                }}
-              />
+              {dotContent}
             </button>
           );
         })}
