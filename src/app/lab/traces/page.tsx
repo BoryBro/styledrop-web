@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import koreaEmdTopology from "@tenqube/react-korea-bubble-map/dist/esm/emd-64475e77.js";
 import koreaSidoTopology from "@tenqube/react-korea-bubble-map/dist/esm/sido-0af932a3.js";
 import koreaSigunguTopology from "@tenqube/react-korea-bubble-map/dist/esm/sigungu-3878911c.js";
+import KakaoTraceMap from "@/components/lab/KakaoTraceMap";
 import { useAuth } from "@/hooks/useAuth";
 import {
   buildTraceJitter,
@@ -35,6 +36,11 @@ type Trace = {
 type DisplayTrace = Trace & {
   displayX: number;
   displayY: number;
+};
+
+type GeoDisplayTrace = DisplayTrace & {
+  lat: number;
+  lng: number;
 };
 
 type SelectableImage = {
@@ -138,6 +144,12 @@ const koreaSigunguMesh = mesh(
   (left, right) => left !== right,
 ) as never;
 
+const koreaEmdMesh = mesh(
+  typedKoreaEmdTopology as never,
+  typedKoreaEmdTopology.objects.emd as never,
+  (left, right) => left !== right,
+) as never;
+
 const projection = geoMercator().fitExtent(
   [
     [MAP_PADDING, MAP_PADDING],
@@ -150,8 +162,16 @@ const projection = geoMercator().fitExtent(
 );
 
 const pathBuilder = geoPath(projection);
+const koreaLandPath =
+  pathBuilder(
+    {
+      type: "FeatureCollection",
+      features: koreaFeatureCollection.features as never[],
+    } as never,
+  ) ?? "";
 const koreaSidoMeshPath = pathBuilder(koreaSidoMesh) ?? "";
 const koreaSigunguMeshPath = pathBuilder(koreaSigunguMesh) ?? "";
+const koreaEmdMeshPath = pathBuilder(koreaEmdMesh) ?? "";
 
 function buildRegionShape(featureItem: KoreaFeature) {
   const option = getSidoOption(featureItem.properties.KOR_NM);
@@ -426,6 +446,40 @@ function buildVisibleDistrictLabels(
   return selected;
 }
 
+function buildVisibleDongLabels(
+  bounds: { minX: number; maxX: number; minY: number; maxY: number },
+  zoom: number,
+) {
+  if (zoom < 10.5) return [];
+
+  const visible = dongMap.filter((region) => isInVisibleBounds(region.centroid, bounds, 1.2));
+  const step = zoom >= 15 ? 1 : zoom >= 12.5 ? 2 : 3;
+  const maxCount = zoom >= 15 ? 34 : zoom >= 12.5 ? 24 : 16;
+  const minDistance = zoom >= 15 ? 2.4 : zoom >= 12.5 ? 3 : 3.8;
+
+  const selected: RegionLabel[] = [];
+
+  visible
+    .filter((_, index) => index % step === 0)
+    .forEach((region) => {
+      if (selected.length >= maxCount) return;
+
+      const overlapped = selected.some(
+        (item) => Math.hypot(item.x - region.centroid.x, item.y - region.centroid.y) < minDistance,
+      );
+      if (overlapped) return;
+
+      selected.push({
+        id: region.code,
+        x: region.centroid.x,
+        y: region.centroid.y,
+        shortLabel: region.shortLabel,
+      });
+    });
+
+  return selected;
+}
+
 function formatOrdinalRank(value: number) {
   const mod100 = value % 100;
   if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
@@ -477,7 +531,6 @@ function TraceMap({
   traces,
   clusters,
   activeTrace,
-  activePublicTrace,
   previewTrace,
   pulseUserId,
   onPickTrace,
@@ -491,7 +544,6 @@ function TraceMap({
   traces: DisplayTrace[];
   clusters: TraceCluster[];
   activeTrace: DisplayTrace | null;
-  activePublicTrace: DisplayTrace | null;
   previewTrace: DisplayTrace | null;
   pulseUserId: string | null;
   onPickTrace: (trace: DisplayTrace | null) => void;
@@ -514,9 +566,42 @@ function TraceMap({
   const draggedRef = useRef(false);
   const zoomRef = useRef(zoom);
   const panRef = useRef(pan);
-  const detailLevel = zoom >= 4 ? "sigungu" : "sido";
-  const showProvinceLabels = zoom < 3.6;
-  const showDistrictLabels = zoom >= 4.8;
+  const detailLevel = zoom >= 4.5 ? "sigungu" : "sido";
+  const showProvinceLabels = zoom < 5;
+  const showDistrictLabels = zoom >= 5;
+  const getRenderMetrics = useCallback((rect: { width: number; height: number }) => {
+    if (!rect.width || !rect.height) {
+      return {
+        contentWidth: rect.width,
+        contentHeight: rect.height,
+        offsetX: 0,
+        offsetY: 0,
+      };
+    }
+
+    const viewRatio = MAP_WIDTH / MAP_HEIGHT;
+    const frameRatio = rect.width / rect.height;
+
+    if (frameRatio > viewRatio) {
+      const contentHeight = rect.height;
+      const contentWidth = rect.height * viewRatio;
+      return {
+        contentWidth,
+        contentHeight,
+        offsetX: (rect.width - contentWidth) / 2,
+        offsetY: 0,
+      };
+    }
+
+    const contentWidth = rect.width;
+    const contentHeight = rect.width / viewRatio;
+    return {
+      contentWidth,
+      contentHeight,
+      offsetX: 0,
+      offsetY: (rect.height - contentHeight) / 2,
+    };
+  }, []);
   const visibleBounds = useMemo(() => {
     const frame = mapFrameRef.current;
     if (!frame) {
@@ -524,45 +609,32 @@ function TraceMap({
     }
 
     const rect = frame.getBoundingClientRect();
+    const { contentWidth, contentHeight, offsetX, offsetY } = getRenderMetrics(rect);
     return {
-      minX: clamp((0 - pan.x) / (zoom * rect.width) * MAP_WIDTH, 0, MAP_WIDTH),
-      maxX: clamp((rect.width - pan.x) / (zoom * rect.width) * MAP_WIDTH, 0, MAP_WIDTH),
-      minY: clamp((0 - pan.y) / (zoom * rect.height) * MAP_HEIGHT, 0, MAP_HEIGHT),
-      maxY: clamp((rect.height - pan.y) / (zoom * rect.height) * MAP_HEIGHT, 0, MAP_HEIGHT),
+      minX: clamp((((0 - pan.x) / zoom) - offsetX) / contentWidth * MAP_WIDTH, 0, MAP_WIDTH),
+      maxX: clamp((((rect.width - pan.x) / zoom) - offsetX) / contentWidth * MAP_WIDTH, 0, MAP_WIDTH),
+      minY: clamp((((0 - pan.y) / zoom) - offsetY) / contentHeight * MAP_HEIGHT, 0, MAP_HEIGHT),
+      maxY: clamp((((rect.height - pan.y) / zoom) - offsetY) / contentHeight * MAP_HEIGHT, 0, MAP_HEIGHT),
     };
-  }, [pan.x, pan.y, zoom]);
+  }, [getRenderMetrics, pan.x, pan.y, zoom]);
   const provinceLabels = useMemo(() => buildVisibleRegionLabels(clusters), [clusters]);
   const districtLabels = useMemo(() => buildVisibleDistrictLabels(visibleBounds, zoom), [visibleBounds, zoom]);
   const screenPxToSvg = useCallback(
     (screenPx: number) => {
-      if (!frameSize.width || !zoom) return 0.3;
-      return (screenPx * MAP_WIDTH) / (frameSize.width * zoom);
+      if (!frameSize.width || !frameSize.height || !zoom) return 0.3;
+      const { contentWidth } = getRenderMetrics(frameSize);
+      return (screenPx * MAP_WIDTH) / (contentWidth * zoom);
     },
-    [frameSize.width, zoom],
+    [frameSize, getRenderMetrics, zoom],
   );
   const provinceFontSize = useMemo(() => {
     const px = zoom < 1.8 ? 22 : zoom < 2.6 ? 19 : zoom < 3.4 ? 16 : 13;
     return screenPxToSvg(px).toFixed(2);
   }, [screenPxToSvg, zoom]);
   const districtFontSize = useMemo(() => {
-    const px = zoom < 5.5 ? 18 : zoom < 7 ? 15 : 12;
+    const px = zoom < 7 ? 15 : zoom < 9.5 ? 13 : 11;
     return screenPxToSvg(px).toFixed(2);
   }, [screenPxToSvg, zoom]);
-  const activePopupPosition = useMemo(() => {
-    if (!activePublicTrace || !frameSize.width || !frameSize.height) return null;
-
-    const hasImage = Boolean(activePublicTrace.publicImageUrl);
-    const hasInstagram = Boolean(activePublicTrace.instagramHandle);
-    const popupWidth = hasImage ? 72 : 88;
-    const popupHeight = hasImage ? (hasInstagram ? 92 : 72) : 28;
-    const pointX = (activePublicTrace.displayX / MAP_WIDTH) * frameSize.width * zoom + pan.x;
-    const pointY = (activePublicTrace.displayY / MAP_HEIGHT) * frameSize.height * zoom + pan.y;
-
-    return {
-      left: clamp(pointX - popupWidth / 2, 8, Math.max(8, frameSize.width - popupWidth - 8)),
-      top: clamp(pointY - popupHeight - 12, 8, Math.max(8, frameSize.height - popupHeight - 8)),
-    };
-  }, [activePublicTrace, frameSize.height, frameSize.width, pan.x, pan.y, zoom]);
   const provinceCounts = useMemo(() => {
     const counts = new Map<string, number>();
 
@@ -584,6 +656,24 @@ function TraceMap({
 
     return counts;
   }, [traces]);
+  const nearbyTraceCards = useMemo(() => {
+    if (!activeTrace) return [];
+
+    const nearby = traces
+      .filter((trace) => trace.publicImageUrl || trace.instagramHandle)
+      .map((trace) => ({
+        trace,
+        distance: Math.hypot(trace.displayX - activeTrace.displayX, trace.displayY - activeTrace.displayY),
+      }))
+      .filter(({ distance }) => distance <= 18 || distance === 0)
+      .sort((left, right) => left.distance - right.distance)
+      .slice(0, 12)
+      .map(({ trace }) => trace);
+
+    if (nearby.length > 0) return nearby;
+
+    return activeTrace.publicImageUrl || activeTrace.instagramHandle ? [activeTrace] : [];
+  }, [activeTrace, traces]);
 
   const clampPan = useCallback((nextZoom: number, nextPan: { x: number; y: number }) => {
     const frame = mapFrameRef.current;
@@ -607,12 +697,13 @@ function TraceMap({
       if (!frame) return null;
 
       const rect = frame.getBoundingClientRect();
+      const { contentWidth, contentHeight, offsetX, offsetY } = getRenderMetrics(rect);
       return clampPan(nextZoom, {
-        x: rect.width / 2 - (targetX / MAP_WIDTH) * rect.width * nextZoom,
-        y: rect.height / 2 - (targetY / MAP_HEIGHT) * rect.height * nextZoom,
+        x: rect.width / 2 - nextZoom * (offsetX + (targetX / MAP_WIDTH) * contentWidth),
+        y: rect.height / 2 - nextZoom * (offsetY + (targetY / MAP_HEIGHT) * contentHeight),
       });
     },
-    [clampPan],
+    [clampPan, getRenderMetrics],
   );
 
   useEffect(() => {
@@ -653,22 +744,23 @@ function TraceMap({
       }
 
       const rect = frame.getBoundingClientRect();
+      const { contentWidth, contentHeight, offsetX, offsetY } = getRenderMetrics(rect);
       const focalX = clientX !== undefined ? clientX - rect.left : rect.width / 2;
       const focalY = clientY !== undefined ? clientY - rect.top : rect.height / 2;
       const currentZoom = zoomRef.current;
       const currentPan = panRef.current;
-      const svgX = (focalX - currentPan.x) / (currentZoom * rect.width) * MAP_WIDTH;
-      const svgY = (focalY - currentPan.y) / (currentZoom * rect.height) * MAP_HEIGHT;
+      const svgX = ((((focalX - currentPan.x) / currentZoom) - offsetX) / contentWidth) * MAP_WIDTH;
+      const svgY = ((((focalY - currentPan.y) / currentZoom) - offsetY) / contentHeight) * MAP_HEIGHT;
 
       setZoom(boundedZoom);
       setPan(
         clampPan(boundedZoom, {
-          x: focalX - (svgX / MAP_WIDTH) * rect.width * boundedZoom,
-          y: focalY - (svgY / MAP_HEIGHT) * rect.height * boundedZoom,
+          x: focalX - boundedZoom * (offsetX + (svgX / MAP_WIDTH) * contentWidth),
+          y: focalY - boundedZoom * (offsetY + (svgY / MAP_HEIGHT) * contentHeight),
         }),
       );
     },
-    [clampPan],
+    [clampPan, getRenderMetrics],
   );
 
   const updateZoom = useCallback(
@@ -707,15 +799,7 @@ function TraceMap({
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle at 22% 18%, rgba(73,140,255,0.18) 0%, transparent 28%), radial-gradient(circle at 78% 80%, rgba(84,255,196,0.12) 0%, transparent 30%), linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 100%)",
-        }}
-      />
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
-          backgroundSize: "34px 34px",
+            "radial-gradient(circle at 20% 16%, rgba(60,120,255,0.22) 0%, transparent 32%), radial-gradient(circle at 80% 82%, rgba(67,231,184,0.16) 0%, transparent 34%), radial-gradient(circle at 50% 50%, rgba(10,14,22,0.6) 0%, transparent 70%)",
         }}
       />
 
@@ -919,10 +1003,11 @@ function TraceMap({
           if (!frame) return;
 
           const rect = frame.getBoundingClientRect();
+          const { contentWidth, contentHeight, offsetX, offsetY } = getRenderMetrics(rect);
           const localX = event.clientX - rect.left;
           const localY = event.clientY - rect.top;
-          const svgX = (localX - pan.x) / zoom / rect.width * MAP_WIDTH;
-          const svgY = (localY - pan.y) / zoom / rect.height * MAP_HEIGHT;
+          const svgX = ((((localX - pan.x) / zoom) - offsetX) / contentWidth) * MAP_WIDTH;
+          const svgY = ((((localY - pan.y) / zoom) - offsetY) / contentHeight) * MAP_HEIGHT;
           const invert = projection.invert;
           if (!invert) return;
           const coordinates = invert([svgX, svgY]);
@@ -946,27 +1031,17 @@ function TraceMap({
             WebkitTouchCallout: "none",
           }}
         >
-          <defs>
-            <filter id="trace-blur">
-              <feGaussianBlur stdDeviation="2.2" />
-            </filter>
-          </defs>
+
+          <path d={koreaLandPath} fill="rgba(7,10,16,0.99)" />
 
           {detailLevel === "sido" &&
             provinceMap.map((region) => {
               const count = provinceCounts.get(region.label) ?? 0;
-              const activeAlpha = count === 0 ? 0 : Math.min(0.18 + count * 0.04, 0.42);
+              if (count === 0) return null;
+              const fillAlpha = Math.min(0.24 + count * 0.06, 0.62);
 
               return (
-                <g key={region.code}>
-                  <path d={region.path} fill="rgba(12,17,24,0.98)" />
-                  {count > 0 && (
-                    <path
-                      d={region.path}
-                      fill={`rgba(91, 224, 197, ${activeAlpha})`}
-                    />
-                  )}
-                </g>
+                <path key={region.code} d={region.path} fill={`rgba(91, 224, 197, ${fillAlpha})`} />
               );
             })}
 
@@ -974,29 +1049,25 @@ function TraceMap({
             districtMap.map((region) => {
               const province = provinceMap.find((item) => item.code.slice(0, 2) === region.code.slice(0, 2));
               const count = districtCounts.get(`${province?.label ?? ""}|${region.normalizedLabel}`) ?? 0;
-              const activeAlpha = count === 0 ? 0 : Math.min(0.14 + count * 0.05, 0.38);
+              if (count === 0) return null;
+              const fillAlpha = Math.min(0.18 + count * 0.065, 0.58);
 
               return (
-                <g key={region.code}>
-                  <path d={region.path} fill="rgba(11,15,21,0.98)" />
-                  {count > 0 && (
-                    <path
-                      d={region.path}
-                      fill={`rgba(91, 224, 197, ${activeAlpha})`}
-                    />
-                  )}
-                </g>
+                <path key={region.code} d={region.path} fill={`rgba(91, 224, 197, ${fillAlpha})`} />
               );
             })}
+
 
           {detailLevel === "sido" && (
             <path
               d={koreaSidoMeshPath}
               fill="none"
-              stroke="rgba(255,255,255,0.11)"
-              strokeWidth="0.16"
+              stroke="rgba(120,200,180,0.5)"
+              strokeWidth="0.5"
               strokeLinejoin="round"
               strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+              shapeRendering="geometricPrecision"
             />
           )}
 
@@ -1004,39 +1075,16 @@ function TraceMap({
             <path
               d={koreaSigunguMeshPath}
               fill="none"
-              stroke="rgba(255,255,255,0.095)"
-              strokeWidth="0.07"
+              stroke="rgba(120,200,180,0.38)"
+              strokeWidth="0.5"
               strokeLinejoin="round"
               strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+              shapeRendering="geometricPrecision"
             />
           )}
 
-          {zoom <= 1.65 &&
-            clusters
-              .filter((cluster) => cluster.count >= 10)
-              .map((cluster) => {
-                const blobSize = 0.9 + Math.min(cluster.count - 9, 20) * 0.12;
-                const opacity = Math.min(0.22, 0.08 + (cluster.count - 9) * 0.012);
 
-                return (
-                  <g key={`${cluster.key}-glow`}>
-                    <circle
-                      cx={cluster.x}
-                      cy={cluster.y}
-                      r={blobSize * 2.2}
-                      fill={`rgba(79, 151, 255, ${opacity * 0.65})`}
-                      filter="url(#trace-blur)"
-                    />
-                    <circle
-                      cx={cluster.x}
-                      cy={cluster.y}
-                      r={blobSize * 1.18}
-                      fill={`rgba(67, 231, 184, ${opacity})`}
-                      filter="url(#trace-blur)"
-                    />
-                  </g>
-                );
-              })}
 
           {showProvinceLabels &&
             provinceLabels.map((region) => (
@@ -1108,8 +1156,18 @@ function TraceMap({
                   y={trace.displayY - squareSize / 2}
                   width={squareSize}
                   height={squareSize}
-                  fill={isActive ? "rgba(255,196,79,0.98)" : "rgba(255,255,255,0.92)"}
-                />
+                  fill={isActive ? "rgba(255,196,79,1)" : "rgba(255,255,255,0.97)"}
+                >
+                  {!isActive && (
+                    <animate
+                      attributeName="opacity"
+                      values="0.55;1;0.7;1;0.55"
+                      dur={`${2.4 + ((Math.round(trace.displayX * 17 + trace.displayY * 23)) % 100) / 100 * 2.4}s`}
+                      begin={`-${((Math.round(trace.displayX * 13 + trace.displayY * 19)) % 100) / 100 * 2.2}s`}
+                      repeatCount="indefinite"
+                    />
+                  )}
+                </rect>
                 {shouldPulse && (
                   <rect
                     x={trace.displayX - screenPxToSvg(4)}
@@ -1216,32 +1274,31 @@ function TraceMap({
         </svg>
       </div>
 
-      {activePublicTrace && activePopupPosition && (
-        <div
-          className="pointer-events-none absolute z-20"
-          style={{ left: activePopupPosition.left, top: activePopupPosition.top }}
-        >
-          <div className="pointer-events-auto flex flex-col items-center gap-1.5">
-            {activePublicTrace.publicImageUrl ? (
-              <button
-                type="button"
-                onClick={() => onPickTrace(null)}
-                className="overflow-hidden rounded-[10px] border border-white/12 bg-[rgba(8,11,16,0.92)] shadow-[0_14px_32px_rgba(0,0,0,0.34)]"
-                aria-label="선택 해제"
-              >
-                <img src={activePublicTrace.publicImageUrl} alt="" className="h-[72px] w-[72px] object-cover" />
-              </button>
-            ) : null}
-            {activePublicTrace.instagramHandle ? (
-              <button
-                type="button"
-                onClick={() => onPickTrace(null)}
-                className="max-w-[112px] truncate rounded-full border border-white/10 bg-[rgba(8,11,16,0.9)] px-2 py-1 text-[10px] font-bold text-[#6BE2C5] shadow-[0_10px_24px_rgba(0,0,0,0.28)]"
-                aria-label="선택 해제"
-              >
-                @{activePublicTrace.instagramHandle}
-              </button>
-            ) : null}
+      {nearbyTraceCards.length > 0 && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-3">
+          <div className="pointer-events-auto flex max-w-[calc(100%-24px)] gap-2 overflow-x-auto rounded-[18px] border border-white/10 bg-[rgba(8,11,16,0.84)] px-2.5 py-2 shadow-[0_18px_40px_rgba(0,0,0,0.34)] backdrop-blur-xl">
+            {nearbyTraceCards.map((trace) => {
+              const selected = activeTrace?.user_id === trace.user_id;
+              return (
+                <button
+                  key={`${trace.user_id}-${trace.regionKey}-card`}
+                  type="button"
+                  onClick={() => onPickTrace(selected ? null : trace)}
+                  className={`shrink-0 overflow-hidden rounded-[14px] border transition ${
+                    selected ? "border-[#FFC44F] shadow-[0_0_0_1px_rgba(255,196,79,0.24)]" : "border-white/10"
+                  }`}
+                  aria-label="흔적 보기"
+                >
+                  {trace.publicImageUrl ? (
+                    <img src={trace.publicImageUrl} alt="" className="h-[64px] w-[64px] object-cover" />
+                  ) : (
+                    <div className="flex h-[64px] w-[64px] items-center justify-center bg-white/[0.04] px-2 text-center text-[10px] font-bold text-[#6BE2C5]">
+                      @{trace.instagramHandle}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1321,15 +1378,27 @@ export default function TraceLabPage() {
   }, [pulseUserId]);
 
   const displayTraces = useMemo(() => (payload?.traces ?? []).map(buildDisplayTrace), [payload?.traces]);
+  const geoDisplayTraces = useMemo<GeoDisplayTrace[]>(
+    () =>
+      displayTraces.map((trace) => {
+        const inverted = projection.invert?.([trace.displayX, trace.displayY]);
+        return {
+          ...trace,
+          lng: inverted?.[0] ?? 127.8,
+          lat: inverted?.[1] ?? 36.4,
+        };
+      }),
+    [displayTraces],
+  );
   const activeDisplayTrace = useMemo(
-    () => displayTraces.find((trace) => trace.user_id === activeTrace?.user_id) ?? null,
-    [activeTrace?.user_id, displayTraces],
+    () => geoDisplayTraces.find((trace) => trace.user_id === activeTrace?.user_id) ?? null,
+    [activeTrace?.user_id, geoDisplayTraces],
   );
   const selectedImage = useMemo(
     () => payload?.me.selectableImages.find((image) => image.id === form.selectedImageId) ?? null,
     [form.selectedImageId, payload?.me.selectableImages],
   );
-  const previewDisplayTrace = useMemo(() => {
+  const previewDisplayTrace = useMemo<GeoDisplayTrace | null>(() => {
     if (!user || payload?.me.alreadyJoined) return null;
     const normalizedSido = normalizeSido(form.sido);
     const normalizedSigungu = normalizeRegionPart(form.sigungu);
@@ -1337,7 +1406,7 @@ export default function TraceLabPage() {
 
     if (!normalizedSido || !normalizedSigungu) return null;
 
-    return buildDisplayTrace({
+    const built = buildDisplayTrace({
       user_id: user.id,
       sido: normalizedSido,
       sigungu: normalizedSigungu,
@@ -1350,8 +1419,14 @@ export default function TraceLabPage() {
       instagramHandle: form.shareInstagram ? form.instagramHandle.trim().replace(/^@+/, "") || null : null,
       created_at: null,
     });
+    const inverted = projection.invert?.([built.displayX, built.displayY]);
+    return {
+      ...built,
+      lng: inverted?.[0] ?? 127.8,
+      lat: inverted?.[1] ?? 36.4,
+    };
   }, [form.dong, form.instagramHandle, form.shareImage, form.shareInstagram, form.sido, form.sigungu, payload?.me.alreadyJoined, selectedImage?.result_image_url, user]);
-  const clusters = useMemo(() => buildClusters(displayTraces), [displayTraces]);
+  const clusters = useMemo(() => buildClusters(geoDisplayTraces), [geoDisplayTraces]);
   const cityHotspots = useMemo(() => {
     const counts = new Map<string, { sido: string; label: string; count: number }>();
 
@@ -1540,13 +1615,9 @@ export default function TraceLabPage() {
         ? payload.me.trace.regionLabel
         : previewDisplayTrace?.regionLabel ?? "시 / 구 / 동을 고르거나 자동 입력";
   const canQuickSubmit = Boolean(user && payload?.me.eligible && !payload?.me.alreadyJoined && previewDisplayTrace);
-  const activePublicTrace =
-    activeDisplayTrace && (activeDisplayTrace.publicImageUrl || activeDisplayTrace.instagramHandle)
-      ? activeDisplayTrace
-      : null;
   const myDisplayTrace = useMemo(
-    () => displayTraces.find((trace) => trace.user_id === payload?.me.trace?.user_id) ?? null,
-    [displayTraces, payload?.me.trace?.user_id],
+    () => geoDisplayTraces.find((trace) => trace.user_id === payload?.me.trace?.user_id) ?? null,
+    [geoDisplayTraces, payload?.me.trace?.user_id],
   );
 
   const participationOverlay = !loading ? (
@@ -1798,15 +1869,14 @@ export default function TraceLabPage() {
 
   return (
     <div className="min-h-screen bg-[#06070A] text-white">
-      <header className="sticky top-0 z-40 border-b border-white/8 bg-[#06070A]/88 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#6BE2C5]">StyleDrop Lab</p>
-            <h1 className="mt-1 text-[22px] font-black tracking-[-0.04em] text-white">실험실 흔적 지도</h1>
-          </div>
-          <Link href="/studio" className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-[13px] font-bold text-white/80">
-            실험실로 돌아가기
+      <header className="sticky top-0 z-40 border-b border-white/6 bg-[#06070A]/90 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+          <Link href="/studio" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 transition hover:text-white/90">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </Link>
+          <p className="text-[14px] font-bold tracking-[-0.02em] text-white/80">흔적 지도</p>
         </div>
       </header>
 
@@ -1822,56 +1892,51 @@ export default function TraceLabPage() {
           ))}
         </datalist>
 
-        <section className="mb-5 overflow-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(135deg,rgba(18,24,33,0.82)_0%,rgba(12,17,24,0.66)_48%,rgba(16,27,34,0.74)_100%)] px-4 py-3 shadow-[0_22px_54px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl sm:px-5">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-          <div className="pointer-events-none absolute -left-10 top-1/2 h-24 w-24 -translate-y-1/2 rounded-full bg-[#66E6C9]/10 blur-3xl" />
-          <div className="pointer-events-none absolute right-0 top-0 h-20 w-28 rounded-full bg-[#5A8FFF]/10 blur-3xl" />
-
-          <div className="relative flex flex-wrap items-center gap-x-3 gap-y-2 sm:flex-nowrap sm:gap-x-4">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <span className="text-[14px] font-semibold tracking-[-0.03em] text-white/52">참여자</span>
-              <span className="text-[14px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.04em] text-[#C9571A]">
+        <section className="mb-5 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            <div className="flex items-baseline gap-1">
+              <span className="text-[20px] font-black leading-none tracking-tight text-[#C9571A]">
                 {payload?.summary.totalParticipants ?? 0}
               </span>
+              <span className="text-[11px] text-white/38">명</span>
             </div>
-            <span className="text-white/18">/</span>
-            <div className="flex min-w-0 items-center gap-1.5">
-              <span className="text-[14px] font-semibold tracking-[-0.03em] text-white/52">지역</span>
-              <span className="text-[14px] font-[family-name:var(--font-outfit)] font-black tracking-[-0.04em] text-[#C9571A]">
+            <div className="h-3 w-px bg-white/10" />
+            <div className="flex items-baseline gap-1">
+              <span className="text-[20px] font-black leading-none tracking-tight text-[#C9571A]">
                 {payload?.summary.totalRegions ?? 0}
               </span>
+              <span className="text-[11px] text-white/38">곳</span>
             </div>
-            <span className="text-white/18">/</span>
-            <div className="flex min-w-0 items-center gap-2 sm:flex-1">
-              <span className="shrink-0 text-[14px] font-semibold tracking-[-0.03em] text-white/52">가장 밝은 흔적</span>
-              <span className="truncate text-[14px] font-semibold tracking-[-0.03em] text-white/92">
-                {payload?.summary.hottestRegion?.label ?? "아직 첫 흔적을 기다리는 중"}
+            <div className="h-3 w-px bg-white/10" />
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+              <span className="shrink-0 text-[10px] text-white/32">가장 밝은</span>
+              <span className="truncate text-[12px] font-medium tracking-[-0.02em] text-white/75">
+                {payload?.summary.hottestRegion?.label ?? "—"}
               </span>
             </div>
           </div>
 
           {cityHotspots.length > 0 && (
-            <div className="relative mt-2.5 overflow-x-auto border-t border-white/8 pt-2.5">
-              <div className="flex min-w-max items-center gap-4 px-0.5">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/32">hotspots</span>
-              {cityHotspots.map((hotspot, index) => (
-                <button
-                  key={hotspot.sido}
-                  onClick={() => {
-                    const picked = displayTraces.find((trace) => normalizeSido(trace.sido) === hotspot.sido) ?? null;
-                    if (picked) {
-                      setActiveTrace(picked);
-                      setPulseUserId(picked.user_id);
-                    }
-                  }}
-                  className="text-left text-[11px] font-semibold tracking-[-0.02em] text-white/62 transition hover:text-white/88"
-                >
-                  <span className="text-[#6BE2C5]">{formatOrdinalRank(index + 1)}</span>{" "}
-                  <span className="text-white/84">{hotspot.label}</span>{" "}
-                  <span className="text-white/42">{hotspot.count}명</span>
-                </button>
-              ))}
-            </div>
+            <div className="mt-2.5 overflow-x-auto border-t border-white/8 pt-2.5">
+              <div className="flex min-w-max items-center gap-2">
+                {cityHotspots.map((hotspot, index) => (
+                  <button
+                    key={hotspot.sido}
+                    onClick={() => {
+                      const picked = geoDisplayTraces.find((trace) => normalizeSido(trace.sido) === hotspot.sido) ?? null;
+                      if (picked) {
+                        setActiveTrace(picked);
+                        setPulseUserId(picked.user_id);
+                      }
+                    }}
+                    className="flex items-center gap-1 rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-0.5 text-left transition hover:border-white/14 hover:bg-white/[0.07]"
+                  >
+                    <span className="text-[10px] font-bold text-[#6BE2C5]">{formatOrdinalRank(index + 1)}</span>
+                    <span className="text-[11px] text-white/70">{hotspot.label}</span>
+                    <span className="text-[10px] text-white/32">{hotspot.count}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </section>
@@ -1883,11 +1948,9 @@ export default function TraceLabPage() {
                 흔적 지도를 불러오는 중...
               </div>
             ) : (
-              <TraceMap
-                traces={displayTraces}
-                clusters={clusters}
+              <KakaoTraceMap
+                traces={geoDisplayTraces}
                 activeTrace={activeDisplayTrace}
-                activePublicTrace={activePublicTrace}
                 previewTrace={previewDisplayTrace}
                 pulseUserId={pulseUserId}
                 onPickTrace={setActiveTrace}
@@ -1901,6 +1964,8 @@ export default function TraceLabPage() {
                 canRemoveMyTrace={Boolean(!loading && user && payload?.me.alreadyJoined)}
                 removing={removing}
                 onRemoveMyTrace={handleRemoveMyTrace}
+                onLocateCurrent={fillFromCurrentLocation}
+                locating={locating}
               />
             )}
             {participationOverlay && <div className="mt-4">{participationOverlay}</div>}
