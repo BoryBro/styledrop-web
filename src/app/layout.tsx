@@ -9,9 +9,53 @@ const boldonse = Boldonse({ subsets: ["latin"], weight: "400", variable: "--font
 const outfit = Outfit({ subsets: ["latin"], weight: ["600", "700", "900"], variable: "--font-outfit" });
 const unbounded = Unbounded({ subsets: ["latin"], weight: ["600"], variable: "--font-unbounded" });
 
+const BASE_URL = "https://styledrop.cloud";
+
 export const metadata: Metadata = {
-  title: "StyleDrop",
-  description: "사진 한 장, 감성은 AI가",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: "StyleDrop — AI 스타일 분석",
+    template: "%s | StyleDrop",
+  },
+  description: "사진 한 장으로 AI가 나에게 맞는 스타일을 분석해드려요. 퍼스널컬러, 얼굴형, 패션 추천까지.",
+  keywords: ["AI 스타일 분석", "퍼스널컬러", "AI 패션 추천", "얼굴형 분석", "스타일드랍", "StyleDrop"],
+  authors: [{ name: "StyleDrop" }],
+  creator: "StyleDrop",
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: BASE_URL,
+    siteName: "StyleDrop",
+    title: "StyleDrop — AI 스타일 분석",
+    description: "사진 한 장으로 AI가 나에게 맞는 스타일을 분석해드려요.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "StyleDrop — AI 스타일 분석",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "StyleDrop — AI 스타일 분석",
+    description: "사진 한 장으로 AI가 나에게 맞는 스타일을 분석해드려요.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: BASE_URL,
+  },
 };
 
 export default function RootLayout({
