@@ -42,6 +42,35 @@ type GeneratePromptTemplateId =
   | "thriller"
   | "thriller 2";
 
+type LongformGenreId =
+  | "action"
+  | "comedy"
+  | "crime"
+  | "daily"
+  | "fantasy"
+  | "horror"
+  | "melo"
+  | "psycho"
+  | "romance"
+  | "thriller";
+
+type LongformSectionKey =
+  | "INTRO"
+  | "POSE_EXPRESSION"
+  | "SCENE"
+  | "LIGHTING"
+  | "FILTER_DREAM_EFFECT"
+  | "PHOTO_STYLE"
+  | "COLOR"
+  | "MOOD"
+  | "STRICT_RULES_APPEND"
+  | "OUTPUT_TARGET_APPEND";
+
+type LongformVariation = {
+  title: string;
+  sections: Record<LongformSectionKey, string>;
+};
+
 const TEMPLATE_BY_GENRE: Record<string, GeneratePromptTemplateId> = {
   액션: "action",
   코미디: "comedy",
@@ -68,6 +97,33 @@ const VALID_TEMPLATE_IDS = new Set<GeneratePromptTemplateId>([
   "thriller",
   "thriller 2",
 ]);
+
+const LONGFORM_GENRE_BY_TEMPLATE: Record<GeneratePromptTemplateId, LongformGenreId> = {
+  action: "action",
+  comedy: "comedy",
+  crime: "crime",
+  daily: "daily",
+  fantasy: "fantasy",
+  horror: "horror",
+  melo: "melo",
+  psycho: "psycho",
+  romance: "romance",
+  thriller: "thriller",
+  "thriller 2": "thriller",
+};
+
+const LONGFORM_SECTION_KEYS: LongformSectionKey[] = [
+  "INTRO",
+  "POSE_EXPRESSION",
+  "SCENE",
+  "LIGHTING",
+  "FILTER_DREAM_EFFECT",
+  "PHOTO_STYLE",
+  "COLOR",
+  "MOOD",
+  "STRICT_RULES_APPEND",
+  "OUTPUT_TARGET_APPEND",
+];
 
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
   try {
@@ -126,6 +182,74 @@ async function loadPromptTemplate(templateId: GeneratePromptTemplateId) {
   const filePath = path.join(process.cwd(), "src/lib/styles/audition-prompts", `${templateId}.txt`);
   const content = await readFile(filePath, "utf8");
   return content.trim();
+}
+
+async function loadLongformMasterTemplate() {
+  const filePath = path.join(process.cwd(), "src/lib/styles/audition-prompts/longform/MASTER_PROMPT_TEMPLATE.txt");
+  const content = await readFile(filePath, "utf8");
+  return content.trim();
+}
+
+async function loadLongformGenreFile(genreId: LongformGenreId) {
+  const filePath = path.join(process.cwd(), "src/lib/styles/audition-prompts/longform", `${genreId}.md`);
+  const content = await readFile(filePath, "utf8");
+  return content.trim();
+}
+
+function parseLongformVariations(markdown: string): LongformVariation[] {
+  const rawBlocks = markdown.split(/^## /m).slice(1);
+
+  return rawBlocks.map((rawBlock) => {
+    const normalizedBlock = rawBlock.trim();
+    const firstLineBreak = normalizedBlock.indexOf("\n");
+    const title = (firstLineBreak >= 0 ? normalizedBlock.slice(0, firstLineBreak) : normalizedBlock).trim();
+    const body = firstLineBreak >= 0 ? normalizedBlock.slice(firstLineBreak + 1) : "";
+
+    const sections = {} as Record<LongformSectionKey, string>;
+    const sectionRegex = /^### ([A-Z_]+)\n([\s\S]*?)(?=^### [A-Z_]+\n|\Z)/gm;
+    let match: RegExpExecArray | null;
+    while ((match = sectionRegex.exec(body))) {
+      const sectionKey = match[1] as LongformSectionKey;
+      if (LONGFORM_SECTION_KEYS.includes(sectionKey)) {
+        sections[sectionKey] = match[2].trim();
+      }
+    }
+
+    return { title, sections };
+  }).filter((variation) => LONGFORM_SECTION_KEYS.every((key) => Boolean(variation.sections[key])));
+}
+
+function replacePromptPlaceholders(template: string, values: Record<string, string>) {
+  return template.replace(/{{([A-Z_]+)}}/g, (_match, key: string) => values[key] ?? "");
+}
+
+function renderLongformPrompt({
+  masterTemplate,
+  variation,
+  values,
+}: {
+  masterTemplate: string;
+  variation: LongformVariation;
+  values: Record<string, string>;
+}) {
+  let output = masterTemplate;
+  for (const sectionKey of LONGFORM_SECTION_KEYS) {
+    output = output.replace(`{{${sectionKey}}}`, replacePromptPlaceholders(variation.sections[sectionKey], values));
+  }
+  return replacePromptPlaceholders(output, values);
+}
+
+function hashSeed(seed: string) {
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+  return hash;
+}
+
+function pickVariationIndex(variationCount: number, seed: string) {
+  if (variationCount <= 1) return 0;
+  return hashSeed(seed) % variationCount;
 }
 
 function resolvePromptTemplateId(templateId: unknown, genre: string) {
@@ -217,14 +341,49 @@ export async function POST(request: NextRequest) {
     let promptText = defaultPromptText;
     const resolvedTemplateId = resolvePromptTemplateId(promptTemplateId, clampText(bestScene.genre, 32));
     if (resolvedTemplateId) {
-      const templatePrompt = await loadPromptTemplate(resolvedTemplateId);
       const sceneCueLine = clampText(bestGenreMeta.cue, 120);
       const roleLine = clampText(bestScene.assigned_role, 48);
-      promptText = [
-        templatePrompt,
-        sceneCueLine ? `Scene cue to honor: ${sceneCueLine}.` : "",
-        roleLine ? `Character role to embody: ${roleLine}.` : "",
-      ].filter(Boolean).join("\n\n");
+      const longformGenreId = LONGFORM_GENRE_BY_TEMPLATE[resolvedTemplateId];
+
+      try {
+        const [masterTemplate, genreMarkdown] = await Promise.all([
+          loadLongformMasterTemplate(),
+          loadLongformGenreFile(longformGenreId),
+        ]);
+        const variations = parseLongformVariations(genreMarkdown);
+        if (variations.length > 0) {
+          const variationSeed = [
+            clampText(referenceImage, 180),
+            clampText(bestScene.genre, 32),
+            sceneCueLine,
+            roleLine,
+            clampText(normalizedPhysiognomy.archetype, 40),
+            clampText(normalizedPhysiognomy.screen_impression, 72),
+            clampText(normalizedPhysiognomy.casting_frame, 72),
+          ].join("|");
+          const selectedVariation = variations[pickVariationIndex(variations.length, variationSeed)];
+          promptText = renderLongformPrompt({
+            masterTemplate,
+            variation: selectedVariation,
+            values: {
+              SCENE_CUE: sceneCueLine || "a decisive dramatic moment",
+              ASSIGNED_ROLE: roleLine || "scene-stealing supporting role",
+              ARCHETYPE: clampText(normalizedPhysiognomy.archetype, 40) || "distinctive cinematic screen presence",
+              SCREEN_IMPRESSION: clampText(normalizedPhysiognomy.screen_impression, 72) || "clear, memorable screen presence",
+              CASTING_FRAME: clampText(normalizedPhysiognomy.casting_frame, 72) || "a strong, cinematic supporting-role presence",
+            },
+          });
+        } else {
+          throw new Error(`No longform variations parsed for ${longformGenreId}`);
+        }
+      } catch {
+        const templatePrompt = await loadPromptTemplate(resolvedTemplateId);
+        promptText = [
+          templatePrompt,
+          sceneCueLine ? `Scene cue to honor: ${sceneCueLine}.` : "",
+          roleLine ? `Character role to embody: ${roleLine}.` : "",
+        ].filter(Boolean).join("\n\n");
+      }
     }
 
     if (!promptText) {

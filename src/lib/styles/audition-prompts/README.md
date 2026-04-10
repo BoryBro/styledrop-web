@@ -19,4 +19,5 @@ Current backend runtime:
 Files:
 - `base-movie-still.txt`: global still-cut rules
 - One `.txt` file per audition genre for genre-specific art direction
-
+- `GENRE_VARIATION_PACK.md`: review-only pack with 3 variation blocks for each of the 10 audition genres
+- `longform/`: long-form template system that preserves the original prompt density while varying genre-specific sections

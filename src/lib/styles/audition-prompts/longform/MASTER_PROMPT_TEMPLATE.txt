@@ -1,0 +1,89 @@
+{{INTRO}}
+
+This must look like a real high-resolution digital photograph — authentic, cinematic, emotionally immersive, and visually controlled, with a strong premium film-treatment layered over the entire image. The result should feel photographically real, production-ready, and genre-faithful. Not fantasy illustration. Not painterly. Not cartoonish. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the original subject’s face with the uploaded user’s face
+- Preserve the uploaded user’s exact facial identity, bone structure, eye shape, nose, lips, jawline, proportions, skin texture, and instantly recognizable likeness
+- The final result must adapt naturally whether the uploaded user is male or female
+- Keep the uploaded user fully recognizable as the same person
+- CRITICAL: The face must feel naturally integrated into the scene with matching lighting direction, contrast, skin detail, and overall image sharpness
+- The face must NOT look pasted onto a different body
+- Match the neck, face, skin tone, and facial perspective seamlessly into the body and scene
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Preserve recognizable facial identity even under stylized cinematic lighting or atmosphere
+- The face should remain real and human beneath the scene treatment, contrast design, haze, grain, bloom, or diffusion
+
+HAIR:
+- Preserve the uploaded user’s exact hairstyle from the original photo
+- Keep the same haircut, length, silhouette, texture, parting, bangs, hairline, color, and overall styling cues
+- Do NOT restyle the hair into a different feminine, masculine, longer, shorter, wavier, or more editorial hairstyle
+- The hairstyle must remain clearly recognizable as the user’s real hair from the uploaded image
+- Only allow minimal natural movement caused by the pose, weather, atmosphere, or scene logic
+- Fine strands may react naturally to light, motion, or environmental conditions, but the hairstyle itself must not change
+
+POSE / EXPRESSION:
+{{POSE_EXPRESSION}}
+
+CLOTHING:
+- Preserve the uploaded user’s exact clothing from the original photo
+- Keep the same outfit type, colors, fabric behavior, fit, layering, and styling cues from the uploaded image
+- Do NOT substitute the outfit with generated wardrobe unrelated to the source image
+- The clothing must remain clearly recognizable as the user’s original outfit while being naturally integrated into the cinematic scene
+- Fabric should respond naturally to lighting, environment, weather, and atmospheric conditions
+- Keep wrinkles, folds, seams, silhouette, and material behavior consistent with the real uploaded clothing
+- If only a partial outfit is visible in the uploaded photo, infer the rest conservatively so the final clothing remains faithful to the original look
+- No fantasy costume elements unless the silhouette still reads as the same original clothing adapted naturally into the scene
+- No random wardrobe substitution
+
+SCENE:
+{{SCENE}}
+
+LIGHTING:
+{{LIGHTING}}
+
+FILTER / ATMOSPHERE:
+{{FILTER_DREAM_EFFECT}}
+
+PHOTO STYLE:
+{{PHOTO_STYLE}}
+
+CAMERA / LENS:
+- Medium shot or wide medium shot depending on genre logic, while keeping the uploaded user's face clearly readable and fully recognizable
+- Use natural live-action lens rendering with premium cinematic realism
+- Perspective should feel physically believable and motivated by the scene rather than stylized for poster impact
+- Maintain enough environmental context to support the genre while keeping the subject as the primary focal point
+- Avoid excessive distortion, artificial warping, or synthetic AI framing tricks
+
+COLOR:
+{{COLOR}}
+
+MOOD:
+{{MOOD}}
+
+STRICT RULES:
+- The uploaded user’s face must replace the original subject’s face
+- This must work naturally whether the uploaded user is male or female
+- The uploaded user’s clothing must remain the same as in the uploaded photo
+- The uploaded user’s hairstyle must remain the same as in the uploaded photo
+- Do not substitute or redesign the outfit
+- Do not restyle, lengthen, shorten, recolor, or change the hair
+- Keep the uploaded user clearly recognizable
+- Do not make the face look pasted on
+- Do not turn the result into fantasy illustration or cartoon styling
+- Do not keep the result too digitally sharp or clinically clean
+- Avoid obvious AI image clarity
+- Prioritize premium live-action cinematic realism, face fidelity, and believable environmental integration
+{{STRICT_RULES_APPEND}}
+
+OUTPUT TARGET:
+- Ultra-realistic cinematic portrait or medium shot
+- Same recognizable uploaded user
+- Same original outfit from the uploaded photo
+- Same original hairstyle from the uploaded photo
+- Strong live-action realism with premium atmospheric treatment
+- Production-grade lighting, believable environment, and scene-specific emotional clarity
+- The final result must feel like a captured frame from a Korean feature film, not an AI composite, poster, or illustration
+{{OUTPUT_TARGET_APPEND}}
