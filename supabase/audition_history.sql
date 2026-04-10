@@ -12,5 +12,11 @@ CREATE TABLE IF NOT EXISTS audition_history (
 CREATE INDEX IF NOT EXISTS idx_audition_history_user_id ON audition_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_audition_history_created_at ON audition_history(created_at);
 
+ALTER TABLE audition_history ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "service_only_audition_history" ON audition_history;
+CREATE POLICY "service_only_audition_history" ON audition_history
+  USING (false) WITH CHECK (false);
+
 -- 24시간 지난 히스토리 자동 삭제 (선택사항)
 -- SELECT cron.schedule('cleanup-audition-history', '0 4 * * *', $$DELETE FROM audition_history WHERE created_at < NOW() - INTERVAL '1 day'$$);

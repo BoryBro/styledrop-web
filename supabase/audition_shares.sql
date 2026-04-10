@@ -12,5 +12,11 @@ CREATE TABLE IF NOT EXISTS audition_shares (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE audition_shares ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "service_only_audition_shares" ON audition_shares;
+CREATE POLICY "service_only_audition_shares" ON audition_shares
+  USING (false) WITH CHECK (false);
+
 -- 30일 지난 공유 결과 자동 삭제 (선택사항)
 -- SELECT cron.schedule('cleanup-old-shares', '0 3 * * *', $$DELETE FROM audition_shares WHERE created_at < NOW() - INTERVAL '30 days'$$);

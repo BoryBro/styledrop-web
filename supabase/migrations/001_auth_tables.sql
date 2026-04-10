@@ -29,6 +29,31 @@ CREATE TABLE IF NOT EXISTS user_events (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- RLS
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transform_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_events ENABLE ROW LEVEL SECURITY;
+
+-- style_usage는 기존 테이블 기준으로 함께 잠금
+ALTER TABLE style_usage ENABLE ROW LEVEL SECURITY;
+
+-- 서버 API(service role) 외에는 접근 차단
+DROP POLICY IF EXISTS "service_only_users" ON users;
+CREATE POLICY "service_only_users" ON users
+  USING (false) WITH CHECK (false);
+
+DROP POLICY IF EXISTS "service_only_transform_history" ON transform_history;
+CREATE POLICY "service_only_transform_history" ON transform_history
+  USING (false) WITH CHECK (false);
+
+DROP POLICY IF EXISTS "service_only_user_events" ON user_events;
+CREATE POLICY "service_only_user_events" ON user_events
+  USING (false) WITH CHECK (false);
+
+DROP POLICY IF EXISTS "service_only_style_usage" ON style_usage;
+CREATE POLICY "service_only_style_usage" ON style_usage
+  USING (false) WITH CHECK (false);
+
 -- style_usage에 user_id 추가 (nullable — 비로그인 호환)
 ALTER TABLE style_usage ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL;
 
