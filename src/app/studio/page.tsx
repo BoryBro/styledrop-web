@@ -224,6 +224,11 @@ export default function Studio() {
     setActiveSectionTab(section);
   }, []);
 
+  const handleStyleCategorySelect = useCallback((tab: StyleCategoryTab) => {
+    setActiveStyleCategory(tab);
+    scrollToSection("cards");
+  }, [scrollToSection]);
+
   useEffect(() => {
     if (!showLabSection) return;
 
@@ -804,7 +809,7 @@ export default function Studio() {
                           <button
                             key={tab}
                             type="button"
-                            onClick={() => setActiveStyleCategory(tab)}
+                            onClick={() => handleStyleCategorySelect(tab)}
                             className={`rounded-full px-3.5 py-2 text-[12px] font-semibold transition-colors ${
                               isActive
                                 ? "bg-[#C9571A]/18 text-[#F6B38C]"

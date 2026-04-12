@@ -14,6 +14,41 @@ export type StyleDef = {
   popular?: boolean;
 };
 
+export type StyleCategory = "일상" | "자연" | "무드" | "컨셉" | "스포츠";
+
+export const STYLE_CATEGORY_TABS = ["전체", "일상", "자연", "무드", "컨셉", "스포츠"] as const;
+
+export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
+  gyaru: "컨셉",
+  angel: "컨셉",
+  "idol-photocard": "무드",
+  "club-flash": "무드",
+  "flash-selfie": "일상",
+  "grab-selfie": "일상",
+  "voxel-character": "컨셉",
+  "joseon-farmer": "컨셉",
+  "red-carpet-glam": "컨셉",
+  "dark-coquette": "무드",
+  "datecam-film": "무드",
+  "ulzzang-cam": "무드",
+  "jjimjilbang-master": "컨셉",
+  skydiving: "스포츠",
+  "maid-cafe-heart": "컨셉",
+  "hiphop-grillz": "컨셉",
+  hellotokyo: "컨셉",
+  "mongolian-warrior": "컨셉",
+  "american-rugby-player": "스포츠",
+  "american-cheerleader": "스포츠",
+  "western-gunslinger": "컨셉",
+  "drink-pov": "컨셉",
+  "existential-studio": "무드",
+  "transit-station-security": "컨셉",
+  "luxury-bedroom-bag": "컨셉",
+  "cinematic-horseback": "컨셉",
+  "dreamy-wildflower": "자연",
+  "dreamy-celebratory": "자연",
+};
+
 export const ALL_STYLES: StyleDef[] = [
   {
     id: "gyaru",
