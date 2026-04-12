@@ -14,6 +14,7 @@ type ShowcaseEvent = {
     storage_path?: string | null;
     style_id?: string | null;
     variant?: string | null;
+    instagram_handle?: string | null;
   } | null;
   created_at: string;
 };
@@ -95,6 +96,7 @@ export async function GET(request: NextRequest) {
           profileImage: profile?.profile_image ?? null,
           imageUrl: event.metadata?.image_url ?? null,
           styleId: event.metadata?.style_id ?? null,
+          instagramHandle: event.metadata?.instagram_handle ?? null,
           createdAt: event.created_at,
         };
       })
@@ -107,6 +109,7 @@ export async function GET(request: NextRequest) {
         ? {
             imageUrl: meEvent.metadata.image_url as string,
             styleId: (meEvent.metadata?.style_id as string | null) ?? null,
+            instagramHandle: (meEvent.metadata?.instagram_handle as string | null) ?? null,
             createdAt: meEvent.created_at,
           }
         : null;
@@ -129,6 +132,10 @@ export async function POST(request: NextRequest) {
     const imageBase64 = body.imageBase64 as string | undefined;
     const styleId = body.styleId as string | undefined;
     const variant = body.variant as string | undefined;
+    const instagramHandle =
+      typeof body.instagramHandle === "string" && body.instagramHandle.trim()
+        ? body.instagramHandle.trim().replace(/^@+/, "")
+        : null;
 
     if (!imageBase64 || !styleId) {
       return NextResponse.json({ error: "Missing imageBase64 or styleId" }, { status: 400 });
@@ -163,6 +170,7 @@ export async function POST(request: NextRequest) {
         variant: variant ?? "default",
         image_url: publicUrl,
         storage_path: filePath,
+        instagram_handle: instagramHandle,
       },
     });
 

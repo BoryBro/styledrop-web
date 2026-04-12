@@ -12,7 +12,7 @@ import {
   resolveFeatureControlState,
   type StyleControlState,
 } from "@/lib/style-controls";
-import { ALL_STYLES, STYLE_CATEGORY_BY_ID, STYLE_CATEGORY_TABS } from "@/lib/styles";
+import { ALL_STYLES, STYLE_CATEGORY_BY_ID, STYLE_CATEGORY_TABS, STYLE_LABELS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
 function formatCount(n: number): string {
@@ -40,7 +40,16 @@ type ShowcaseItem = {
   profileImage: string | null;
   imageUrl: string;
   styleId: string | null;
+  instagramHandle?: string | null;
   createdAt: string;
+};
+
+type ShowcaseHistoryItem = {
+  id: string;
+  style_id: string;
+  variant?: string;
+  result_image_url: string;
+  created_at: string;
 };
 
 type Toast = { id: number; message: string };
@@ -97,6 +106,12 @@ export default function Studio() {
   const [usageCounts, setUsageCounts] = useState<Record<string, number> | null>(null);
   const [showcaseItems, setShowcaseItems] = useState<ShowcaseItem[]>([]);
   const [selectedShowcaseIndex, setSelectedShowcaseIndex] = useState<number | null>(null);
+  const [showShowcaseJoinModal, setShowShowcaseJoinModal] = useState(false);
+  const [showcaseHistory, setShowcaseHistory] = useState<ShowcaseHistoryItem[]>([]);
+  const [showcaseHistoryLoading, setShowcaseHistoryLoading] = useState(false);
+  const [selectedShowcaseHistoryId, setSelectedShowcaseHistoryId] = useState<string | null>(null);
+  const [showcaseInstagram, setShowcaseInstagram] = useState("");
+  const [showcaseSubmitting, setShowcaseSubmitting] = useState(false);
   const [likedShowcaseUserIds, setLikedShowcaseUserIds] = useState<string[]>([]);
   const [storyProgressMs, setStoryProgressMs] = useState(0);
   const [styleControls, setStyleControls] = useState<Record<string, StyleControlState>>({});
@@ -159,6 +174,13 @@ export default function Studio() {
   const generalCardsSectionRef = useRef<HTMLDivElement>(null);
   const labSectionRef = useRef<HTMLDivElement>(null);
 
+  const loadShowcaseItems = useCallback(() => {
+    fetch("/api/public-showcase", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => setShowcaseItems(Array.isArray(data?.items) ? data.items : []))
+      .catch(() => setShowcaseItems([]));
+  }, []);
+
   useEffect(() => {
     fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
@@ -187,11 +209,8 @@ export default function Studio() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/public-showcase", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((data) => setShowcaseItems(Array.isArray(data?.items) ? data.items : []))
-      .catch(() => setShowcaseItems([]));
-  }, []);
+    loadShowcaseItems();
+  }, [loadShowcaseItems]);
 
   useEffect(() => {
     if (selectedShowcaseIndex === null) {
@@ -296,6 +315,92 @@ export default function Studio() {
     setActiveStyleCategory(tab);
     scrollToSection("cards");
   }, [scrollToSection]);
+
+  const imageUrlToBase64 = useCallback(async (url: string) => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("이미지를 불러오지 못했어요.");
+    const blob = await response.blob();
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+        else reject(new Error("이미지 변환에 실패했어요."));
+      };
+      reader.onerror = () => reject(new Error("이미지 변환에 실패했어요."));
+      reader.readAsDataURL(blob);
+    });
+
+    const base64 = dataUrl.split(",")[1];
+    if (!base64) throw new Error("이미지 변환에 실패했어요.");
+    return base64;
+  }, []);
+
+  const handleOpenShowcaseJoin = useCallback(async () => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    setShowShowcaseJoinModal(true);
+    setShowcaseHistoryLoading(true);
+
+    try {
+      const response = await fetch("/api/history", { cache: "no-store" });
+      const data = await response.json();
+      const history = Array.isArray(data?.history) ? data.history : [];
+      setShowcaseHistory(history);
+      setSelectedShowcaseHistoryId(history[0]?.id ?? null);
+    } catch {
+      setShowcaseHistory([]);
+      setSelectedShowcaseHistoryId(null);
+      showToast("최근 결과를 불러오지 못했어요.");
+    } finally {
+      setShowcaseHistoryLoading(false);
+    }
+  }, [showToast, user]);
+
+  const handleSubmitShowcaseJoin = useCallback(async () => {
+    if (!selectedShowcaseHistoryId) {
+      showToast("올릴 결과 사진을 먼저 선택해주세요.");
+      return;
+    }
+
+    const selectedItem = showcaseHistory.find((item) => item.id === selectedShowcaseHistoryId);
+    if (!selectedItem) {
+      showToast("선택한 결과를 찾지 못했어요.");
+      return;
+    }
+
+    setShowcaseSubmitting(true);
+    try {
+      const imageBase64 = await imageUrlToBase64(selectedItem.result_image_url);
+      const response = await fetch("/api/public-showcase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageBase64,
+          styleId: selectedItem.style_id,
+          variant: selectedItem.variant ?? "default",
+          instagramHandle: showcaseInstagram,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "공개 스토리에 올리지 못했어요.");
+      }
+
+      await loadShowcaseItems();
+      setShowShowcaseJoinModal(false);
+      setShowcaseInstagram("");
+      showToast("메인 공개 스토리에 추가했어요.");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "공개 스토리에 올리지 못했어요.");
+    } finally {
+      setShowcaseSubmitting(false);
+    }
+  }, [imageUrlToBase64, loadShowcaseItems, selectedShowcaseHistoryId, showcaseHistory, showcaseInstagram, showToast]);
 
   useEffect(() => {
     if (selectedShowcaseIndex === null) return;
@@ -898,10 +1003,27 @@ export default function Studio() {
             </div>
           )}
 
-          {showcaseItems.length > 0 && (
+          {(showcaseItems.length > 0 || user) && (
             <div className="mb-5">
               <div className="overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex w-max gap-3 px-1 pb-1">
+                  <button
+                    type="button"
+                    onClick={handleOpenShowcaseJoin}
+                    className="group flex w-[78px] shrink-0 flex-col items-center gap-2"
+                  >
+                    <div className="rounded-full bg-[linear-gradient(135deg,#C9571A,#F6B38C,#C9571A)] p-[2px] shadow-[0_10px_24px_rgba(201,87,26,0.16)]">
+                      <div className="flex h-[70px] w-[70px] items-center justify-center rounded-full bg-[#0A0A0A]">
+                        <div className="relative h-[22px] w-[22px] text-white/82">
+                          <span className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 rounded-full bg-current" />
+                          <span className="absolute left-0 top-1/2 h-[2px] w-full -translate-y-1/2 rounded-full bg-current" />
+                        </div>
+                      </div>
+                    </div>
+                    <span className="line-clamp-1 text-center text-[11px] font-medium text-white/72">
+                      나도 추가하기
+                    </span>
+                  </button>
                   {showcaseItems.map((item, index) => (
                     <button
                       key={`${item.userId}-${item.createdAt}`}
@@ -1339,6 +1461,96 @@ export default function Studio() {
           </p>
         </footer>
       </div>
+
+      {showShowcaseJoinModal && (
+        <div
+          className="fixed inset-0 z-[55] bg-black/75"
+          onClick={() => {
+            if (showcaseSubmitting) return;
+            setShowShowcaseJoinModal(false);
+          }}
+        >
+          <div
+            className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-2xl rounded-t-[28px] border border-white/10 bg-[#111] px-5 pt-5 pb-8 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-white/10" />
+            <p className="text-[18px] font-black text-white">나도 추가하기</p>
+            <p className="mt-1 text-[13px] leading-6 text-white/45">
+              최근 결과물 중 한 장을 고르고, 인스타 아이디를 남길 수 있어요.
+            </p>
+
+            <div className="mt-5">
+              <p className="mb-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white/38">Result Photo</p>
+              {showcaseHistoryLoading ? (
+                <div className="flex justify-center py-10">
+                  <div className="h-6 w-6 rounded-full border-2 border-white/10 border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
+                </div>
+              ) : showcaseHistory.length === 0 ? (
+                <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-6 text-center text-[13px] leading-6 text-white/45">
+                  최근 24시간 내 결과물이 없어요.
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {showcaseHistory.map((item) => {
+                    const selected = selectedShowcaseHistoryId === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setSelectedShowcaseHistoryId(item.id)}
+                        className={`overflow-hidden rounded-[18px] border text-left transition-colors ${
+                          selected ? "border-[#C9571A] bg-[#C9571A]/8" : "border-white/8 bg-white/[0.03]"
+                        }`}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={item.result_image_url} alt={STYLE_LABELS[item.style_id] ?? item.style_id} className="aspect-square w-full object-cover" />
+                        <div className="px-2.5 py-2.5">
+                          <p className="line-clamp-1 text-[11px] font-semibold text-white/80">
+                            {STYLE_LABELS[item.style_id] ?? item.style_id}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5">
+              <label htmlFor="showcase-instagram" className="mb-2 block text-[12px] font-bold uppercase tracking-[0.14em] text-white/38">
+                Instagram ID
+              </label>
+              <input
+                id="showcase-instagram"
+                type="text"
+                value={showcaseInstagram}
+                onChange={(event) => setShowcaseInstagram(event.target.value)}
+                placeholder="@yourid"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[14px] text-white outline-none placeholder:text-white/22 focus:border-[#C9571A]/60"
+              />
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowShowcaseJoinModal(false)}
+                className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[14px] font-bold text-white/60"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitShowcaseJoin}
+                disabled={showcaseSubmitting || !selectedShowcaseHistoryId}
+                className="flex-1 rounded-2xl bg-[#C9571A] px-4 py-3 text-[14px] font-bold text-white disabled:opacity-40"
+              >
+                {showcaseSubmitting ? "추가 중..." : "메인에 추가하기"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 베리에이션 선택 모달 (카드 클릭 직후 — 파일 선택 전) */}
       {variantSelectStyle && (() => {
