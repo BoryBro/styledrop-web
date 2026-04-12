@@ -509,80 +509,67 @@ export default function Result() {
 
             {/* ── O/X 퀴즈 카드 ── */}
             {q && (
-              <div className="flex-1 flex flex-col rounded-3xl bg-[#1C1C1E] overflow-hidden">
+              <div className="rounded-3xl bg-[#1C1C1E] overflow-hidden">
 
                 {/* 헤더 */}
-                <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/[0.06]">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-bold text-white">O / X 퀴즈</span>
+                <div className="flex items-center justify-between px-4 pt-3 pb-2.5 border-b border-white/[0.06]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[12px] font-bold text-white">O / X 퀴즈</span>
                     {q.tag && (
-                      <span className="text-[10px] font-semibold text-white/40 bg-white/8 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] text-white/35 bg-white/8 px-1.5 py-0.5 rounded-full">
                         {q.tag}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 bg-white/[0.07] px-2.5 py-1 rounded-full">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5.5l2 2 4-4" stroke="#30D158" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <div className="flex items-center gap-1 bg-white/[0.07] px-2 py-0.5 rounded-full">
+                    <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5.5l2 2 4-4" stroke="#30D158" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span className="text-[12px] font-bold text-white tabular-nums">{score.correct}</span>
-                    <span className="text-[11px] text-white/30">/{score.total}</span>
+                    <span className="text-[11px] font-bold text-white tabular-nums">{score.correct}</span>
+                    <span className="text-[10px] text-white/30">/{score.total}</span>
                   </div>
                 </div>
 
-                {/* 문제 영역 */}
+                {/* 문제 + 버튼 */}
                 <div
-                  className="flex-1 flex flex-col items-center justify-center px-6 py-5 gap-5"
+                  className="flex flex-col px-4 pt-3 pb-4 gap-3"
                   key={quizIndex}
                   style={{ animation: "ios-fade-up 0.28s ease" }}
                 >
-                  {/* 문제 번호 */}
-                  <span className="text-[11px] font-semibold text-white/25 tracking-widest uppercase">
-                    Q {(quizIndex % quizList.length) + 1}
-                  </span>
-
-                  {/* 질문 */}
-                  <p className="text-center text-[16px] font-semibold text-white leading-[1.65] break-keep px-1">
+                  <p className="text-center text-[14px] font-semibold text-white leading-[1.6] break-keep">
                     {q.q}
                   </p>
 
-                  {/* O / X 버튼 or 결과 */}
                   {quizResult === null ? (
-                    <div className="flex gap-3 w-full max-w-[280px]">
+                    <div className="flex gap-2.5">
                       <button
                         onClick={() => handleAnswer(true)}
-                        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-4 rounded-2xl bg-[#30D158]/15 border border-[#30D158]/25 active:scale-95 transition-transform"
+                        className="flex-1 py-2.5 rounded-xl bg-[#30D158]/15 border border-[#30D158]/25 text-[22px] font-black text-[#30D158] active:scale-95 transition-transform"
                       >
-                        <span className="text-[26px] font-black text-[#30D158] leading-none">O</span>
-                        <span className="text-[10px] font-semibold text-[#30D158]/60">맞다</span>
+                        O
                       </button>
                       <button
                         onClick={() => handleAnswer(false)}
-                        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-4 rounded-2xl bg-[#FF453A]/15 border border-[#FF453A]/25 active:scale-95 transition-transform"
+                        className="flex-1 py-2.5 rounded-xl bg-[#FF453A]/15 border border-[#FF453A]/25 text-[22px] font-black text-[#FF453A] active:scale-95 transition-transform"
                       >
-                        <span className="text-[26px] font-black text-[#FF453A] leading-none">X</span>
-                        <span className="text-[10px] font-semibold text-[#FF453A]/60">틀리다</span>
+                        X
                       </button>
                     </div>
                   ) : (
                     <div
-                      className="flex flex-col items-center gap-2"
+                      className="flex items-center justify-center gap-2.5 py-1"
                       style={{ animation: "ios-fade-up 0.2s ease" }}
                     >
-                      <div className={`w-14 h-14 rounded-full flex items-center justify-center text-[28px] ${
-                        quizResult === "correct"
-                          ? "bg-[#30D158]/20 text-[#30D158]"
-                          : "bg-[#FF453A]/20 text-[#FF453A]"
-                      }`}>
+                      <span className={`text-[22px] leading-none ${quizResult === "correct" ? "text-[#30D158]" : "text-[#FF453A]"}`}>
                         {quizResult === "correct" ? "✓" : "✗"}
-                      </div>
-                      <div className="text-center">
-                        <p className={`text-[14px] font-bold ${quizResult === "correct" ? "text-[#30D158]" : "text-[#FF453A]"}`}>
+                      </span>
+                      <div>
+                        <p className={`text-[13px] font-bold ${quizResult === "correct" ? "text-[#30D158]" : "text-[#FF453A]"}`}>
                           {quizResult === "correct" ? "정답!" : "오답"}
                         </p>
                         {quizResult === "wrong" && (
-                          <p className="text-[12px] text-white/40 mt-0.5">
-                            정답은 <span className="font-bold text-white/60">{q.a ? "O (맞다)" : "X (틀리다)"}</span>
+                          <p className="text-[11px] text-white/35">
+                            정답은 <span className="font-bold text-white/55">{q.a ? "O" : "X"}</span>
                           </p>
                         )}
                       </div>
