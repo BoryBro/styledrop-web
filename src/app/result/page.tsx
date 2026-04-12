@@ -141,18 +141,6 @@ export default function Result() {
 
     const variant = sessionStorage.getItem("sd_variant") ?? "default";
 
-    // ── UI 테스트 모드: API 호출 없이 30초 후 원본 이미지로 완료 처리 ──
-    const __UI_TEST__ = true;
-    if (__UI_TEST__) {
-      setTimeout(() => {
-        const dummyUrl = preview ?? base64 ? `data:image/jpeg;base64,${base64}` : "";
-        setResultImage(dummyUrl);
-        setStatus("done");
-      }, 30000);
-      return;
-    }
-    // ────────────────────────────────────────────────────────────────
-
     fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
