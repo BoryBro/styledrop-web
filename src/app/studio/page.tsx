@@ -148,6 +148,7 @@ export default function Studio() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [variantSelectStyle, setVariantSelectStyle] = useState<StyleCard | null>(null);
   const [showCameraGuide, setShowCameraGuide] = useState(false);
+  const [showPhotoSourceSheet, setShowPhotoSourceSheet] = useState(false);
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
   const [editorSize, setEditorSize] = useState(320);
   const [cropState, setCropState] = useState<{
@@ -532,12 +533,12 @@ export default function Studio() {
 
     const variants = STYLE_VARIANTS[style.id];
     if (variants && variants.length > 1) {
-      // 베리에이션 있는 스타일 → 카드 클릭 즉시 옵션 모달 표시
+      // 베리에이션 있는 스타일 → 옵션 모달 먼저
       setVariantSelectStyle(style);
     } else {
-      // 베리에이션 없음 → 바로 파일 선택
+      // 베리에이션 없음 → 촬영/앨범 선택 시트
       sessionStorage.setItem("sd_variant", "default");
-      fileInputRef.current?.click();
+      setShowPhotoSourceSheet(true);
     }
   };
 
@@ -1625,11 +1626,7 @@ export default function Studio() {
                     onClick={() => {
                       sessionStorage.setItem("sd_variant", v.id);
                       setVariantSelectStyle(null);
-                      if (variantSelectStyle?.id === "joseon-farmer") {
-                        setShowCameraGuide(true);
-                      } else {
-                        fileInputRef.current?.click();
-                      }
+                      setShowPhotoSourceSheet(true);
                     }}
                     className="group bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-[#C9571A]/50 rounded-2xl overflow-hidden transition-all text-left flex flex-col"
                   >
@@ -1664,6 +1661,62 @@ export default function Studio() {
       })()}
 
       {/* 카메라 가이드 모달 */}
+      {/* 촬영 / 앨범 선택 시트 */}
+      {showPhotoSourceSheet && (
+        <div
+          className="fixed inset-0 z-[58] bg-black/60 flex items-end justify-center"
+          onClick={() => setShowPhotoSourceSheet(false)}
+        >
+          <div
+            className="w-full max-w-2xl bg-[#1C1C1E] rounded-t-3xl px-4 pt-2 pb-[max(env(safe-area-inset-bottom),20px)] shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-white/15 rounded-full mx-auto mb-5" />
+            <p className="text-[13px] font-semibold text-white/40 text-center mb-4">사진 선택</p>
+            <div className="flex flex-col gap-2 mb-3">
+              <button
+                onClick={() => { setShowPhotoSourceSheet(false); setShowCameraGuide(true); }}
+                className="w-full flex items-center gap-4 bg-white/[0.06] hover:bg-white/10 rounded-2xl px-5 py-4 transition-colors text-left"
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#C9571A]/20 flex items-center justify-center flex-shrink-0">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="#C9571A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="12" cy="13" r="4" stroke="#C9571A" strokeWidth="1.8"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[15px] font-bold text-white">실시간 촬영</p>
+                  <p className="text-[12px] text-white/40 mt-0.5">카메라로 바로 찍기</p>
+                </div>
+              </button>
+              <button
+                onClick={() => { setShowPhotoSourceSheet(false); fileInputRef.current?.click(); }}
+                className="w-full flex items-center gap-4 bg-white/[0.06] hover:bg-white/10 rounded-2xl px-5 py-4 transition-colors text-left"
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth="1.8"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth="1.8"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth="1.8"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth="1.8"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[15px] font-bold text-white">앨범에서 선택</p>
+                  <p className="text-[12px] text-white/40 mt-0.5">갤러리에서 사진 가져오기</p>
+                </div>
+              </button>
+            </div>
+            <button
+              onClick={() => setShowPhotoSourceSheet(false)}
+              className="w-full py-3.5 rounded-2xl bg-white/[0.04] text-[15px] font-semibold text-white/50"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      )}
+
       {showCameraGuide && (
         <div className="fixed inset-0 bg-black z-[60] flex flex-col">
           {/* 상단 */}
