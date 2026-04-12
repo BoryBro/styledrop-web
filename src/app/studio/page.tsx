@@ -1797,7 +1797,7 @@ export default function Studio() {
                     </div>
                   </div>
                   <div className="min-w-0">
-                    <p className="line-clamp-1 text-[14px] font-semibold text-white">{activeShowcase.nickname}</p>
+                    <p className="line-clamp-1 text-[14px] font-semibold text-white">{showcaseDisplayName(activeShowcase)}님</p>
                     <p className="text-[11px] text-white/65">{formatStoryTime(activeShowcase.createdAt)}</p>
                   </div>
                 </div>
@@ -1839,7 +1839,7 @@ export default function Studio() {
               <div className="mb-4 flex items-end justify-between gap-3">
                 <div className="min-w-0">
                   <p className="line-clamp-2 text-[24px] font-black tracking-[-0.04em] text-white drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
-                    {activeShowcase.nickname}
+                    {showcaseDisplayName(activeShowcase)}님
                   </p>
                   <p className="mt-1 text-[13px] text-white/72">
                     공개 결과 스토리
