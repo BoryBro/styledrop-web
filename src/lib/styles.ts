@@ -48,6 +48,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "dreamy-wildflower": "자연",
   "dreamy-celebratory": "자연",
   "bronze-statue-bench": "컨셉",
+  "yakuza": "컨셉",
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -372,6 +373,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/Bronze-before.jpg?v=1",
     afterImg: "/thumbnails/Bronze-after.jpg?v=1",
+  },
+  {
+    id: "yakuza",
+    name: "야쿠자",
+    desc: "문신 새긴 이레즈미 조직원으로 변신하는 80~90년대 다큐 스타일 범죄 포트레이트",
+    bgColor: "#221a28",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/yakuza-before.jpg",
+    afterImg: "/thumbnails/yakuza-after.jpg",
   },
 ];
 

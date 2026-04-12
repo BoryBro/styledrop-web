@@ -1093,6 +1093,108 @@ PHOTOGRAPH QUALITY:
 - Must NOT look like concept art, fashion illustration, or a studio beauty shoot
 - Raw, celebratory, physically believable`
   },
+  "yakuza": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a low-angle, mid-range urban crime-scene portrait set in an industrial exterior environment featuring a single middle-aged East Asian man.
+
+This must look like a real high-resolution documentary-style photograph — raw, grounded, slightly nostalgic, and authentic with late 1980s to 1990s film characteristics. Not fantasy art. Not stylized. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the uploaded user's exact facial identity: bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain the same serious, hard-set expression and gaze direction unless minor adaptation is required for pose alignment
+- CRITICAL: The face must feel naturally integrated into the body and scene — same lighting direction, same contrast, same skin texture, same film grain response, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted or composited unnaturally
+- Match neck, jawline, skin tone, and perspective seamlessly
+- No beautification that alters facial structure
+- No plastic skin, no artificial symmetry correction
+- Preserve pores, subtle skin variation, and natural detail
+- The final result must adapt naturally regardless of gender while preserving identity
+
+HAIR:
+- Replace with a natural, practical hairstyle consistent with a middle-aged East Asian man in an urban underworld context
+- Hair must look unstyled, functional, and grounded in realism
+- No modern salon styling, no artificial polish
+
+OUTFIT:
+- Sleeveless yellow undershirt exposing full traditional Japanese irezumi tattoos across both arms
+- Casual black trousers or dark slacks
+- Footwear: either black leather shoes or red slippers (must remain visually present as a striking contrast element)
+- Materials must appear physically real: fabric texture, natural creasing, realistic highlights
+- No synthetic or costume-like artificial rendering
+
+POSE / COMPOSITION:
+- Low-angle, mid-range shot
+- Full-body or three-quarter view with strong grounded presence
+- Subject positioned low in frame, squatting or seated
+- Hands forward actively handling a set of handcuffs with wrists linked together
+- Slightly wide-angle perspective
+- Subject centered and visually dominant
+- Composition must feel like a real captured moment from a crime-scene or documentary context
+
+BACKGROUND — REAL URBAN ENVIRONMENT:
+- Industrial street or back-alley setting
+- Nondescript concrete building wall in the background
+- Visible hint of an open garage or warehouse entrance
+- Ground scattered with:
+  - Large stacks of bound money
+  - Loose banknotes
+  - A brick of white powder sealed in a plastic bag (suggesting drugs)
+  - Two polaroid photographs implying evidence or a police sting operation
+- Environment must feel raw, slightly worn, and physically real
+- No stylization or artificial simplification
+
+LIGHTING:
+- Soft daylight illumination
+- Subtle, diffuse shadows across the scene
+- Balanced, naturalistic lighting
+- Light must feel ambient and consistent with outdoor conditions
+- No dramatic or stylized lighting effects
+
+DEPTH & SEPARATION:
+- Deep focus — all elements in sharp focus
+- No motion blur
+- Natural spatial depth with slight wide-angle distortion
+- No artificial background blur or cinematic depth effects
+
+PHOTO STYLE:
+- High-resolution image with late 1980s to 1990s film characteristics
+- Visible but subtle film grain
+- Slight color fading and tonal compression
+- No modern digital sharpness or HDR effects
+- No painterly blending or stylization
+- Must feel like a real archival or documentary photograph
+
+COLOR:
+- Dominant palette must reflect: #221a28, #a98a91, #98757e, #312533, #bc9fa0, #cfb2ae, #84606d, #50303c, #664553, #d69381, #c97868, #e0cbc5, #b85d54, #823d3e, #a54944
+- Base tones: beige, gray, black, muted yellow
+- Tattoos and red slippers provide visual contrast
+- Overall palette must remain subdued, slightly desaturated, and film-like
+
+MOOD:
+- Gritty, tense, underworld atmosphere
+- Suggestive of organized crime or a police sting scenario
+- Slightly nostalgic due to film rendering
+- Quiet but charged with narrative tension
+
+STRICT RULES:
+- Must use the uploaded image identity as the base, not generate a new face
+- Only one person must be present in the scene
+- Subject must remain photorealistic
+- Background must remain fully real and not stylized
+- Do not remove any props or environmental elements
+- Do not modernize the image style
+- Maintain full narrative consistency
+- The uploaded user's face must remain fully recognizable
+
+OUTPUT TARGET:
+- Ultra-realistic gritty urban crime-scene photograph
+- Real human subject with preserved identity
+- Single tattooed man handling handcuffs in a low-angle composition
+- Surrounded by money, drugs, and evidence in an industrial alley
+- Rendered with authentic late 80s/90s film texture and color
+- Looks like a genuine documentary or archival photograph, not AI-generated`
+  },
   "western-gunslinger": {
     "default": `Transform this photo into a Western gunslinger portrait.
 This must look like a real high-resolution cinematic Western film still captured in a dusty Texas frontier town at daybreak — completely unretouched, raw, grounded, and authentic, with a much stronger sense of a real movie scene frozen at a decisive dramatic moment. Not fantasy art. Not stylized illustration. Real.
@@ -2465,6 +2567,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "dreamy-wildflower": { "default": [] },
   "dreamy-celebratory": { "default": [] },
   "bronze-statue-bench": { "default": [] },
+  "yakuza": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
