@@ -178,6 +178,14 @@ function buildStillPrompt({
   ].filter(Boolean).join(" ");
 }
 
+const STILL_TEXT_BAN_BLOCK = [
+  "ABSOLUTE TEXT BAN:",
+  "- Do not generate subtitles, captions, dialogue text, title cards, credits, posters, signage, logos, watermarks, UI, stamps, labels, chat bubbles, or any graphic overlay.",
+  "- Do not generate any readable Korean characters, English letters, numbers, punctuation, symbols, or typography anywhere in the image.",
+  "- If the scene would naturally contain text-bearing objects, render them blank, obscured, defocused, or replaced with non-readable texture.",
+  "- The final image must contain zero readable text of any kind.",
+].join("\n");
+
 async function loadPromptTemplate(templateId: GeneratePromptTemplateId) {
   const filePath = path.join(process.cwd(), "src/lib/styles/audition-prompts", `${templateId}.txt`);
   const content = await readFile(filePath, "utf8");
@@ -395,6 +403,8 @@ export async function POST(request: NextRequest) {
     if (!promptText) {
       return NextResponse.json({ error: "스틸컷 생성용 장르 정보가 부족합니다." }, { status: 400 });
     }
+
+    promptText = [promptText, STILL_TEXT_BAN_BLOCK].join("\n\n");
 
     if (typeof shareId === "string" && shareId.trim()) {
       const { data: shareRow } = await createClient(
