@@ -2923,6 +2923,164 @@ OUTPUT TARGET:
 - Soft, pale, slightly diffused processed finish matching a real photographed image
 - Looks captured and retouched, not AI-generated`
   },
+  "ramen-hair": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a medium close-up portrait of a young Korean woman standing against a plain backdrop in soft, diffuse daylight, featuring exaggerated voluminous yellow curls styled like instant ramen noodles.
+
+This must look like a real high-resolution editorial / social-media portrait photograph with a polished digital finish — absurdist, lighthearted, soft, and physically believable. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject’s face with the uploaded user’s face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain the same serious, straight-on, deadpan expression unless minimal adjustment is required
+- CRITICAL: The face must feel naturally integrated into the hairstyle, clothing, and lighting environment — same lighting direction, same contrast, same skin texture, same frontal daylight behavior, and same overall image sharpness
+- The face must NOT look pasted, over-cleaned, or overly beautified
+- Match head, neck, posture, and perspective seamlessly into the portrait framing
+- Preserve real skin texture, pores, slight tonal variation, and natural facial structure
+- No structural beautification, no plastic skin, no artificial symmetry correction
+- The final result must adapt naturally regardless of gender while preserving the same recognizable identity and the intended ramen-hair portrait concept
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like a real photographed portrait subject, not a composited beauty rendering
+- The humorous effect must come from the contrast between the serious expression and the exaggerated hair, not from changing the facial identity
+- Capture using a professional full-frame digital camera system
+- Lens: 85mm portrait prime
+- Aperture: f/3.2–f/4 to keep the face and hair sculpture sharp while producing soft background bokeh
+- Shutter speed: ~1/160 sec
+- ISO: 100–200
+- White balance: neutral daylight, approx. 5000K–5600K
+- Dynamic range: preserve skin detail and bright yellow hair detail without clipping
+- No digital over-sharpening; retain soft portrait rendering and natural lens falloff
+
+HAIR:
+- Hair must change completely into exaggerated, voluminous yellow curls reminiscent of ramen noodles
+- The hairstyle must mimic both the color and the spiral strand structure of classic instant noodle strands
+- Curls must be meticulously defined, dense, springy, and highly textured
+- Color must read as bright noodle-yellow with slight ochre warmth
+- The hairstyle must feel like a real photographed hair sculpture / wig styling, not literal food placed on the head
+- Preserve the humorous visual pun of “라면머리” / “면발헤어”
+- No CGI noodle strands
+- No fantasy hair glow
+- No unrelated fashion-hair redesign
+
+CLOTHING:
+- Simple loose cotton t-shirt
+- Plain neckline
+- Casual, unremarkable fit
+- Clothing must remain visually secondary to the hairstyle
+- Fabric must feel real, soft, and everyday
+- No embellishment, no statement styling, no fashion-catalog treatment
+
+POSE / COMPOSITION:
+- Medium close-up portrait
+- Straight-on composition
+- Subject centered in frame
+- Upright standing posture
+- Face and hair remain the clear focal point
+- Composition must feel clean, direct, and intentionally minimal
+- The plain background and simple shirt must support the hairstyle without competing with it
+
+SCENE:
+- Plain, neutral, uncluttered backdrop
+- Softly out-of-focus background with no distracting objects
+- Environment must feel minimal and editorial, with no set decoration
+- The scene must remain simple so the ramen-hair concept reads immediately
+- No props
+- No extra styling elements beyond the subject, t-shirt, and background
+
+LIGHTING:
+- Soft, diffuse daylight
+- Even frontal illumination
+- Minimal harsh shadow
+- Gentle wrap across the face and hair
+- Bright yellow curls must remain clearly legible without blown highlights
+- Lighting must feel natural and straightforward, not theatrical
+- No dramatic spotlighting
+- No heavy contrast lighting
+
+DEPTH & OPTICS:
+- Moderate portrait lens compression
+- Soft background bokeh
+- Face and hair sculpture remain sharp
+- Background remains slightly softened and unobtrusive
+- No distortion
+- Clean optical rendering with natural falloff
+- No exaggerated blur
+
+PHOTO STYLE:
+- High-resolution digital portrait photography
+- Polished but physically believable editorial / social-media portrait finish
+- Clean rendering with little visible noise
+- Soft, modern digital clarity
+- Slight surrealism must come from the hairstyle concept only
+- No HDR exaggeration
+- No painterly softness
+- No AI-smooth rendering
+- Must feel like a real photographed absurdist editorial portrait
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Slight natural lens falloff toward the edges
+- Very mild softness outside the main focus plane
+- Slight tonal inconsistency in the background to avoid a synthetic flat gradient
+- Minimal but non-zero skin texture variation
+- No perfectly uniform sharpness across every hair strand
+- No sterile, over-clean rendering
+
+EXPOSURE & RESPONSE:
+- Balanced exposure centered on skin tone and bright yellow curls
+- Soft highlight roll-off in the hair
+- Gentle contrast with no crushed shadows
+- Midtones must preserve most of the visual information
+- The background must remain neutral and restrained
+- No flat global overexposure
+
+ANTI-AI CONSTRAINT:
+- Do NOT turn the hair into literal noodles, food props, or CGI strands
+- Do NOT produce plastic skin or beauty-campaign retouching
+- Do NOT over-symmetrize the face
+- Do NOT stylize the background
+- Do NOT let the absurd concept become fantasy or cartoon imagery
+- Maintain the effect as a real photographed portrait with a surreal hairstyle joke
+
+COLOR:
+- Dominant palette:
+  - Muted earth tones
+  - Ochre undertones
+  - Bright noodle-yellow hair
+  - Neutral subdued background
+- The yellow hair must dominate visually
+- The rest of the palette must remain restrained and understated
+- No unnecessary saturation spikes outside the hair
+- No heavy color grading
+
+MOOD:
+- Lighthearted
+- Absurdist
+- Playful
+- Deadpan
+- Slightly silly / “병맛”
+- Polished but surreal
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Preserve the serious straight-on expression
+- Preserve the exaggerated ramen-noodle yellow curls as the main concept
+- Keep the plain cotton t-shirt and plain uncluttered background
+- Maintain soft diffuse daylight and medium close-up framing
+- Do not stylize into cartoon, fantasy, or food-comedy CGI
+- Keep all elements physically believable
+
+OUTPUT TARGET:
+- Ultra-realistic absurdist editorial portrait
+- Same recognizable person
+- Serious straight-on face with exaggerated yellow “라면머리 / 면발헤어”
+- Plain t-shirt, plain background, soft daylight
+- Clean polished digital portrait with soft bokeh
+- Looks like a real photographed visual pun, not AI-generated`
+  },
   "bronze-statue-bench": {
     "default": `Transform the uploaded photo into a realistic European-style park statue scene featuring a seated bronze human figure on an ornate metal bench, preserving the exact composition, pose, and environmental structure of the original image.
 

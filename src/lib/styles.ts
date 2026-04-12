@@ -49,6 +49,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "dreamy-celebratory": "자연",
   "romantic-night-twoshot": "무드",
   astronaut: "컨셉",
+  "ramen-hair": "컨셉",
   "bronze-statue-bench": "컨셉",
   "yakuza": "컨셉",
 };
@@ -100,6 +101,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/astronaut-before.jpg?v=1",
     afterImg: "/thumbnails/astronaut-after.jpg?v=1",
+  },
+  {
+    id: "ramen-hair",
+    name: "라면 머리",
+    desc: "진지한 표정과 노란 면발 컬이 충돌하는 병맛 에디토리얼 포트레이트",
+    bgColor: "#d1bb6d",
+    tag: "MEME",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/ramen-hair-before.jpg?v=1",
+    afterImg: "/thumbnails/ramen-hair-after.jpg?v=1",
   },
   {
     id: "idol-photocard",
