@@ -107,8 +107,8 @@ export const ALL_STYLES: StyleDef[] = [
   },
   {
     id: "visual-kei",
-    name: "비주얼 케이",
-    desc: "어두운 인더스트리얼 배경 위에 선 글램 록 무드의 비주얼 케이 포트레이트",
+    name: "비주얼계 밴드 멤버",
+    desc: "어두운 인더스트리얼 배경 위에 선 일본 비주얼계 밴드 멤버 무드의 글램 록 포트레이트",
     bgColor: "#242a35",
     tag: "NEW",
     active: true,
