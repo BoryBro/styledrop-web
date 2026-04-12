@@ -8,6 +8,10 @@ export const STYLE_VARIANTS: Record<string, Variant[]> = {
     { id: "dark", label: "타락천사",      desc: "다크하고 강렬한 타락천사",       thumbnail: "/thumbnails/angel-dark.jpg" },
     { id: "soft", label: "여리여리 천사", desc: "파스텔 톤의 부드러운 천사",      thumbnail: "/thumbnails/angel-soft.jpg" },
   ],
+  "orange-cosmic-girl": [
+    { id: "default", label: "네온 놀이공원", desc: "실사 코스프레 피사체와 2D 놀이공원 배경이 충돌하는 하이브리드 컷", thumbnail: "/thumbnails/Orange_cosmic_girl-after.jpg?v=1" },
+    { id: "flat-blue", label: "플랫 스카이 블루", desc: "완전히 평평한 하늘색 배경 위에 또렷하게 서는 미니멀 코스믹 스튜디오 컷", thumbnail: "/thumbnails/Orange_cosmic_girl-flat_blue-after.jpg?v=1" },
+  ],
   "joseon-farmer": [
     { id: "v1", label: "전신샷",            desc: "쉬다가 한 컷 찍어봤어요!",      thumbnail: "/thumbnails/joseon-after.jpg?v=2" },
     { id: "v3", label: "자연에서 한컷 🤍", desc: "부끄러워하듯 웃는게 뽀인트!",   thumbnail: "/thumbnails/joseon-ref-1.jpg" },

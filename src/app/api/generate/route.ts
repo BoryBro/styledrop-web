@@ -263,6 +263,228 @@ NEGATIVE RULES:
 FINAL OUTPUT TARGET:
 A highly stylized flash-shot fantasy portrait of the uploaded user as a glamorous fallen angel / dark cupid figure, with preserved identity, large feathered wings, glossy shimmer makeup, short angelic or dark mini dress, cigarette and smoke, surreal floating cherubs, red heart icons, tiny stars, and a moody cloud-filled celestial-underworld backdrop.`,
   },
+  "orange-cosmic-girl": {
+    "default": `Transform the uploaded photo into a Sailor Venus cosplay portrait set in a stylized amusement park.
+
+This must look like a real high-resolution hybrid photograph — a physically real human subject captured in-camera, combined with a clearly artificial 2D illustrated background. Not fantasy illustration. Not fully rendered CGI. Not painterly. The subject must remain real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the uploaded user's exact facial identity: bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain the same expression and gaze direction unless minor adaptation is required for pose alignment
+- CRITICAL: The face must feel naturally integrated into the body — same lighting direction, same contrast, same skin texture, same optical sharpness
+- The face must NOT look pasted or composited unnaturally
+- Match neck, jawline, skin tone, and perspective seamlessly
+- No beautification that alters facial structure
+- No plastic skin, no artificial symmetry correction
+- Preserve pores, subtle skin variation, and natural detail
+- The final result must adapt naturally regardless of gender while preserving identity
+
+HAIR:
+- Long, straight blonde wig styled in Sailor Venus fashion
+- Red bow accessory on top
+- Hair should retain realistic strand detail and natural light interaction
+- No artificial or overly rigid hair rendering
+
+OUTFIT:
+- Sailor Venus cosplay costume:
+  - White sleeveless top with deep orange collar
+  - Navy-blue bow at the chest
+  - Pleated orange skirt
+  - Large yellow bow at the lower back
+  - Orange and white elbow-length gloves
+  - Orange glossy heels with ankle straps
+- Materials must appear physically real: fabric texture, slight creasing, natural highlights
+- No plastic or costume-like artificial rendering
+
+POSE / COMPOSITION:
+- Full-body, three-quarter view
+- Dynamic, energetic pose
+- Slightly angled stance with strong visual flow
+- Subject centered and clearly separated from background
+- Composition must feel like a real photographed cosplay shoot
+
+BACKGROUND — 2D GRAPHIC PLATE (CRITICAL):
+- Replace entire environment with a flat 2D illustrated amusement park scene
+- Carousel, neon lights, signage, and decorative elements rendered as:
+  - Vector-style shapes
+  - Anime-style background art
+  - Bold outlines and simplified geometry
+- No photorealistic textures
+- Clean color blocking with minimal gradients
+- Optional cel-shading or halftone accents
+- Background must feel intentionally flat and graphic, not semi-realistic
+- Must NOT look like a blurred photograph — clearly a designed 2D plate
+
+LIGHTING:
+- Multi-colored neon lighting (blue, pink, yellow) originating from the 2D background
+- Lighting on the subject must remain physically realistic
+- Subtle colored light spill (rim light, edge tint) reflecting onto skin and outfit
+- Maintain consistent light direction and believable interaction with the subject
+- No illustrated lighting on the subject
+
+DEPTH & SEPARATION:
+- Strong separation between subject (3D real) and background (2D flat)
+- Subject remains sharply rendered with natural depth
+- Background remains flat; optional slight blur allowed but must retain graphic quality
+- No depth simulation that makes the background appear realistic
+
+PHOTO STYLE:
+- High-resolution real digital photograph for the subject
+- Background as a clean 2D composited plate
+- Hybrid rendering: real human + flat illustration
+- No painterly blending or texture merging
+- No artificial composite artifacts
+
+COLOR:
+- Dominant palette must reflect neon blues, pinks, yellows, oranges
+- Preserve and visibly reflect these core palette references:
+  - #0c0f14
+  - #375523
+  - #11273c
+  - #5b723b
+  - #deb3a7
+  - #6a565a
+  - #08b5f0
+  - #5670a0
+  - #9e827b
+  - #a4caf1
+  - #294f7e
+  - #f67f33
+  - #e7eaf4
+  - #7292d4
+  - #a83d19
+- Colors should be bold and graphic in the background while remaining natural on the subject
+
+MOOD:
+- Energetic
+- Playful
+- Anime-inspired
+- Visually striking contrast between real human and artificial world
+- Fashion-forward cosplay energy
+
+STRICT RULES:
+- The uploaded user's face must remain fully recognizable
+- Subject must remain photorealistic
+- Background must remain strictly 2D and graphic
+- Do not blend the two styles into one
+- Do not introduce realism into the background
+- Do not stylize the subject into illustration
+- Maintain clear hybrid contrast
+
+OUTPUT TARGET:
+- Ultra-realistic cosplay portrait with hybrid rendering
+- Real human subject in Sailor Venus costume
+- Flat 2D illustrated amusement park background
+- Strong visual contrast between real and graphic elements
+- Looks like a high-end composited editorial image, not AI-generated`,
+    "flat-blue": `Transform the uploaded photo into a Sailor Venus cosplay portrait set against a flat color background.
+
+This must look like a real high-resolution hybrid photograph — a physically real human subject captured in-camera, combined with a clearly artificial flat 2D background. Not fantasy illustration. Not fully rendered CGI. Not painterly. The subject must remain real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the uploaded user's exact facial identity: bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain the same expression and gaze direction unless minor adaptation is required for pose alignment
+- CRITICAL: The face must feel naturally integrated into the body — same lighting direction, same contrast, same skin texture, same optical sharpness
+- The face must NOT look pasted or composited unnaturally
+- Match neck, jawline, skin tone, and perspective seamlessly
+- No beautification that alters facial structure
+- No plastic skin, no artificial symmetry correction
+- Preserve pores, subtle skin variation, and natural detail
+- The final result must adapt naturally regardless of gender while preserving identity
+
+HAIR:
+- Long, straight blonde wig styled in Sailor Venus fashion
+- Red bow accessory on top
+- Hair should retain realistic strand detail and natural light interaction
+- No artificial or overly rigid hair rendering
+
+OUTFIT:
+- Sailor Venus cosplay costume:
+  - White sleeveless top with deep orange collar
+  - Navy-blue bow at the chest
+  - Pleated orange skirt
+  - Large yellow bow at the lower back
+  - Orange and white elbow-length gloves
+  - Orange glossy heels with ankle straps
+- Materials must appear physically real: fabric texture, slight creasing, natural highlights
+- No plastic or costume-like artificial rendering
+
+POSE / COMPOSITION:
+- Full-body, three-quarter view
+- Dynamic, energetic pose
+- Slightly angled stance with strong visual flow
+- Subject centered and clearly separated from background
+- Composition must feel like a real photographed cosplay shoot
+
+BACKGROUND — FLAT COLOR (CRITICAL):
+- Replace entire environment with a completely flat, solid color background
+- No objects, no gradients, no textures, no patterns
+- Pure single-tone color only
+- Use a vivid anime-style sky blue:
+  - #08b5f0 (primary solid fill)
+- Background must feel clean, graphic, and minimal
+- Must NOT include any environmental elements, lighting effects, or decorative shapes
+
+LIGHTING:
+- Neutral studio-like lighting on subject
+- No environmental light influence from background
+- Clean, even illumination with subtle natural shadows
+- Maintain realistic skin rendering and material response
+
+DEPTH & SEPARATION:
+- Strong subject-background separation
+- Subject remains fully photorealistic
+- Background remains perfectly flat and depthless
+- No blur, no depth simulation in background
+
+PHOTO STYLE:
+- High-resolution real digital photograph for the subject
+- Background as a flat 2D color plate
+- Hybrid rendering: real human + pure graphic background
+- No painterly blending or texture merging
+- No artificial composite artifacts
+
+COLOR:
+- Background locked to:
+  - #08b5f0
+- Preserve and visibly reflect these core palette references on subject and styling:
+  - #0c0f14
+  - #375523
+  - #11273c
+  - #5b723b
+  - #deb3a7
+  - #6a565a
+  - #5670a0
+  - #9e827b
+  - #a4caf1
+  - #294f7e
+  - #f67f33
+  - #e7eaf4
+  - #7292d4
+  - #a83d19
+
+MOOD:
+- Clean
+- Graphic
+- Playful
+- Anime-inspired
+- Strong visual contrast between real subject and flat color field
+
+STRICT RULES:
+- The uploaded user's face must remain fully recognizable
+- Subject must remain photorealistic
+- Background must be strictly a single flat color
+- Do not add gradients, textures, or objects
+- Do not stylize the subject into illustration
+- Maintain clear separation between real subject and graphic background
+
+OUTPUT TARGET:
+- Ultra-realistic cosplay portrait
+- Real human subject in Sailor Venus costume
+- Pure flat sky-blue background (#08b5f0)
+- Clean, minimal, high-contrast composition
+- Looks like a high-end editorial photo with graphic backdrop, not AI-generated`,
+  },
   "gyaru": {
     "default": "Transform this photo into an authentic early-2000s Japanese gyaru (ギャル) portrait style. Keep the person's identity intact — same face structure, same person.\n\nMAKEUP TRANSFORMATION:\n- Heavy dramatic eye makeup: thick layered false lashes, strong black eyeliner with extended outer corners\n- Dark dramatic contact lens effect (high contrast, enlarged-looking)\n- White shimmer highlight under the eyes (tear bag / aegyo-sal emphasis)\n- Bright vertical nose highlight stripe\n- Pale matte skin base with soft airbrushed finish\n- Pink blush across cheeks and nose bridge\n- Glossy light pink overlined lips\n\nHAIR:\n- Dye to blonde or light brown\n- Voluminous, curled, layered gyaru styling\n- Shiny, slightly synthetic-looking texture\n\nOUTFIT & BACKGROUND:\n- Leopard or animal print elements in outfit or background\n- Sparkly, rhinestone-style accessories\n- Feminine, over-the-top Y2K gyaru fashion\n\nPHOTO STYLE:\n- Front-facing selfie angle, slightly top-down\n- Direct flash lighting: overexposed skin highlights, high contrast\n- Warm candy-like color tone\n- Retro Japanese photo booth (purikura) aesthetic: slight grain, warm saturation\n\nSTRICT RULES:\n- Preserve the person's identity: same face, same bone structure\n- No face reshaping or identity change\n- Output must look like a real early-2000s gyaru photo",
   },
@@ -3211,6 +3433,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "dreamy-wildflower": { "default": [] },
   "dreamy-celebratory": { "default": [] },
   "bronze-statue-bench": { "default": [] },
+  "orange-cosmic-girl": { "default": [], "flat-blue": [] },
   "yakuza": { "default": [], "mafia": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {

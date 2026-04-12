@@ -21,6 +21,7 @@ export const STYLE_CATEGORY_TABS = ["전체", "일상", "자연", "무드", "컨
 export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   gyaru: "컨셉",
   angel: "컨셉",
+  "orange-cosmic-girl": "컨셉",
   "idol-photocard": "무드",
   "club-flash": "무드",
   "flash-selfie": "일상",
@@ -78,6 +79,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/angel-before.jpg",
     afterImg: "/thumbnails/angel-after.jpg",
     popular: true,
+  },
+  {
+    id: "orange-cosmic-girl",
+    name: "오렌지 코스믹걸",
+    desc: "네온 놀이공원과 플랫 스카이 블루 배경 중 골라 코스믹 히로인 무드로 변환",
+    bgColor: "#08b5f0",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Orange_cosmic_girl-before.jpg?v=1",
+    afterImg: "/thumbnails/Orange_cosmic_girl-after.jpg?v=1",
   },
   {
     id: "romantic-night-twoshot",
