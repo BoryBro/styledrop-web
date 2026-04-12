@@ -207,7 +207,7 @@ export default function Home() {
             </svg>
           </div>
           <span className="text-[12px] text-white/65 leading-relaxed">
-            <Link href="/terms" className="text-white/80 underline underline-offset-2">이용약관</Link> 및 <Link href="/privacy" className="text-white/80 underline underline-offset-2">개인정보처리방침</Link>에 동의하며, 업로드된 사진은 AI 처리 후 즉시 삭제됩니다.
+            <Link href="/terms" className="text-white/80 underline underline-offset-2">이용약관</Link> 및 <Link href="/privacy" className="text-white/80 underline underline-offset-2">개인정보처리방침</Link>에 동의하며, 업로드한 사진과 생성 결과는 서비스 제공·저장·공유 기능 범위에서 처리됩니다.
           </span>
         </label>
 

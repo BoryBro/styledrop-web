@@ -315,7 +315,7 @@ export default function HomeClient({ bottomSlot }: { bottomSlot?: React.ReactNod
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2 px-1">
               <p className="text-[11px] md:text-xs text-white/40 font-medium">
-                업로드된 사진은 서버에 저장되지 않으며, AI 처리 후 즉시 삭제됩니다.
+                업로드한 사진과 생성 결과는 서비스 제공·저장·공유 기능 범위에서 처리됩니다.
               </p>
               <label className="flex items-center gap-3 cursor-pointer group w-fit">
                 <div className="relative flex items-center justify-center">
