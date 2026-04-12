@@ -60,6 +60,7 @@ type ShowcaseItem = {
   imageUrl: string;
   styleId: string | null;
   instagramHandle?: string | null;
+  likeCount: number;
   createdAt: string;
 };
 
@@ -464,12 +465,27 @@ export default function Studio() {
 
   const toggleStoryLike = useCallback(() => {
     if (!activeShowcase) return;
+    const wasLiked = likedShowcaseUserIds.includes(activeShowcase.userId);
+    const liked = !wasLiked;
     setLikedShowcaseUserIds((current) =>
-      current.includes(activeShowcase.userId)
+      wasLiked
         ? current.filter((id) => id !== activeShowcase.userId)
         : [...current, activeShowcase.userId]
     );
-  }, [activeShowcase]);
+    // 낙관적 카운트 업데이트
+    setShowcaseItems((current) =>
+      current.map((item) =>
+        item.userId === activeShowcase.userId
+          ? { ...item, likeCount: Math.max(0, item.likeCount + (liked ? 1 : -1)) }
+          : item
+      )
+    );
+    fetch("/api/showcase-likes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetUserId: activeShowcase.userId, liked }),
+    }).catch(() => {});
+  }, [activeShowcase, likedShowcaseUserIds]);
 
   useEffect(() => {
     if (selectedShowcaseIndex === null) return;
@@ -1796,12 +1812,12 @@ export default function Studio() {
               </div>
             </div>
 
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-black">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={activeShowcase.imageUrl}
                 alt={activeShowcase.nickname}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
               />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.45)_0%,rgba(0,0,0,0.08)_28%,rgba(0,0,0,0.16)_62%,rgba(0,0,0,0.72)_100%)]" />
             </div>
@@ -1832,14 +1848,21 @@ export default function Studio() {
                 <button
                   type="button"
                   onClick={toggleStoryLike}
-                  className={`relative z-20 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border backdrop-blur-sm transition-colors ${
+                  className={`relative z-20 flex shrink-0 flex-col items-center justify-center gap-0.5 h-14 w-12 rounded-2xl border backdrop-blur-sm transition-colors ${
                     activeShowcaseLiked
                       ? "border-[#C9571A]/60 bg-[#C9571A]/18 text-[#FF8B60]"
                       : "border-white/14 bg-black/28 text-white"
                   }`}
                   aria-label="스토리 좋아요"
                 >
-                  <span className="text-[22px] leading-none">{activeShowcaseLiked ? "♥" : "♡"}</span>
+                  <span className="text-[20px] leading-none">{activeShowcaseLiked ? "♥" : "♡"}</span>
+                  {activeShowcase.likeCount > 0 && (
+                    <span className="text-[10px] font-bold tabular-nums leading-none">
+                      {activeShowcase.likeCount >= 1000
+                        ? `${(activeShowcase.likeCount / 1000).toFixed(1)}k`
+                        : activeShowcase.likeCount}
+                    </span>
+                  )}
                 </button>
               </div>
 

@@ -78,14 +78,21 @@ export async function GET(request: NextRequest) {
     const active = [...latestByUser.values()].filter((event) => event.event_type === OPT_IN_EVENT && event.metadata?.image_url);
     const userIds = active.map((event) => event.user_id).filter(Boolean);
 
-    const { data: users } = userIds.length
-      ? await supabase
-          .from("users")
-          .select("id, nickname, profile_image")
-          .in("id", userIds)
-      : { data: [] as Array<{ id: string; nickname: string | null; profile_image: string | null }> };
+    const [{ data: users }, { data: likeEvents }] = await Promise.all([
+      userIds.length
+        ? supabase.from("users").select("id, nickname, profile_image").in("id", userIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; nickname: string | null; profile_image: string | null }> }),
+      supabase.from("user_events").select("metadata").eq("event_type", "story_like"),
+    ]);
 
     const userMap = new Map((users ?? []).map((user) => [user.id, user]));
+
+    // 타겟 userId별 하트 카운트 집계
+    const likeCounts: Record<string, number> = {};
+    for (const e of likeEvents ?? []) {
+      const tid = (e.metadata as Record<string, string> | null)?.target_user_id;
+      if (tid) likeCounts[tid] = (likeCounts[tid] ?? 0) + 1;
+    }
 
     const items = active
       .map((event) => {
@@ -97,6 +104,7 @@ export async function GET(request: NextRequest) {
           imageUrl: event.metadata?.image_url ?? null,
           styleId: event.metadata?.style_id ?? null,
           instagramHandle: event.metadata?.instagram_handle ?? null,
+          likeCount: likeCounts[event.user_id] ?? 0,
           createdAt: event.created_at,
         };
       })
