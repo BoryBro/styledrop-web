@@ -3461,6 +3461,164 @@ OUTPUT TARGET:
 - Clean polished digital portrait with soft bokeh
 - Looks like a real photographed visual pun, not AI-generated`
   },
+  "claw-machine": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a straight-on, mid-range shot of a young Korean woman sitting curled up inside a classic arcade claw machine surrounded by plush dolls.
+
+This must look like a real high-resolution editorial / lifestyle photograph — whimsical, nostalgic, playful, and physically believable. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject’s face with the uploaded user’s face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain a soft, neutral-to-gentle expression with subtle doll-like stillness unless minimal adjustment is required
+- CRITICAL: The face must feel naturally integrated into the enclosed claw machine environment — same lighting direction, same contrast, same skin texture, same reflections through glass layers, and same overall image sharpness
+- The face must NOT look pasted, over-cleaned, or artificially beautified
+- Match head, neck, and curled body posture naturally within the confined space
+- Preserve real skin texture and slight natural asymmetry
+- No structural beautification, no plastic skin, no artificial symmetry correction
+- The final result must adapt naturally regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like it is physically inside the machine behind glass, not composited
+- Glass reflections and slight distortion must partially affect facial clarity
+- Capture using a modern smartphone camera system
+- Lens: standard smartphone lens (approx. 26mm–28mm equivalent)
+- Aperture: f/1.8–f/2.2
+- Shutter speed: ~1/120 sec
+- ISO: 200–400
+- White balance: mixed fluorescent + LED lighting (approx. 4000K–5000K)
+- Dynamic range: preserve bright highlights from LEDs while retaining shadow detail
+- No excessive sharpening; retain natural digital softness and highlight bloom
+
+HAIR:
+- Preserve the uploaded user’s natural hairstyle
+- Hair must appear slightly compressed or shaped by the confined space
+- No artificial restyling or exaggerated redesign
+
+CLOTHING:
+- Casual everyday outfit (unchanged from user image unless necessary)
+- Fabric must appear natural with realistic folds from curled posture
+- No costume-like styling
+- Clothing remains secondary to the environment and plush elements
+
+POSE / COMPOSITION:
+- Straight-on mid-range shot
+- Subject curled up inside the claw machine
+- Knees drawn in, compact posture enhancing doll-like impression
+- Centered composition within the rectangular frame of the machine
+- Strong framing from the machine’s structure
+- Subject visually surrounded and enclosed by plush toys
+
+PROP:
+- Arcade claw machine with transparent glass panels
+- Visible smudges, fingerprints, and surface imperfections on glass
+- Plush dolls filling the lower half of the frame:
+  - pastel blue
+  - pink
+  - yellow
+  - mint
+- Plush toys must feel soft, varied, and densely packed
+- Visible machine structure with red and blue painted metal frame
+- Bold white Korean signage printed on the machine frame
+- Internal claw mechanism may be partially visible
+
+SCENE:
+- Indoor arcade setting implied but not dominant
+- Focus remains on the interior of the claw machine
+- Background beyond glass remains secondary and slightly obscured
+- Environment must feel nostalgic and familiar
+
+LIGHTING:
+- Overhead fluorescent lighting
+- Internal LED illumination from the machine
+- Cool-toned highlights with slight color variation
+- Glossy reflections on glass and plastic surfaces
+- Mild highlight blooming from bright LEDs
+- Light must feel artificial and arcade-authentic
+- No cinematic or studio lighting
+
+DEPTH & OPTICS:
+- Deep focus across subject and plush elements
+- Multiple reflection layers due to glass surfaces
+- Slight internal reflections overlapping subject and background
+- No bokeh
+- No distortion beyond natural glass and lens interaction
+- Clean but layered optical rendering
+
+PHOTO STYLE:
+- High-resolution smartphone photography
+- Clean digital clarity
+- Slight highlight bloom from LED sources
+- Subtle surface reflections and glare
+- No HDR exaggeration
+- No painterly softness
+- No AI-smooth rendering
+- Must feel like a real captured arcade moment
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Visible smudges and fingerprints on glass
+- Slight glare and reflection layering
+- Mild uneven exposure due to mixed light sources
+- Subtle sensor noise in darker areas
+- Slight loss of clarity through glass layers
+- No perfectly clean or sterile surfaces
+
+EXPOSURE & RESPONSE:
+- Exposure balanced for subject and bright LED highlights
+- Slight highlight bloom on bright surfaces
+- Shadows remain soft but present within plush layers
+- Midtones carry most visual detail
+- No flat exposure
+
+ANTI-AI CONSTRAINT:
+- Do NOT produce perfectly clean glass
+- Do NOT remove reflections or smudges
+- Do NOT over-beautify the face
+- Do NOT simplify plush arrangement
+- Do NOT stylize into cartoon or toy-like rendering
+- Maintain physical realism with layered reflections
+
+COLOR:
+- Dominant palette:
+  - pastel blue
+  - pink
+  - yellow
+  - mint
+- Accents:
+  - red and blue machine frame
+  - white Korean text
+- Cool highlights from LEDs
+- Slight nostalgic color tone
+- No oversaturation or artificial grading
+
+MOOD:
+- Whimsical
+- Dreamlike
+- Nostalgic
+- Playful
+- Slightly surreal but grounded
+- Cute and enclosed
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Preserve claw machine structure, glass reflections, plush toys, and Korean signage
+- Maintain curled posture inside the machine
+- Keep centered framing
+- Maintain cool artificial lighting and LED highlights
+- Do not stylize into fantasy or toy rendering
+- Keep everything physically believable
+
+OUTPUT TARGET:
+- Ultra-realistic claw machine portrait
+- Same recognizable person sitting inside the machine
+- Surrounded by pastel plush dolls
+- Visible reflections, smudges, and layered glass effects
+- Cool LED lighting with slight bloom
+- Looks like a real captured arcade scene, not AI-generated`
+  },
   "bronze-statue-bench": {
     "default": `Transform the uploaded photo into a realistic European-style park statue scene featuring a seated bronze human figure on an ornate metal bench, preserving the exact composition, pose, and environmental structure of the original image.
 
