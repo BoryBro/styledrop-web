@@ -346,11 +346,19 @@ export default function Studio() {
     setShowcaseHistoryLoading(true);
 
     try {
-      const response = await fetch("/api/history", { cache: "no-store" });
-      const data = await response.json();
-      const history = Array.isArray(data?.history) ? data.history : [];
+      const [historyRes, profileRes] = await Promise.all([
+        fetch("/api/history", { cache: "no-store" }),
+        fetch("/api/profile"),
+      ]);
+      const historyData = await historyRes.json();
+      const history = Array.isArray(historyData?.history) ? historyData.history : [];
       setShowcaseHistory(history);
       setSelectedShowcaseHistoryId(history[0]?.id ?? null);
+
+      const profileData = await profileRes.json().catch(() => ({}));
+      if (profileData?.instagram_handle) {
+        setShowcaseInstagram(profileData.instagram_handle);
+      }
     } catch {
       setShowcaseHistory([]);
       setSelectedShowcaseHistoryId(null);
@@ -1518,17 +1526,25 @@ export default function Studio() {
             </div>
 
             <div className="mt-5">
-              <label htmlFor="showcase-instagram" className="mb-2 block text-[12px] font-bold uppercase tracking-[0.14em] text-white/38">
-                Instagram ID
-              </label>
-              <input
-                id="showcase-instagram"
-                type="text"
-                value={showcaseInstagram}
-                onChange={(event) => setShowcaseInstagram(event.target.value)}
-                placeholder="@yourid"
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[14px] text-white outline-none placeholder:text-white/22 focus:border-[#C9571A]/60"
-              />
+              <div className="mb-2 flex items-center justify-between">
+                <label htmlFor="showcase-instagram" className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/38">
+                  Instagram ID
+                </label>
+                {showcaseInstagram && (
+                  <span className="text-[11px] text-[#6BE2C5]/70">프로필에서 자동 불러옴</span>
+                )}
+              </div>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] text-white/30 select-none">@</span>
+                <input
+                  id="showcase-instagram"
+                  type="text"
+                  value={showcaseInstagram.replace(/^@/, "")}
+                  onChange={(event) => setShowcaseInstagram(event.target.value.replace(/^@+/, ""))}
+                  placeholder="instagram_id"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.03] pl-8 pr-4 py-3 text-[14px] text-white outline-none placeholder:text-white/22 focus:border-[#C9571A]/60"
+                />
+              </div>
             </div>
 
             <div className="mt-6 flex gap-3">
