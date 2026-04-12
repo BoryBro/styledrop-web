@@ -1442,14 +1442,6 @@ function AuditionResultInner() {
     balanceAxes.xScore >= 60 ? "감정 직진형 배역" :
     balanceAxes.yScore >= 60 ? "계산된 존재감 배역" :
     "짧고 센 단역 배역";
-  const balanceFunSummary =
-    balanceAxes.xScore >= 60 && balanceAxes.yScore >= 60
-      ? "답변 패턴상 숨기기보다 밀어붙이는 쪽에 가까워서, 존재감 있는 배역에 잘 붙습니다."
-      : balanceAxes.xScore >= 60
-        ? "답변 패턴상 감정을 안으로 숨기기보다 밖으로 드러내는 쪽이 더 자연스럽게 읽혔습니다."
-        : balanceAxes.yScore >= 60
-          ? "답변 패턴상 분위기를 끌고 가는 성향은 있는데, 감정 표현은 조금 더 아껴 쓰는 타입에 가깝습니다."
-          : "답변 패턴상 무작정 튀기보다 간을 보고 움직이는 편이라, 세게 밀어붙이는 배역보다는 계산된 톤이 더 잘 맞습니다.";
   const directorSummaryCard = (
     <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-5">
       <p className="text-[10px] font-black text-[#C9571A] tracking-widest uppercase mb-2">감독 한마디</p>
@@ -1871,23 +1863,6 @@ function AuditionResultInner() {
         <section className="py-10 border-b border-gray-100">
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mb-2">Scene Analysis</p>
           <p className="text-[22px] font-black text-gray-900 mb-5">씬별 연기 분석</p>
-
-          {result.personality_summary && (
-            <div className="rounded-2xl border border-[#C9571A]/15 bg-[#FFF9F5] px-5 py-4 mb-6">
-              <p className="text-[10px] font-black text-[#C9571A] uppercase tracking-[0.24em] mb-2">Acting Tone</p>
-              <p className="text-[17px] font-black text-gray-900 leading-snug">
-                {result.personality_summary}
-              </p>
-              <p className="mt-2 text-[13px] leading-relaxed text-gray-600">
-                {balanceFunSummary}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span className="rounded-full bg-white px-3 py-1.5 text-[12px] font-bold text-gray-700 ring-1 ring-black/[0.06]">{balanceAxes.xLabel}</span>
-                <span className="rounded-full bg-white px-3 py-1.5 text-[12px] font-bold text-gray-700 ring-1 ring-black/[0.06]">{balanceAxes.yLabel}</span>
-                <span className="rounded-full bg-white px-3 py-1.5 text-[12px] font-bold text-gray-900 ring-1 ring-black/[0.06]">{bestToneLabel}</span>
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-1 gap-3 mb-6">
             <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
