@@ -46,7 +46,14 @@ export default function Result() {
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizResult, setQuizResult] = useState<"correct" | "wrong" | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [quizStat, setQuizStat] = useState<{ correctCount: number; totalCount: number } | null>(null);
   const progressRef = useRef(0);
+
+  function qHash(q: string): string {
+    let h = 0;
+    for (let i = 0; i < q.length; i++) h = (Math.imul(31, h) + q.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36);
+  }
 
   const fetchCredits = () => {
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
@@ -424,11 +431,21 @@ export default function Result() {
             if (quizResult !== null || !q) return;
             const correct = answer === q.a;
             setQuizResult(correct ? "correct" : "wrong");
+            setQuizStat(null);
             setScore((s) => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+            fetch("/api/quiz-stats", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ hash: qHash(q.q), correct }),
+            })
+              .then((r) => r.json())
+              .then((d) => { if (d.totalCount) setQuizStat({ correctCount: d.correctCount, totalCount: d.totalCount }); })
+              .catch(() => {});
             setTimeout(() => {
               setQuizResult(null);
+              setQuizStat(null);
               setQuizIndex((i) => i + 1);
-            }, 1100);
+            }, 1800);
           };
           const stepLabels = ["사진 분석 중", "AI 스타일 학습 중", "변환 적용 중", "마무리 중"];
           const stepIcons = ["🔍", "✨", "🎨", "🪄"];
@@ -569,22 +586,35 @@ export default function Result() {
                     </div>
                   ) : (
                     <div
-                      className="flex items-center justify-center gap-2.5 py-1"
+                      className="flex flex-col items-center gap-1.5 py-0.5"
                       style={{ animation: "ios-fade-up 0.2s ease" }}
                     >
-                      <span className={`text-[22px] leading-none ${quizResult === "correct" ? "text-[#30D158]" : "text-[#FF453A]"}`}>
-                        {quizResult === "correct" ? "✓" : "✗"}
-                      </span>
-                      <div>
-                        <p className={`text-[13px] font-bold ${quizResult === "correct" ? "text-[#30D158]" : "text-[#FF453A]"}`}>
-                          {quizResult === "correct" ? "정답!" : "오답"}
-                        </p>
-                        {quizResult === "wrong" && (
-                          <p className="text-[11px] text-white/35">
-                            정답은 <span className="font-bold text-white/55">{q.a ? "O" : "X"}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[22px] leading-none ${quizResult === "correct" ? "text-[#30D158]" : "text-[#FF453A]"}`}>
+                          {quizResult === "correct" ? "✓" : "✗"}
+                        </span>
+                        <div>
+                          <p className={`text-[13px] font-bold ${quizResult === "correct" ? "text-[#30D158]" : "text-[#FF453A]"}`}>
+                            {quizResult === "correct" ? "정답!" : "오답"}
                           </p>
-                        )}
+                          {quizResult === "wrong" && (
+                            <p className="text-[11px] text-white/35">
+                              정답은 <span className="font-bold text-white/55">{q.a ? "O" : "X"}</span>
+                            </p>
+                          )}
+                        </div>
                       </div>
+                      {quizStat && quizStat.totalCount >= 2 && (
+                        <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.06]" style={{ animation: "ios-fade-up 0.25s ease" }}>
+                          <span className="text-[11px] text-white/40">
+                            <span className="font-bold text-white/60">{quizStat.totalCount.toLocaleString()}명</span> 중{" "}
+                            <span className={`font-bold ${quizResult === "correct" ? "text-[#30D158]" : "text-[#FF453A]"}`}>
+                              {quizStat.correctCount.toLocaleString()}명
+                            </span>{" "}
+                            정답 ({Math.round((quizStat.correctCount / quizStat.totalCount) * 100)}%)
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
