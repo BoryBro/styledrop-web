@@ -485,6 +485,164 @@ OUTPUT TARGET:
 - Clean, minimal, high-contrast composition
 - Looks like a high-end editorial photo with graphic backdrop, not AI-generated`,
   },
+  "subway-cctv": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a high-angle CCTV-style shot of a young Korean person standing inside a crowded subway car.
+
+This must look like a real low-resolution surveillance capture — raw, compressed, distorted, and physically believable. Not stylized illustration. Not cinematic. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject's face with the uploaded user's face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain a neutral, candid expression unless minimal adjustment is required
+- CRITICAL: The face must feel naturally integrated into the surveillance environment — same lighting direction, same compression artifacts, same motion softness, same color degradation, and same overall image sharpness
+- The face must NOT look clean, enhanced, or artificially sharp
+- The face must be partially affected by motion blur, compression noise, and angle distortion
+- Match head position and perspective from a ceiling-mounted camera viewpoint
+- Preserve identity under degraded image conditions
+- No beautification, no smoothing, no symmetry correction
+- The final result must adapt naturally regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the subject recognizable but degraded by CCTV quality
+- Maintain believable proportions under fisheye distortion
+- The face must NOT be the sharpest element in the image
+- Capture as if from a ceiling-mounted security camera
+- Lens: ultra-wide fisheye (approx. 12–16mm equivalent)
+- Aperture: fixed small sensor aperture equivalent (deep focus)
+- Shutter speed: low (~1/30–1/60 sec) to allow motion blur
+- ISO: high (800–1600 equivalent) to introduce noise
+- White balance: cool fluorescent (approx. 4200K–4800K)
+- Dynamic range: limited, with compressed highlights and shadows
+- Heavy digital compression and low bitrate artifacts must be visible
+
+HAIR:
+- Preserve the uploaded user's hairstyle
+- Hair must appear slightly blurred and compressed due to motion and low resolution
+- No stylization
+
+CLOTHING:
+- The outfit must adapt automatically to the uploaded user's gender presentation while preserving the same everyday CCTV-subway realism
+- If the uploaded user reads as male, use a heavy cotton jacket and slacks
+- If the uploaded user reads as female, replace the outfit with realistic everyday women's streetwear appropriate for a subway commute, while keeping the same understated, practical, non-stylized mood
+- Fabrics must appear slightly flattened and texture-reduced due to compression
+- No stylization or fashion-forward exaggeration
+- No wardrobe that feels staged, glamorous, or costume-like
+
+POSE / COMPOSITION:
+- High-angle shot from ceiling
+- Subject positioned among other passengers
+- Slightly off-center framing due to surveillance placement
+- Natural standing posture
+- Crowd partially visible, some figures cropped or cut off
+- Composition must feel incidental, not composed
+
+PROP:
+- Subway interior elements:
+  - metal poles
+  - overhead handrails
+  - brushed steel walls
+  - tiled or reflective floor
+- Passengers around subject, partially blurred or obscured
+- No staged props
+
+SCENE:
+- Interior subway car
+- Crowded environment
+- Metallic surfaces and linear structure
+- Tube-like perspective with vanishing lines
+- Environment must feel busy and functional
+- No stylization or cleanup
+
+LIGHTING:
+- Overhead LED strip lighting
+- Harsh, cool fluorescent illumination
+- Specular highlights on metal surfaces
+- Uneven lighting distribution across frame
+- Slight flicker or exposure inconsistency
+- No soft lighting, no cinematic lighting
+
+DEPTH & OPTICS:
+- Fisheye distortion across the frame
+- Strong edge warping
+- Deep focus across entire image
+- No bokeh
+- Slight perspective compression due to lens and angle
+- No clean optical rendering
+
+PHOTO STYLE:
+- Low-resolution CCTV footage aesthetic
+- Visible compression artifacts (blockiness, macroblocking)
+- Motion blur on moving subjects
+- Grainy digital noise
+- Slight frame softness
+- No HDR
+- No sharpening
+- No editorial polish
+- Must feel like raw surveillance footage
+
+REAL CAMERA IMPERFECTIONS (CRITICAL):
+- Compression artifacts across entire image
+- Motion blur in moving subjects and edges
+- Chroma noise in darker areas
+- Banding in gradients
+- Slight frame tearing or uneven detail
+- Uneven sharpness across frame
+- No clean lines or edges
+
+EXPOSURE & RESPONSE:
+- Slight underexposure overall
+- Highlights from lights slightly blown
+- Shadows slightly crushed
+- Midtones compressed
+- No balanced exposure
+- No tonal refinement
+
+ANTI-AI CONSTRAINT:
+- Do NOT produce clean or sharp image
+- Do NOT enhance face clarity
+- Do NOT remove distortion or noise
+- Do NOT center composition perfectly
+- Do NOT stylize lighting
+- Maintain degraded surveillance realism
+
+COLOR:
+- Dominant palette:
+  - gray
+  - metallic blue
+  - fluorescent white
+- Cool color cast across entire frame
+- Slight desaturation
+- No color grading
+
+MOOD:
+- Candid
+- Immediate
+- Slightly chaotic
+- Everyday realism
+- Observational
+- Slightly mischievous
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Preserve CCTV angle and distortion
+- Maintain crowd presence and partial occlusion
+- Keep low-resolution degraded quality
+- Maintain subway environment
+- Keep outfit gender-adaptive automatically based on the uploaded user while preserving realistic commuter styling
+- Do not stylize or clean image
+- Keep everything physically believable
+
+OUTPUT TARGET:
+- Ultra-realistic CCTV-style subway image
+- Same recognizable person in crowd
+- High-angle fisheye distortion
+- Low resolution with compression artifacts and motion blur
+- Harsh fluorescent lighting
+- Gender-adaptive everyday commuter outfit based on the uploaded user
+- Looks like real surveillance footage, not AI-generated`,
+  },
   "gyaru": {
     "default": "Transform this photo into an authentic early-2000s Japanese gyaru (ギャル) portrait style. Keep the person's identity intact — same face structure, same person.\n\nMAKEUP TRANSFORMATION:\n- Heavy dramatic eye makeup: thick layered false lashes, strong black eyeliner with extended outer corners\n- Dark dramatic contact lens effect (high contrast, enlarged-looking)\n- White shimmer highlight under the eyes (tear bag / aegyo-sal emphasis)\n- Bright vertical nose highlight stripe\n- Pale matte skin base with soft airbrushed finish\n- Pink blush across cheeks and nose bridge\n- Glossy light pink overlined lips\n\nHAIR:\n- Dye to blonde or light brown\n- Voluminous, curled, layered gyaru styling\n- Shiny, slightly synthetic-looking texture\n\nOUTFIT & BACKGROUND:\n- Leopard or animal print elements in outfit or background\n- Sparkly, rhinestone-style accessories\n- Feminine, over-the-top Y2K gyaru fashion\n\nPHOTO STYLE:\n- Front-facing selfie angle, slightly top-down\n- Direct flash lighting: overexposed skin highlights, high contrast\n- Warm candy-like color tone\n- Retro Japanese photo booth (purikura) aesthetic: slight grain, warm saturation\n\nSTRICT RULES:\n- Preserve the person's identity: same face, same bone structure\n- No face reshaping or identity change\n- Output must look like a real early-2000s gyaru photo",
   },
@@ -3434,6 +3592,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "dreamy-celebratory": { "default": [] },
   "bronze-statue-bench": { "default": [] },
   "orange-cosmic-girl": { "default": [], "flat-blue": [] },
+  "subway-cctv": { "default": [] },
   "yakuza": { "default": [], "mafia": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
