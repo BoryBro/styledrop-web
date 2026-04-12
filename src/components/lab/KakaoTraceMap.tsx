@@ -130,7 +130,7 @@ export default function KakaoTraceMap({
   previewTrace: GeoDisplayTrace | null;
   pulseUserId: string | null;
   onPickTrace: (trace: GeoDisplayTrace | null) => void;
-  onSelectLocation: (region: { sido: string; sigungu: string; dong: string }) => void;
+  onSelectLocation: (region: { sido: string; sigungu: string; dong: string; lat: number; lng: number }) => void;
   canFocusMyTrace: boolean;
   onFocusMyTrace: () => void;
   canRemoveMyTrace: boolean;
@@ -289,9 +289,11 @@ export default function KakaoTraceMap({
 
       const latLng = mouseEvent.latLng;
       if (!latLng) return;
-      const region = await resolveRegionFromLatLng(latLng.getLat(), latLng.getLng());
+      const lat = latLng.getLat();
+      const lng = latLng.getLng();
+      const region = await resolveRegionFromLatLng(lat, lng);
       if (!region) return;
-      onSelectLocation(region);
+      onSelectLocation({ ...region, lat, lng });
     });
   }, [activeTrace, onPickTrace, onSelectLocation, ready, resolveRegionFromLatLng]);
 

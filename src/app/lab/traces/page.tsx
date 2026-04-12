@@ -1314,6 +1314,7 @@ export default function TraceLabPage() {
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [clickedLatLng, setClickedLatLng] = useState<{ lat: number; lng: number } | null>(null);
   const [panelExpanded, setPanelExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -1422,10 +1423,10 @@ export default function TraceLabPage() {
     const inverted = projection.invert?.([built.displayX, built.displayY]);
     return {
       ...built,
-      lng: inverted?.[0] ?? 127.8,
-      lat: inverted?.[1] ?? 36.4,
+      lng: clickedLatLng?.lng ?? inverted?.[0] ?? 127.8,
+      lat: clickedLatLng?.lat ?? inverted?.[1] ?? 36.4,
     };
-  }, [form.dong, form.instagramHandle, form.shareImage, form.shareInstagram, form.sido, form.sigungu, payload?.me.alreadyJoined, selectedImage?.result_image_url, user]);
+  }, [clickedLatLng, form.dong, form.instagramHandle, form.shareImage, form.shareInstagram, form.sido, form.sigungu, payload?.me.alreadyJoined, selectedImage?.result_image_url, user]);
   const clusters = useMemo(() => buildClusters(geoDisplayTraces), [geoDisplayTraces]);
   const cityHotspots = useMemo(() => {
     const counts = new Map<string, { sido: string; label: string; count: number }>();
@@ -1539,10 +1540,11 @@ export default function TraceLabPage() {
     }
   };
 
-  const handleSelectLocation = useCallback((region: { sido: string; sigungu: string; dong: string }) => {
+  const handleSelectLocation = useCallback((region: { sido: string; sigungu: string; dong: string; lat: number; lng: number }) => {
     setError(null);
     setActiveTrace(null);
     setPanelExpanded(true);
+    setClickedLatLng({ lat: region.lat, lng: region.lng });
     setForm((current) => ({
       ...current,
       sido: normalizeSido(region.sido),
@@ -1716,6 +1718,7 @@ export default function TraceLabPage() {
                   value={form.sido}
                   onChange={(event) => {
                     setActiveTrace(null);
+                    setClickedLatLng(null);
                     setForm((current) => ({
                       ...current,
                       sido: event.target.value,
@@ -1735,6 +1738,7 @@ export default function TraceLabPage() {
                   value={form.sigungu}
                   onChange={(event) => {
                     setActiveTrace(null);
+                    setClickedLatLng(null);
                     setForm((current) => ({
                       ...current,
                       sigungu: event.target.value,
@@ -1750,6 +1754,7 @@ export default function TraceLabPage() {
                   value={form.dong}
                   onChange={(event) => {
                     setActiveTrace(null);
+                    setClickedLatLng(null);
                     setForm((current) => ({ ...current, dong: event.target.value }));
                   }}
                   list="lab-trace-dong-list"
@@ -1880,7 +1885,7 @@ export default function TraceLabPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+      <main className="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 sm:py-5">
         <datalist id="lab-trace-sigungu-list">
           {districtSuggestions.map((option) => (
             <option key={option} value={option} />
@@ -1892,7 +1897,7 @@ export default function TraceLabPage() {
           ))}
         </datalist>
 
-        <section className="mb-5 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+        <section className="mb-4 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
             <div className="flex items-baseline gap-1">
               <span className="text-[20px] font-black leading-none tracking-tight text-[#C9571A]">
@@ -1941,10 +1946,10 @@ export default function TraceLabPage() {
           )}
         </section>
 
-        <div className="grid gap-6">
-          <section>
+        <div className="grid gap-3">
+          <section className="mx-auto w-full max-w-[390px]">
             {loadingState ? (
-              <div className="flex aspect-square items-center justify-center rounded-[34px] border border-white/10 bg-white/5 text-white/55">
+              <div className="flex aspect-[0.76] items-center justify-center rounded-[28px] border border-white/10 bg-white/5 text-white/55 sm:aspect-square">
                 흔적 지도를 불러오는 중...
               </div>
             ) : (
