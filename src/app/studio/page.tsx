@@ -1080,51 +1080,51 @@ export default function Studio() {
           )}
 
           {showLabSection && (
-            <div className="sticky top-[60px] z-30 mb-5">
-              <div className="rounded-[20px] border border-white/8 bg-[#121212]/90 p-1.5 shadow-[0_16px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-                <div className="grid grid-cols-2 gap-1.5">
+            <div className="sticky top-[60px] z-30 mb-4">
+              <div className="rounded-2xl border border-white/8 bg-[#111]/95 backdrop-blur-xl shadow-[0_8px_24px_rgba(0,0,0,0.4)] px-2 pt-2 pb-1.5">
+                {/* 메인 탭 */}
+                <div className="grid grid-cols-2 gap-1 mb-1.5">
                   <button
                     onClick={() => scrollToSection("cards")}
-                    className={`rounded-[16px] px-4 py-3 text-[14px] font-bold transition-colors ${
+                    className={`rounded-xl py-2 text-[13px] font-bold transition-colors ${
                       activeSectionTab === "cards"
                         ? "bg-[#C9571A] text-white"
-                        : "bg-transparent text-white/55"
+                        : "text-white/40 hover:text-white/70"
                     }`}
                   >
                     일반 카드
                   </button>
                   <button
                     onClick={() => scrollToSection("lab")}
-                    className={`rounded-[16px] px-4 py-3 text-[14px] font-bold transition-colors ${
+                    className={`rounded-xl py-2 text-[13px] font-bold transition-colors ${
                       activeSectionTab === "lab"
                         ? "bg-[#C9571A] text-white"
-                        : "bg-transparent text-white/55"
+                        : "text-white/40 hover:text-white/70"
                     }`}
                   >
                     실험실
                   </button>
                 </div>
-                <div className="mt-1.5 rounded-[16px] border border-white/6 bg-[#0F0F0F]/90 px-1.5 py-1.5">
-                  <div className="overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                    <div className="flex w-max items-center gap-1.5">
-                      {STYLE_CATEGORY_TABS.map((tab) => {
-                        const isActive = activeStyleCategory === tab;
-                        return (
-                          <button
-                            key={tab}
-                            type="button"
-                            onClick={() => handleStyleCategorySelect(tab)}
-                            className={`rounded-full px-3.5 py-2 text-[12px] font-semibold transition-colors ${
-                              isActive
-                                ? "bg-[#C9571A]/18 text-[#F6B38C]"
-                                : "bg-transparent text-white/45"
-                            }`}
-                          >
-                            {tab}
-                          </button>
-                        );
-                      })}
-                    </div>
+                {/* 카테고리 필터 */}
+                <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="flex w-max items-center gap-0.5 px-0.5">
+                    {STYLE_CATEGORY_TABS.map((tab) => {
+                      const isActive = activeStyleCategory === tab;
+                      return (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => handleStyleCategorySelect(tab)}
+                          className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors whitespace-nowrap ${
+                            isActive
+                              ? "bg-[#C9571A]/20 text-[#F6B38C]"
+                              : "text-white/35 hover:text-white/60"
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
