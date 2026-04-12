@@ -47,6 +47,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "cinematic-horseback": "컨셉",
   "dreamy-wildflower": "자연",
   "dreamy-celebratory": "자연",
+  "bronze-statue-bench": "컨셉",
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -360,6 +361,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/Dreamy_celebratory-before.jpg?v=1",
     afterImg: "/thumbnails/Dreamy_celebratory-after.jpg?v=1",
+  },
+  {
+    id: "bronze-statue-bench",
+    name: "공원 벤치 청동상",
+    desc: "한적한 공원 벤치에 앉은 청동 조형물처럼 바뀌는 리얼 파크 스냅 컷",
+    bgColor: "#5a4637",
+    tag: "HOT",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Bronze-before.jpg?v=1",
+    afterImg: "/thumbnails/Bronze-after.jpg?v=1",
   },
 ];
 

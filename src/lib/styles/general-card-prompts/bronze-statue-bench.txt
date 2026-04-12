@@ -1,0 +1,95 @@
+스타일 ID: bronze-statue-bench
+스타일명: 공원 벤치 청동상
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["bronze-statue-bench"]
+
+[default]
+Transform the uploaded photo into a realistic European-style park statue scene featuring a seated bronze human figure on an ornate metal bench, preserving the exact composition, pose, and environmental structure of the original image.
+
+This must look like a real moderate-resolution digital photograph — natural, observational, and grounded in realism. Not stylized. Not cinematic. Not painterly. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the statue's face with the uploaded user's face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and overall recognizability
+- Maintain the same calm, slightly neutral expression consistent with the seated statue pose
+- CRITICAL: The face must be fully integrated into the bronze material — including oxidized patina, subtle greenish verdigris, and metallic surface texture
+- The face must NOT appear pasted; it must share identical reflectivity, roughness, and aging characteristics as the rest of the sculpture
+- Preserve fine facial structure while adapting it into sculpted metal form
+- No beautification, no smoothing, no symmetry correction
+- Maintain believable depth and anatomical realism within the metallic transformation
+
+HAIR:
+- Preserve the user's real hairstyle but reinterpret it as sculpted bronze hair
+- Hair must appear as cast metal with defined strands and structure, integrated into the statue
+- Include subtle patina variation and natural oxidation across the surface
+- No soft or natural hair rendering — must read as solid metal
+
+CLOTHING:
+- The figure must wear sculpted clothing as part of the statue: a loose shirt and long pants
+- All garments must appear as cast bronze with visible folds, seams, and weight translated into metal form
+- Include surface wear, slight smoothing on contact areas, and realistic casting imperfections
+- No fabric simulation — everything must read as unified metallic material
+
+POSE / COMPOSITION:
+- Preserve the exact seated pose: the figure leaning slightly back on an ornate bench
+- One arm resting casually along the backrest of the bench
+- Legs extended forward with a relaxed posture
+- Maintain straight-on perspective with slight angle from the front-left
+- Medium-to-full body framing with the entire statue and bench visible
+- Camera at approximately eye-level or slightly above, consistent with the original image
+- Maintain natural spatial depth and subject placement within the frame
+
+SCENE:
+- Outdoor park setting with dry ground covered in fallen leaves and sparse grass
+- Trees with green foliage overhead and around the scene
+- Background includes a paved walkway and park infrastructure
+- A white stone staircase and low wall structure visible in the background
+- Green-painted metal railings and park elements present
+- Ornate metal bench with intricate decorative patterns and cast iron detailing
+- Ground surface includes stone pavement beneath the bench
+- Environment must feel like a quiet, slightly worn public park
+
+LIGHTING:
+- Natural daylight under soft, diffused conditions
+- Likely overcast or filtered sunlight through trees
+- Soft shadows on the ground and under the bench
+- Even illumination across statue and environment
+- Subtle highlights on metallic surfaces of the statue and bench
+
+DEPTH & OPTICS:
+- Moderate depth of field with clear focus on the statue and foreground
+- Background remains visible and readable with slight natural softness
+- No motion blur
+- No digital noise
+- Natural smartphone or digital camera perspective
+
+PHOTO STYLE:
+- Moderate-resolution digital photography
+- Clean, realistic rendering with balanced exposure
+- No stylization, no HDR exaggeration
+- No painterly or AI-generated artifacts
+- Must feel like a casual but well-composed real-world photograph
+
+COLOR:
+- Natural, muted outdoor palette
+- Bronze and dark metallic tones for statue and bench
+- Earthy browns and tans in ground and fallen leaves
+- Greens in foliage and park elements
+- Off-white tones in stone structures
+- No artificial saturation or color grading shifts
+
+MOOD:
+- Calm
+- Still
+- Quiet
+- Slightly contemplative
+- Reflective of a peaceful park moment with minimal human activity
+
+STRICT RULES:
+- Preserve the exact pose, bench structure, and seated positioning
+- Maintain all environmental elements: trees, staircase, railings, pavement, and park layout
+- Ensure full metallic realism of the statue with oxidation and patina
+- Do not alter camera angle or framing
+- Do not introduce stylization or remove details
+- The user's identity must remain recognizable while fully integrated into the statue material
+
+OUTPUT TARGET:
+- A realistic park photograph featuring a seated bronze statue with the user's identity integrated into the sculptural form, resting on an ornate metal bench in a quiet outdoor setting, captured with natural light and authentic environmental detail, matching the original composition and atmosphere exactly.
