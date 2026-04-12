@@ -152,6 +152,7 @@ type AuditionResult = {
   overall_one_liner: string;
   physiognomy?: Physiognomy;
   personality_summary?: string;
+  selected_still_scene_idx?: number;
 };
 
 type GenreMeta = { genre: string; cue: string };
@@ -192,6 +193,8 @@ function restoreLocalAuditionResult({
   personalityRaw,
   stillRaw,
   stillSignatureRaw,
+  stillSceneIdxRaw,
+  stillSceneSignatureRaw,
   setResult,
   setGenres,
   setPhysioPhoto,
@@ -199,6 +202,7 @@ function restoreLocalAuditionResult({
   setUserPhotos,
   setStillImage,
   setBestSceneIdx,
+  setSelectedStillSceneIdx,
   setErrorMsg,
   setPhase,
   stillImageRef,
@@ -210,6 +214,8 @@ function restoreLocalAuditionResult({
   personalityRaw: string | null;
   stillRaw: string | null;
   stillSignatureRaw: string | null;
+  stillSceneIdxRaw: string | null;
+  stillSceneSignatureRaw: string | null;
   setResult: (result: AuditionResult | null) => void;
   setGenres: (genres: GenreMeta[]) => void;
   setPhysioPhoto: (photo: string | null) => void;
@@ -217,6 +223,7 @@ function restoreLocalAuditionResult({
   setUserPhotos: (photos: string[]) => void;
   setStillImage: (image: string | null) => void;
   setBestSceneIdx: (index: number) => void;
+  setSelectedStillSceneIdx: (index: number) => void;
   setErrorMsg: (message: string | null) => void;
   setPhase: (phase: Phase) => void;
   stillImageRef: React.MutableRefObject<string | null>;
@@ -246,8 +253,21 @@ function restoreLocalAuditionResult({
     const b = SCORE_LABELS.reduce((s, l) => s + (parsed.scenes[best].scores?.[l] ?? 0), 0) / 4;
     return a > b ? i : best;
   }, 0);
+  const parsedStillSceneIdx = Number(parsed.selected_still_scene_idx);
+  const sessionStillSceneIdx = (
+    stillSceneSignatureRaw === currentStillSignature &&
+    stillSceneIdxRaw !== null
+  )
+    ? Number(stillSceneIdxRaw)
+    : NaN;
+  const resolvedStillSceneIdx = Number.isFinite(sessionStillSceneIdx)
+    ? sessionStillSceneIdx
+    : Number.isFinite(parsedStillSceneIdx)
+      ? parsedStillSceneIdx
+      : bestIdx;
 
   setBestSceneIdx(bestIdx);
+  setSelectedStillSceneIdx(clamp(resolvedStillSceneIdx, 0, parsed.scenes.length - 1));
   setErrorMsg(null);
   setPhase("ready");
 }
@@ -857,9 +877,8 @@ function AuditionResultInner() {
   const [result, setResult] = useState<AuditionResult | null>(null);
   const [userPhotos, setUserPhotos] = useState<string[]>([]);
   const [stillImage, setStillImage] = useState<string | null>(null);
-  const [albumStillPhoto, setAlbumStillPhoto] = useState<string | null>(null);
-  const [selectedStillSourceKey, setSelectedStillSourceKey] = useState<string>("");
   const [bestSceneIdx, setBestSceneIdx] = useState<number>(0);
+  const [selectedStillSceneIdx, setSelectedStillSceneIdx] = useState<number>(0);
   const [genres, setGenres] = useState<GenreMeta[]>([]);
   const [phase, setPhase] = useState<Phase>("generating");
   const [activeSceneTab, setActiveSceneTab] = useState(0);
@@ -882,7 +901,6 @@ function AuditionResultInner() {
   const [historyShareId, setHistoryShareId] = useState<string | null | undefined>(undefined);
   const cachedShareId = useRef<string | null>(null);
   const stillImageRef = useRef<string | null>(null);
-  const stillFileInputRef = useRef<HTMLInputElement | null>(null);
   const cardStageRef = useRef<HTMLDivElement | null>(null);
   const draggingStickerIdRef = useRef<string | null>(null);
   const activeStickerPointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
@@ -953,6 +971,13 @@ function AuditionResultInner() {
         setUserPhotos(nextUserPhotos);
         setStillImage(nextStillImage);
         setBestSceneIdx(nextBestSceneIdx);
+        setSelectedStillSceneIdx(clamp(
+          Number.isFinite(Number(parsedResult.selected_still_scene_idx))
+            ? Number(parsedResult.selected_still_scene_idx)
+            : nextBestSceneIdx,
+          0,
+          parsedResult.scenes.length - 1
+        ));
         setPhysioPhoto(null);
         setErrorMsg(null);
         setPhase("ready");
@@ -971,6 +996,8 @@ function AuditionResultInner() {
     const personalityRaw = sessionStorage.getItem("sd_au_personality");
     const stillRaw = sessionStorage.getItem("sd_au_still");
     const stillSignatureRaw = sessionStorage.getItem("sd_au_still_sig");
+    const stillSceneIdxRaw = sessionStorage.getItem("sd_au_still_scene_idx");
+    const stillSceneSignatureRaw = sessionStorage.getItem("sd_au_still_scene_sig");
 
     if (historyShareId && raw) {
       try {
@@ -983,6 +1010,8 @@ function AuditionResultInner() {
           personalityRaw,
           stillRaw,
           stillSignatureRaw,
+          stillSceneIdxRaw,
+          stillSceneSignatureRaw,
           setResult,
           setGenres,
           setPhysioPhoto,
@@ -990,6 +1019,7 @@ function AuditionResultInner() {
           setUserPhotos,
           setStillImage,
           setBestSceneIdx,
+          setSelectedStillSceneIdx,
           setErrorMsg,
           setPhase,
           stillImageRef,
@@ -1026,6 +1056,8 @@ function AuditionResultInner() {
         personalityRaw,
         stillRaw,
         stillSignatureRaw,
+        stillSceneIdxRaw,
+        stillSceneSignatureRaw,
         setResult,
         setGenres,
         setPhysioPhoto,
@@ -1033,6 +1065,7 @@ function AuditionResultInner() {
         setUserPhotos,
         setStillImage,
         setBestSceneIdx,
+        setSelectedStillSceneIdx,
         setErrorMsg,
         setPhase,
         stillImageRef,
@@ -1053,18 +1086,10 @@ function AuditionResultInner() {
   }, []);
 
   useEffect(() => {
-    setSelectedStillSourceKey((prev) => {
-      if (prev === "album" && albumStillPhoto) return prev;
-      if (prev.startsWith("scene-")) {
-        const idx = Number(prev.replace("scene-", ""));
-        if (userPhotos[idx]) return prev;
-      }
-      if (userPhotos[bestSceneIdx]) return `scene-${bestSceneIdx}`;
-      const fallbackIdx = userPhotos.findIndex(Boolean);
-      if (fallbackIdx >= 0) return `scene-${fallbackIdx}`;
-      return albumStillPhoto ? "album" : "";
-    });
-  }, [albumStillPhoto, bestSceneIdx, userPhotos]);
+    if (!result) return;
+    sessionStorage.setItem("sd_au_still_scene_idx", String(selectedStillSceneIdx));
+    sessionStorage.setItem("sd_au_still_scene_sig", buildStillCacheSignature(result));
+  }, [result, selectedStillSceneIdx]);
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
@@ -1167,22 +1192,26 @@ function AuditionResultInner() {
 
   const buildShareRequestPayload = useCallback(async () => {
     if (!result) throw new Error("결과가 없습니다.");
-    const bestPhoto = userPhotos[bestSceneIdx] ?? null;
+    const shareSceneIdx = clamp(selectedStillSceneIdx, 0, result.scenes.length - 1);
+    const sharePhoto = userPhotos[shareSceneIdx] ?? userPhotos[bestSceneIdx] ?? null;
     const [userPhotoBase64, stillImageBase64, userPhotosBase64] = await Promise.all([
-      srcToBase64Payload(bestPhoto),
+      srcToBase64Payload(sharePhoto),
       srcToBase64Payload(stillImageRef.current),
       Promise.all(userPhotos.map((photo) => srcToBase64Payload(photo))),
     ]);
 
     return {
-      result,
+      result: {
+        ...result,
+        selected_still_scene_idx: shareSceneIdx,
+      },
       genres,
       bestSceneIdx,
       userPhotoBase64,
       userPhotosBase64,
       stillImageBase64,
     };
-  }, [bestSceneIdx, genres, result, userPhotos]);
+  }, [bestSceneIdx, genres, result, selectedStillSceneIdx, userPhotos]);
 
   const ensureShareId = useCallback(async () => {
     if (cachedShareId.current) return cachedShareId.current;
@@ -1201,25 +1230,6 @@ function AuditionResultInner() {
     return data.id as string;
   }, [buildShareRequestPayload]);
 
-  const handleAlbumStillPhotoChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      alert("이미지 파일만 선택할 수 있어요.");
-      return;
-    }
-
-    try {
-      const payload = await blobToBase64Payload(file);
-      const dataUrl = `data:${file.type || "image/jpeg"};base64,${payload}`;
-      setAlbumStillPhoto(dataUrl);
-      setSelectedStillSourceKey("album");
-    } catch {
-      alert("앨범 사진을 불러오지 못했어요. 다시 선택해주세요.");
-    }
-  }, []);
-
   // 스틸컷 생성 (시작 패키지에 포함)
   const handleGenerateStill = async () => {
     if (isGeneratingStill || !result) return;
@@ -1227,38 +1237,40 @@ function AuditionResultInner() {
       alert("스틸컷은 1회만 생성할 수 있어요.");
       return;
     }
+    const targetSceneIdx = clamp(selectedStillSceneIdx, 0, result.scenes.length - 1);
     const photos: string[] = sessionStorage.getItem("sd_au_images")
       ? JSON.parse(sessionStorage.getItem("sd_au_images")!)
       : userPhotos;
     const photoPayloads = await Promise.all(photos.map((photo) => srcToBase64Payload(photo)));
-    const base64List = photoPayloads.filter((payload): payload is string => Boolean(payload));
-    const selectedSourceImage =
-      selectedStillSourceKey === "album"
-        ? albumStillPhoto
-        : selectedStillSourceKey.startsWith("scene-")
-          ? userPhotos[Number(selectedStillSourceKey.replace("scene-", ""))] ?? null
-          : userPhotos[bestSceneIdx] ?? null;
-    const selectedStillSourcePayload = await srcToBase64Payload(selectedSourceImage);
+    const fallbackScenePayload = photoPayloads[targetSceneIdx]
+      ?? photoPayloads[bestSceneIdx]
+      ?? photoPayloads.find((payload): payload is string => Boolean(payload))
+      ?? null;
     const physioPayload = physioPhoto && physioPhoto !== LOCAL_PHYSIO_FALLBACK
       ? await srcToBase64Payload(physioPhoto)
       : null;
-    if (!selectedStillSourcePayload && base64List.length === 0 && !physioPayload) {
-      alert("스틸컷에 사용할 사진을 먼저 선택해주세요.");
+    if (!physioPayload && !fallbackScenePayload) {
+      alert("스틸컷 생성에 필요한 사진을 찾지 못했어요.");
       return;
     }
     setIsGeneratingStill(true);
     try {
       const shareId = await ensureShareId();
       const genreRaw = sessionStorage.getItem("sd_au_genres");
+      const resultPayload = {
+        ...result,
+        selected_still_scene_idx: targetSceneIdx,
+      };
       const res = await fetch("/api/audition/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           shareId,
-          image: selectedStillSourcePayload ?? physioPayload ?? base64List[bestSceneIdx] ?? base64List[0],
+          image: physioPayload ?? fallbackScenePayload,
           physioImage: physioPayload,
+          selectedSceneIdx: targetSceneIdx,
           mimeType: "image/jpeg",
-          stylePrompt: result.scenes[bestSceneIdx].style_prompt,
+          stylePrompt: result.scenes[targetSceneIdx].style_prompt,
           scenes: result.scenes,
           genreMeta: genres,
           physiognomy: result.physiognomy ?? null,
@@ -1269,18 +1281,22 @@ function AuditionResultInner() {
       const dataUrl = `data:image/jpeg;base64,${data.image}`;
       stillImageRef.current = dataUrl;
       setStillImage(dataUrl);
+      setResult(resultPayload);
+      sessionStorage.setItem("sd_au_result", JSON.stringify(resultPayload));
       sessionStorage.setItem("sd_au_still", dataUrl);
       sessionStorage.setItem("sd_au_still_sig", buildStillCacheSignature(result));
+      sessionStorage.setItem("sd_au_still_scene_idx", String(targetSceneIdx));
+      sessionStorage.setItem("sd_au_still_scene_sig", buildStillCacheSignature(result));
       fetch("/api/audition/history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           shareId,
-          result,
+          result: resultPayload,
           genres: genreRaw ? JSON.parse(genreRaw) : genres,
           bestSceneIdx,
           stillImageBase64: data.image,
-          userPhotoBase64: selectedStillSourcePayload ?? photoPayloads[bestSceneIdx] ?? base64List[0] ?? null,
+          userPhotoBase64: photoPayloads[targetSceneIdx] ?? fallbackScenePayload,
           userPhotosBase64: photoPayloads,
         }),
       }).catch(() => {});
@@ -1307,15 +1323,16 @@ function AuditionResultInner() {
 
   const handleSave = useCallback(async () => {
     if (!result || isSaving) return;
+    const saveSceneIdx = clamp(selectedStillSceneIdx, 0, result.scenes.length - 1);
     setIsSaving(true);
     try {
       const blob = await buildSaveCanvas(
         result,
-        result.scenes[bestSceneIdx],
-        bestSceneIdx,
-        userPhotos[bestSceneIdx] ?? null,
+        result.scenes[saveSceneIdx],
+        saveSceneIdx,
+        userPhotos[saveSceneIdx] ?? userPhotos[bestSceneIdx] ?? null,
         stillImageRef.current,
-        genres[bestSceneIdx] ?? null
+        genres[saveSceneIdx] ?? genres[bestSceneIdx] ?? null
       );
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -1327,7 +1344,7 @@ function AuditionResultInner() {
       URL.revokeObjectURL(url);
     } catch (e) { console.error(e); }
     finally { setIsSaving(false); }
-  }, [result, isSaving, userPhotos, genres, bestSceneIdx]);
+  }, [result, isSaving, userPhotos, genres, bestSceneIdx, selectedStillSceneIdx]);
 
   const handleKakaoShare = async () => {
     if (isSharing || !result) return;
@@ -1338,10 +1355,11 @@ function AuditionResultInner() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const Kakao = (window as any).Kakao;
       if (!Kakao?.isInitialized()) Kakao?.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
-      const bestScene = result.scenes[bestSceneIdx];
+      const shareSceneIdx = clamp(selectedStillSceneIdx, 0, result.scenes.length - 1);
+      const shareScene = result.scenes[shareSceneIdx];
       Kakao?.Share?.sendDefault({
         objectType: "text",
-        text: `AI 감독이 나한테 "${bestScene?.assigned_role}" 역할을 줬어 😂\n내 오디션 결과 보러와`,
+        text: `AI 감독이 나한테 "${shareScene?.assigned_role}" 역할을 줬어 😂\n내 오디션 결과 보러와`,
         link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       });
       fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event_type: "audition_share_kakao" }) }).catch(() => {});
@@ -1384,6 +1402,8 @@ function AuditionResultInner() {
   // ── READY — 단일 스크롤 ──────────────────────────────────────────
   const physio = result.physiognomy;
   const bestScene = result.scenes[bestSceneIdx];
+  const cardSceneIdx = clamp(selectedStillSceneIdx, 0, result.scenes.length - 1);
+  const cardScene = result.scenes[cardSceneIdx] ?? bestScene;
   const overallAvg = Math.round(result.scenes.reduce((s, sc) => s + avgScore(sc.scores), 0) / result.scenes.length);
   const physioNeedsRetry = Boolean(
     physio && (
@@ -1400,31 +1420,18 @@ function AuditionResultInner() {
   const archetypeGuide = physio && !physioNeedsRetry ? ARCHETYPE_GUIDE[physio.archetype] : null;
   const selectedCardTheme = CARD_THEMES.find(theme => theme.id === selectedCardThemeId) ?? CARD_THEMES[0];
   const cardStudioLocked = !stillImage;
-  const stillSourceOptions = userPhotos
-    .map((photo, index) => (
-      photo
-        ? {
-            key: `scene-${index}`,
-            image: photo,
-            label: `씬 ${index + 1}`,
-          }
-        : null
-    ))
-    .filter((item): item is { key: string; image: string; label: string } => Boolean(item));
-  const selectedStillSourceImage =
-    selectedStillSourceKey === "album"
-      ? albumStillPhoto
-      : selectedStillSourceKey.startsWith("scene-")
-        ? userPhotos[Number(selectedStillSourceKey.replace("scene-", ""))] ?? null
-        : userPhotos[bestSceneIdx] ?? albumStillPhoto ?? null;
-  const baseCardPhoto = selectedStillSourceImage ?? userPhotos[bestSceneIdx] ?? physioPhoto ?? null;
+  const baseCardPhoto = userPhotos[cardSceneIdx] ?? userPhotos[bestSceneIdx] ?? physioPhoto ?? null;
   const cardPreviewImage = stillImage ?? baseCardPhoto;
-  const cardTitle = genreCardTitle(bestScene.genre);
+  const cardTitle = genreCardTitle(cardScene.genre);
   const overallScoreColor = scoreColor(overallAvg);
-  const actingScore = avgScore(bestScene.scores);
-  const emotionalRangeScore = bestScene.scores["표정연기"] ?? 0;
-  const screenPresenceScore = bestScene.scores["몰입도"] ?? 0;
-  const cardCueLine = (genres[bestSceneIdx]?.cue ?? "").replace(/\s+/g, " ").trim().slice(0, 48);
+  const actingScore = avgScore(cardScene.scores);
+  const emotionalRangeScore = cardScene.scores["표정연기"] ?? 0;
+  const screenPresenceScore = cardScene.scores["몰입도"] ?? 0;
+  const cardCueLine = (
+    genres[cardSceneIdx]?.cue
+    ?? genres.find((item) => item.genre === cardScene.genre)?.cue
+    ?? ""
+  ).replace(/\s+/g, " ").trim().slice(0, 48);
   const weakestSceneIdx = result.scenes.reduce((worst, scene, i) => (
     avgScore(scene.scores) < avgScore(result.scenes[worst].scores) ? i : worst
   ), 0);
@@ -1460,13 +1467,6 @@ function AuditionResultInner() {
       </div>
 
       <div className="mx-auto w-full max-w-[380px]">
-        <input
-          ref={stillFileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleAlbumStillPhotoChange}
-        />
         <div
           ref={cardStageRef}
           className="relative w-full aspect-[677/938] overflow-hidden rounded-[40px] shadow-[0_26px_70px_rgba(0,0,0,0.16)] select-none"
@@ -1491,12 +1491,11 @@ function AuditionResultInner() {
               {cardStudioLocked && (
                 <div className="absolute inset-x-[12%] top-[37%] z-[2] rounded-[22px] border border-white/14 bg-black/46 px-4 py-4 text-center text-white shadow-[0_16px_40px_rgba(0,0,0,0.28)] backdrop-blur-[2px]">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Card Locked</p>
-                  <p className="mt-2 text-[16px] font-black">사진 1장만 고르면</p>
                   <p
                     className="mt-2 text-[25px] leading-none tracking-[-0.03em]"
                     style={{ fontFamily: '"BMKkubulim", sans-serif', color: "#FFE26A" }}
                   >
-                    [{bestScene.genre}] 카드가 열려요
+                    [{cardScene.genre}] 카드가 열려요
                   </p>
                 </div>
               )}
@@ -1648,77 +1647,62 @@ function AuditionResultInner() {
 
         {cardStudioLocked && (
           <div className="-mt-3 rounded-b-[28px] bg-[#fbfbfd] px-5 pb-4 pt-4 shadow-[0_14px_28px_rgba(0,0,0,0.06)]">
-            <div>
-              <div className="grid grid-cols-4 gap-2">
-                {stillSourceOptions.map((option) => {
-                  const selected = selectedStillSourceKey === option.key;
+            <div className="text-center">
+              <p className="text-[15px] font-bold leading-[1.28] tracking-[-0.02em] text-[#5f6472]">
+                스틸컷으로 만들 장르를 고르세요.
+              </p>
+              <div className="mt-4 grid grid-cols-1 gap-2.5">
+                {result.scenes.map((scene, index) => {
+                  const selected = cardSceneIdx === index;
+                  const isBest = bestSceneIdx === index;
+                  const genreEmoji = GENRE_EMOJIS[scene.genre] ?? "🎬";
                   return (
                     <button
-                      key={option.key}
+                      key={`${scene.genre}-${index}`}
                       type="button"
-                      onClick={() => setSelectedStillSourceKey(option.key)}
-                      className={`overflow-hidden rounded-[18px] bg-white text-left ring-1 transition-all ${
+                      onClick={() => setSelectedStillSceneIdx(index)}
+                      className={`rounded-[18px] px-4 py-3 text-left transition-all ${
                         selected
-                          ? "ring-[1.5px] ring-[#111827]/16 -translate-y-[1px]"
-                          : "ring-black/[0.06] hover:ring-black/[0.12]"
+                          ? "bg-[#111827] text-white shadow-[0_12px_24px_rgba(17,24,39,0.14)]"
+                          : "bg-white text-[#111827] ring-1 ring-black/[0.08] hover:ring-black/[0.14]"
                       }`}
                     >
-                      <div className="relative aspect-[0.72] overflow-hidden bg-[#f3f4f6]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={option.image} alt={option.label} className="h-full w-full object-cover" />
-                        {selected && (
-                          <span className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#111827] text-[10px] font-black text-white shadow-[0_6px_12px_rgba(17,24,39,0.24)]">
-                            ✓
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[15px] font-black tracking-[-0.03em]">
+                            {genreEmoji} {scene.genre}
+                          </p>
+                          <p className={`mt-1 break-keep text-[12px] font-medium leading-[1.35] ${
+                            selected ? "text-white/70" : "text-[#5f6472]"
+                          }`}>
+                            {scene.assigned_role}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5">
+                          {isBest && (
+                            <span className={`inline-flex h-5 items-center justify-center rounded-full px-2 text-[10px] font-black tracking-[0.04em] ${
+                              selected
+                                ? "bg-[#C9571A] text-white"
+                                : "bg-[#FFF1E8] text-[#C9571A]"
+                            }`}>
+                              BEST
+                            </span>
+                          )}
+                          <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-[11px] font-black ${
+                            selected
+                              ? "bg-white/16 text-white"
+                              : "bg-[#F3F4F6] text-[#111827]"
+                          }`}>
+                            {selected ? "선택" : `${index + 1}`}
                           </span>
-                        )}
+                        </div>
                       </div>
                     </button>
                   );
                 })}
-
-                <button
-                  type="button"
-                  onClick={() => stillFileInputRef.current?.click()}
-                  className={`overflow-hidden rounded-[18px] text-left transition-all ${
-                    selectedStillSourceKey === "album"
-                      ? "bg-[#111827] text-white shadow-[0_10px_24px_rgba(17,24,39,0.18)]"
-                      : "bg-white text-[#4b5563] ring-1 ring-black/[0.08] hover:ring-black/[0.14]"
-                  }`}
-                  aria-label="업로드"
-                  title="업로드"
-                >
-                  <div className="flex aspect-[0.72] flex-col items-center justify-center gap-2">
-                    {albumStillPhoto ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={albumStillPhoto} alt="업로드 사진" className="h-full w-full object-cover" />
-                      </>
-                    ) : (
-                      <>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                          <path d="M12 16V8.2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M8.9 11.4 12 8.2l3.1 3.2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M6.5 18.5h11" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                        </svg>
-                      </>
-                    )}
-                  </div>
-                  {!albumStillPhoto && (
-                    <div className="sr-only">업로드</div>
-                  )}
-                </button>
               </div>
-
-              <div className="mt-4 flex items-start gap-3">
-                <div className="min-w-0 flex-1 text-center">
-                  <p className="text-[15px] font-medium leading-[1.28] tracking-[-0.02em] text-[#5f6472]">어떤 사진으로 스틸컷을 만들까요?</p>
-                  <p className="mt-1 text-[15px] font-bold leading-[1.28] tracking-[-0.02em] text-[#5f6472]">
-                    씬 3장 또는 업로드 사진 중 1장을 고르세요.
-                  </p>
-                  <div className="mt-3 flex justify-center">
-                    <GenreMoodLine genre={bestScene.genre} />
-                  </div>
-                </div>
+              <div className="mt-3 flex justify-center">
+                <GenreMoodLine genre={cardScene.genre} />
               </div>
             </div>
           </div>

@@ -304,6 +304,7 @@ export async function POST(request: NextRequest) {
       genreMeta,
       physiognomy,
       promptTemplateId,
+      selectedSceneIdx,
     } = await request.json();
 
     const normalizedScenes: GenerateScene[] = Array.isArray(scenes) ? scenes : [];
@@ -323,9 +324,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "관상용 정면 사진이 필요합니다." }, { status: 400 });
     }
 
-    const bestSceneIdx = normalizedScenes.reduce((best, scene, index) => (
-      averageSceneScore(scene) > averageSceneScore(normalizedScenes[best]) ? index : best
-    ), 0);
+    const requestedSceneIdx = Number(selectedSceneIdx);
+    const bestSceneIdx = normalizedScenes.length > 0
+      ? Number.isInteger(requestedSceneIdx) && requestedSceneIdx >= 0 && requestedSceneIdx < normalizedScenes.length
+        ? requestedSceneIdx
+        : normalizedScenes.reduce((best, scene, index) => (
+          averageSceneScore(scene) > averageSceneScore(normalizedScenes[best]) ? index : best
+        ), 0)
+      : 0;
     const bestScene = normalizedScenes[bestSceneIdx] ?? {};
     const bestGenreMeta = normalizedGenreMeta[bestSceneIdx] ?? normalizedGenreMeta.find((item) => item.genre === bestScene.genre) ?? {};
     const defaultPromptText = buildStillPrompt({
