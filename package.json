@@ -17,6 +17,7 @@
     "@tenqube/react-korea-bubble-map": "^0.0.4",
     "@types/sharp": "^0.31.1",
     "d3-geo": "^3.1.1",
+    "google-auth-library": "^10.6.2",
     "next": "16.2.1",
     "next-auth": "^4.24.13",
     "react": "19.2.4",
