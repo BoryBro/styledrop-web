@@ -1343,7 +1343,7 @@ export default function AdminPage() {
                   placeholder="닉네임 또는 ID 검색..."
                   className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
                 />
-                <span className="text-[11px] text-gray-400 whitespace-nowrap">최근 가입순</span>
+                <span className="text-[11px] text-gray-400 whitespace-nowrap">최근 로그인순</span>
               </div>
 
               <div className="rounded-xl border border-gray-200 overflow-hidden">

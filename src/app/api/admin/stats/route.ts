@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     supabase.from("style_usage").select("style_id").gte("created_at", todayIso),
     supabase.from("payments").select("id, amount, credits, user_id, status, created_at").order("created_at", { ascending: false }),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
-    supabase.from("users").select("id, nickname, created_at, last_login_at").order("created_at", { ascending: false }).limit(500),
+    supabase.from("users").select("id, nickname, created_at, last_login_at").limit(500),
     // 월별 스타일 변환
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
@@ -287,8 +287,18 @@ export async function POST(request: NextRequest) {
   const marCostSource = marBillingSnapshot ? "bigquery_actual" : "manual_actual";
   const aprCostSource = aprBillingSnapshot ? "bigquery_actual" : "reference_weighted_estimate";
 
+  const userList = [...(userListRes.data ?? [])].sort((left, right) => {
+    const leftLogin = left.last_login_at ? new Date(left.last_login_at).getTime() : 0;
+    const rightLogin = right.last_login_at ? new Date(right.last_login_at).getTime() : 0;
+    if (rightLogin !== leftLogin) return rightLogin - leftLogin;
+
+    const leftCreated = left.created_at ? new Date(left.created_at).getTime() : 0;
+    const rightCreated = right.created_at ? new Date(right.created_at).getTime() : 0;
+    return rightCreated - leftCreated;
+  });
+
   return NextResponse.json({
-    userList: userListRes.data ?? [],
+    userList,
     paymentList: payments,
     total,
     todayTotal,
