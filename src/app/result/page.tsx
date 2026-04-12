@@ -416,90 +416,178 @@ export default function Result() {
             setTimeout(() => {
               setQuizResult(null);
               setQuizIndex((i) => i + 1);
-            }, 1200);
+            }, 1100);
           };
+          const stepLabels = ["사진 분석 중", "AI 스타일 학습 중", "변환 적용 중", "마무리 중"];
+          const stepIcons = ["🔍", "✨", "🎨", "🪄"];
           return (
-          <div className="flex-1 flex flex-col gap-4 py-4 px-1">
+          <div className="flex-1 flex flex-col gap-3 pt-4 pb-2">
             <style>{`
-              @keyframes spin { to { transform: rotate(360deg); } }
-              @keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+              @keyframes ios-spin {
+                to { transform: rotate(360deg); }
+              }
+              @keyframes ios-fade-up {
+                from { opacity: 0; transform: translateY(8px); }
+                to   { opacity: 1; transform: translateY(0); }
+              }
+              @keyframes ios-pulse-ring {
+                0%   { transform: scale(1);   opacity: 0.5; }
+                70%  { transform: scale(1.12); opacity: 0; }
+                100% { transform: scale(1.12); opacity: 0; }
+              }
             `}</style>
 
-            {/* 상단: 진행바 + 단계 + before 이미지 */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                {previewDataUrl && (
-                  <div className="relative shrink-0">
-                    <img src={previewDataUrl} alt="원본" className="w-14 h-14 rounded-xl object-cover opacity-80 ring-1 ring-white/10" />
-                    <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-black/30">
-                      <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
-                    </div>
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[12px] font-bold text-white/80" style={{ animation: "fadeSlideIn 0.4s ease" }} key={stepIndex}>
-                      {["사진 분석 중", "AI 스타일 학습 중", "변환 적용 중", "마무리 중"][stepIndex]}
-                    </span>
-                    <span className="text-[11px] font-bold text-[#C9571A]">{progress}%</span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-white/8 overflow-hidden">
+            {/* ── 진행 카드 ── */}
+            <div className="rounded-3xl bg-[#1C1C1E] overflow-hidden">
+              {/* 이미지 + 스피너 */}
+              <div className="flex items-center gap-4 px-5 pt-5 pb-4">
+                <div className="relative shrink-0 w-[72px] h-[72px]">
+                  {previewDataUrl ? (
+                    <img
+                      src={previewDataUrl}
+                      alt="원본"
+                      className="w-full h-full rounded-2xl object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-2xl bg-white/8" />
+                  )}
+                  {/* 펄스 링 */}
+                  <div
+                    className="absolute inset-0 rounded-2xl border-2 border-[#C9571A]/60"
+                    style={{ animation: "ios-pulse-ring 1.8s ease-out infinite" }}
+                  />
+                  {/* 반투명 오버레이 + 스피너 */}
+                  <div className="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#C9571A] to-[#E8824A] transition-all duration-300"
+                      className="w-7 h-7 rounded-full border-[2.5px] border-white/20 border-t-white"
+                      style={{ animation: "ios-spin 0.85s linear infinite" }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div
+                    className="flex items-center gap-1.5 mb-2"
+                    key={stepIndex}
+                    style={{ animation: "ios-fade-up 0.35s ease" }}
+                  >
+                    <span className="text-base leading-none">{stepIcons[stepIndex]}</span>
+                    <span className="text-[14px] font-semibold text-white tracking-tight">
+                      {stepLabels[stepIndex]}
+                    </span>
+                  </div>
+
+                  {/* 진행바 */}
+                  <div className="relative h-[6px] w-full rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#C9571A] to-[#F07840] transition-all duration-300"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <p className="text-[10px] text-white/32 mt-1.5">완료될 때까지 이 화면에서 기다려 주세요</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-[11px] text-white/30">완료 전 이 화면을 유지해 주세요</span>
+                    <span className="text-[12px] font-bold text-[#C9571A] tabular-nums">{progress}%</span>
+                  </div>
                 </div>
+              </div>
+
+              {/* 단계 인디케이터 도트 */}
+              <div className="flex items-center justify-center gap-1.5 pb-4">
+                {stepLabels.map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-full transition-all duration-500"
+                    style={{
+                      width:  i === stepIndex ? 16 : 5,
+                      height: 5,
+                      background: i <= stepIndex ? "#C9571A" : "rgba(255,255,255,0.15)",
+                    }}
+                  />
+                ))}
               </div>
             </div>
 
-            {/* 퀴즈 */}
+            {/* ── O/X 퀴즈 카드 ── */}
             {q && (
-              <div className="flex-1 flex flex-col rounded-2xl border border-white/10 bg-white/[0.04] overflow-hidden">
+              <div className="flex-1 flex flex-col rounded-3xl bg-[#1C1C1E] overflow-hidden">
+
                 {/* 헤더 */}
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/8">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-black tracking-tight text-white/50">OX 퀴즈</span>
-                    <span className="text-[10px] text-white/25">기다리는 시간 동안</span>
+                <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/[0.06]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-bold text-white">O / X 퀴즈</span>
+                    {q.tag && (
+                      <span className="text-[10px] font-semibold text-white/40 bg-white/8 px-2 py-0.5 rounded-full">
+                        {q.tag}
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[11px] font-bold text-[#C9571A]">{score.correct}</span>
-                    <span className="text-[10px] text-white/30">/{score.total}</span>
+                  <div className="flex items-center gap-1 bg-white/[0.07] px-2.5 py-1 rounded-full">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5.5l2 2 4-4" stroke="#30D158" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span className="text-[12px] font-bold text-white tabular-nums">{score.correct}</span>
+                    <span className="text-[11px] text-white/30">/{score.total}</span>
                   </div>
                 </div>
 
-                {/* 문제 */}
-                <div className="flex-1 flex flex-col items-center justify-center px-5 py-6 gap-6" style={{ animation: "fadeSlideIn 0.3s ease" }} key={quizIndex}>
-                  <p className="text-center text-[15px] font-semibold text-white/90 leading-relaxed break-keep">
+                {/* 문제 영역 */}
+                <div
+                  className="flex-1 flex flex-col items-center justify-center px-6 py-5 gap-5"
+                  key={quizIndex}
+                  style={{ animation: "ios-fade-up 0.28s ease" }}
+                >
+                  {/* 문제 번호 */}
+                  <span className="text-[11px] font-semibold text-white/25 tracking-widest uppercase">
+                    Q {(quizIndex % quizList.length) + 1}
+                  </span>
+
+                  {/* 질문 */}
+                  <p className="text-center text-[16px] font-semibold text-white leading-[1.65] break-keep px-1">
                     {q.q}
                   </p>
 
-                  {/* O / X 버튼 */}
+                  {/* O / X 버튼 or 결과 */}
                   {quizResult === null ? (
-                    <div className="flex gap-4 w-full max-w-[240px]">
+                    <div className="flex gap-3 w-full max-w-[280px]">
                       <button
                         onClick={() => handleAnswer(true)}
-                        className="flex-1 h-14 rounded-2xl border-2 border-[#4CAF87]/40 bg-[#4CAF87]/10 text-[28px] font-black text-[#4CAF87] transition active:scale-95 hover:bg-[#4CAF87]/20"
+                        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-4 rounded-2xl bg-[#30D158]/15 border border-[#30D158]/25 active:scale-95 transition-transform"
                       >
-                        O
+                        <span className="text-[26px] font-black text-[#30D158] leading-none">O</span>
+                        <span className="text-[10px] font-semibold text-[#30D158]/60">맞다</span>
                       </button>
                       <button
                         onClick={() => handleAnswer(false)}
-                        className="flex-1 h-14 rounded-2xl border-2 border-[#E05A5A]/40 bg-[#E05A5A]/10 text-[28px] font-black text-[#E05A5A] transition active:scale-95 hover:bg-[#E05A5A]/20"
+                        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-4 rounded-2xl bg-[#FF453A]/15 border border-[#FF453A]/25 active:scale-95 transition-transform"
                       >
-                        X
+                        <span className="text-[26px] font-black text-[#FF453A] leading-none">X</span>
+                        <span className="text-[10px] font-semibold text-[#FF453A]/60">틀리다</span>
                       </button>
                     </div>
                   ) : (
-                    <div className={`flex flex-col items-center gap-1 ${quizResult === "correct" ? "text-[#4CAF87]" : "text-[#E05A5A]"}`}>
-                      <span className="text-[36px] leading-none">{quizResult === "correct" ? "✓" : "✗"}</span>
-                      <span className="text-[13px] font-bold">{quizResult === "correct" ? "정답!" : `오답 — 정답은 ${q.a ? "O" : "X"}`}</span>
+                    <div
+                      className="flex flex-col items-center gap-2"
+                      style={{ animation: "ios-fade-up 0.2s ease" }}
+                    >
+                      <div className={`w-14 h-14 rounded-full flex items-center justify-center text-[28px] ${
+                        quizResult === "correct"
+                          ? "bg-[#30D158]/20 text-[#30D158]"
+                          : "bg-[#FF453A]/20 text-[#FF453A]"
+                      }`}>
+                        {quizResult === "correct" ? "✓" : "✗"}
+                      </div>
+                      <div className="text-center">
+                        <p className={`text-[14px] font-bold ${quizResult === "correct" ? "text-[#30D158]" : "text-[#FF453A]"}`}>
+                          {quizResult === "correct" ? "정답!" : "오답"}
+                        </p>
+                        {quizResult === "wrong" && (
+                          <p className="text-[12px] text-white/40 mt-0.5">
+                            정답은 <span className="font-bold text-white/60">{q.a ? "O (맞다)" : "X (틀리다)"}</span>
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
-
-                  {/* 문제 번호 */}
-                  <span className="text-[10px] text-white/20">{(quizIndex % quizList.length) + 1} / {quizList.length}</span>
                 </div>
               </div>
             )}
