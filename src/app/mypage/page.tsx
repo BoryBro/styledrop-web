@@ -87,6 +87,10 @@ export default function MyPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [historyView, setHistoryView] = useState<"before" | "after">("after");
   const [toast, setToast] = useState<string | null>(null);
+  const [instaHandle, setInstaHandle] = useState<string>("");
+  const [instaInput, setInstaInput] = useState<string>("");
+  const [instaEditing, setInstaEditing] = useState(false);
+  const [instaSaving, setInstaSaving] = useState(false);
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showcaseState, setShowcaseState] = useState<ShowcaseState>(null);
@@ -123,6 +127,14 @@ export default function MyPage() {
       .then((r) => r.json())
       .then((data) => setShowcaseState(data?.me?.imageUrl ? data.me : null))
       .catch(() => {});
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((data) => {
+        const h = data?.instagram_handle ?? "";
+        setInstaHandle(h);
+        setInstaInput(h);
+      })
+      .catch(() => {});
   }, [user, loading, showAuditionHistory]);
 
   useEffect(() => {
@@ -156,6 +168,31 @@ export default function MyPage() {
       if (res.ok) window.location.href = "/";
     } catch { /* ignore */ } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleSaveInsta = async () => {
+    setInstaSaving(true);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instagram_handle: instaInput }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error ?? "저장에 실패했어요.");
+      } else {
+        const saved = data.instagram_handle ?? "";
+        setInstaHandle(saved);
+        setInstaInput(saved);
+        setInstaEditing(false);
+        showToast(saved ? "인스타그램 아이디가 저장됐어요." : "인스타그램 아이디를 삭제했어요.");
+      }
+    } catch {
+      showToast("저장에 실패했어요.");
+    } finally {
+      setInstaSaving(false);
     }
   };
 
@@ -382,6 +419,80 @@ export default function MyPage() {
               >
                 로그아웃
               </button>
+            </div>
+
+            {/* 인스타그램 아이디 */}
+            <div className="rounded-2xl bg-[#1C1C1E] overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3.5">
+                {/* 인스타 아이콘 */}
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#515BD4] flex items-center justify-center flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="2" width="20" height="20" rx="6" stroke="white" strokeWidth="1.8"/>
+                    <circle cx="12" cy="12" r="4" stroke="white" strokeWidth="1.8"/>
+                    <circle cx="17.5" cy="6.5" r="1" fill="white"/>
+                  </svg>
+                </div>
+
+                {instaEditing ? (
+                  <div className="flex-1 flex items-center gap-2 min-w-0">
+                    <span className="text-[15px] text-white/30 flex-shrink-0">@</span>
+                    <input
+                      autoFocus
+                      value={instaInput}
+                      onChange={(e) => setInstaInput(e.target.value.replace(/^@+/, ""))}
+                      onKeyDown={(e) => { if (e.key === "Enter") void handleSaveInsta(); if (e.key === "Escape") { setInstaInput(instaHandle); setInstaEditing(false); } }}
+                      placeholder="instagram_id"
+                      maxLength={30}
+                      className="flex-1 bg-transparent text-[15px] text-white placeholder-white/20 outline-none min-w-0"
+                    />
+                    <button
+                      onClick={() => { setInstaInput(instaHandle); setInstaEditing(false); }}
+                      className="text-[13px] text-white/30 hover:text-white/60 flex-shrink-0 transition-colors"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={() => void handleSaveInsta()}
+                      disabled={instaSaving}
+                      className="bg-[#C9571A] text-white text-[13px] font-bold px-3 py-1.5 rounded-full flex-shrink-0 disabled:opacity-50 transition-opacity"
+                    >
+                      {instaSaving ? "저장 중" : "저장"}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="flex-1 flex items-center justify-between min-w-0 text-left"
+                    onClick={() => setInstaEditing(true)}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-white/40">Instagram</p>
+                      {instaHandle ? (
+                        <p className="text-[15px] font-semibold text-white mt-0.5 truncate">@{instaHandle}</p>
+                      ) : (
+                        <p className="text-[14px] text-white/25 mt-0.5">아이디를 입력해 주세요</p>
+                      )}
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-white/20 flex-shrink-0 ml-2">
+                      <path d="M10.5 2.5L13.5 5.5L5.5 13.5H2.5V10.5L10.5 2.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* 연결된 경우 외부 링크 */}
+              {!instaEditing && instaHandle && (
+                <a
+                  href={`https://instagram.com/${instaHandle}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 py-2.5 border-t border-white/[0.06] text-[12px] font-semibold text-[#DD2A7B]/80 hover:text-[#DD2A7B] transition-colors"
+                >
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                    <path d="M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V7M8 1h3m0 0v3M11 1L5.5 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  instagram.com/{instaHandle}
+                </a>
+              )}
             </div>
 
             <div className="rounded-2xl border border-white/8 bg-[#111315] p-4">
