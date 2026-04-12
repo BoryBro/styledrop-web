@@ -1,6 +1,25 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+
+const ANON_WORDS = [
+  "코코", "루나", "민트", "하루", "별빛", "구름", "봄비", "달빛", "숲속", "노을",
+  "파도", "새벽", "은하", "꽃잎", "체리", "바람", "이슬", "솔잎", "안개", "초록",
+  "하늘", "강물", "햇살", "모래", "보랏", "연두", "산들", "반짝", "아침", "나비",
+];
+
+function anonName(userId: string): string {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = (hash * 31 + userId.charCodeAt(i)) >>> 0;
+  }
+  return ANON_WORDS[hash % ANON_WORDS.length];
+}
+
+function showcaseDisplayName(item: { instagramHandle?: string | null; nickname: string; userId: string }): string {
+  if (item.instagramHandle) return `@${item.instagramHandle}`;
+  return anonName(item.userId);
+}
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -1051,7 +1070,7 @@ export default function Studio() {
                         </div>
                       </div>
                       <span className="line-clamp-1 text-center text-[11px] font-medium text-white/72">
-                        {item.nickname}
+                        {showcaseDisplayName(item)}
                       </span>
                     </button>
                   ))}
