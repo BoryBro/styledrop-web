@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
-import { COMMUNITY_LAB_ENABLED, PERSONAL_COLOR_LAB_ENABLED, TRACE_LAB_ENABLED } from "@/lib/feature-flags";
+import { PERSONAL_COLOR_LAB_ENABLED, TRACE_LAB_ENABLED } from "@/lib/feature-flags";
 import {
   PERSONAL_COLOR_CONTROL_ID,
   applyStyleControl,
@@ -213,8 +213,7 @@ export default function Studio() {
   );
   const showPersonalColorLab = personalColorControl.is_visible;
   const isPersonalColorEnabled = personalColorControl.is_enabled;
-  const showCommunityLab = COMMUNITY_LAB_ENABLED;
-  const showLabSection = showAuditionLab || showPersonalColorLab || showCommunityLab;
+  const showLabSection = showAuditionLab || showPersonalColorLab;
 
   const scrollToSection = useCallback((section: StudioSectionTab) => {
     const target = section === "cards" ? generalCardsSectionRef.current : labSectionRef.current;
@@ -700,14 +699,6 @@ export default function Studio() {
                 <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#FFE082]" style={{ animation: "blink 1.3s step-end infinite" }} />
               </Link>
             )}
-            {COMMUNITY_LAB_ENABLED && (
-              <Link
-                href="/lab/magazine"
-                className="ml-2.5 font-[family-name:var(--font-boldonse)] text-[9px] tracking-[0.05em] text-white/58 transition-colors hover:text-[#C9571A]"
-              >
-                MAGAZINE
-              </Link>
-            )}
           </div>
           {!loading && (
             user ? (
@@ -804,6 +795,29 @@ export default function Studio() {
                     실험실
                   </button>
                 </div>
+                <div className="mt-1.5 rounded-[16px] border border-white/6 bg-[#0F0F0F]/90 px-1.5 py-1.5">
+                  <div className="overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="flex w-max items-center gap-1.5">
+                      {STYLE_CATEGORY_TABS.map((tab) => {
+                        const isActive = activeStyleCategory === tab;
+                        return (
+                          <button
+                            key={tab}
+                            type="button"
+                            onClick={() => setActiveStyleCategory(tab)}
+                            className={`rounded-full px-3.5 py-2 text-[12px] font-semibold transition-colors ${
+                              isActive
+                                ? "bg-[#C9571A]/18 text-[#F6B38C]"
+                                : "bg-transparent text-white/45"
+                            }`}
+                          >
+                            {tab}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -813,28 +827,6 @@ export default function Studio() {
             <div className="mb-4">
               <h2 className="text-[20px] font-bold text-[#C9571A]">스타일 선택</h2>
               <p className="text-[18px] font-bold text-white mt-1">원하는 스타일의 카드를 선택해봐요</p>
-            </div>
-
-            <div className="mb-4 -mx-1 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              <div className="flex w-max items-center gap-2 px-1">
-                {STYLE_CATEGORY_TABS.map((tab) => {
-                  const isActive = activeStyleCategory === tab;
-                  return (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => setActiveStyleCategory(tab)}
-                      className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors ${
-                        isActive
-                          ? "border-[#C9571A] bg-[#C9571A]/16 text-[#F6B38C]"
-                          : "border-white/10 bg-white/[0.03] text-white/55"
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  );
-                })}
-              </div>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -1142,47 +1134,6 @@ export default function Studio() {
                     )}
                     </div>
                   </button>
-                )}
-
-                {showCommunityLab && (
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {[
-                      {
-                        href: "/lab/feed",
-                        kicker: "PUBLIC FEED",
-                        title: "공개 피드",
-                        body: "남이 만든 결과를 보고 바로 따라 해보는 흐름",
-                      },
-                      {
-                        href: "/lab/challenge",
-                        kicker: "WEEKLY",
-                        title: "주간 챌린지",
-                        body: "이번 주 미션 하나로 재방문을 만드는 구조",
-                      },
-                      {
-                        href: "/lab/magazine",
-                        kicker: "MAGAZINE",
-                        title: "스타일 매거진",
-                        body: "사진 고르는 법과 반응 좋은 카드 큐레이션",
-                      },
-                    ].map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className="group rounded-[24px] border border-white/8 bg-[#101214] p-4 transition-colors hover:border-[#C9571A]/45 hover:bg-[#15181B]"
-                      >
-                        <p className="font-unbounded text-[10px] tracking-[0.18em] text-[#6BE2C5] uppercase">{item.kicker}</p>
-                        <p className="mt-3 text-[18px] font-black tracking-[-0.04em] text-white">{item.title}</p>
-                        <p className="mt-2 text-[13px] leading-6 text-white/56">{item.body}</p>
-                        <div className="mt-4 flex items-center gap-2 text-[12px] font-bold text-[#C9571A]">
-                          <span>로컬 테스트 보기</span>
-                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
                 )}
 
               </div>
