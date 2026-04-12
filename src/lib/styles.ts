@@ -389,8 +389,8 @@ export const ALL_STYLES: StyleDef[] = [
   },
   {
     id: "yakuza",
-    name: "야쿠자",
-    desc: "문신 새긴 이레즈미 조직원으로 변신하는 80~90년대 다큐 스타일 범죄 포트레이트",
+    name: "어둠의 큰형님",
+    desc: "야쿠자와 마피아 무드 중 하나를 골라 범죄 드라마 에디토리얼 포트레이트로 변환",
     bgColor: "#221a28",
     tag: "NEW",
     active: true,

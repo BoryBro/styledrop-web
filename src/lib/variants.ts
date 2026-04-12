@@ -17,4 +17,8 @@ export const STYLE_VARIANTS: Record<string, Variant[]> = {
     { id: "default", label: "초원 전사", desc: "넓은 초원 위에 선 몽골 전사 다큐멘터리 컷", thumbnail: "/thumbnails/mongolian-warrior-option-1.jpg?v=1" },
     { id: "tribal", label: "부족 전사", desc: "전통 천막과 창이 함께 보이는 부족 전사 인물사진", thumbnail: "/thumbnails/mongolian-warrior-option-2.jpg?v=1" },
   ],
+  "yakuza": [
+    { id: "default", label: "야쿠자", desc: "이레즈미 조직원 무드의 80~90년대 범죄 다큐 포트레이트", thumbnail: "/thumbnails/yakuza-after.jpg" },
+    { id: "mafia", label: "마피아", desc: "바디가드와 시가가 함께 있는 다크 올드머니 범죄 에디토리얼", thumbnail: "/thumbnails/mafia-after.jpg" },
+  ],
 };

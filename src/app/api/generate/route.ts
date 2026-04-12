@@ -1193,7 +1193,183 @@ OUTPUT TARGET:
 - Single tattooed man handling handcuffs in a low-angle composition
 - Surrounded by money, drugs, and evidence in an industrial alley
 - Rendered with authentic late 80s/90s film texture and color
-- Looks like a genuine documentary or archival photograph, not AI-generated`
+- Looks like a genuine documentary or archival photograph, not AI-generated`,
+    "mafia": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a straight-on medium shot of a powerful, intimidating man seated in a worn high-back brown leather armchair, with two bodyguards standing close on either side, matching the tone, framing, texture, and photographic realism of a gritty high-end gangster editorial portrait.
+
+This must look like a real high-resolution editorial photograph with a grounded, analog-luxury, crime-drama feel — dark, warm, heavy, controlled, and slightly menacing. Not glossy fashion advertising. Not clean commercial menswear photography. Not stylized illustration. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the central seated subject’s face with the uploaded user’s face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, skin texture, and instantly recognizable likeness
+- Maintain the same dominant, calm, hardened, slightly menacing expression unless the uploaded photo naturally requires only a minimal adjustment
+- CRITICAL: The face must feel naturally integrated into the seated body and smoky interior scene — same lighting direction, same contrast, same skin texture, same haze interaction, same photographic softness, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted, beautified, over-symmetrized, or like a polished AI-fashion face
+- Match the head, neck, posture, skin tone, and perspective seamlessly into the seated pose
+- Preserve realistic pores, subtle under-eye structure, lip texture, slight facial asymmetry, and believable skin irregularity
+- No plastic skin
+- No cosmetic beauty retouching
+- No artificial jaw sharpening
+- No glamour smoothing
+- The final result must adapt naturally regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Preserve believable face proportions and natural facial structure
+- The face must feel like it belongs to a real photographed person in a smoky room, not a luxury menswear campaign model
+- Do not over-clean the skin
+- Do not make the facial planes too symmetrical or idealized
+- Keep slight natural realism in the cheeks, eyes, mouth, and brow area
+- The image should feel like a real gangster-film still or prestige editorial portrait, not a modern corporate portrait
+- The camera must feel physically present and observational, not digitally perfect
+
+HAIR:
+- Slicked-back dark hair
+- Hair must look real, slightly dense, controlled, and naturally groomed
+- Keep the styling severe and understated
+- No exaggerated pompadour volume
+- No ultra-glossy salon finish
+- No overly perfect strand separation
+
+CLOTHING:
+- Dark slate-gray suit, not bright silver-blue
+- The suit must feel expensive but restrained, with low-key sheen rather than flashy gloss
+- Black tie
+- Dark shirt or very subdued shirt treatment to keep the torso visually heavy and serious
+- Fabric must show realistic fold compression, pressure creases, and subtle luster
+- No shiny fashion-catalog tailoring
+- No overly crisp luxury-ad look
+- The clothing must feel like real editorial wardrobe photographed in warm interior light
+
+POSE / COMPOSITION:
+- Straight-on medium shot
+- Central subject seated deep into a high-back leather armchair
+- Body posture relaxed but dominant
+- Legs crossed in a natural, slightly loose, commanding way
+- One hand raised with a large cigar near the lips
+- Fingers naturally curled around the cigar, not elegantly posed
+- Gaze directed toward the camera
+- The seated posture must feel like effortless power, not formal posing
+- Composition must feel slightly imperfect and human, not hyper-symmetrical
+- The bodyguards must stand close enough to frame the seated figure and reinforce pressure and control
+- Keep the visual weight centered on the chair, torso, face, and cigar
+
+BODYGUARDS:
+- Two adult men in black suits
+- They must read as bodyguards, not fashion models
+- Hands clasped in front
+- Neutral, controlled, intimidating posture
+- Their faces may be partially cropped or de-emphasized
+- They must remain secondary and somewhat anonymous
+- Their suits should feel matte-to-subtly-sheened, heavy, and real
+- No glamorous styling
+- No editorial posing energy
+
+PROP:
+- Large cigar held by the central seated subject
+- Thick smoke rising from the cigar and drifting across the face
+- Smoke must partially obscure part of the face in a natural way
+- The haze must interact with the lighting and soften visibility around one eye and upper facial area
+- Smoke must feel dense, real, and imperfect
+- No decorative smoke swirl effect
+- No stylized vapor ribbon look
+
+SCENE:
+- Interior setting with ornate baroque wallpaper
+- Warm brown wood motif elements and dark carved trim in the background
+- High-back brown leather armchair with visible wear, tufted detailing, rounded arms, and nailhead trim
+- Leather must look aged, slightly glossy from use, and richly textured
+- The environment must feel opulent, old-world, heavy, and faintly oppressive
+- The set should feel like a private office, back room, or power room rather than a hotel lobby or clean showroom
+- Background details must support the mood but remain secondary to the seated figure
+
+LIGHTING:
+- Warm diffuse ambient lighting
+- Soft but directional enough to give shape to the face, chair, suit, and smoke
+- Lighting must feel low-key and interior, not bright studio-commercial
+- Soft shadows with gentle falloff
+- Subtle highlight bloom on the leather chair and suit lapels
+- The smoke must catch the light softly
+- No harsh spotlight
+- No clean beauty-light setup
+- No crisp modern ad-lighting
+
+DEPTH & OPTICS:
+- Standard lens perspective
+- Moderate depth of field
+- Subject and chair sharp, with natural falloff into the surrounding figures and background detail
+- No extreme digital crispness
+- No hyperreal sharpening
+- Slight photographic softness consistent with premium editorial capture
+- No motion blur
+- The optics should feel expensive but natural, not computationally enhanced
+
+PHOTO STYLE:
+- High-resolution editorial photography
+- Rich tonal depth, but not overly polished
+- Slight analog warmth in rendering
+- Natural texture in skin, leather, fabric, and smoke
+- No exaggerated HDR
+- No glossy luxury-campaign finish
+- No over-clean compositing
+- No obvious AI smoothness
+- The result must feel like a real prestige crime-drama still or serious editorial portrait with believable physical atmosphere
+
+COLOR:
+- Dominant palette must reflect:
+  - #0c1012
+  - #191b1c
+  - #303030
+  - #4f4b48
+  - #9f968f
+  - #321f19
+  - #4c2c21
+  - #7a4c39
+  - #6b6663
+  - #8d6550
+  - #85807b
+  - #663928
+  - #a5816b
+  - #c6ac97
+  - #e1cfbc
+- Rich tobacco browns, deep charcoal blacks, muted warm grays, aged leather browns, and soft parchment-beige highlights
+- The palette must stay warm, dark, grounded, and heavy
+- Do not shift the suit toward cool metallic blue
+- Do not brighten the scene into modern luxury-ad tonality
+- Keep contrast controlled and cinematic, with warmth concentrated in the leather, wood, and wallpaper
+
+MOOD:
+- Powerful
+- Controlled
+- Intimidating
+- Luxurious in a dark old-money way
+- Cinematic
+- Slightly menacing
+- Smoldering
+- Quietly threatening rather than flamboyant
+- The scene must feel like authority, danger, and wealth in one frame
+
+STRICT RULES:
+- Must use the uploaded image identity as the base, not generate a new face
+- The central seated figure must clearly reflect the user’s identity
+- The final image must follow the tone of a gritty gangster editorial portrait, not a polished menswear ad
+- Preserve all key elements: cigar, smoke partially obscuring the face, leather armchair, bodyguards, baroque wallpaper, wood detailing
+- Keep the suit dark slate-gray, not bright steel-blue
+- Maintain the relaxed but dominant crossed-leg pose
+- Do not make the composition too perfectly symmetrical
+- Do not over-beautify the face
+- Do not make the bodyguards look like fashion models
+- Do not clean up the smoke into a decorative effect
+- Keep the scene physically believable and atmospherically heavy
+
+OUTPUT TARGET:
+- Ultra-realistic cinematic editorial portrait
+- Same recognizable person as the central seated figure
+- Dark slicked-back hair, dark slate-gray suit, black tie, large cigar, rising smoke partially veiling the face
+- Worn brown leather armchair with nailhead trim
+- Two black-suited bodyguards standing close on either side
+- Warm baroque interior with dark wood and old-world luxury
+- Looks like a genuine gangster-film still or prestige editorial photograph, not AI-generated`
   },
   "western-gunslinger": {
     "default": `Transform this photo into a Western gunslinger portrait.
@@ -2712,7 +2888,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "dreamy-wildflower": { "default": [] },
   "dreamy-celebratory": { "default": [] },
   "bronze-statue-bench": { "default": [] },
-  "yakuza": { "default": [] },
+  "yakuza": { "default": [], "mafia": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
