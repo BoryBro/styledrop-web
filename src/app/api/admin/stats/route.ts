@@ -65,7 +65,12 @@ export async function POST(request: NextRequest) {
     supabase.from("style_usage").select("style_id").gte("created_at", todayIso),
     supabase.from("payments").select("id, amount, credits, user_id, status, created_at").order("created_at", { ascending: false }),
     supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
-    supabase.from("users").select("id, nickname, created_at, last_login_at").limit(500),
+    supabase
+      .from("users")
+      .select("id, nickname, created_at, last_login_at")
+      .order("last_login_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(500),
     // 월별 스타일 변환
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
