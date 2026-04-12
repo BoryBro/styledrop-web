@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { addGuestHistoryItem } from "@/lib/guest-history";
 import { STYLE_VARIANTS } from "@/lib/variants";
+import { getShuffledQuiz, type OXQuestion } from "@/lib/ox-quiz";
 
 interface KakaoSDK {
   init: (key: string) => void;
@@ -38,11 +39,44 @@ export default function Result() {
   const [showcaseLoading, setShowcaseLoading] = useState(false);
   const [showcaseActive, setShowcaseActive] = useState(false);
 
+  // 로딩 UX
+  const [progress, setProgress] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [quizList, setQuizList] = useState<OXQuestion[]>([]);
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [quizResult, setQuizResult] = useState<"correct" | "wrong" | null>(null);
+  const [score, setScore] = useState({ correct: 0, total: 0 });
+  const progressRef = useRef(0);
+
   const fetchCredits = () => {
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
   };
 
   useEffect(() => { fetchCredits(); }, []);
+
+  // 퀴즈 초기화
+  useEffect(() => { setQuizList(getShuffledQuiz()); }, []);
+
+  // 진행바 + 단계 메시지
+  const STEPS = ["사진 분석 중", "AI 스타일 학습 중", "변환 적용 중", "마무리 중"];
+  useEffect(() => {
+    if (status !== "loading") return;
+    const TOTAL_MS = 28000;
+    const TARGET = 92;
+    const interval = setInterval(() => {
+      progressRef.current = Math.min(TARGET, progressRef.current + TARGET / (TOTAL_MS / 120));
+      setProgress(Math.round(progressRef.current));
+    }, 120);
+    const stepTimer = setInterval(() => {
+      setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
+    }, 7000);
+    return () => { clearInterval(interval); clearInterval(stepTimer); };
+  }, [status]);
+
+  // 완료 시 100%
+  useEffect(() => {
+    if (status === "done") { setProgress(100); }
+  }, [status]);
 
   useEffect(() => {
     if (!user || status !== "done") return;
@@ -372,52 +406,106 @@ export default function Result() {
 
       <main className="max-w-2xl mx-auto w-full px-4 py-4 flex flex-col" style={{ height: "calc(100vh - 52px)" }}>
 
-        {status === "loading" && (
-          <div className="flex-1 flex items-center justify-center">
+        {status === "loading" && (() => {
+          const q = quizList[quizIndex % quizList.length];
+          const handleAnswer = (answer: boolean) => {
+            if (quizResult !== null || !q) return;
+            const correct = answer === q.a;
+            setQuizResult(correct ? "correct" : "wrong");
+            setScore((s) => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+            setTimeout(() => {
+              setQuizResult(null);
+              setQuizIndex((i) => i + 1);
+            }, 1200);
+          };
+          return (
+          <div className="flex-1 flex flex-col gap-4 py-4 px-1">
             <style>{`
-              @keyframes pulse-glow {
-                0%, 100% { box-shadow: 0 0 8px rgba(201,87,26,0.3); }
-                50% { box-shadow: 0 0 24px rgba(201,87,26,0.6); }
-              }
-              @keyframes dot-bounce {
-                0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-                40% { opacity: 1; transform: scale(1.2); }
-              }
+              @keyframes spin { to { transform: rotate(360deg); } }
+              @keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
             `}</style>
-            <div className="flex flex-col items-center gap-6 bg-white/5 border border-white/10 rounded-3xl px-8 py-10 shadow-xl w-full max-w-xs" style={{ animation: "pulse-glow 2.5s ease-in-out infinite" }}>
-              {/* Spinner */}
-              <div className="relative w-20 h-20">
-                <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#C9571A] border-r-[#C9571A]/30" style={{ animation: "spin 1s linear infinite" }} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-[#C9571A] text-2xl leading-none select-none" style={{ animation: "pulse-glow 2s ease-in-out infinite" }}>✦</span>
-                </div>
-              </div>
 
-              {/* Text + animated dots */}
-              <div className="text-center flex flex-col items-center gap-2">
-                <p className="text-white font-bold text-lg">AI 변환 중</p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  {[0, 1, 2].map(i => (
-                    <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#C9571A]" style={{ animation: `dot-bounce 1.4s ease-in-out ${i * 0.2}s infinite` }} />
-                  ))}
-                </div>
-                <p className="text-white/40 text-xs mt-1">사진을 분석하고 스타일을 적용하고 있어요</p>
-              </div>
-
-              {/* Info banner */}
-              <div className="w-full bg-[#C9571A]/10 border border-[#C9571A]/30 rounded-2xl px-4 py-3.5 flex items-start gap-2.5">
-                <span className="text-base leading-none mt-0.5 flex-shrink-0">⏳</span>
-                <div className="flex flex-col gap-1">
-                  <p className="text-[#C9571A] font-bold text-[13px]">잠시 기다려주세요</p>
-                  <p className="text-[#C9571A]/60 text-[11px] leading-relaxed break-keep">
-                    AI가 정성껏 변환 중이에요. 완료될 때까지 이 화면에서 기다려 주세요.
-                  </p>
+            {/* 상단: 진행바 + 단계 + before 이미지 */}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                {previewDataUrl && (
+                  <div className="relative shrink-0">
+                    <img src={previewDataUrl} alt="원본" className="w-14 h-14 rounded-xl object-cover opacity-80 ring-1 ring-white/10" />
+                    <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-black/30">
+                      <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
+                    </div>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[12px] font-bold text-white/80" style={{ animation: "fadeSlideIn 0.4s ease" }} key={stepIndex}>
+                      {["사진 분석 중", "AI 스타일 학습 중", "변환 적용 중", "마무리 중"][stepIndex]}
+                    </span>
+                    <span className="text-[11px] font-bold text-[#C9571A]">{progress}%</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-white/8 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#C9571A] to-[#E8824A] transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-white/32 mt-1.5">완료될 때까지 이 화면에서 기다려 주세요</p>
                 </div>
               </div>
             </div>
+
+            {/* 퀴즈 */}
+            {q && (
+              <div className="flex-1 flex flex-col rounded-2xl border border-white/10 bg-white/[0.04] overflow-hidden">
+                {/* 헤더 */}
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/8">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-black tracking-tight text-white/50">OX 퀴즈</span>
+                    <span className="text-[10px] text-white/25">기다리는 시간 동안</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[11px] font-bold text-[#C9571A]">{score.correct}</span>
+                    <span className="text-[10px] text-white/30">/{score.total}</span>
+                  </div>
+                </div>
+
+                {/* 문제 */}
+                <div className="flex-1 flex flex-col items-center justify-center px-5 py-6 gap-6" style={{ animation: "fadeSlideIn 0.3s ease" }} key={quizIndex}>
+                  <p className="text-center text-[15px] font-semibold text-white/90 leading-relaxed break-keep">
+                    {q.q}
+                  </p>
+
+                  {/* O / X 버튼 */}
+                  {quizResult === null ? (
+                    <div className="flex gap-4 w-full max-w-[240px]">
+                      <button
+                        onClick={() => handleAnswer(true)}
+                        className="flex-1 h-14 rounded-2xl border-2 border-[#4CAF87]/40 bg-[#4CAF87]/10 text-[28px] font-black text-[#4CAF87] transition active:scale-95 hover:bg-[#4CAF87]/20"
+                      >
+                        O
+                      </button>
+                      <button
+                        onClick={() => handleAnswer(false)}
+                        className="flex-1 h-14 rounded-2xl border-2 border-[#E05A5A]/40 bg-[#E05A5A]/10 text-[28px] font-black text-[#E05A5A] transition active:scale-95 hover:bg-[#E05A5A]/20"
+                      >
+                        X
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={`flex flex-col items-center gap-1 ${quizResult === "correct" ? "text-[#4CAF87]" : "text-[#E05A5A]"}`}>
+                      <span className="text-[36px] leading-none">{quizResult === "correct" ? "✓" : "✗"}</span>
+                      <span className="text-[13px] font-bold">{quizResult === "correct" ? "정답!" : `오답 — 정답은 ${q.a ? "O" : "X"}`}</span>
+                    </div>
+                  )}
+
+                  {/* 문제 번호 */}
+                  <span className="text-[10px] text-white/20">{(quizIndex % quizList.length) + 1} / {quizList.length}</span>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+          );
+        })()}
 
         {status === "error" && (
           <div className="flex-1 flex items-center justify-center">
