@@ -593,7 +593,7 @@ export default function MyPage() {
                             <button
                               type="button"
                               onClick={() => setHistoryDeleteTarget(item)}
-                              className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md border border-white/10 hover:bg-[#ff4444] transition-colors"
+                              className="absolute bottom-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md border border-white/10 hover:bg-[#ff4444] transition-colors"
                               aria-label="변환 기록 삭제"
                             >
                               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
