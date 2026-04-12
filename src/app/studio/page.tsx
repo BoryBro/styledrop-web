@@ -1086,7 +1086,7 @@ export default function Studio() {
                         </div>
                       </div>
                       <span className="line-clamp-1 text-center text-[11px] font-medium text-white/72">
-                        {showcaseDisplayName(item)}
+                        {showcaseDisplayName(item)}님
                       </span>
                     </button>
                   ))}
