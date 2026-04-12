@@ -85,8 +85,8 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "2인",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/romantic-night-twoshot-before.jpg",
-    afterImg: "/thumbnails/romantic-night-twoshot-after.jpg",
+    beforeImg: "/thumbnails/romantic-night-twoshot-before.jpg?v=2",
+    afterImg: "/thumbnails/romantic-night-twoshot-after.jpg?v=2",
     popular: true,
   },
   {
