@@ -112,6 +112,19 @@ export default function Result() {
     const styleId = sessionStorage.getItem("sd_styleId");
     const base64 = sessionStorage.getItem("sd_imageBase64");
     const preview = sessionStorage.getItem("sd_previewDataUrl");
+    const imageBase64ListRaw = sessionStorage.getItem("sd_imageBase64List");
+
+    let imageBase64List: string[] | null = null;
+    if (imageBase64ListRaw) {
+      try {
+        const parsed = JSON.parse(imageBase64ListRaw);
+        if (Array.isArray(parsed)) {
+          imageBase64List = parsed.filter((item): item is string => typeof item === "string" && item.length > 0);
+        }
+      } catch {
+        imageBase64List = null;
+      }
+    }
 
     if (!styleId || !base64) {
       router.replace("/studio");
@@ -144,7 +157,13 @@ export default function Result() {
     fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ style: styleId, variant, imageBase64: base64, mimeType: "image/jpeg" }),
+      body: JSON.stringify({
+        style: styleId,
+        variant,
+        imageBase64: base64,
+        imageBase64List,
+        mimeType: "image/jpeg",
+      }),
     })
       .then(async (res) => {
         const data = await res.json();

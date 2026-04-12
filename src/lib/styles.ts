@@ -47,6 +47,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "cinematic-horseback": "컨셉",
   "dreamy-wildflower": "자연",
   "dreamy-celebratory": "자연",
+  "romantic-night-twoshot": "무드",
   "bronze-statue-bench": "컨셉",
   "yakuza": "컨셉",
 };
@@ -364,6 +365,17 @@ export const ALL_STYLES: StyleDef[] = [
     afterImg: "/thumbnails/Dreamy_celebratory-after.jpg?v=1",
   },
   {
+    id: "romantic-night-twoshot",
+    name: "둘이 선 밤도시",
+    desc: "사진 2장을 올리면 밤 도시 야경 위 손잡은 로맨틱 시네마틱 투샷으로 변환",
+    bgColor: "#1c2245",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Dreamy_wildflower-before.jpg?v=1",
+    afterImg: "/thumbnails/Dreamy_celebratory-after.jpg?v=1",
+  },
+  {
     id: "bronze-statue-bench",
     name: "공원 벤치 청동상",
     desc: "한적한 공원 벤치에 앉은 청동 조형물처럼 바뀌는 리얼 파크 스냅 컷",
@@ -397,3 +409,6 @@ export const STYLE_LABELS: Record<string, string> = Object.fromEntries(
 
 /** UI에 표시되는 스타일 ID 순서 배열 */
 export const VISIBLE_STYLE_IDS = VISIBLE_STYLES.map((s) => s.id);
+
+/** 다중 업로드가 필요한 스타일 ID */
+export const MULTI_SOURCE_STYLE_IDS = ["romantic-night-twoshot"] as const;

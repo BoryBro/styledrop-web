@@ -31,7 +31,7 @@ import {
   resolveFeatureControlState,
   type StyleControlState,
 } from "@/lib/style-controls";
-import { ALL_STYLES, STYLE_CATEGORY_BY_ID, STYLE_CATEGORY_TABS, STYLE_LABELS } from "@/lib/styles";
+import { ALL_STYLES, MULTI_SOURCE_STYLE_IDS, STYLE_CATEGORY_BY_ID, STYLE_CATEGORY_TABS, STYLE_LABELS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
 function formatCount(n: number): string {
@@ -50,9 +50,11 @@ function formatStoryTime(value: string): string {
 
 const BASE_STYLE_CARDS = ALL_STYLES.map((s) => ({ ...s, bgImage: s.afterImg }));
 const STORY_DURATION_MS = 4500;
+const MULTI_SOURCE_STYLE_ID_SET = new Set<string>(MULTI_SOURCE_STYLE_IDS);
 type StyleCard = (typeof BASE_STYLE_CARDS)[number];
 type StudioSectionTab = "cards" | "lab";
 type StyleCategoryTab = (typeof STYLE_CATEGORY_TABS)[number];
+type UploadTarget = { mode: "single" } | { mode: "pair"; slotIndex: 0 | 1 };
 type ShowcaseItem = {
   userId: string;
   nickname: string;
@@ -149,6 +151,9 @@ export default function Studio() {
   const [variantSelectStyle, setVariantSelectStyle] = useState<StyleCard | null>(null);
   const [showCameraGuide, setShowCameraGuide] = useState(false);
   const [showPhotoSourceSheet, setShowPhotoSourceSheet] = useState(false);
+  const [pairUploadStyle, setPairUploadStyle] = useState<StyleCard | null>(null);
+  const [pairUploadImages, setPairUploadImages] = useState<[string | null, string | null]>([null, null]);
+  const [pairSubmitting, setPairSubmitting] = useState(false);
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
   const [editorSize, setEditorSize] = useState(320);
   const [cropState, setCropState] = useState<{
@@ -162,6 +167,7 @@ export default function Studio() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const cropFrameRef = useRef<HTMLDivElement>(null);
+  const uploadTargetRef = useRef<UploadTarget | null>(null);
   const dragStateRef = useRef<{
     pointerId: number;
     startX: number;
@@ -531,6 +537,14 @@ export default function Studio() {
     setSelectedStyle(style.id);
     selectedStyleRef.current = style.id;
 
+    if (MULTI_SOURCE_STYLE_ID_SET.has(style.id)) {
+      sessionStorage.setItem("sd_variant", "default");
+      setPairUploadImages([null, null]);
+      setPairUploadStyle(style);
+      uploadTargetRef.current = null;
+      return;
+    }
+
     const variants = STYLE_VARIANTS[style.id];
     if (variants && variants.length > 1) {
       // 베리에이션 있는 스타일 → 옵션 모달 먼저
@@ -538,6 +552,7 @@ export default function Studio() {
     } else {
       // 베리에이션 없음 → 촬영/앨범 선택 시트
       sessionStorage.setItem("sd_variant", "default");
+      uploadTargetRef.current = { mode: "single" };
       setShowPhotoSourceSheet(true);
     }
   };
@@ -604,32 +619,131 @@ export default function Studio() {
     setCropState((prev) => prev ? { ...prev, zoom: 1, offsetX: 0, offsetY: 0 } : prev);
   }, []);
 
-  const processImageDataUrl = useCallback((dataUrl: string) => {
+  const loadDataUrlImage = useCallback((dataUrl: string) => (
+    new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("이미지를 불러오지 못했어요."));
+      img.src = dataUrl;
+    })
+  ), []);
+
+  const resizeImageDataUrl = useCallback(async (dataUrl: string) => {
+    const img = await loadDataUrlImage(dataUrl);
+    const canvas = document.createElement("canvas");
+    let width = img.width;
+    let height = img.height;
+    const MAX_SIZE = 1024;
+    if (width > height) {
+      if (width > MAX_SIZE) {
+        height *= MAX_SIZE / width;
+        width = MAX_SIZE;
+      }
+    } else if (height > MAX_SIZE) {
+      width *= MAX_SIZE / height;
+      height = MAX_SIZE;
+    }
+    canvas.width = Math.floor(width);
+    canvas.height = Math.floor(height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("이미지 처리를 시작하지 못했어요.");
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.85);
+  }, [loadDataUrlImage]);
+
+  const composePairPreviewDataUrl = useCallback(async (dataUrls: [string, string]) => {
+    const [leftImage, rightImage] = await Promise.all(dataUrls.map(loadDataUrlImage));
+    const canvas = document.createElement("canvas");
+    const size = 1024;
+    const half = size / 2;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("미리보기를 만들지 못했어요.");
+
+    const drawCover = (img: HTMLImageElement, dx: number) => {
+      const scale = Math.max(half / img.width, size / img.height);
+      const drawWidth = img.width * scale;
+      const drawHeight = img.height * scale;
+      const offsetX = dx + (half - drawWidth) / 2;
+      const offsetY = (size - drawHeight) / 2;
+      ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+    };
+
+    ctx.fillStyle = "#0A0A0A";
+    ctx.fillRect(0, 0, size, size);
+    drawCover(leftImage, 0);
+    drawCover(rightImage, half);
+    ctx.fillStyle = "rgba(255,255,255,0.14)";
+    ctx.fillRect(half - 2, 48, 4, size - 96);
+    return canvas.toDataURL("image/jpeg", 0.9);
+  }, [loadDataUrlImage]);
+
+  const finalizeSingleUpload = useCallback(async (dataUrl: string) => {
     const styleId = selectedStyleRef.current;
     if (!styleId) return;
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      let width = img.width; let height = img.height;
-      const MAX_SIZE = 1024;
-      if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } }
-      else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
-      canvas.width = Math.floor(width); canvas.height = Math.floor(height);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const resized = canvas.toDataURL("image/jpeg", 0.85);
+    const resized = await resizeImageDataUrl(dataUrl);
+    sessionStorage.setItem("sd_styleId", styleId);
+    sessionStorage.setItem("sd_imageBase64", resized.split(",")[1]);
+    sessionStorage.setItem("sd_previewDataUrl", resized);
+    sessionStorage.removeItem("sd_imageBase64List");
+    sessionStorage.removeItem("sd_resultDataUrl");
+    sessionStorage.removeItem("sd_shareUrl");
+    sessionStorage.removeItem("sd_shareLink");
+    sessionStorage.setItem("sd_fromStudio", "1");
+    router.push("/result");
+  }, [resizeImageDataUrl, router]);
+
+  const handleGeneratePairUpload = useCallback(async () => {
+    const styleId = selectedStyleRef.current;
+    if (!styleId) return;
+    const [first, second] = pairUploadImages;
+    if (!first || !second) {
+      showToast("두 사람 사진을 모두 올려주세요.");
+      return;
+    }
+
+    setPairSubmitting(true);
+    try {
+      const normalized = await Promise.all([
+        resizeImageDataUrl(first),
+        resizeImageDataUrl(second),
+      ]) as [string, string];
+      const preview = await composePairPreviewDataUrl(normalized);
       sessionStorage.setItem("sd_styleId", styleId);
-      sessionStorage.setItem("sd_imageBase64", resized.split(",")[1]);
-      sessionStorage.setItem("sd_previewDataUrl", resized);
+      sessionStorage.setItem("sd_imageBase64", preview.split(",")[1]);
+      sessionStorage.setItem("sd_imageBase64List", JSON.stringify(normalized.map((item) => item.split(",")[1])));
+      sessionStorage.setItem("sd_previewDataUrl", preview);
       sessionStorage.removeItem("sd_resultDataUrl");
       sessionStorage.removeItem("sd_shareUrl");
       sessionStorage.removeItem("sd_shareLink");
       sessionStorage.setItem("sd_fromStudio", "1");
+      setPairUploadStyle(null);
+      setPairUploadImages([null, null]);
+      uploadTargetRef.current = null;
+      if (fileInputRef.current) fileInputRef.current.value = "";
       router.push("/result");
-    };
-    img.src = dataUrl;
-  }, [router]);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "두 장 업로드를 처리하지 못했어요.");
+    } finally {
+      setPairSubmitting(false);
+    }
+  }, [composePairPreviewDataUrl, pairUploadImages, resizeImageDataUrl, router, showToast]);
+
+  const processImageDataUrl = useCallback(async (dataUrl: string) => {
+    const target = uploadTargetRef.current ?? { mode: "single" as const };
+    if (target.mode === "pair") {
+      setPairUploadImages((prev) => {
+        const next: [string | null, string | null] = [...prev] as [string | null, string | null];
+        next[target.slotIndex] = dataUrl;
+        return next;
+      });
+      showToast(target.slotIndex === 0 ? "첫 번째 인물 사진을 담았어요." : "두 번째 인물 사진을 담았어요.");
+      return;
+    }
+
+    await finalizeSingleUpload(dataUrl);
+  }, [finalizeSingleUpload, showToast]);
 
   const openImageConfirm = useCallback((dataUrl: string) => {
     setPendingImagePreview(dataUrl);
@@ -638,6 +752,7 @@ export default function Studio() {
   const closeImageConfirm = useCallback(() => {
     setPendingImagePreview(null);
     setCropState(null);
+    uploadTargetRef.current = null;
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
@@ -683,8 +798,10 @@ export default function Studio() {
   const handleConfirmSelectedImage = useCallback(() => {
     if (!pendingImagePreview) return;
     if (!cropState) {
-      processImageDataUrl(pendingImagePreview);
+      void processImageDataUrl(pendingImagePreview);
       setPendingImagePreview(null);
+      setCropState(null);
+      uploadTargetRef.current = null;
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
@@ -719,9 +836,10 @@ export default function Studio() {
         outputSize
       );
 
-      processImageDataUrl(canvas.toDataURL("image/jpeg", 0.9));
+      void processImageDataUrl(canvas.toDataURL("image/jpeg", 0.9));
       setPendingImagePreview(null);
       setCropState(null);
+      uploadTargetRef.current = null;
       if (fileInputRef.current) fileInputRef.current.value = "";
     };
     img.src = pendingImagePreview;
@@ -1626,6 +1744,7 @@ export default function Studio() {
                     onClick={() => {
                       sessionStorage.setItem("sd_variant", v.id);
                       setVariantSelectStyle(null);
+                      uploadTargetRef.current = { mode: "single" };
                       setShowPhotoSourceSheet(true);
                     }}
                     className="group bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-[#C9571A]/50 rounded-2xl overflow-hidden transition-all text-left flex flex-col"
@@ -1660,12 +1779,128 @@ export default function Studio() {
         );
       })()}
 
+      {pairUploadStyle && (
+        <div
+          className="fixed inset-0 z-[58] bg-black/70 flex items-end justify-center"
+          onClick={() => {
+            setPairUploadStyle(null);
+            setPairUploadImages([null, null]);
+            setSelectedStyle(null);
+            uploadTargetRef.current = null;
+            if (fileInputRef.current) fileInputRef.current.value = "";
+          }}
+        >
+          <div
+            className="w-full max-w-2xl bg-[#111214] rounded-t-3xl px-4 pt-2 pb-[max(env(safe-area-inset-bottom),20px)] shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-white/15 rounded-full mx-auto mb-5" />
+            <p className="text-[13px] font-semibold text-white/40 text-center mb-1">2장 업로드 전용</p>
+            <p className="text-[22px] font-black tracking-[-0.04em] text-white text-center">{pairUploadStyle.name}</p>
+            <p className="mt-2 text-center text-[13px] leading-6 text-white/45">
+              서로 다른 두 사람 사진을 각각 1장씩 올려주세요.
+              <br />
+              얼굴이 정면에 가깝고 또렷하게 보일수록 정확도가 좋습니다.
+            </p>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {([0, 1] as const).map((slotIndex) => {
+                const image = pairUploadImages[slotIndex];
+                return (
+                  <div key={slotIndex} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-3">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-[13px] font-bold text-white">인물 {slotIndex + 1}</p>
+                      {image && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPairUploadImages((prev) => {
+                              const next: [string | null, string | null] = [...prev] as [string | null, string | null];
+                              next[slotIndex] = null;
+                              return next;
+                            });
+                          }}
+                          className="text-[12px] text-white/38"
+                        >
+                          삭제
+                        </button>
+                      )}
+                    </div>
+                    <div className="aspect-[4/5] overflow-hidden rounded-[20px] bg-black/30">
+                      {image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={image} alt={`인물 ${slotIndex + 1}`} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center px-4 text-center text-[12px] leading-5 text-white/28">
+                          얼굴이 잘 보이는
+                          <br />
+                          사진을 올려주세요
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          uploadTargetRef.current = { mode: "pair", slotIndex };
+                          fileInputRef.current?.click();
+                        }}
+                        className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-3 text-[13px] font-bold text-white"
+                      >
+                        앨범
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          uploadTargetRef.current = { mode: "pair", slotIndex };
+                          setShowCameraGuide(true);
+                        }}
+                        className="rounded-2xl border border-[#C9571A]/30 bg-[#C9571A]/10 px-3 py-3 text-[13px] font-bold text-[#F6B38C]"
+                      >
+                        촬영
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setPairUploadStyle(null);
+                  setPairUploadImages([null, null]);
+                  setSelectedStyle(null);
+                  uploadTargetRef.current = null;
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
+                className="flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-[14px] font-bold text-white/55"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleGeneratePairUpload()}
+                disabled={pairSubmitting || !pairUploadImages[0] || !pairUploadImages[1]}
+                className="flex-[1.4] rounded-2xl bg-[#C9571A] px-4 py-4 text-[14px] font-bold text-white disabled:opacity-40"
+              >
+                {pairSubmitting ? "준비 중..." : "이 두 장으로 생성하기"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 카메라 가이드 모달 */}
       {/* 촬영 / 앨범 선택 시트 */}
       {showPhotoSourceSheet && (
         <div
           className="fixed inset-0 z-[58] bg-black/60 flex items-end justify-center"
-          onClick={() => setShowPhotoSourceSheet(false)}
+          onClick={() => {
+            setShowPhotoSourceSheet(false);
+            uploadTargetRef.current = null;
+          }}
         >
           <div
             className="w-full max-w-2xl bg-[#1C1C1E] rounded-t-3xl px-4 pt-2 pb-[max(env(safe-area-inset-bottom),20px)] shadow-2xl"
@@ -1675,7 +1910,11 @@ export default function Studio() {
             <p className="text-[13px] font-semibold text-white/40 text-center mb-4">사진 선택</p>
             <div className="flex flex-col gap-2 mb-3">
               <button
-                onClick={() => { setShowPhotoSourceSheet(false); setShowCameraGuide(true); }}
+                onClick={() => {
+                  uploadTargetRef.current = { mode: "single" };
+                  setShowPhotoSourceSheet(false);
+                  setShowCameraGuide(true);
+                }}
                 className="w-full flex items-center gap-4 bg-white/[0.06] hover:bg-white/10 rounded-2xl px-5 py-4 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-xl bg-[#C9571A]/20 flex items-center justify-center flex-shrink-0">
@@ -1690,7 +1929,11 @@ export default function Studio() {
                 </div>
               </button>
               <button
-                onClick={() => { setShowPhotoSourceSheet(false); fileInputRef.current?.click(); }}
+                onClick={() => {
+                  uploadTargetRef.current = { mode: "single" };
+                  setShowPhotoSourceSheet(false);
+                  fileInputRef.current?.click();
+                }}
                 className="w-full flex items-center gap-4 bg-white/[0.06] hover:bg-white/10 rounded-2xl px-5 py-4 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
@@ -1708,7 +1951,10 @@ export default function Studio() {
               </button>
             </div>
             <button
-              onClick={() => setShowPhotoSourceSheet(false)}
+              onClick={() => {
+                setShowPhotoSourceSheet(false);
+                uploadTargetRef.current = null;
+              }}
               className="w-full py-3.5 rounded-2xl bg-white/[0.04] text-[15px] font-semibold text-white/50"
             >
               취소

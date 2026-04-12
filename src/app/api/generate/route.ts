@@ -2437,6 +2437,151 @@ OUTPUT TARGET:
 - #f4f4ee
 - #5c4c42`
   },
+  "romantic-night-twoshot": {
+    "default": `Use the uploaded image or uploaded images as the base and transform them, not generate a new person.
+
+Transform the uploaded photo set into a wide-angle romantic night scene featuring exactly two young adults standing together and holding hands on a hilltop overlooking a vast illuminated cityscape.
+
+This must look like a real high-resolution cinematic editorial photograph — romantic, dreamy, natural, and grounded in physical realism. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+SUBJECT COUNT / IDENTITY SOURCE — MUST FOLLOW EXACTLY:
+- The final image must contain exactly two young adults only
+- No extra people, no third subject, no crowd, no silhouettes, no background human figures
+- Use only the uploaded image identities as the source for both faces
+- This is an edit using uploaded people, not a newly invented couple
+- Two uploaded face photos are provided and both must be used
+- Map uploaded person 1 to one final subject and uploaded person 2 to the other final subject
+- Preserve each uploaded identity separately
+- Do not average, merge, remix, or partially invent either face
+- Do not turn one uploaded face into both people unless both uploaded photos are actually the same person
+- Do not hide either face behind hair, extreme angle, shadow, hands, or blur
+- Both final faces must be readable enough to clearly preserve identity
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace both subjects’ faces using only the uploaded face images as identity sources
+- Preserve exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain soft, calm, emotionally connected expressions unless minimal adjustment is required
+- CRITICAL: The faces must feel naturally integrated into the scene — same lighting direction, same contrast, same skin texture, same night-light interaction, and same overall image sharpness as the rest of the photograph
+- The faces must NOT look pasted or overly symmetrical
+- Match head, neck, posture, skin tone, and perspective seamlessly into both bodies
+- No beautification that alters facial structure
+- No plastic skin, no artificial symmetry correction
+- Preserve pores, subtle skin variation, and natural detail
+- The final styling must adapt naturally to each uploaded person’s gender while preserving identity and romantic pairing context
+
+FACE & CAMERA:
+- Keep both subjects recognizable as the uploaded user identities
+- Preserve believable face proportions and natural structure
+- Maintain a real photographed cinematic moment, not an over-generated couple
+- Do not over-smooth or idealize facial features
+- The camera must feel physically present and observational
+- Capture using a full-frame professional camera system
+- Lens: 35mm wide-angle lens (environmental portrait)
+- Aperture: f/1.8 to f/2.2 to achieve shallow depth of field with strong background bokeh
+- Shutter speed: approximately 1/80 to 1/125 sec for handheld stability
+- ISO: 800 to 1600 to realistically accommodate low-light conditions with controlled noise
+- White balance: cool night balance around 3800K to 4500K to preserve blue/violet tones
+- Dynamic range: preserved highlights in city lights with soft roll-off and lifted shadow detail
+- No digital over-sharpening; maintain natural lens softness and highlight bloom
+
+HAIR:
+- Natural, softly styled hair consistent with a romantic outdoor night setting
+- Slight movement or looseness in strands
+- No rigid or overly polished styling
+
+CLOTHING:
+- Young man: light brown textured suit with a white shirt
+- Young woman: flowing white off-the-shoulder dress with puffed sleeves
+- Fabrics must appear physically real with natural folds, flow, and light interaction
+- Slight movement in the dress fabric to enhance softness
+- No synthetic or costume-like rendering
+
+POSE / COMPOSITION:
+- Wide-angle shot at eye level
+- Both subjects standing close together holding hands
+- Positioned slightly off-center to allow expansive background visibility
+- Natural, relaxed posture conveying intimacy
+- Balanced composition using environmental negative space
+- Foreground subtly uneven with hints of grass or bush framing one side
+- Keep both faces clearly visible and unobstructed
+- The frame may be wide, but both subjects must still be large enough in frame for facial identity to remain recognizable
+- Do not place one subject too far away, turned away, or cropped so heavily that identity is lost
+
+SCENE:
+- Hilltop setting at night
+- Foreground dark and textured with uneven ground
+- Background: vast cityscape filled with thousands of lights
+- City lights rendered as soft bokeh in blue and violet haze
+- Strong contrast between dark foreground and luminous background
+- Environment must feel real, expansive, and atmospheric
+
+LIGHTING:
+- Soft, diffuse artificial lighting illuminating the subjects
+- Light must feel subtle and natural, not staged
+- Gentle highlight on faces and clothing
+- Background lights create natural glow and separation
+- No harsh spotlight or artificial lighting effects
+
+DEPTH & OPTICS:
+- Wide-angle perspective with environmental depth
+- Shallow depth of field
+- Background rendered as soft, diffused bokeh
+- Subjects remain sharp with slight natural falloff
+- Subtle optical bloom around highlights
+- No motion blur
+- Lens rendering must feel physical and natural, not computational
+
+PHOTO STYLE:
+- High-resolution digital photography
+- Cinematic but grounded realism
+- Natural highlight bloom and soft contrast
+- Slight low-light noise consistent with ISO usage
+- No HDR exaggeration
+- No painterly blending
+- No AI-smooth rendering
+- Must feel like a real romantic editorial or film still
+
+COLOR:
+- Dominant palette:
+  - #4c5590
+  - #040a0b
+  - #343a7b
+  - #3f4887
+  - #2e346a
+  - #0a121d
+  - #5b659b
+- Deep blues and midnight blacks dominate
+- Accents of warm yellow and white from city lights
+- Maintain cool atmospheric tone with warm contrast points
+- No artificial color grading shifts
+
+MOOD:
+- Romantic
+- Dreamy
+- Cinematic
+- Nostalgic
+- Slightly surreal but grounded
+- Sense of wonder and emotional intimacy
+
+STRICT RULES:
+- Must use the uploaded images as the base, not generate new faces
+- The final image must contain exactly two people only
+- Both uploaded identities must appear clearly and separately in the final image
+- Preserve hand-holding interaction and emotional connection
+- Maintain wide composition and cityscape background
+- Do not stylize or turn into fantasy imagery
+- Do not over-perfect faces or symmetry
+- Keep lighting, texture, and atmosphere physically believable
+- Do not invent a new romantic partner identity
+- Do not obscure either face
+
+OUTPUT TARGET:
+- Ultra-realistic cinematic romantic portrait
+- Two subjects holding hands on a hilltop at night
+- Vast glowing cityscape in soft bokeh behind them
+- Cool-toned atmosphere with warm light accents
+- Looks like a real film still or editorial photograph, not AI-generated`
+  },
   "bronze-statue-bench": {
     "default": `Transform the uploaded photo into a realistic European-style park statue scene featuring a seated bronze human figure on an ornate metal bench, preserving the exact composition, pose, and environmental structure of the original image.
 
@@ -2590,16 +2735,25 @@ export async function POST(request: NextRequest) {
   const now = Date.now();
   let style = "";
   let imageBase64 = "";
+  let imageBase64List: string[] = [];
   let mimeType = "image/jpeg";
   let variant = "default";
 
   try {
     const body = await request.json();
     style = body.style;
-    imageBase64 = body.imageBase64;
+    imageBase64 = body.imageBase64 || "";
+    imageBase64List = Array.isArray(body.imageBase64List)
+      ? body.imageBase64List.filter((item: unknown): item is string => typeof item === "string" && item.length > 0)
+      : [];
     mimeType = body.mimeType || "image/jpeg";
     variant = body.variant || "default";
   } catch {
+    return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
+  }
+
+  const inputImages = imageBase64List.length > 0 ? imageBase64List : (imageBase64 ? [imageBase64] : []);
+  if (!style || inputImages.length === 0) {
     return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
   }
 
@@ -2686,13 +2840,18 @@ export async function POST(request: NextRequest) {
     }
 
     const refCount = loadedRefs.length;
+    const inputCount = inputImages.length;
 
     const promptText = refCount === 0
-      ? `Edit this image: ${prompt}`
-      : `Image 1 is the original subject. Image 2 is the style reference. Extract identity from Image 1 and apply the exact style, color grading, and aesthetic of Image 2. Additional instructions: ${prompt}`;
+      ? (inputCount === 1
+        ? `Edit this image: ${prompt}`
+        : `Images 1 and 2 are uploaded source identities for a single combined edit. Use both uploaded people exactly as the only identity source and create one final image. Additional instructions: ${prompt}`)
+      : (inputCount === 1
+        ? `Image 1 is the original subject. Image 2 is the style reference. Extract identity from Image 1 and apply the exact style, color grading, and aesthetic of Image 2. Additional instructions: ${prompt}`
+        : `Images 1 and 2 are uploaded source identities. Image ${inputCount + 1} is the style reference. Use the uploaded people as the only identity source and apply the exact style, color grading, and aesthetic of the style reference. Additional instructions: ${prompt}`);
 
     const contents = [
-      { inlineData: { mimeType: mimeType || "image/jpeg", data: imageBase64 } },
+      ...inputImages.map((data) => ({ inlineData: { mimeType: mimeType || "image/jpeg", data } })),
       ...loadedRefs.map(b64 => ({ inlineData: { mimeType: "image/jpeg" as const, data: b64 } })),
       { text: promptText },
     ];
