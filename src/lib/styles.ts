@@ -24,6 +24,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "orange-cosmic-girl": "컨셉",
   "subway-cctv": "일상",
   "visual-kei": "컨셉",
+  "escalator-flash-twoshot": "일상",
   "idol-photocard": "무드",
   "club-flash": "무드",
   "flash-selfie": "일상",
@@ -115,6 +116,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/visual-kei-before.jpg?v=1",
     afterImg: "/thumbnails/visual-kei-after.jpg?v=1",
+  },
+  {
+    id: "escalator-flash-twoshot",
+    name: "에스컬레이터 급포착",
+    desc: "같은 에스컬레이터 위에서 카메라를 올려다본 두 사람의 직플래시 코미디 스냅샷",
+    bgColor: "#1f2630",
+    tag: "2인",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Two_Korean_adults-before.jpg?v=1",
+    afterImg: "/thumbnails/Two_Korean_adults-after.jpg?v=1",
   },
   {
     id: "romantic-night-twoshot",
@@ -484,4 +496,4 @@ export const STYLE_LABELS: Record<string, string> = Object.fromEntries(
 export const VISIBLE_STYLE_IDS = VISIBLE_STYLES.map((s) => s.id);
 
 /** 다중 업로드가 필요한 스타일 ID */
-export const MULTI_SOURCE_STYLE_IDS = ["romantic-night-twoshot"] as const;
+export const MULTI_SOURCE_STYLE_IDS = ["romantic-night-twoshot", "escalator-flash-twoshot"] as const;

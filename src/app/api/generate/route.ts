@@ -3294,6 +3294,198 @@ OUTPUT TARGET:
 - Cool-toned atmosphere with warm light accents
 - Looks like a real film still or editorial photograph, not AI-generated`
   },
+  "escalator-flash-twoshot": {
+    "default": `Images 1 and 2 are uploaded source identities for a single combined edit. Use both uploaded people exactly as the only identity source and create one final image. Additional instructions:
+Use the uploaded image or uploaded images as the base and transform them, not generate a new person.
+
+Transform the uploaded photo set into a high-angle direct-flash escalator snapshot featuring exactly two Korean adults riding the same escalator in a modern indoor public building, captured in a candid, slightly chaotic, comedy-film-still moment.
+
+This must look like a real high-resolution film-style candid photograph — spontaneous, funny, observational, slightly messy, and grounded in physical realism. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+SUBJECT COUNT / IDENTITY SOURCE — MUST FOLLOW EXACTLY:
+- The final image must contain exactly two primary Korean adults only
+- Use only the uploaded image identities as the source for both faces
+- This is an edit using uploaded people, not newly invented strangers
+- Two uploaded face photos are provided and both must be used
+- Map uploaded person 1 to one final subject and uploaded person 2 to the other final subject
+- Preserve each uploaded identity separately
+- Do not average, merge, remix, or partially invent either face
+- Do not turn one uploaded face into both people unless both uploaded photos are actually the same person
+- Do not hide either face behind hair, extreme angle, shadow, hands, railings, or blur
+- Both final faces must be readable enough to clearly preserve identity
+- No extra clearly readable foreground or midground people
+- If tiny distant background figures appear at the far end of the escalator or upper landing, they must remain very small, indistinct, and non-competing
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace both subjects’ faces using only the uploaded face images as identity sources
+- Preserve exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain playful surprise, quick upward glance, and candid caught-off-guard energy unless minimal adjustment is required
+- CRITICAL: The faces must feel naturally integrated into the escalator snapshot — same lighting direction, same direct-flash behavior, same contrast, same skin texture, same slight motion softness, and same overall image sharpness as the rest of the photograph
+- The faces must NOT look pasted or overly symmetrical
+- Match head, neck, posture, skin tone, and perspective seamlessly into both bodies
+- No beautification that alters facial structure
+- No plastic skin, no artificial symmetry correction
+- Preserve pores, subtle skin variation, and natural detail
+- The final styling must adapt naturally to each uploaded person’s gender while preserving identity and the candid comedic public-space context
+
+FACE & CAMERA:
+- Keep both subjects recognizable as the uploaded user identities
+- Preserve believable face proportions and natural structure
+- Maintain a real photographed candid moment, not an over-generated staged pair
+- Do not over-smooth or idealize facial features
+- The camera must feel physically present, handheld, close, and intrusive
+- Capture using a compact 35mm point-and-shoot or direct-flash snapshot camera aesthetic
+- Lens: 28mm wide-angle lens
+- Aperture: approximately f/4 to f/5.6
+- Shutter speed: approximately 1/30 to 1/60 sec
+- ISO: 400 to 800 film-equivalent grain response
+- White balance: mixed indoor ambient with flash-neutral foreground
+- Direct on-camera flash must dominate the subjects while ambient mall light remains visible in the background
+- No digital over-sharpening; maintain slight optical softness, film grain, flash glare, and snapshot realism
+
+HAIR:
+- Preserve each uploaded person’s natural hairstyle
+- Hair must react naturally to movement, escalator motion, and direct flash
+- Slight flyaway strands and uneven shine are allowed
+- No rigid or overly polished styling
+
+CLOTHING:
+- Both subjects must wear casual, loose-fitting everyday public-building outfits
+- Clothing must adapt naturally to each uploaded person’s gender while preserving realistic street-casual styling
+- All garments must read as thick, opaque, everyday materials such as denim, cotton, and canvas
+- Fabrics must appear physically real with natural folds, weight, and movement
+- Clothing should feel similar in spirit to candid streetwear worn in the reference mood: practical, slightly oversized, and not fashion-editorial
+- No synthetic or costume-like rendering
+- No formal styling
+- No fashion-shoot exaggeration
+
+POSE / COMPOSITION:
+- High-angle shot looking down the escalator
+- Both subjects are on the same escalator, close together, captured mid-ride
+- Both subjects twist their upper bodies and look up toward the camera
+- One subject may be slightly ahead or behind the other on the steps
+- The poses must feel candid, playful, and slightly awkward, as if suddenly noticed by the camera
+- The frame must feel close, compressed, and immediate rather than architectural and distant
+- Do NOT use a top-down X-shaped escalator intersection composition
+- Do NOT place the subjects far apart across separate escalators
+- Do NOT build the image around perfect symmetry
+- The escalator steps must create strong downward leading lines beneath them
+- Keep both faces clearly visible and unobstructed
+- The subjects must be large enough in frame for facial identity to remain clearly recognizable
+
+SCENE:
+- Modern indoor public-building or shopping-mall escalator environment
+- One escalator descending away from the camera
+- Visible escalator handrails and metallic side panels
+- Upper landing area visible in the distant background
+- Minimal surrounding architecture compared with the subjects and escalator
+- Environment must feel like a real indoor escalator corridor, not a grand geometric mall atrium
+- Background should feel secondary, slightly empty, and naturally lit
+- If distant people appear far away, they must remain tiny and incidental only
+
+LIGHTING:
+- Strong direct on-camera flash is the primary lighting source
+- Flash creates bright frontal illumination on faces, hands, clothing, and escalator edges
+- Ambient indoor lighting remains visible in the background
+- Flash must create hard specular highlights, slight hot spots, and abrupt light falloff
+- Shadows must feel direct, immediate, and snapshot-like rather than soft commercial lighting
+- No polished mall-beauty lighting
+- No cinematic spotlighting
+- No overhead architectural-light drama as the main effect
+
+DEPTH & OPTICS:
+- Wide-angle perspective with close subject distance
+- Moderate depth of field typical of direct-flash snapshot photography
+- Subjects remain readable and prominent
+- Background remains visible but less important
+- Slight wide-lens exaggeration and closeness must be felt
+- Mild motion softness is allowed in hands, feet, or escalator movement
+- No deep, perfectly clinical architectural focus across the whole frame
+- Lens rendering must feel physical, candid, and slightly imperfect
+
+PHOTO STYLE:
+- High-resolution film-snapshot / direct-flash candid photography
+- Strong flash foreground separation
+- Visible film grain or film-like noise
+- Slight softness and mild motion residue
+- Realistic direct-flash glare on skin, rails, and escalator surfaces
+- Slight messiness in exposure and framing is allowed
+- No HDR exaggeration
+- No painterly blending
+- No AI-smooth rendering
+- Must feel like a real comedy-movie still, candid fashion snapshot, or accidental magazine outtake rather than a polished architectural editorial
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Slight direct-flash overexposure on parts of the face, hands, or nearby clothing
+- Mild film grain
+- Slight lens softness toward edges
+- Tiny framing imperfection and handheld imbalance
+- Slight motion blur in moving limbs or escalator tread texture
+- Mild flash reflection on escalator rails
+- No perfectly sterile gradients
+- No unnaturally clean commercial finish
+
+EXPOSURE & RESPONSE:
+- Exposure should prioritize flash-lit subjects over balanced background rendering
+- Subjects may appear brighter than the environment
+- Background may fall slightly darker or dirtier in tone
+- Highlights must roll off naturally in flash-lit skin and metal
+- Midtones must preserve denim, cotton, and facial detail
+- No flat global exposure balance
+- No evenly polished mall-interior exposure
+
+ANTI-AI CONSTRAINT:
+- Do NOT use a distant top-down mall-architecture composition
+- Do NOT center the image around perfectly intersecting escalators
+- Do NOT make the pair look staged, posed, or overly composed
+- Do NOT over-perfect faces or symmetry
+- Do NOT clean up the direct-flash harshness
+- Do NOT remove slight film grain, handheld imbalance, or candid awkwardness
+- Do NOT invent readable extra people
+- Maintain snapshot realism and accidental comedic energy
+
+COLOR:
+- Dominant palette:
+  - dark navy and denim blues
+  - muted black and charcoal
+  - warm indoor beige ambient light
+  - silver-gray escalator metal
+- Flash-lit skin tones should feel slightly pale and immediate
+- Overall color must feel like mixed indoor ambient light plus neutral flash
+- No artificial color grading shifts
+- No oversaturated chrome-mall palette
+- No polished cool architectural grading
+
+MOOD:
+- Lively
+- Humorous
+- Spontaneous
+- Slightly awkward
+- Candid
+- Playfully mischievous
+
+STRICT RULES:
+- Must use the uploaded images as the base, not generate new faces
+- The final image must be built from the uploaded identities only
+- Both uploaded identities must appear clearly and separately in the final image
+- Preserve candid upward eye contact and caught-in-the-moment expressions
+- The composition must match a close, high-angle, direct-flash escalator snapshot feeling
+- Do NOT use the previous precise X-shaped escalator intersection structure
+- Do NOT turn this into a polished architectural editorial
+- Do not stylize or turn into fantasy imagery
+- Do not over-perfect faces or symmetry
+- Keep lighting, texture, motion, flash harshness, and atmosphere physically believable
+- Do not obscure either face
+- The uploaded faces must remain the identity source without exception
+
+OUTPUT TARGET:
+- Ultra-realistic candid escalator snapshot
+- Exactly two primary Korean adults built from the two uploaded identities
+- Both subjects riding the same escalator and twisting upward toward the camera
+- Direct flash, visible film grain, slight motion softness, and handheld candid energy
+- Modern indoor escalator environment with metallic rails and distant landing
+- Looks like a real direct-flash comedy-film still or analog snapshot, not AI-generated`
+  },
   "astronaut": {
     "default": `Use the uploaded image as the base and transform it, not generate a new person.
 
