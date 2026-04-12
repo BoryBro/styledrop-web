@@ -55,6 +55,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   astronaut: "컨셉",
   "ramen-hair": "컨셉",
   "claw-machine": "컨셉",
+  "boxing-counterpunch": "스포츠",
   "bronze-statue-bench": "컨셉",
   "yakuza": "컨셉",
 };
@@ -172,6 +173,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/claw-machine-before.jpg?v=1",
     afterImg: "/thumbnails/claw-machine-after.jpg?v=1",
+  },
+  {
+    id: "boxing-counterpunch",
+    name: "링 위의 카운터펀치",
+    desc: "복싱 링 위에서 회피 직후 강하게 꽂아 넣는 카운터 순간을 잡아낸 초근접 스포츠 컷",
+    bgColor: "#171c26",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Boxer-before.jpg?v=1",
+    afterImg: "/thumbnails/Boxer-after.jpg?v=1",
   },
   {
     id: "idol-photocard",

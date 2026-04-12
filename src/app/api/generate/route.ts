@@ -3967,6 +3967,167 @@ OUTPUT TARGET:
 - Cool LED lighting with slight bloom
 - Looks like a real captured arcade scene, not AI-generated`
   },
+  "boxing-counterpunch": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a dramatic ultra-close side-angle boxing action portrait captured inside a boxing ring at the instant of a sharp counterpunch after a fast evasive upper-body movement.
+
+This must look like a real high-resolution sports editorial photograph — tense, raw, competitive, and physically believable. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject’s face with the uploaded user’s face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain an intensely focused, adrenaline-driven expression with jaw slightly clenched unless minimal adjustment is required
+- CRITICAL: The face must feel naturally integrated into the boxing-ring environment — same lighting direction, same contrast, same skin texture, same sweat behavior, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted, over-cleaned, or artificially beautified
+- Match head angle, neck tension, motion direction, and perspective seamlessly into the action pose
+- Preserve real skin texture, pores, slight asymmetry, and natural facial structure
+- No structural beautification, no plastic skin, no artificial symmetry correction
+- The final result must adapt naturally regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like a real photographed athlete under ring lighting, not a composited portrait
+- Capture using a professional full-frame digital camera system
+- Lens: 85mm portrait lens
+- Aperture: f/1.8 to f/2.2 to create shallow depth of field and soft background separation
+- Shutter speed: approximately 1/1000 to 1/1600 sec to freeze sweat and motion droplets
+- ISO: 800 to 1600
+- White balance: cool-neutral arena balance around 4300K to 5000K
+- Dynamic range: preserve highlight detail on damp skin and gloves while retaining shadow structure
+- No digital over-sharpening; maintain natural telephoto rendering, highlight roll-off, and subtle grain
+
+HAIR:
+- Preserve the uploaded user’s natural hairstyle
+- Hair must react naturally to sweat, exertion, and motion
+- Slight dampness and strand separation are allowed
+- No unrelated restyling
+- No artificial salon finish
+
+CLOTHING:
+- Standard boxing attire adapted naturally to the uploaded user’s gender while preserving real athletic practicality
+- Heavy-duty boxing gloves
+- Well-worn hand wraps
+- Athletic ring-appropriate trunks or equivalent competition-ready boxing bottoms with realistic fabric texture
+- All clothing must be functional, secure, and non-revealing
+- Fabric must appear rough, matte, and physically believable
+- Gloves must retain a slightly glossy finish with realistic wear
+- No stylization, no costume exaggeration, no revealing wardrobe
+
+POSE / COMPOSITION:
+- Ultra-close side-angle action shot
+- Subject captured moments after weaving the upper body to dodge a punch
+- Subject delivering a sharp counterpunch
+- Upper body tension and rotational movement must be clearly visible
+- The rival appears only as a partially blurred opposing presence
+- Composition must isolate the subject while preserving the immediate fight context
+- Tight framing must emphasize face, glove, shoulder line, and impact direction
+
+PROP / EQUIPMENT:
+- Boxing ring ropes partially visible
+- Heavy-duty gloves
+- Hand wraps
+- Rival’s blurred glove or partial facial presence may appear at the edge of frame
+- Sweat beads and airborne droplets must be visible and physically believable
+- No extra props outside the boxing environment
+
+SCENE:
+- Interior boxing ring
+- Background elements reduced to soft blur
+- Ring environment must remain legible through ropes, lighting, and spatial context
+- Scene must feel like a professional fight or sparring setup
+- No crowd detail required beyond implied arena atmosphere
+- Environment must remain grounded and realistic
+
+LIGHTING:
+- Focused ring lighting
+- Strong specular highlights on damp skin, hair, and gloves
+- High-contrast directional light shaping the face and upper torso
+- Cinematic but physically believable fight lighting
+- No soft beauty lighting
+- No stylized neon lighting
+- Lighting must emphasize sweat, motion, and tension
+
+DEPTH & OPTICS:
+- Shallow depth of field
+- Background rendered into soft, creamy bokeh
+- Subject remains sharp with natural falloff
+- Partial rival presence remains blurred
+- Subtle telephoto compression from the 85mm lens
+- No wide-angle distortion
+- No artificial blur effects
+
+PHOTO STYLE:
+- High-resolution digital sports editorial photography
+- Cinematic contrast
+- Neutral grays, shadowy blues, and desaturated skin tones
+- Natural grain texture consistent with high-end digital production
+- No HDR exaggeration
+- No painterly blending
+- No AI-smooth rendering
+- Must feel like a real captured boxing still from a premium sports photo shoot
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Slight natural grain in darker areas
+- Tiny highlight bloom on sweat and glove reflections
+- Mild motion residue on secondary background elements only
+- No perfectly sterile gradients
+- No unnaturally clean edge separation
+- Maintain physical realism in droplets, skin texture, and lens rendering
+
+EXPOSURE & RESPONSE:
+- Exposure balanced for damp skin highlights and glove reflections
+- Highlights must roll off naturally without harsh clipping
+- Shadows must remain deep but readable
+- Midtones must preserve skin texture, wraps, and fabric detail
+- Contrast must feel strong and filmic without becoming artificial
+- No flat global exposure balance
+
+ANTI-AI CONSTRAINT:
+- Do NOT beautify the face
+- Do NOT over-clean skin or remove sweat texture
+- Do NOT stylize droplets into decorative particles
+- Do NOT turn the rival into a fully detailed second portrait
+- Do NOT flatten lighting or reduce tension
+- Do NOT make the wardrobe revealing, stylized, or costume-like
+- Maintain raw, realistic athletic intensity
+
+COLOR:
+- Dominant palette:
+  - neutral grays
+  - shadowy blues
+  - desaturated skin tones
+- Controlled highlights on gloves, sweat, and ring lighting
+- Palette must remain cinematic, restrained, and cool-neutral
+- No oversaturation
+- No artificial color grading shifts
+
+MOOD:
+- Tense
+- Raw
+- Competitive
+- Focused
+- Adrenaline-driven
+- Intense and physically immediate
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Preserve the ultra-close side angle, evasive movement, and counterpunch moment
+- Maintain boxing ring context, sweat droplets, focused ring lighting, shallow depth of field, and rival blur
+- Clothing must adapt automatically and naturally to the uploaded user’s gender while remaining realistic and non-revealing
+- Remove any unnecessary suggestive styling or wording
+- Do not stylize or clean the image
+- Keep everything physically believable
+
+OUTPUT TARGET:
+- Ultra-realistic boxing action portrait
+- Same recognizable person
+- Intense side-angle counterpunch moment inside a boxing ring
+- Focused ring lighting, sweat droplets, blurred rival presence, and creamy bokeh
+- Gender-adaptive realistic boxing attire with non-revealing athletic styling
+- Looks like a real high-end sports editorial still, not AI-generated`
+  },
   "bronze-statue-bench": {
     "default": `Transform the uploaded photo into a realistic European-style park statue scene featuring a seated bronze human figure on an ornate metal bench, preserving the exact composition, pose, and environmental structure of the original image.
 
