@@ -319,8 +319,12 @@ export default function KakaoTraceMap({
   }, [activeTrace?.user_id, previewTrace?.regionKey, ready]);
 
   return (
-    <div className="relative overflow-hidden rounded-[34px] border border-white/10 bg-[#05070B] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
-      <div ref={mapContainerRef} className="relative z-0 aspect-square w-full" style={{ filter: "saturate(0.18) brightness(0.72) contrast(0.88)" }} />
+    <div className="relative mx-auto w-full max-w-[390px] overflow-hidden rounded-[28px] border border-white/10 bg-[#05070B] shadow-[0_22px_56px_rgba(0,0,0,0.3)]">
+      <div
+        ref={mapContainerRef}
+        className="relative z-0 aspect-[0.76] w-full sm:aspect-square"
+        style={{ filter: "saturate(0.18) brightness(0.72) contrast(0.88)" }}
+      />
       <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(2,4,7,0.28)_0%,rgba(3,5,8,0.18)_48%,rgba(2,4,7,0.32)_100%)]" />
       <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_18%_16%,rgba(86,145,255,0.07),transparent_24%),radial-gradient(circle_at_82%_84%,rgba(77,227,197,0.05),transparent_26%)] opacity-80" />
 
@@ -531,69 +535,111 @@ export default function KakaoTraceMap({
         )}
       </div>
 
-      <div className="absolute right-4 top-4 z-30 flex items-center gap-2">
-        {canFocusMyTrace && (
-          <button
-            onClick={onFocusMyTrace}
-            className="rounded-2xl border border-white/10 bg-[rgba(8,11,16,0.72)] px-3 py-2 text-[12px] font-bold text-white/80 backdrop-blur"
-          >
-            내 흔적
-          </button>
-        )}
-        {canRemoveMyTrace && (
-          <button
-            onClick={onRemoveMyTrace}
-            disabled={removing}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-[rgba(8,11,16,0.72)] text-white/80 backdrop-blur disabled:opacity-60"
-            aria-label="내 흔적 삭제"
-            title="내 흔적 삭제"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M3.6 4.3h8.8M6.2 2.7h3.6M5.1 4.3l.5 7.1a1 1 0 0 0 1 .9h2.8a1 1 0 0 0 1-.9l.5-7.1M6.7 6.4v4.1M9.3 6.4v4.1" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        )}
-        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[rgba(8,11,16,0.72)] px-3 py-2 backdrop-blur">
-          <span className="text-[11px] font-bold text-white/38">1x</span>
-          <input
-            type="range"
-            min="1"
-            max="20"
-            step="0.1"
-            value={zoomValue}
-            onChange={(event) => {
-              const map = mapRef.current;
-              if (!map) return;
-              const nextValue = Number(event.target.value);
-              setZoomValue(nextValue);
-              map.setLevel(sliderToLevel(nextValue));
-            }}
-            className="h-2 w-24 accent-white"
-            aria-label="지도 확대 슬라이더"
-          />
-          <span className="text-[11px] font-bold text-white/72">{zoomValue.toFixed(1)}x</span>
+      {/* 우측 하단 컨트롤: 줌 +/- · 현재위치 · 초기화 */}
+      <div className="absolute bottom-16 right-3 z-30 flex flex-col gap-1.5">
+        {/* 줌 + */}
+        <button
+          onClick={() => {
+            const map = mapRef.current;
+            if (!map) return;
+            const next = Math.min(20, zoomValue + 1);
+            setZoomValue(next);
+            map.setLevel(sliderToLevel(next));
+          }}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[rgba(8,11,16,0.78)] text-white/70 backdrop-blur transition hover:text-white/95"
+          aria-label="확대"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+          </svg>
+        </button>
+        {/* 줌 레벨 표시 */}
+        <div className="flex h-7 w-9 items-center justify-center rounded-lg border border-white/8 bg-[rgba(8,11,16,0.6)] backdrop-blur">
+          <span className="text-[10px] font-bold text-white/40">{zoomValue.toFixed(0)}x</span>
         </div>
+        {/* 줌 - */}
+        <button
+          onClick={() => {
+            const map = mapRef.current;
+            if (!map) return;
+            const next = Math.max(1, zoomValue - 1);
+            setZoomValue(next);
+            map.setLevel(sliderToLevel(next));
+          }}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[rgba(8,11,16,0.78)] text-white/70 backdrop-blur transition hover:text-white/95"
+          aria-label="축소"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+          </svg>
+        </button>
+        {/* 구분선 */}
+        <div className="mx-auto h-px w-5 bg-white/10" />
+        {/* 현재 위치 */}
+        <button
+          onClick={onLocateCurrent}
+          disabled={locating}
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[rgba(8,11,16,0.78)] text-white/70 backdrop-blur transition hover:text-white/95 disabled:opacity-40"
+          aria-label="현재 위치"
+          title="현재 위치"
+        >
+          {locating ? (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="animate-spin">
+              <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.6" strokeDasharray="8 6" strokeLinecap="round"/>
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="2.5" fill="currentColor"/>
+              <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.4"/>
+              <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          )}
+        </button>
+        {/* 초기 위치 */}
         <button
           onClick={() => {
             const map = mapRef.current;
             if (!map || !window.kakao?.maps?.LatLng) return;
             map.setLevel(sliderToLevel(1));
+            setZoomValue(1);
             map.panTo(new window.kakao.maps.LatLng(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng));
           }}
-          className="rounded-2xl border border-white/10 bg-[rgba(8,11,16,0.72)] px-3 py-2 text-[12px] font-bold text-white/80 backdrop-blur"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[rgba(8,11,16,0.78)] text-white/70 backdrop-blur transition hover:text-white/95"
+          aria-label="전체 보기"
+          title="전체 보기"
         >
-          원위치
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1.5 5V2.5A1 1 0 0 1 2.5 1.5H5M9 1.5h2.5A1 1 0 0 1 12.5 2.5V5M12.5 9v2.5a1 1 0 0 1-1 1H9M5 12.5H2.5a1 1 0 0 1-1-1V9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
         </button>
-      </div>
-
-      <div className="absolute left-4 top-4 z-30">
-        <button
-          onClick={onLocateCurrent}
-          disabled={locating}
-          className="rounded-2xl border border-white/10 bg-[rgba(8,11,16,0.72)] px-3 py-2 text-[12px] font-bold text-white/80 backdrop-blur disabled:opacity-60"
-        >
-          {locating ? "위치 찾는 중..." : "현재 위치"}
-        </button>
+        {/* 내 흔적 포커스 */}
+        {canFocusMyTrace && (
+          <button
+            onClick={onFocusMyTrace}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#00FFC8]/30 bg-[rgba(0,255,200,0.08)] text-[#00FFC8] backdrop-blur transition hover:bg-[rgba(0,255,200,0.15)]"
+            aria-label="내 흔적"
+            title="내 흔적"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="5.5" r="2.2" stroke="currentColor" strokeWidth="1.4"/>
+              <path d="M2.5 12c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          </button>
+        )}
+        {/* 내 흔적 삭제 */}
+        {canRemoveMyTrace && (
+          <button
+            onClick={onRemoveMyTrace}
+            disabled={removing}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[rgba(8,11,16,0.78)] text-white/40 backdrop-blur transition hover:text-red-400 disabled:opacity-40"
+            aria-label="내 흔적 삭제"
+            title="내 흔적 삭제"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3 3.8h8M5.4 2.4h3.2M4.5 3.8l.5 6.3a.9.9 0 0 0 .9.8h2.2a.9.9 0 0 0 .9-.8l.5-6.3M5.8 5.6v3.6M8.2 5.6v3.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       {nearbyPublicTraces.length > 0 && (
