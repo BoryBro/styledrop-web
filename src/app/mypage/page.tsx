@@ -91,6 +91,7 @@ export default function MyPage() {
   const [instaInput, setInstaInput] = useState<string>("");
   const [instaEditing, setInstaEditing] = useState(false);
   const [instaSaving, setInstaSaving] = useState(false);
+  const [showcaseUploading, setShowcaseUploading] = useState(false);
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showcaseState, setShowcaseState] = useState<ShowcaseState>(null);
@@ -255,9 +256,43 @@ export default function MyPage() {
       const res = await fetch("/api/public-showcase", { method: "DELETE" });
       if (!res.ok) throw new Error("delete failed");
       setShowcaseState(null);
-      showToast("메인 공개 스토리에서 내렸어요.");
+      showToast("메인 스토리에서 내렸어요.");
     } catch {
       showToast("공개 해제에 실패했어요.");
+    }
+  };
+
+  const handlePostToShowcase = async () => {
+    const item = selectedItems[activeIndex];
+    if (!item) return;
+    setShowcaseUploading(true);
+    try {
+      const imgRes = await fetch(item.result_image_url);
+      const blob = await imgRes.blob();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      const res = await fetch("/api/public-showcase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageBase64: base64,
+          styleId: item.style_id,
+          variant: item.variant ?? "default",
+          instagramHandle: instaHandle || null,
+        }),
+      });
+      if (!res.ok) throw new Error("failed");
+      const data = await res.json();
+      setShowcaseState({ imageUrl: data.imageUrl, styleId: item.style_id, createdAt: new Date().toISOString() });
+      showToast(instaHandle ? `메인 스토리에 올렸어요 · @${instaHandle} 포함` : "메인 스토리에 올렸어요.");
+    } catch {
+      showToast("올리기에 실패했어요.");
+    } finally {
+      setShowcaseUploading(false);
     }
   };
 
@@ -495,36 +530,41 @@ export default function MyPage() {
               )}
             </div>
 
-            <div className="rounded-2xl border border-white/8 bg-[#111315] p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="font-unbounded text-[10px] tracking-[0.18em] text-[#6BE2C5] uppercase">Main Slider</p>
-                  <p className="mt-2 text-[16px] font-black tracking-[-0.03em] text-white">
-                    {showcaseState ? "메인 공개 스토리에 내 결과가 올라가 있어요" : "아직 메인 공개 스토리에 올라간 결과가 없어요"}
-                  </p>
-                  <p className="mt-2 text-[13px] leading-6 text-white/50">
-                    {showcaseState
-                      ? "지금 공개중인 이미지는 스튜디오 상단 공개 스토리에서 보여집니다."
-                      : "결과 페이지에서 체크하면 스튜디오 상단 공개 스토리에 1장만 노출할 수 있어요."}
+            {/* 메인 스토리 현황 카드 */}
+            <div className="rounded-2xl bg-[#1C1C1E] overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3.5">
+                {/* 방송 아이콘 */}
+                <div className="w-9 h-9 rounded-xl bg-[#6BE2C5]/12 flex items-center justify-center flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="3" fill="#6BE2C5"/>
+                    <path d="M5.5 5.5a6.5 6.5 0 009 9M5.5 14.5a6.5 6.5 0 010-9" stroke="#6BE2C5" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-[#6BE2C5]/60 tracking-wide uppercase">메인 스토리</p>
+                  <p className="text-[14px] font-semibold text-white mt-0.5">
+                    {showcaseState ? "공개 중" : "미공개"}
                   </p>
                 </div>
-                {showcaseState && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={showcaseState.imageUrl} alt="" className="h-20 w-16 rounded-2xl object-cover" />
+                {showcaseState ? (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={showcaseState.imageUrl} alt="" className="w-10 h-10 rounded-xl object-cover ring-1 ring-white/10" />
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-[10px] text-white/30">{relativeTime(showcaseState.createdAt)}</span>
+                      <button
+                        type="button"
+                        onClick={handleHideFromHome}
+                        className="text-[12px] font-semibold text-white/40 hover:text-white/70 transition-colors"
+                      >
+                        해제
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-2 h-2 rounded-full bg-white/15 flex-shrink-0" />
                 )}
               </div>
-              {showcaseState && (
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <span className="text-[12px] text-white/38">{relativeTime(showcaseState.createdAt)} 공개됨</span>
-                  <button
-                    type="button"
-                    onClick={handleHideFromHome}
-                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[13px] font-bold text-white/78 hover:text-white"
-                  >
-                    공개 해제
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* 스타일별 기록 */}
@@ -757,22 +797,47 @@ export default function MyPage() {
                 })()}
 
                 {/* 고정 액션 버튼 */}
-                <div className="flex gap-3 pt-1 pb-2">
+                <div className="flex gap-3 pt-1">
                   <button
                     onClick={() => selectedItems[activeIndex] && handleSave(selectedItems[activeIndex].result_image_url)}
                     className="flex-1 bg-[#C9571A] hover:bg-[#B34A12] text-white py-3.5 rounded-2xl font-bold text-[15px] transition-colors flex items-center justify-center gap-2"
                   >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M8 10l-3-3M8 10l3-3M1 12v1a2 2 0 002 2h10a2 2 0 002-2v-1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    저장하기
+                    저장
                   </button>
                   <button
                     onClick={() => selectedItems[activeIndex] && handleKakaoShare(selectedItems[activeIndex].result_image_url)}
                     className="flex-1 bg-[#FEE500] hover:bg-[#F0D900] text-[#191919] py-3.5 rounded-2xl font-bold text-[15px] transition-colors flex items-center justify-center gap-2"
                   >
                     <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/></svg>
-                    카카오 공유
+                    카카오
                   </button>
                 </div>
+
+                {/* 메인 스토리 올리기 */}
+                <button
+                  onClick={() => void handlePostToShowcase()}
+                  disabled={showcaseUploading}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-[#6BE2C5]/25 bg-[#6BE2C5]/8 text-[#6BE2C5] font-bold text-[14px] transition-opacity disabled:opacity-50 pb-2"
+                >
+                  {showcaseUploading ? (
+                    <>
+                      <div className="w-4 h-4 rounded-full border-2 border-[#6BE2C5]/30 border-t-[#6BE2C5] animate-spin" />
+                      올리는 중...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="3" fill="currentColor"/>
+                        <path d="M5.5 5.5a6.5 6.5 0 019 9M5.5 14.5a6.5 6.5 0 010-9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                      {showcaseState ? "메인 스토리 교체" : "메인 스토리에 올리기"}
+                      {instaHandle && (
+                        <span className="text-[11px] font-normal opacity-60">· @{instaHandle} 자동 포함</span>
+                      )}
+                    </>
+                  )}
+                </button>
               </>
             )}
           </div>
