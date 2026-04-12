@@ -1718,6 +1718,243 @@ OUTPUT TARGET:
 - Exact attached-reference feeling: dreamy, futuristic, polished, cool, mysterious, and refined
 - Looks like a real photographed high-end editorial image, not AI-generated`,
   },
+  "organza-halo": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a close, frontal editorial portrait of a young Korean woman wrapped in a sculptural white organza dress, standing before a glowing chandelier and luminous clouds, matching the exact background, objects, camera distance, expression, skin finish, fabric texture, lighting behavior, and sacred dreamlike atmosphere of the attached reference image.
+
+This must look like a real high-resolution editorial portrait photograph with a surreal-but-photographic ethereal atmosphere - opulent, luminous, soft, sacred, and physically believable within the image world. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+FACE - PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject's face with the uploaded user's face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain a serene, contemplative, calm expression unless minimal adjustment is required
+- CRITICAL: The face must feel naturally integrated into the chandelier-and-cloud portrait environment - same lighting direction, same contrast, same skin texture, same halo interaction, same lens-flare contamination, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted, over-cleaned, or artificially beautified
+- Match head position, neck, posture, skin tone, and perspective seamlessly into the close portrait framing
+- Preserve real skin texture, pores, subtle asymmetry, and natural facial structure
+- No structural beautification, no plastic skin, no artificial symmetry correction
+- The final result must adapt naturally regardless of gender while preserving the same recognizable identity and the intended sacred surreal portrait context
+- The facial rendering must inherit the same warm luminous skin glow, soft specular highlights, and refined editorial polish visible in the attached reference
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like a real photographed subject inside a physical set, not a composited fantasy face
+- Capture using a professional full-frame digital camera system
+- Lens: 85mm portrait lens
+- Aperture: f/2-f/2.8 to create shallow depth of field and gentle compression
+- Shutter speed: approximately 1/125 to 1/200 sec
+- ISO: 100 to 400
+- White balance: warm-neutral around 4800K to 5600K with soft cream-gold contamination from chandelier light
+- Dynamic range: preserve bright chandelier highlights, pearl-like particles, fabric detail, and skin glow without clipping
+- No digital over-sharpening; maintain natural lens softness, smooth highlight roll-off, and delicate atmospheric bloom
+- Optical rendering must match the attached reference: close, intimate, premium, softly radiant, and portrait-lens compressed
+
+HAIR:
+- Hair must be dark, softly pulled back or naturally controlled behind the head and shoulders
+- A few natural strands may remain visible near the temples or neck
+- Hair must catch subtle warm backlight around the edges
+- No unrelated hairstyle redesign
+- No excessive volume or fashion-hair exaggeration
+- Hair must remain elegant, restrained, and secondary to the face and dress
+
+CLOTHING:
+- White organza dress with a thick, opaque finish
+- Dense folded fabric wrapping across the shoulders and upper body in large sculptural shapes
+- Fabric must feel airy yet substantial, with crisp translucent layering, luminous edges, and soft internal volume
+- The garment must match the attached reference in feeling: cloudlike, ceremonial, elegant, and architectural
+- Material must appear physically real with layered folds, soft sheen, and delicate texture
+- No transparent treatment that changes the intended coverage
+- No costume-like fantasy armor styling
+- No unrelated garment substitution
+
+POSE / COMPOSITION:
+- Close upper-body portrait
+- Subject centered in the frame
+- Frontal composition with calm stillness
+- Camera distance must remain intimate and close, matching the attached reference
+- The framing must include the upper torso and dramatic organza folds
+- The chandelier must appear above and behind the subject
+- Large cloud masses must frame the sides and background
+- The subject must remain the clear focal point
+- The composition must match the attached reference closely:
+  - centered face
+  - close portrait scale
+  - chandelier glowing above the head
+  - organza filling the lower foreground
+  - cloud forms surrounding the scene
+- Do not widen the frame
+- Do not flatten the composition into a simple studio portrait
+- Keep the image grand, luminous, and immersive
+
+PROP / ENVIRONMENTAL ELEMENTS:
+- Ornate chandelier suspended in the background
+- Multiple glowing chandelier bulbs creating star-like points of light
+- Floating pearlescent particles / shard-like pearl highlights suspended through the air
+- Large cloudlike forms surrounding the subject
+- The chandelier, clouds, and floating pearl-like elements must all feel physically photographed and integrated into the same optical space
+- The floating particles must vary in size, focus, and brightness naturally
+- No repeated copy-paste particle placement
+- No extra props beyond chandelier, clouds, and pearl-like floating highlights
+
+SCENE:
+- Dreamlike interior set dominated by clouds and chandelier light
+- Background filled with soft cloud masses and luminous floating particles
+- No visible room edges, text, logos, or branding
+- No hard architectural details beyond the chandelier
+- The environment must feel opulent, mysterious, and celestial
+- The scene must closely follow the attached reference:
+  - chandelier overhead
+  - clouds surrounding the subject
+  - soft floating highlights throughout the frame
+  - no distracting set dressing
+- The world must remain soft, sacred, and immersive
+
+LIGHTING:
+- Strong divine backlight from the chandelier behind the subject
+- Bright halo effects around the head and upper silhouette
+- Visible lens flare and radiant light bursts from chandelier bulbs
+- Soft diffuse frontal fill keeping the face readable
+- Light must catch the organza folds and reveal their layered volume
+- Skin must glow with a gentle warm sheen
+- Clouds and floating pearl-like particles must catch light softly and volumetrically
+- Lighting must match the attached reference exactly in feeling:
+  - chandelier radiance behind the head
+  - warm cream-white glow
+  - luminous sacred atmosphere
+  - bright halo and flare effects
+  - soft but present facial shadow shaping
+- No harsh cold lighting
+- No flat studio beauty lighting
+- No modern commercial lighting feel
+
+MAKEUP / SKIN FINISH:
+- Minimal refined editorial makeup
+- Smooth even-toned skin with natural complexion preserved
+- Luminous skin finish with warm reflective highlights on forehead, cheeks, nose bridge, and lips
+- Skin must feel gently polished but still real
+- Natural lip sheen with soft color
+- No heavy contour
+- No theatrical makeup
+- The skin finish must match the attached reference exactly in feeling: calm, radiant, warm, softly retouched, and editorially refined without becoming artificial
+
+DEPTH & OPTICS:
+- 85mm lens perspective
+- Shallow depth of field
+- Face and main fabric folds remain sharp
+- Chandelier, clouds, and floating pearl-like particles soften progressively into blur
+- Bokeh must feel soft, luminous, and expensive
+- No wide-angle distortion
+- Optical rendering must feel real, lens-based, and premium
+- Depth behavior must match the attached reference:
+  - facial plane sharp
+  - background chandelier softened but bright
+  - cloud masses diffused
+  - floating particles layered in different focus depths
+  - no flat full-scene sharpness
+
+PHOTO STYLE:
+- High-resolution digital editorial photography
+- Clean, low-noise rendering
+- Crisp facial detail
+- Rich luminous highlight behavior
+- Soft atmospheric bloom
+- Fine fabric detail in the organza folds
+- No film grain
+- No visible digital noise
+- No HDR exaggeration
+- No painterly softness
+- No AI-smooth rendering
+- Must feel like a real photographed surreal editorial portrait, not a digitally painted fantasy image
+- Must match the attached reference in finish:
+  - warm
+  - luminous
+  - ethereal
+  - opulent
+  - sacred
+  - premium editorial realism
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Slight highlight bloom on chandelier bulbs and bright pearl-like particles
+- Mild lens flare streaking and starburst behavior around bright light sources
+- Soft optical haze around the brightest highlights
+- Slight atmospheric diffusion through the cloud layers
+- No perfectly sterile gradient transitions in the background glow
+- No unnaturally cut-out subject edges
+- No artificial subject separation from the backdrop
+- Maintain natural lens falloff and realistic light diffusion matching the reference
+
+EXPOSURE & RESPONSE:
+- Exposure balanced for facial readability, chandelier brightness, floating highlight detail, and organza texture
+- Highlights must roll off softly on skin, fabric, chandelier bulbs, and floating pearl-like elements
+- Shadows must remain delicate and open
+- Midtones must preserve facial structure, skin texture, and organza detail
+- The cream-white luminous wash must remain controlled and integrated into the image
+- No flat global exposure balance
+- The image must feel bright, rich, sacred, and premium without harsh clipping
+
+ANTI-AI CONSTRAINT:
+- Do NOT over-refine the face
+- Do NOT erase real pore structure
+- Do NOT turn the skin into plastic CGI
+- Do NOT flatten the chandelier into generic background bokeh
+- Do NOT reduce the clouds into simple mist
+- Do NOT add props, text, or decorative objects outside the chandelier, cloud forms, and floating pearl-like highlights
+- Do NOT stylize into illustration or fantasy poster art
+- Do NOT harden contrast or remove the luminous haze
+- Maintain real photographic rendering with editorial surrealism only
+- Follow the attached reference's exact close crop, chandelier scale, cloud placement, halo behavior, warm glow, and sacred portrait mood
+
+COLOR:
+- Dominant palette:
+  - pure white
+  - cream
+  - soft pearl white
+  - warm silver highlights
+- Secondary tones:
+  - faint warm gold from chandelier light
+  - subtle neutral skin tones
+  - gentle iridescent accents in floating highlights
+- The palette must remain luminous, elegant, and opulent
+- No heavy saturation
+- No muddy grading
+- Color must match the attached reference closely:
+  - warm white chandelier glow
+  - cream-toned organza
+  - pearl-like floating highlights
+  - softly illuminated skin
+  - sacred editorial harmony
+
+MOOD:
+- Ethereal
+- Sacred
+- Opulent
+- Serene
+- Dreamlike
+- Mysterious
+- Luminous
+- Refined
+- Entrancing
+- Must match the emotional tone of the attached reference exactly
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Preserve the close upper-body portrait framing, serene expression, chandelier background, floating pearl-like highlights, cloud masses, white organza folds, warm halo lighting, 85mm shallow depth of field, and clean editorial finish
+- The attached reference image's tone, mood, lighting behavior, background objects, crop, skin finish, fabric texture, atmosphere, and sacred editorial finish must be followed as closely as possible
+- Clothing and styling must remain fully covering and physically believable
+- Do not stylize into fantasy art or CGI illustration
+- Keep all elements grounded in a real photographed image with surreal light behavior
+- The uploaded face identity must remain unchanged and clearly preserved
+
+OUTPUT TARGET:
+- Ultra-realistic ethereal editorial portrait
+- Same recognizable person in a close upper-body composition
+- White sculptural organza garment, chandelier glow, floating pearl-like highlights, and surrounding cloud forms
+- Warm luminous halo lighting with soft bokeh and lens flare
+- Exact attached-reference feeling: sacred, opulent, dreamy, refined, and luminous
+- Looks like a real photographed high-end editorial image, not AI-generated`,
+  },
   "gyaru": {
     "default": "Transform this photo into an authentic early-2000s Japanese gyaru (ギャル) portrait style. Keep the person's identity intact — same face structure, same person.\n\nMAKEUP TRANSFORMATION:\n- Heavy dramatic eye makeup: thick layered false lashes, strong black eyeliner with extended outer corners\n- Dark dramatic contact lens effect (high contrast, enlarged-looking)\n- White shimmer highlight under the eyes (tear bag / aegyo-sal emphasis)\n- Bright vertical nose highlight stripe\n- Pale matte skin base with soft airbrushed finish\n- Pink blush across cheeks and nose bridge\n- Glossy light pink overlined lips\n\nHAIR:\n- Dye to blonde or light brown\n- Voluminous, curled, layered gyaru styling\n- Shiny, slightly synthetic-looking texture\n\nOUTFIT & BACKGROUND:\n- Leopard or animal print elements in outfit or background\n- Sparkly, rhinestone-style accessories\n- Feminine, over-the-top Y2K gyaru fashion\n\nPHOTO STYLE:\n- Front-facing selfie angle, slightly top-down\n- Direct flash lighting: overexposed skin highlights, high contrast\n- Warm candy-like color tone\n- Retro Japanese photo booth (purikura) aesthetic: slight grain, warm saturation\n\nSTRICT RULES:\n- Preserve the person's identity: same face, same bone structure\n- No face reshaping or identity change\n- Output must look like a real early-2000s gyaru photo",
   },
