@@ -405,12 +405,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Mock 모드: API 호출 없이 원본 이미지를 그대로 반환 ─────────────
-    if (process.env.MOCK_GEMINI === "true") {
-      console.log("[MOCK] audition/generate — Gemini API 호출 생략, 원본 이미지 반환");
-      return NextResponse.json({ image: referenceImage, mimeType: "image/jpeg" });
-    }
-
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
     const contents = [
       { inlineData: { mimeType: (mimeType || "image/jpeg") as "image/jpeg", data: referenceImage } },

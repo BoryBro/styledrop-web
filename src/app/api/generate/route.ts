@@ -2561,18 +2561,6 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    // ── 로컬 Mock 모드 (MOCK_GEMINI=true 시 API 호출 없이 입력 이미지 그대로 반환) ──
-    if (process.env.MOCK_GEMINI === "true") {
-      console.log(`[MOCK] style=${style} variant=${variant} — Gemini API 호출 생략`);
-      const res = NextResponse.json({
-        image: imageBase64,
-        mimeType: mimeType || "image/jpeg",
-        shouldSaveHistory: false,
-      });
-      if (!session) res.cookies.set(GUEST_COOKIE, cookieValue, cookieOptions);
-      return res;
-    }
-
     // 레퍼런스 이미지 로드 (존재하는 파일만, 없으면 단일 이미지 모드 fallback)
     // 비용 절감을 위해 전체 리스트 중 랜덤하게 1개만 선택하여 보냄
     const refPaths = STYLE_REFERENCES[style]?.[variant] ?? STYLE_REFERENCES[style]?.["default"] ?? [];
