@@ -85,8 +85,8 @@ export const ALL_STYLES: StyleDef[] = [
     tag: "2인",
     active: true,
     hidden: false,
-    beforeImg: "/thumbnails/Dreamy_wildflower-before.jpg?v=1",
-    afterImg: "/thumbnails/Dreamy_celebratory-after.jpg?v=1",
+    beforeImg: "/thumbnails/romantic-night-twoshot-before.jpg",
+    afterImg: "/thumbnails/romantic-night-twoshot-after.jpg",
     popular: true,
   },
   {
