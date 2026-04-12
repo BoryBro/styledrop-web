@@ -20,7 +20,17 @@ function formatCount(n: number): string {
   return String(n);
 }
 
+function formatStoryTime(value: string): string {
+  const diffMs = Date.now() - new Date(value).getTime();
+  const diffMin = Math.max(1, Math.floor(diffMs / 60000));
+  if (diffMin < 60) return `${diffMin}m`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}h`;
+  return `${Math.floor(diffHour / 24)}d`;
+}
+
 const BASE_STYLE_CARDS = ALL_STYLES.map((s) => ({ ...s, bgImage: s.afterImg }));
+const STORY_DURATION_MS = 4500;
 type StyleCard = (typeof BASE_STYLE_CARDS)[number];
 type StudioSectionTab = "cards" | "lab";
 type StyleCategoryTab = (typeof STYLE_CATEGORY_TABS)[number];
@@ -86,7 +96,9 @@ export default function Studio() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [usageCounts, setUsageCounts] = useState<Record<string, number> | null>(null);
   const [showcaseItems, setShowcaseItems] = useState<ShowcaseItem[]>([]);
-  const [selectedShowcase, setSelectedShowcase] = useState<ShowcaseItem | null>(null);
+  const [selectedShowcaseIndex, setSelectedShowcaseIndex] = useState<number | null>(null);
+  const [likedShowcaseUserIds, setLikedShowcaseUserIds] = useState<string[]>([]);
+  const [storyProgressMs, setStoryProgressMs] = useState(0);
   const [styleControls, setStyleControls] = useState<Record<string, StyleControlState>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectedStyleRef = useRef<string | null>(null);
@@ -181,6 +193,45 @@ export default function Studio() {
       .catch(() => setShowcaseItems([]));
   }, []);
 
+  useEffect(() => {
+    if (selectedShowcaseIndex === null) {
+      setStoryProgressMs(0);
+      return;
+    }
+
+    if (!showcaseItems[selectedShowcaseIndex]) {
+      setSelectedShowcaseIndex(null);
+      setStoryProgressMs(0);
+      return;
+    }
+
+    setStoryProgressMs(0);
+
+    const startedAt = performance.now();
+    let frameId = 0;
+
+    const tick = (now: number) => {
+      const elapsed = now - startedAt;
+      if (elapsed >= STORY_DURATION_MS) {
+        setStoryProgressMs(STORY_DURATION_MS);
+        setSelectedShowcaseIndex((current) => {
+          if (current === null) return null;
+          if (current >= showcaseItems.length - 1) return null;
+          return current + 1;
+        });
+        return;
+      }
+      setStoryProgressMs(elapsed);
+      frameId = window.requestAnimationFrame(tick);
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [selectedShowcaseIndex, showcaseItems]);
+
   const showToast = useCallback((message: string) => {
     const id = ++toastIdRef.current;
     setToasts((prev) => [...prev, { id, message }]);
@@ -245,6 +296,61 @@ export default function Studio() {
     setActiveStyleCategory(tab);
     scrollToSection("cards");
   }, [scrollToSection]);
+
+  useEffect(() => {
+    if (selectedShowcaseIndex === null) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedShowcaseIndex]);
+
+  const activeShowcase = selectedShowcaseIndex !== null ? showcaseItems[selectedShowcaseIndex] ?? null : null;
+  const activeShowcaseLiked = activeShowcase ? likedShowcaseUserIds.includes(activeShowcase.userId) : false;
+
+  const closeStoryViewer = useCallback(() => {
+    setSelectedShowcaseIndex(null);
+    setStoryProgressMs(0);
+  }, []);
+
+  const openNextStory = useCallback(() => {
+    setSelectedShowcaseIndex((current) => {
+      if (current === null) return null;
+      if (current >= showcaseItems.length - 1) return null;
+      return current + 1;
+    });
+  }, [showcaseItems.length]);
+
+  const openPreviousStory = useCallback(() => {
+    setSelectedShowcaseIndex((current) => {
+      if (current === null) return null;
+      if (current <= 0) return 0;
+      return current - 1;
+    });
+  }, []);
+
+  const toggleStoryLike = useCallback(() => {
+    if (!activeShowcase) return;
+    setLikedShowcaseUserIds((current) =>
+      current.includes(activeShowcase.userId)
+        ? current.filter((id) => id !== activeShowcase.userId)
+        : [...current, activeShowcase.userId]
+    );
+  }, [activeShowcase]);
+
+  useEffect(() => {
+    if (selectedShowcaseIndex === null) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeStoryViewer();
+      if (event.key === "ArrowRight") openNextStory();
+      if (event.key === "ArrowLeft") openPreviousStory();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closeStoryViewer, openNextStory, openPreviousStory, selectedShowcaseIndex]);
 
   useEffect(() => {
     if (!showLabSection) return;
@@ -792,6 +898,38 @@ export default function Studio() {
             </div>
           )}
 
+          {showcaseItems.length > 0 && (
+            <div className="mb-5">
+              <div className="overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex w-max gap-3 px-1 pb-1">
+                  {showcaseItems.map((item, index) => (
+                    <button
+                      key={`${item.userId}-${item.createdAt}`}
+                      type="button"
+                      onClick={() => setSelectedShowcaseIndex(index)}
+                      className="group flex w-[78px] shrink-0 flex-col items-center gap-2"
+                    >
+                      <div className="rounded-full bg-[linear-gradient(135deg,#C9571A,#F6B38C,#C9571A)] p-[2px] shadow-[0_10px_24px_rgba(201,87,26,0.16)]">
+                        <div className="rounded-full bg-[#0A0A0A] p-[3px]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={item.imageUrl}
+                            alt={item.nickname}
+                            className="h-[64px] w-[64px] rounded-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                            draggable={false}
+                          />
+                        </div>
+                      </div>
+                      <span className="line-clamp-1 text-center text-[11px] font-medium text-white/72">
+                        {item.nickname}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {showLabSection && (
             <div className="sticky top-[60px] z-30 mb-5">
               <div className="rounded-[20px] border border-white/8 bg-[#121212]/90 p-1.5 shadow-[0_16px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
@@ -850,45 +988,6 @@ export default function Studio() {
               <h2 className="text-[20px] font-bold text-[#C9571A]">스타일 선택</h2>
               <p className="text-[18px] font-bold text-white mt-1">원하는 스타일의 카드를 선택해봐요</p>
             </div>
-
-            {showcaseItems.length > 0 && (
-              <div className="mb-5">
-                <div className="mb-3 flex items-center justify-between px-1">
-                  <div>
-                    <p className="font-unbounded text-[10px] tracking-[0.18em] uppercase text-[#C9571A]">Public Stories</p>
-                    <p className="mt-1 text-[14px] font-bold text-white">방금 공개된 결과물</p>
-                  </div>
-                  <span className="text-[11px] text-white/35">동의한 결과만 노출</span>
-                </div>
-                <div className="overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="flex w-max gap-3 px-1 pb-1">
-                    {showcaseItems.map((item) => (
-                      <button
-                        key={`${item.userId}-${item.createdAt}`}
-                        type="button"
-                        onClick={() => setSelectedShowcase(item)}
-                        className="group flex w-[78px] shrink-0 flex-col items-center gap-2"
-                      >
-                        <div className="rounded-full bg-[linear-gradient(135deg,#C9571A,#F6B38C,#C9571A)] p-[2px] shadow-[0_10px_24px_rgba(201,87,26,0.16)]">
-                          <div className="rounded-full bg-[#0A0A0A] p-[3px]">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={item.imageUrl}
-                              alt={item.nickname}
-                              className="h-[64px] w-[64px] rounded-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-                              draggable={false}
-                            />
-                          </div>
-                        </div>
-                        <span className="line-clamp-1 text-center text-[11px] font-medium text-white/72">
-                          {item.nickname}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div className="flex flex-col gap-3">
               {filteredStyles.map((style) => {
@@ -1397,53 +1496,113 @@ export default function Studio() {
         </div>
       )}
 
-      {selectedShowcase && (
+      {activeShowcase && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/78 px-4"
-          onClick={() => setSelectedShowcase(null)}
+          className="fixed inset-0 z-[70] bg-black"
+          onClick={closeStoryViewer}
         >
           <div
-            className="w-full max-w-sm overflow-hidden rounded-[30px] border border-white/10 bg-[#111315] shadow-2xl"
+            className="relative h-full w-full overflow-hidden bg-black text-white sm:mx-auto sm:max-w-[430px]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div className="rounded-full bg-[linear-gradient(135deg,#C9571A,#F6B38C,#C9571A)] p-[2px]">
-                  <div className="rounded-full bg-[#0A0A0A] p-[2px]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={selectedShowcase.imageUrl} alt={selectedShowcase.nickname} className="h-8 w-8 rounded-full object-cover" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-[max(env(safe-area-inset-top),12px)]">
+              <div className="flex items-center gap-1.5">
+                {showcaseItems.map((item, index) => {
+                  const isPast = selectedShowcaseIndex !== null && index < selectedShowcaseIndex;
+                  const isCurrent = index === selectedShowcaseIndex;
+                  const fill = isPast ? 100 : isCurrent ? Math.min(100, (storyProgressMs / STORY_DURATION_MS) * 100) : 0;
+                  return (
+                    <div key={`${item.userId}-${item.createdAt}`} className="h-1 flex-1 overflow-hidden rounded-full bg-white/20">
+                      <div
+                        className="h-full rounded-full bg-white transition-[width] duration-100"
+                        style={{ width: `${fill}%` }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <div className="rounded-full bg-[linear-gradient(135deg,#C9571A,#F6B38C,#C9571A)] p-[2px]">
+                    <div className="rounded-full bg-black p-[2px]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={activeShowcase.imageUrl}
+                        alt={activeShowcase.nickname}
+                        className="h-9 w-9 rounded-full object-cover"
+                      />
+                    </div>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="line-clamp-1 text-[14px] font-semibold text-white">{activeShowcase.nickname}</p>
+                    <p className="text-[11px] text-white/65">{formatStoryTime(activeShowcase.createdAt)}</p>
                   </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="line-clamp-1 text-[14px] font-bold text-white">{selectedShowcase.nickname}</p>
-                  <p className="text-[11px] text-white/35">메인 공개 스토리</p>
-                </div>
+                <button
+                  type="button"
+                  onClick={closeStoryViewer}
+                  className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-[22px] font-light text-white backdrop-blur-sm"
+                  aria-label="스토리 닫기"
+                >
+                  ×
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedShowcase(null)}
-                className="h-8 w-8 rounded-full border border-white/10 bg-white/[0.03] text-white/60"
-                aria-label="스토리 닫기"
-              >
-                ×
-              </button>
             </div>
-            <div className="relative bg-[#0A0A0A]">
+
+            <div className="absolute inset-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={selectedShowcase.imageUrl}
-                alt={selectedShowcase.nickname}
-                className="aspect-[4/5] w-full object-cover"
+                src={activeShowcase.imageUrl}
+                alt={activeShowcase.nickname}
+                className="h-full w-full object-cover"
               />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.45)_0%,rgba(0,0,0,0.08)_28%,rgba(0,0,0,0.16)_62%,rgba(0,0,0,0.72)_100%)]" />
             </div>
-            <div className="px-4 py-4">
+
+            <button
+              type="button"
+              onClick={openPreviousStory}
+              className="absolute inset-y-0 left-0 z-10 w-1/3"
+              aria-label="이전 스토리"
+            />
+            <button
+              type="button"
+              onClick={openNextStory}
+              className="absolute inset-y-0 right-0 z-10 w-1/3"
+              aria-label="다음 스토리"
+            />
+
+            <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-[max(env(safe-area-inset-bottom),20px)]">
+              <div className="mb-4 flex items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="line-clamp-2 text-[24px] font-black tracking-[-0.04em] text-white drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
+                    {activeShowcase.nickname}
+                  </p>
+                  <p className="mt-1 text-[13px] text-white/72">
+                    공개 결과 스토리
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleStoryLike}
+                  className={`relative z-20 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border backdrop-blur-sm transition-colors ${
+                    activeShowcaseLiked
+                      ? "border-[#C9571A]/60 bg-[#C9571A]/18 text-[#FF8B60]"
+                      : "border-white/14 bg-black/28 text-white"
+                  }`}
+                  aria-label="스토리 좋아요"
+                >
+                  <span className="text-[22px] leading-none">{activeShowcaseLiked ? "♥" : "♡"}</span>
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedShowcase(null);
+                  closeStoryViewer();
                   router.push("/studio");
                 }}
-                className="w-full rounded-full bg-[#C9571A] px-4 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#B34A12]"
+                className="relative z-20 w-full rounded-full bg-[#C9571A] px-4 py-4 text-[15px] font-bold text-white transition-colors hover:bg-[#B34A12]"
               >
                 나도 결과 만들기
               </button>
