@@ -643,6 +643,162 @@ OUTPUT TARGET:
 - Gender-adaptive everyday commuter outfit based on the uploaded user
 - Looks like real surveillance footage, not AI-generated`,
   },
+  "visual-kei": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a straight-on portrait shot of a single South Korean visual kei musician against a minimalist industrial backdrop.
+
+This must look like a real high-resolution editorial band photograph — edgy, decadent, somber, and physically believable. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Apply the uploaded user's face to the single subject while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Replace the subject's face with the uploaded user's face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain the same cool, casual, slightly provocative expression unless minimal adjustment is required
+- CRITICAL: The replaced face must feel naturally integrated into the portrait — same lighting direction, same contrast, same skin texture, same makeup finish, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted, over-cleaned, or artificially beautified
+- Match head position, neck, posture, and perspective seamlessly into the subject
+- Preserve real skin texture and facial structure beneath the makeup
+- No structural beautification, no plastic skin, no artificial symmetry correction
+- The final result must adapt naturally regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The replaced face must feel like a real photographed visual kei musician under dim studio lighting, not composited
+- Capture using a professional full-frame digital camera system
+- Lens: 50mm standard prime
+- Aperture: f/4–f/5
+- Shutter speed: ~1/125 sec
+- ISO: 800–1600
+- White balance: cool-neutral, approx. 4000K–4800K
+- Dynamic range: preserve shadow depth while retaining metallic reflections and fabric detail
+- No excessive sharpening; retain slight low-light softness and subtle digital noise
+
+HAIR:
+- Voluminous, spiked, and color-treated visual kei hairstyle
+- Electric red, platinum blonde, or jet black hair tones with possible visible streaks or extensions
+- Hair must feel heavily styled but physically real
+- No plastic or CGI hair rendering
+
+CLOTHING:
+- Studded leather jacket
+- Band T-shirt
+- Silver chains
+- Layered accessories
+- Fingerless gloves made from heavy opaque black leather or thick cotton
+- Clothing must feel real, textured, weighty, and performance-oriented
+- No fantasy-costume exaggeration
+
+POSE / COMPOSITION:
+- Straight-on portrait shot
+- Single subject only
+- Casual but slightly provocative pose
+- Tight framing emphasizing visual kei styling and personality
+- Balanced composition with the subject clearly isolated
+- Minimalist industrial backdrop remains secondary to the subject
+
+PROP / ACCESSORIES:
+- Metal jewelry
+- Chains
+- Fingerless gloves
+- Layered rock accessories
+- Faint fog visible in the scene
+- Accessories must reflect light naturally and remain physically believable
+
+SCENE:
+- Minimalist industrial backdrop
+- Dim, moody environment
+- Slightly rough, understated background texture
+- Faint visible fog in the air
+- Environment must support the band aesthetic without distracting from the subject
+
+LIGHTING:
+- Intentionally dim lighting
+- Single soft box positioned overhead
+- Deep moody shadows
+- Cool blue-tinted specular highlights
+- Controlled reflections on leather, skin, and metal jewelry
+- Lighting must feel studio-based but low-key and atmospheric
+- No bright beauty lighting
+- No cinematic over-lighting
+
+DEPTH & OPTICS:
+- Standard lens perspective
+- Moderate depth of field keeping the subject readable
+- Crisp focus across face, fabrics, and jewelry
+- Slight vignette toward frame edges
+- No visible distortion
+- Natural optical rendering with subtle low-light softness
+
+PHOTO STYLE:
+- High-resolution digital editorial photography
+- Crisp fabric texture
+- Clear skin detail
+- Sharp jewelry reflections
+- Subtle digital noise from low-light conditions
+- No HDR exaggeration
+- No painterly softness
+- No AI-smooth rendering
+- Must feel like a real photographed visual kei portrait
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Slight low-light digital noise
+- Subtle vignette
+- Mild highlight bloom on reflective jewelry and leather
+- Slight shadow grain in darker regions
+- No perfectly sterile gradients
+- No unnaturally clean low-light rendering
+
+EXPOSURE & RESPONSE:
+- Exposure biased to preserve mood and shadow depth
+- Highlights on metal and leather must roll off naturally
+- Blacks must remain deep but not flatly crushed
+- Midtones must preserve makeup, skin texture, and clothing detail
+- No flat global exposure balance
+
+ANTI-AI CONSTRAINT:
+- Do NOT add extra band members
+- Do NOT make the subject look duplicated
+- Do NOT over-clean skin or makeup
+- Do NOT simplify accessories or styling
+- Do NOT flatten the overhead lighting
+- Maintain low-light realism, texture, and individuality
+
+COLOR:
+- Dominant palette:
+  - muted silver
+  - deep black
+  - accent jewel tones
+- Hair colors include electric red, platinum blonde, or jet black
+- Cool blue-tinted highlights from lighting
+- Palette must remain dark, metallic, and moody
+- No oversaturation
+- No warm color shift
+
+MOOD:
+- Edgy
+- Decadent
+- Somber
+- Glam-rock
+- Slightly provocative
+- Atmospheric and cool
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Only one person must appear in the final image
+- Preserve visual kei makeup, hair, clothing, accessories, fog, and industrial backdrop
+- Maintain dim overhead softbox lighting and moody shadow structure
+- Keep everything physically believable
+
+OUTPUT TARGET:
+- Ultra-realistic visual kei portrait
+- Single South Korean visual kei musician
+- Same recognizable user identity
+- Gothic makeup, flamboyant rock styling, fog, and industrial backdrop
+- Dark metallic palette with cool highlights
+- Looks like a real photographed band editorial portrait, not AI-generated`,
+  },
   "gyaru": {
     "default": "Transform this photo into an authentic early-2000s Japanese gyaru (ギャル) portrait style. Keep the person's identity intact — same face structure, same person.\n\nMAKEUP TRANSFORMATION:\n- Heavy dramatic eye makeup: thick layered false lashes, strong black eyeliner with extended outer corners\n- Dark dramatic contact lens effect (high contrast, enlarged-looking)\n- White shimmer highlight under the eyes (tear bag / aegyo-sal emphasis)\n- Bright vertical nose highlight stripe\n- Pale matte skin base with soft airbrushed finish\n- Pink blush across cheeks and nose bridge\n- Glossy light pink overlined lips\n\nHAIR:\n- Dye to blonde or light brown\n- Voluminous, curled, layered gyaru styling\n- Shiny, slightly synthetic-looking texture\n\nOUTFIT & BACKGROUND:\n- Leopard or animal print elements in outfit or background\n- Sparkly, rhinestone-style accessories\n- Feminine, over-the-top Y2K gyaru fashion\n\nPHOTO STYLE:\n- Front-facing selfie angle, slightly top-down\n- Direct flash lighting: overexposed skin highlights, high contrast\n- Warm candy-like color tone\n- Retro Japanese photo booth (purikura) aesthetic: slight grain, warm saturation\n\nSTRICT RULES:\n- Preserve the person's identity: same face, same bone structure\n- No face reshaping or identity change\n- Output must look like a real early-2000s gyaru photo",
   },
@@ -3751,6 +3907,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "bronze-statue-bench": { "default": [] },
   "orange-cosmic-girl": { "default": [], "flat-blue": [] },
   "subway-cctv": { "default": [] },
+  "visual-kei": { "default": [] },
   "yakuza": { "default": [], "mafia": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
