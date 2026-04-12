@@ -5,7 +5,6 @@ type CreditSourceType =
   | "payment"
   | "reward"
   | "signup_bonus"
-  | "referral_reward"
   | "reviewer"
   | "manual";
 

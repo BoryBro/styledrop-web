@@ -890,8 +890,6 @@ function AuditionResultInner() {
   const [isGeneratingStill, setIsGeneratingStill] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [shareRewardToast, setShareRewardToast] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [referralCopied, setReferralCopied] = useState(false);
   const [physioPhoto, setPhysioPhoto] = useState<string | null>(null);
   const [personalityAnswers, setPersonalityAnswers] = useState<PersonalityAnswer[]>([]);
   const [activePhysioTab, setActivePhysioTab] = useState(0);
@@ -1082,7 +1080,6 @@ function AuditionResultInner() {
   // 크레딧 + 유저 ID 조회
   useEffect(() => {
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => setCredits(0));
-    fetch("/api/auth/me").then(r => r.json()).then(d => setUserId(d.id ?? null)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -2284,36 +2281,6 @@ function AuditionResultInner() {
               </Link>
             </div>
           </div>
-
-          {/* 친구 초대 섹션 */}
-          {userId && (
-            <div className="mt-6 bg-gray-50 border border-gray-200 rounded-2xl px-5 py-5">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[18px]">🎁</span>
-                <p className="text-[15px] font-black text-gray-900">친구 초대하고 크레딧 받기</p>
-              </div>
-              <p className="text-[12px] text-gray-500 mb-4 leading-relaxed">
-                친구가 내 링크로 가입하면<br />
-                <span className="text-gray-900 font-bold">나 +2크레딧, 친구 +2크레딧</span> 동시 지급
-              </p>
-              <button
-                onClick={async () => {
-                  const refUrl = `${window.location.origin}/api/auth/kakao?ref=${userId}`;
-                  await navigator.clipboard.writeText(refUrl).catch(() => {});
-                  setReferralCopied(true);
-                  setTimeout(() => setReferralCopied(false), 2500);
-                }}
-                className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-gray-700 text-white font-bold py-3 rounded-xl text-[14px] transition-colors"
-              >
-                {referralCopied ? (
-                  <><span>✓</span><span>링크 복사됨!</span></>
-                ) : (
-                  <><span>🔗</span><span>초대 링크 복사</span></>
-                )}
-              </button>
-            </div>
-          )}
-
           {copyToast && (
             <div className="mt-3 text-center text-[12px] text-green-600 font-bold">링크가 복사됐어요!</div>
           )}

@@ -9,8 +9,6 @@ const ALLOWED_EVENTS = [
   "audition_share_link_copy",
   "revisit",
   "share_credit_reward",
-  "referral_reward_new",
-  "referral_reward_ref",
 ];
 
 function parseSession(request: NextRequest): { id: string } | null {
