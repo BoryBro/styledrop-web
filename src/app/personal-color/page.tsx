@@ -171,18 +171,10 @@ function ToneMirrorGrid({ previewSrc, result }: { previewSrc: string; result: Pe
             >
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_30%,rgba(17,24,39,0.14)_100%)]" />
 
-              <div className="relative z-10 flex items-start justify-between gap-3">
+              <div className="relative z-10 flex items-start gap-3">
                 <div className="rounded-full bg-black/24 px-3 py-1.5 backdrop-blur-sm">
                   <p className="text-[12px] font-bold tracking-[0.14em] text-white uppercase">{profile.title}</p>
                 </div>
-                {selected && (
-                  <span
-                    className="rounded-full px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] shadow-lg"
-                    style={{ backgroundColor: "#FFFFFF", color: profile.accent }}
-                  >
-                    AI PICK
-                  </span>
-                )}
               </div>
 
               <div
