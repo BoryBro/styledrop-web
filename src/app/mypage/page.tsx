@@ -33,6 +33,12 @@ type AuditionHistoryItem = {
   created_at: string;
 };
 
+type ShowcaseState = {
+  imageUrl: string;
+  styleId: string | null;
+  createdAt: string;
+} | null;
+
 interface KakaoSDK {
   init: (key: string) => void;
   isInitialized: () => boolean;
@@ -83,6 +89,7 @@ export default function MyPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [showcaseState, setShowcaseState] = useState<ShowcaseState>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const showAuditionHistory = isAuditionVisible && isAuditionEnabled;
@@ -111,6 +118,10 @@ export default function MyPage() {
     fetch("/api/credits")
       .then(r => r.json())
       .then(d => setCredits(d.credits ?? 0))
+      .catch(() => {});
+    fetch("/api/public-showcase", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => setShowcaseState(data?.me?.imageUrl ? data.me : null))
       .catch(() => {});
   }, [user, loading, showAuditionHistory]);
 
@@ -200,6 +211,17 @@ export default function MyPage() {
     const ua = navigator.userAgent.toLowerCase();
     const isIOS = /iphone|ipad|ipod/.test(ua);
     router.push(isIOS ? "/install-app#ios" : "/install-app#android");
+  };
+
+  const handleHideFromHome = async () => {
+    try {
+      const res = await fetch("/api/public-showcase", { method: "DELETE" });
+      if (!res.ok) throw new Error("delete failed");
+      setShowcaseState(null);
+      showToast("메인 공개 스토리에서 내렸어요.");
+    } catch {
+      showToast("공개 해제에 실패했어요.");
+    }
   };
 
   // 스타일별 그룹핑 (history가 없어도 STYLE_ORDER 전체 표시)
@@ -360,6 +382,38 @@ export default function MyPage() {
               >
                 로그아웃
               </button>
+            </div>
+
+            <div className="rounded-2xl border border-white/8 bg-[#111315] p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="font-unbounded text-[10px] tracking-[0.18em] text-[#6BE2C5] uppercase">Main Slider</p>
+                  <p className="mt-2 text-[16px] font-black tracking-[-0.03em] text-white">
+                    {showcaseState ? "메인 공개 스토리에 내 결과가 올라가 있어요" : "아직 메인 공개 스토리에 올라간 결과가 없어요"}
+                  </p>
+                  <p className="mt-2 text-[13px] leading-6 text-white/50">
+                    {showcaseState
+                      ? "지금 공개중인 이미지는 스튜디오 상단 공개 스토리에서 보여집니다."
+                      : "결과 페이지에서 체크하면 스튜디오 상단 공개 스토리에 1장만 노출할 수 있어요."}
+                  </p>
+                </div>
+                {showcaseState && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={showcaseState.imageUrl} alt="" className="h-20 w-16 rounded-2xl object-cover" />
+                )}
+              </div>
+              {showcaseState && (
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <span className="text-[12px] text-white/38">{relativeTime(showcaseState.createdAt)} 공개됨</span>
+                  <button
+                    type="button"
+                    onClick={handleHideFromHome}
+                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[13px] font-bold text-white/78 hover:text-white"
+                  >
+                    공개 해제
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* 스타일별 기록 */}

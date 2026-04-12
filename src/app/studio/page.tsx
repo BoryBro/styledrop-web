@@ -24,6 +24,14 @@ const BASE_STYLE_CARDS = ALL_STYLES.map((s) => ({ ...s, bgImage: s.afterImg }));
 type StyleCard = (typeof BASE_STYLE_CARDS)[number];
 type StudioSectionTab = "cards" | "lab";
 type StyleCategoryTab = (typeof STYLE_CATEGORY_TABS)[number];
+type ShowcaseItem = {
+  userId: string;
+  nickname: string;
+  profileImage: string | null;
+  imageUrl: string;
+  styleId: string | null;
+  createdAt: string;
+};
 
 type Toast = { id: number; message: string };
 
@@ -77,6 +85,8 @@ export default function Studio() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [usageCounts, setUsageCounts] = useState<Record<string, number> | null>(null);
+  const [showcaseItems, setShowcaseItems] = useState<ShowcaseItem[]>([]);
+  const [selectedShowcase, setSelectedShowcase] = useState<ShowcaseItem | null>(null);
   const [styleControls, setStyleControls] = useState<Record<string, StyleControlState>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectedStyleRef = useRef<string | null>(null);
@@ -162,6 +172,13 @@ export default function Studio() {
         console.error("[usage] fetch error:", e);
         setUsageCounts({});
       });
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/public-showcase", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => setShowcaseItems(Array.isArray(data?.items) ? data.items : []))
+      .catch(() => setShowcaseItems([]));
   }, []);
 
   const showToast = useCallback((message: string) => {
@@ -834,6 +851,45 @@ export default function Studio() {
               <p className="text-[18px] font-bold text-white mt-1">원하는 스타일의 카드를 선택해봐요</p>
             </div>
 
+            {showcaseItems.length > 0 && (
+              <div className="mb-5">
+                <div className="mb-3 flex items-center justify-between px-1">
+                  <div>
+                    <p className="font-unbounded text-[10px] tracking-[0.18em] uppercase text-[#C9571A]">Public Stories</p>
+                    <p className="mt-1 text-[14px] font-bold text-white">방금 공개된 결과물</p>
+                  </div>
+                  <span className="text-[11px] text-white/35">동의한 결과만 노출</span>
+                </div>
+                <div className="overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="flex w-max gap-3 px-1 pb-1">
+                    {showcaseItems.map((item) => (
+                      <button
+                        key={`${item.userId}-${item.createdAt}`}
+                        type="button"
+                        onClick={() => setSelectedShowcase(item)}
+                        className="group flex w-[78px] shrink-0 flex-col items-center gap-2"
+                      >
+                        <div className="rounded-full bg-[linear-gradient(135deg,#C9571A,#F6B38C,#C9571A)] p-[2px] shadow-[0_10px_24px_rgba(201,87,26,0.16)]">
+                          <div className="rounded-full bg-[#0A0A0A] p-[3px]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={item.imageUrl}
+                              alt={item.nickname}
+                              className="h-[64px] w-[64px] rounded-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                              draggable={false}
+                            />
+                          </div>
+                        </div>
+                        <span className="line-clamp-1 text-center text-[11px] font-medium text-white/72">
+                          {item.nickname}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col gap-3">
               {filteredStyles.map((style) => {
                 const hasOptions = (STYLE_VARIANTS[style.id]?.length ?? 0) > 1;
@@ -1337,6 +1393,61 @@ export default function Studio() {
             <button onClick={() => setShowNoCreditModal(false)} className="text-[13px] text-[#555] mt-3 hover:text-[#888] transition-colors">
               나중에 할게요
             </button>
+          </div>
+        </div>
+      )}
+
+      {selectedShowcase && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/78 px-4"
+          onClick={() => setSelectedShowcase(null)}
+        >
+          <div
+            className="w-full max-w-sm overflow-hidden rounded-[30px] border border-white/10 bg-[#111315] shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <div className="rounded-full bg-[linear-gradient(135deg,#C9571A,#F6B38C,#C9571A)] p-[2px]">
+                  <div className="rounded-full bg-[#0A0A0A] p-[2px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={selectedShowcase.imageUrl} alt={selectedShowcase.nickname} className="h-8 w-8 rounded-full object-cover" />
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="line-clamp-1 text-[14px] font-bold text-white">{selectedShowcase.nickname}</p>
+                  <p className="text-[11px] text-white/35">메인 공개 스토리</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedShowcase(null)}
+                className="h-8 w-8 rounded-full border border-white/10 bg-white/[0.03] text-white/60"
+                aria-label="스토리 닫기"
+              >
+                ×
+              </button>
+            </div>
+            <div className="relative bg-[#0A0A0A]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={selectedShowcase.imageUrl}
+                alt={selectedShowcase.nickname}
+                className="aspect-[4/5] w-full object-cover"
+              />
+            </div>
+            <div className="px-4 py-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedShowcase(null);
+                  router.push("/studio");
+                }}
+                className="w-full rounded-full bg-[#C9571A] px-4 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#B34A12]"
+              >
+                나도 결과 만들기
+              </button>
+            </div>
           </div>
         </div>
       )}

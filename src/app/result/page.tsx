@@ -34,12 +34,27 @@ export default function Result() {
   const [isSharing, setIsSharing] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [variantLabel, setVariantLabel] = useState<string | null>(null);
+  const [showcaseChecked, setShowcaseChecked] = useState(false);
+  const [showcaseLoading, setShowcaseLoading] = useState(false);
+  const [showcaseActive, setShowcaseActive] = useState(false);
 
   const fetchCredits = () => {
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
   };
 
   useEffect(() => { fetchCredits(); }, []);
+
+  useEffect(() => {
+    if (!user || status !== "done") return;
+    fetch("/api/public-showcase", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        const active = Boolean(data?.me?.imageUrl);
+        setShowcaseActive(active);
+        setShowcaseChecked(active);
+      })
+      .catch(() => {});
+  }, [user, status]);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -276,6 +291,46 @@ export default function Result() {
     }
   };
 
+  const handleToggleShowcase = async (checked: boolean) => {
+    if (!user) {
+      showToast("로그인 후 공개할 수 있어요.");
+      return;
+    }
+    if (!resultImage || !selectedStyle) return;
+
+    setShowcaseLoading(true);
+    try {
+      if (checked) {
+        const imageBase64 = resultImage.split(",")[1];
+        const variant = sessionStorage.getItem("sd_variant") ?? "default";
+        const res = await fetch("/api/public-showcase", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageBase64,
+            styleId: selectedStyle,
+            variant,
+          }),
+        });
+        if (!res.ok) throw new Error("showcase opt-in failed");
+        setShowcaseChecked(true);
+        setShowcaseActive(true);
+        showToast("메인 공개 스토리에 올렸어요.");
+      } else {
+        const res = await fetch("/api/public-showcase", { method: "DELETE" });
+        if (!res.ok) throw new Error("showcase opt-out failed");
+        setShowcaseChecked(false);
+        setShowcaseActive(false);
+        showToast("메인 공개 스토리에서 내렸어요.");
+      }
+    } catch {
+      showToast("공개 설정에 실패했어요.");
+      setShowcaseChecked(showcaseActive);
+    } finally {
+      setShowcaseLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-dvh bg-[#0A0A0A] flex flex-col">
       {toast && (
@@ -499,6 +554,34 @@ export default function Result() {
               </svg>
               링크 복사
             </button>
+
+            <div className="rounded-2xl border border-white/10 bg-[#111315] px-4 py-4">
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={showcaseChecked}
+                  disabled={!user || showcaseLoading}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setShowcaseChecked(checked);
+                    void handleToggleShowcase(checked);
+                  }}
+                  className="mt-1 h-4 w-4 rounded border border-white/20 bg-transparent accent-[#C9571A] disabled:opacity-40"
+                />
+                <div className="min-w-0">
+                  <p className="text-[14px] font-bold text-white">메인 공개 스토리에 내 결과 노출하기</p>
+                  <p className="mt-1 text-[12px] leading-6 text-white/46">
+                    동의한 이미지 1장만 스튜디오 상단 스토리에 노출되고, 마이페이지에서 언제든 해제할 수 있어요.
+                  </p>
+                  {!user && (
+                    <p className="mt-2 text-[12px] text-[#C9571A]">로그인 사용자만 공개할 수 있어요.</p>
+                  )}
+                  {user && showcaseActive && (
+                    <p className="mt-2 text-[12px] text-[#C9571A]">현재 메인 공개 스토리에 올라가 있어요.</p>
+                  )}
+                </div>
+              </label>
+            </div>
 
             {/* 크레딧 부족 안내 (로그인 유저) */}
             {user && credits !== null && credits <= 2 && (
