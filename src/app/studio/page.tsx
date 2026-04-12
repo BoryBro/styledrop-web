@@ -5,14 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
-import { PERSONAL_COLOR_LAB_ENABLED, TRACE_LAB_ENABLED } from "@/lib/feature-flags";
+import { COMMUNITY_LAB_ENABLED, PERSONAL_COLOR_LAB_ENABLED, TRACE_LAB_ENABLED } from "@/lib/feature-flags";
 import {
   PERSONAL_COLOR_CONTROL_ID,
   applyStyleControl,
   resolveFeatureControlState,
   type StyleControlState,
 } from "@/lib/style-controls";
-import { ALL_STYLES } from "@/lib/styles";
+import { ALL_STYLES, STYLE_CATEGORY_BY_ID, STYLE_CATEGORY_TABS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
 function formatCount(n: number): string {
@@ -23,6 +23,7 @@ function formatCount(n: number): string {
 const BASE_STYLE_CARDS = ALL_STYLES.map((s) => ({ ...s, bgImage: s.afterImg }));
 type StyleCard = (typeof BASE_STYLE_CARDS)[number];
 type StudioSectionTab = "cards" | "lab";
+type StyleCategoryTab = (typeof STYLE_CATEGORY_TABS)[number];
 
 type Toast = { id: number; message: string };
 
@@ -90,11 +91,49 @@ export default function Studio() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [variantSelectStyle, setVariantSelectStyle] = useState<StyleCard | null>(null);
   const [showCameraGuide, setShowCameraGuide] = useState(false);
+  const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
+  const [editorSize, setEditorSize] = useState(320);
+  const [cropState, setCropState] = useState<{
+    zoom: number;
+    offsetX: number;
+    offsetY: number;
+    imageWidth: number;
+    imageHeight: number;
+    baseScale: number;
+  } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const cropFrameRef = useRef<HTMLDivElement>(null);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startOffsetX: number;
+    startOffsetY: number;
+  } | null>(null);
+  const touchStateRef = useRef<
+    | {
+        mode: "drag";
+        startX: number;
+        startY: number;
+        startOffsetX: number;
+        startOffsetY: number;
+      }
+    | {
+        mode: "pinch";
+        startDistance: number;
+        startZoom: number;
+        startCenterX: number;
+        startCenterY: number;
+        startOffsetX: number;
+        startOffsetY: number;
+      }
+    | null
+  >(null);
   const [notices, setNotices] = useState<{ id: number; text: string }[]>([]);
   const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
   const [activeSectionTab, setActiveSectionTab] = useState<StudioSectionTab>("cards");
+  const [activeStyleCategory, setActiveStyleCategory] = useState<StyleCategoryTab>("전체");
   const generalCardsSectionRef = useRef<HTMLDivElement>(null);
   const labSectionRef = useRef<HTMLDivElement>(null);
 
@@ -163,6 +202,10 @@ export default function Studio() {
 
     return styleOrder[a.id] - styleOrder[b.id];
   });
+  const filteredStyles =
+    activeStyleCategory === "전체"
+      ? styles
+      : styles.filter((style) => STYLE_CATEGORY_BY_ID[style.id] === activeStyleCategory);
   const showAuditionLab = !isAuditionLoading && isAuditionVisible && isAuditionEnabled;
   const personalColorControl = resolveFeatureControlState(
     styleControls[PERSONAL_COLOR_CONTROL_ID],
@@ -170,7 +213,8 @@ export default function Studio() {
   );
   const showPersonalColorLab = personalColorControl.is_visible;
   const isPersonalColorEnabled = personalColorControl.is_enabled;
-  const showLabSection = showAuditionLab || showPersonalColorLab;
+  const showCommunityLab = COMMUNITY_LAB_ENABLED;
+  const showLabSection = showAuditionLab || showPersonalColorLab || showCommunityLab;
 
   const scrollToSection = useCallback((section: StudioSectionTab) => {
     const target = section === "cards" ? generalCardsSectionRef.current : labSectionRef.current;
@@ -259,7 +303,32 @@ export default function Studio() {
     setShowCameraGuide(false);
   };
 
-  const processImageDataUrl = (dataUrl: string) => {
+  const clampCropOffsets = useCallback((next: {
+    zoom: number;
+    offsetX: number;
+    offsetY: number;
+    imageWidth: number;
+    imageHeight: number;
+    baseScale: number;
+  }) => {
+    const displayScale = next.baseScale * next.zoom;
+    const displayWidth = next.imageWidth * displayScale;
+    const displayHeight = next.imageHeight * displayScale;
+    const limitX = Math.max(0, (displayWidth - editorSize) / 2);
+    const limitY = Math.max(0, (displayHeight - editorSize) / 2);
+
+    return {
+      ...next,
+      offsetX: Math.min(limitX, Math.max(-limitX, next.offsetX)),
+      offsetY: Math.min(limitY, Math.max(-limitY, next.offsetY)),
+    };
+  }, [editorSize]);
+
+  const resetCropState = useCallback(() => {
+    setCropState((prev) => prev ? { ...prev, zoom: 1, offsetX: 0, offsetY: 0 } : prev);
+  }, []);
+
+  const processImageDataUrl = useCallback((dataUrl: string) => {
     const styleId = selectedStyleRef.current;
     if (!styleId) return;
     const img = new Image();
@@ -284,7 +353,248 @@ export default function Studio() {
       router.push("/result");
     };
     img.src = dataUrl;
-  };
+  }, [router]);
+
+  const openImageConfirm = useCallback((dataUrl: string) => {
+    setPendingImagePreview(dataUrl);
+  }, []);
+
+  const closeImageConfirm = useCallback(() => {
+    setPendingImagePreview(null);
+    setCropState(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, []);
+
+  useEffect(() => {
+    if (!pendingImagePreview) return;
+
+    const measure = () => {
+      const nextSize = cropFrameRef.current?.clientWidth;
+      if (!nextSize) return;
+      setEditorSize(nextSize);
+      setCropState((prev) => {
+        if (!prev) return prev;
+        const nextBaseScale = Math.max(nextSize / prev.imageWidth, nextSize / prev.imageHeight);
+        return clampCropOffsets({ ...prev, baseScale: nextBaseScale });
+      });
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [pendingImagePreview, clampCropOffsets]);
+
+  useEffect(() => {
+    if (!pendingImagePreview) return;
+
+    const img = new Image();
+    img.onload = () => {
+      const frameSize = cropFrameRef.current?.clientWidth ?? editorSize;
+      const baseScale = Math.max(frameSize / img.width, frameSize / img.height);
+      setEditorSize(frameSize);
+      setCropState({
+        zoom: 1,
+        offsetX: 0,
+        offsetY: 0,
+        imageWidth: img.width,
+        imageHeight: img.height,
+        baseScale,
+      });
+    };
+    img.src = pendingImagePreview;
+  }, [pendingImagePreview, editorSize]);
+
+  const handleConfirmSelectedImage = useCallback(() => {
+    if (!pendingImagePreview) return;
+    if (!cropState) {
+      processImageDataUrl(pendingImagePreview);
+      setPendingImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      const outputSize = 1024;
+      const displayScale = cropState.baseScale * cropState.zoom;
+      const displayWidth = cropState.imageWidth * displayScale;
+      const displayHeight = cropState.imageHeight * displayScale;
+      const imageLeft = (editorSize - displayWidth) / 2 + cropState.offsetX;
+      const imageTop = (editorSize - displayHeight) / 2 + cropState.offsetY;
+      const sourceX = Math.max(0, -imageLeft / displayScale);
+      const sourceY = Math.max(0, -imageTop / displayScale);
+      const sourceWidth = Math.min(cropState.imageWidth, editorSize / displayScale);
+      const sourceHeight = Math.min(cropState.imageHeight, editorSize / displayScale);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = outputSize;
+      canvas.height = outputSize;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(
+        img,
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
+        0,
+        0,
+        outputSize,
+        outputSize
+      );
+
+      processImageDataUrl(canvas.toDataURL("image/jpeg", 0.9));
+      setPendingImagePreview(null);
+      setCropState(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+    img.src = pendingImagePreview;
+  }, [cropState, editorSize, pendingImagePreview, processImageDataUrl]);
+
+  const handleCropPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (!cropState) return;
+    if (event.pointerType === "touch") return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startOffsetX: cropState.offsetX,
+      startOffsetY: cropState.offsetY,
+    };
+  }, [cropState]);
+
+  const handleCropPointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (!cropState) return;
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+    setCropState((prev) => prev ? clampCropOffsets({
+      ...prev,
+      offsetX: dragState.startOffsetX + deltaX,
+      offsetY: dragState.startOffsetY + deltaY,
+    }) : prev);
+  }, [cropState, clampCropOffsets]);
+
+  const handleCropPointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const dragState = dragStateRef.current;
+    if (dragState?.pointerId === event.pointerId) {
+      dragStateRef.current = null;
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
+
+  const handleCropTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (!cropState) return;
+
+    if (event.touches.length === 1) {
+      const touch = event.touches[0];
+      touchStateRef.current = {
+        mode: "drag",
+        startX: touch.clientX,
+        startY: touch.clientY,
+        startOffsetX: cropState.offsetX,
+        startOffsetY: cropState.offsetY,
+      };
+      return;
+    }
+
+    if (event.touches.length >= 2) {
+      const [firstTouch, secondTouch] = [event.touches[0], event.touches[1]];
+      const dx = secondTouch.clientX - firstTouch.clientX;
+      const dy = secondTouch.clientY - firstTouch.clientY;
+      const centerX = (firstTouch.clientX + secondTouch.clientX) / 2;
+      const centerY = (firstTouch.clientY + secondTouch.clientY) / 2;
+      touchStateRef.current = {
+        mode: "pinch",
+        startDistance: Math.hypot(dx, dy),
+        startZoom: cropState.zoom,
+        startCenterX: centerX,
+        startCenterY: centerY,
+        startOffsetX: cropState.offsetX,
+        startOffsetY: cropState.offsetY,
+      };
+    }
+  }, [cropState]);
+
+  const handleCropTouchMove = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (!cropState || !touchStateRef.current) return;
+    event.preventDefault();
+
+    const state = touchStateRef.current;
+
+    if (state.mode === "drag" && event.touches.length === 1) {
+      const touch = event.touches[0];
+      const deltaX = touch.clientX - state.startX;
+      const deltaY = touch.clientY - state.startY;
+      setCropState((prev) => prev ? clampCropOffsets({
+        ...prev,
+        offsetX: state.startOffsetX + deltaX,
+        offsetY: state.startOffsetY + deltaY,
+      }) : prev);
+      return;
+    }
+
+    if (state.mode === "pinch" && event.touches.length >= 2) {
+      const [firstTouch, secondTouch] = [event.touches[0], event.touches[1]];
+      const dx = secondTouch.clientX - firstTouch.clientX;
+      const dy = secondTouch.clientY - firstTouch.clientY;
+      const currentDistance = Math.hypot(dx, dy);
+      const centerX = (firstTouch.clientX + secondTouch.clientX) / 2;
+      const centerY = (firstTouch.clientY + secondTouch.clientY) / 2;
+      const nextZoom = Math.max(1, Math.min(2.6, state.startZoom * (currentDistance / state.startDistance)));
+      const deltaCenterX = centerX - state.startCenterX;
+      const deltaCenterY = centerY - state.startCenterY;
+
+      setCropState((prev) => prev ? clampCropOffsets({
+        ...prev,
+        zoom: nextZoom,
+        offsetX: state.startOffsetX + deltaCenterX,
+        offsetY: state.startOffsetY + deltaCenterY,
+      }) : prev);
+    }
+  }, [cropState, clampCropOffsets]);
+
+  const handleCropTouchEnd = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (!cropState) {
+      touchStateRef.current = null;
+      return;
+    }
+
+    if (event.touches.length === 0) {
+      touchStateRef.current = null;
+      return;
+    }
+
+    if (event.touches.length === 1) {
+      const touch = event.touches[0];
+      touchStateRef.current = {
+        mode: "drag",
+        startX: touch.clientX,
+        startY: touch.clientY,
+        startOffsetX: cropState.offsetX,
+        startOffsetY: cropState.offsetY,
+      };
+      return;
+    }
+
+    if (event.touches.length >= 2) {
+      const [firstTouch, secondTouch] = [event.touches[0], event.touches[1]];
+      const dx = secondTouch.clientX - firstTouch.clientX;
+      const dy = secondTouch.clientY - firstTouch.clientY;
+      touchStateRef.current = {
+        mode: "pinch",
+        startDistance: Math.hypot(dx, dy),
+        startZoom: cropState.zoom,
+        startCenterX: (firstTouch.clientX + secondTouch.clientX) / 2,
+        startCenterY: (firstTouch.clientY + secondTouch.clientY) / 2,
+        startOffsetX: cropState.offsetX,
+        startOffsetY: cropState.offsetY,
+      };
+    }
+  }, [cropState]);
 
   const captureFromCamera = () => {
     const video = videoRef.current;
@@ -299,7 +609,7 @@ export default function Studio() {
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0);
     stopCamera();
-    processImageDataUrl(canvas.toDataURL("image/jpeg", 0.85));
+    openImageConfirm(canvas.toDataURL("image/jpeg", 0.85));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -326,16 +636,8 @@ export default function Studio() {
       if (!ctx) return;
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-      const base64 = dataUrl.split(",")[1];
-
-      sessionStorage.setItem("sd_styleId", styleId);
-      sessionStorage.setItem("sd_imageBase64", base64);
-      sessionStorage.setItem("sd_previewDataUrl", dataUrl);
-      sessionStorage.removeItem("sd_resultDataUrl");
-      sessionStorage.removeItem("sd_shareUrl");
-      sessionStorage.removeItem("sd_shareLink");
-      sessionStorage.setItem("sd_fromStudio", "1");
-      router.push("/result");
+      openImageConfirm(dataUrl);
+      URL.revokeObjectURL(url);
     };
     img.src = url;
   };
@@ -396,6 +698,14 @@ export default function Studio() {
                 />
                 <PixelTraceTriggerIcon />
                 <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#FFE082]" style={{ animation: "blink 1.3s step-end infinite" }} />
+              </Link>
+            )}
+            {COMMUNITY_LAB_ENABLED && (
+              <Link
+                href="/lab/magazine"
+                className="ml-2.5 font-[family-name:var(--font-boldonse)] text-[9px] tracking-[0.05em] text-white/58 transition-colors hover:text-[#C9571A]"
+              >
+                MAGAZINE
               </Link>
             )}
           </div>
@@ -505,8 +815,30 @@ export default function Studio() {
               <p className="text-[18px] font-bold text-white mt-1">원하는 스타일의 카드를 선택해봐요</p>
             </div>
 
+            <div className="mb-4 -mx-1 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex w-max items-center gap-2 px-1">
+                {STYLE_CATEGORY_TABS.map((tab) => {
+                  const isActive = activeStyleCategory === tab;
+                  return (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setActiveStyleCategory(tab)}
+                      className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors ${
+                        isActive
+                          ? "border-[#C9571A] bg-[#C9571A]/16 text-[#F6B38C]"
+                          : "border-white/10 bg-white/[0.03] text-white/55"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="flex flex-col gap-3">
-              {styles.map((style) => {
+              {filteredStyles.map((style) => {
                 const hasOptions = (STYLE_VARIANTS[style.id]?.length ?? 0) > 1;
 
                 return (
@@ -812,6 +1144,47 @@ export default function Studio() {
                   </button>
                 )}
 
+                {showCommunityLab && (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {[
+                      {
+                        href: "/lab/feed",
+                        kicker: "PUBLIC FEED",
+                        title: "공개 피드",
+                        body: "남이 만든 결과를 보고 바로 따라 해보는 흐름",
+                      },
+                      {
+                        href: "/lab/challenge",
+                        kicker: "WEEKLY",
+                        title: "주간 챌린지",
+                        body: "이번 주 미션 하나로 재방문을 만드는 구조",
+                      },
+                      {
+                        href: "/lab/magazine",
+                        kicker: "MAGAZINE",
+                        title: "스타일 매거진",
+                        body: "사진 고르는 법과 반응 좋은 카드 큐레이션",
+                      },
+                    ].map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="group rounded-[24px] border border-white/8 bg-[#101214] p-4 transition-colors hover:border-[#C9571A]/45 hover:bg-[#15181B]"
+                      >
+                        <p className="font-unbounded text-[10px] tracking-[0.18em] text-[#6BE2C5] uppercase">{item.kicker}</p>
+                        <p className="mt-3 text-[18px] font-black tracking-[-0.04em] text-white">{item.title}</p>
+                        <p className="mt-2 text-[13px] leading-6 text-white/56">{item.body}</p>
+                        <div className="mt-4 flex items-center gap-2 text-[12px] font-bold text-[#C9571A]">
+                          <span>로컬 테스트 보기</span>
+                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
               </div>
             </>
           )}
@@ -1008,6 +1381,118 @@ export default function Studio() {
             <button onClick={() => setShowNoCreditModal(false)} className="text-[13px] text-[#555] mt-3 hover:text-[#888] transition-colors">
               나중에 할게요
             </button>
+          </div>
+        </div>
+      )}
+
+      {pendingImagePreview && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 px-4" onClick={closeImageConfirm}>
+          <div
+            className="w-full max-w-sm rounded-[28px] border border-white/10 bg-[#111] p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="font-unbounded text-[10px] tracking-[0.18em] text-[#C9571A] uppercase">Photo Check</p>
+            <p className="mt-3 text-[22px] font-black tracking-[-0.04em] text-white">이 사진으로 진행할까요?</p>
+            <p className="mt-2 text-[13px] leading-6 text-white/50">
+              확인을 누르면 바로 AI 변환으로 넘어갑니다.
+            </p>
+
+            <div className="mt-5">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[12px] font-bold text-white/72">프레임 안에서 위치를 맞춰주세요</p>
+                <span className="text-[11px] text-white/38">확대 · 이동 가능</span>
+              </div>
+              <div
+                ref={cropFrameRef}
+                onPointerDown={handleCropPointerDown}
+                onPointerMove={handleCropPointerMove}
+                onPointerUp={handleCropPointerUp}
+                onPointerCancel={handleCropPointerUp}
+                onTouchStart={handleCropTouchStart}
+                onTouchMove={handleCropTouchMove}
+                onTouchEnd={handleCropTouchEnd}
+                onTouchCancel={handleCropTouchEnd}
+                className="relative aspect-square w-full overflow-hidden rounded-[24px] border border-white/10 bg-[#1A1A1A] touch-none"
+                style={{ userSelect: "none" }}
+              >
+                {pendingImagePreview && cropState && (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={pendingImagePreview}
+                      alt="선택한 사진 미리보기"
+                      draggable={false}
+                      className="pointer-events-none absolute left-1/2 top-1/2 max-w-none"
+                      style={{
+                        width: cropState.imageWidth * cropState.baseScale * cropState.zoom,
+                        height: cropState.imageHeight * cropState.baseScale * cropState.zoom,
+                        transform: `translate(calc(-50% + ${cropState.offsetX}px), calc(-50% + ${cropState.offsetY}px))`,
+                      }}
+                    />
+                    <div className="pointer-events-none absolute inset-0 border border-white/15" />
+                    <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]" />
+                    <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                      <defs>
+                        <mask id="crop-face-mask">
+                          <rect width="100" height="100" fill="white" />
+                          <ellipse cx="50" cy="47" rx="26" ry="33" fill="black" />
+                        </mask>
+                      </defs>
+                      <rect width="100" height="100" fill="rgba(0,0,0,0.2)" mask="url(#crop-face-mask)" />
+                      <ellipse
+                        cx="50"
+                        cy="47"
+                        rx="26"
+                        ry="33"
+                        fill="none"
+                        stroke="rgba(255,255,255,0.75)"
+                        strokeWidth="0.6"
+                        strokeDasharray="3 2"
+                      />
+                    </svg>
+                  </>
+                )}
+              </div>
+              <div className="mt-4 flex items-center gap-3">
+                <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/34">Zoom</span>
+                <input
+                  type="range"
+                  min={1}
+                  max={2.6}
+                  step={0.01}
+                  value={cropState?.zoom ?? 1}
+                  onChange={(event) => {
+                    const nextZoom = Number(event.target.value);
+                    setCropState((prev) => prev ? clampCropOffsets({ ...prev, zoom: nextZoom }) : prev);
+                  }}
+                  className="h-2 flex-1 cursor-pointer accent-[#C9571A]"
+                />
+                <button
+                  type="button"
+                  onClick={resetCropState}
+                  className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] font-bold text-white/70 transition-colors hover:text-white"
+                >
+                  초기화
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={closeImageConfirm}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[14px] font-bold text-white/70 transition-colors hover:text-white"
+              >
+                다시 고르기
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSelectedImage}
+                className="rounded-2xl bg-[#C9571A] px-4 py-3 text-[14px] font-bold text-white transition-colors hover:bg-[#B34A12]"
+              >
+                이 사진으로 진행
+              </button>
+            </div>
           </div>
         </div>
       )}
