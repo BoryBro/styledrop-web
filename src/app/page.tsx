@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 type User = { id: string; nickname: string | null; profileImage: string | null };
+type ShowcaseItem = {
+  userId: string;
+  nickname: string;
+  profileImage: string | null;
+  imageUrl: string;
+  styleId: string | null;
+  createdAt: string;
+};
 
 export default function Home() {
   const [isAgreed, setIsAgreed] = useState(false);
@@ -12,6 +20,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showcaseItems, setShowcaseItems] = useState<ShowcaseItem[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -23,6 +32,10 @@ export default function Home() {
     fetch("/api/visitors", { method: alreadyVisited ? "GET" : "POST" })
       .then((r) => r.json())
       .then((d) => { setVisitors(d); sessionStorage.setItem("sd_visited", "1"); })
+      .catch(() => {});
+    fetch("/api/public-showcase")
+      .then((r) => r.json())
+      .then((data) => setShowcaseItems(Array.isArray(data.items) ? data.items : []))
       .catch(() => {});
   }, []);
 
@@ -107,6 +120,29 @@ export default function Home() {
 
         {/* Subcopy */}
         <p className="text-[18px] text-white/80 tracking-[-0.02em]">사진 한 장, 감성은 AI가</p>
+
+        {showcaseItems.length > 0 && (
+          <div className="w-screen max-w-none px-0 overflow-hidden">
+            <div className="mx-auto w-full max-w-md">
+              <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+                <div
+                  className="flex gap-3 w-max px-4"
+                  style={{ animation: "showcase-marquee 22s linear infinite" }}
+                >
+                  {[...showcaseItems, ...showcaseItems].map((item, index) => (
+                    <div
+                      key={`${item.userId}-${index}`}
+                      className="h-24 w-20 shrink-0 overflow-hidden rounded-[22px] border border-white/12 bg-black/20 shadow-[0_14px_28px_rgba(0,0,0,0.24)] backdrop-blur-sm"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={item.imageUrl} alt={item.nickname} className="h-full w-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 로그인 상태 */}
         {user === undefined ? null : user ? (
@@ -200,6 +236,13 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes showcase-marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(calc(-50% - 6px)); }
+        }
+      `}</style>
 
       {/* Footer */}
       <footer className="absolute bottom-4 left-0 right-0 text-center px-4">
