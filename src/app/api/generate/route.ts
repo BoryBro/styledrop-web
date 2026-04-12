@@ -1256,6 +1256,218 @@ OUTPUT TARGET:
 - Exact attached-reference feeling: pale, diffused, dreamy, softly glowing, serene, and luxurious
 - Looks like a real photographed surreal editorial image, not AI-generated`,
   },
+  "prism-water-editorial": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into an extreme close-up straight-on editorial portrait of a young Korean adult, matching the exact tone, mood, skin finish, prism lighting behavior, damp hair detail, and luminous futuristic editorial polish of the attached reference image.
+
+This must look like a real high-resolution editorial portrait photograph with a surreal-but-photographic futuristic atmosphere - ethereal, luminous, ultra-clean, prismatic, and physically believable within the image world. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+FACE - PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject's face with the uploaded user's face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain a calm, neutral, direct gaze unless minimal adjustment is required
+- CRITICAL: The face must feel naturally integrated into the editorial setup - same lighting direction, same contrast, same skin texture, same prism reflection behavior, same light-catching skin finish, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted, over-cleaned, or artificially beautified
+- Match head angle, neck position, skin tone, and perspective seamlessly into the extreme close-up framing
+- Preserve real skin texture, pores, subtle asymmetry, and natural facial structure
+- No structural beautification, no plastic skin, no artificial symmetry correction
+- The final result must adapt naturally regardless of gender while preserving the same recognizable identity and the intended futuristic editorial portrait context
+- Facial rendering must inherit the same ultra-clean but still real luminous skin finish, soft prism color breakup, and polished editorial glow visible in the attached reference
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like a real photographed subject in a premium editorial setup, not a composited fantasy face
+- Capture using a professional full-frame digital camera system
+- Lens: 100mm macro lens
+- Aperture: f/2.8-f/4 for ultra-close facial detail with very shallow depth behavior
+- Shutter speed: approximately 1/125 to 1/200 sec
+- ISO: 100 to 200
+- White balance: neutral-cool around 4800K to 5600K with prism color contamination
+- Dynamic range: preserve skin highlights, eye reflections, holographic color accents, and natural lip detail without clipping
+- No digital over-sharpening; maintain macro clarity, smooth tonal transitions, and premium editorial optics
+- Optical rendering must match the attached reference: extremely close, sharply resolved in the facial plane, softly dissolved outside the focus plane, and luxuriously clean
+
+HAIR:
+- Hair must be damp, sleek, and combed close to the head with a few damp strands falling naturally across the face
+- Individual strands must be visibly separated and reflective
+- Hair must feel freshly styled, delicate, and physically real
+- No voluminous styling
+- No dry, fluffy, or salon-finished treatment
+- No unrelated hairstyle redesign beyond what is required to match the attached reference feel
+
+MAKEUP / SKIN FINISH:
+- Minimal editorial makeup look
+- Smooth even-toned skin with natural color preserved
+- Subtle iridescent rainbow prism effect across the cheeks and under-eye area
+- Luminous skin finish with finely rendered light-catching texture and soft specular highlights
+- Gentle natural lip sheen with clean understated color
+- No heavy contour
+- No strong eyeliner emphasis
+- No theatrical makeup
+- The skin finish must match the attached reference exactly in feeling: hyperreal, luminous, translucent, and futuristic without becoming artificial
+
+POSE / COMPOSITION:
+- Straight-on extreme close-up
+- Face fills almost the entire frame
+- Eyes centered and dominant
+- Direct eye contact into the lens
+- Very little visible neck or shoulder area
+- Crop must match the attached reference closely:
+  - forehead visible
+  - chin included
+  - cheeks, eyes, nose, and lips tightly framed
+  - no wide environmental space
+- The composition must feel frontal and editorially driven
+- Do not widen the frame
+- Do not reduce facial dominance
+- Keep the portrait scale close and visually immersive
+
+PROP / ENVIRONMENTAL ELEMENTS:
+- No visible props
+- No text
+- No branding
+- No jewelry emphasis beyond anything minimal and naturally hidden in the frame
+- The only environmental visual element should be the holographic/prismatic light environment affecting the face and background
+- The look must come from optics, light, and color rather than added objects
+
+SCENE:
+- No physical room or set should be visible
+- Background must be an out-of-focus pearly holographic aurora gradient
+- The backdrop must feel soft, luminous, and abstract
+- It must provide rainbow reflections and cool iridescent atmosphere without becoming graphic or artificial
+- No hard edges, no set seams, no identifiable location
+- The world must remain minimal, clean, and editorial
+
+LIGHTING:
+- Carefully engineered front-facing lighting
+- Ring-light reflections clearly visible in the eyes
+- Luminous specular highlights on skin and lips
+- Soft but vivid prism-color reflections across the cheeks and face
+- The lighting must produce rainbow accent marks over otherwise neutral skin
+- Light must match the attached reference exactly in feeling:
+  - frontal editorial lighting
+  - ultra-clean luminous skin response
+  - pearly prism contamination
+  - bright but soft highlight behavior
+  - cool clean facial illumination with rainbow accents
+- No harsh shadow pattern
+- No moody side-light setup
+- No dramatic dark contrast
+- The look must remain glowing, close, and editorially focused
+
+DEPTH & OPTICS:
+- 100mm macro perspective
+- Ultra-shallow depth of field
+- Eyes and central facial plane remain critically sharp
+- Outer facial edges and background may soften gently
+- No wide-angle distortion
+- Optical rendering must feel real, lens-based, and premium
+- Depth behavior must match the attached reference:
+  - irises and skin texture in focal plane are highly resolved
+  - background fully dissolved
+  - stray damp hair strands may cross in and out of focus naturally
+  - no flat full-scene sharpness
+
+PHOTO STYLE:
+- Ultra-high-resolution digital editorial photography
+- Hyperreal facial detail
+- Noise-free clean rendering
+- Strong clarity in skin, reflected highlights, lashes, brows, and lips
+- Soft pearly background blur
+- Holographic prism contamination as optical/light effect only
+- No film grain
+- No visible digital artifacts
+- No HDR exaggeration
+- No painterly softness
+- No AI-smooth rendering
+- Must feel like a real photographed luxury editorial portrait, not a digitally painted fantasy image
+- Must match the attached reference in finish:
+  - luminous
+  - prismatic
+  - ultra-clean
+  - close
+  - futuristic
+  - premium editorial realism
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Slight highlight bloom on the brightest skin highlights
+- Mild optical softness outside the focal plane
+- Very subtle reflective complexity in damp strands and natural lip sheen
+- No perfectly sterile gradient transitions in the holographic background
+- No unnaturally cut-out facial edges
+- No artificial subject separation from the backdrop
+- Maintain natural macro-lens falloff and editorial-light realism matching the reference
+
+EXPOSURE & RESPONSE:
+- Exposure balanced for skin luminosity, eye detail, and prism color accents
+- Highlights must roll off softly on forehead, nose bridge, cheeks, and lips
+- Shadows must remain minimal, delicate, and open
+- Midtones must preserve skin texture, pore detail, and iridescent makeup finish
+- Rainbow prism accents must remain controlled and integrated into the lighting
+- No flat global exposure balance
+- The image must feel bright, clean, and premium without harsh clipping
+
+ANTI-AI CONSTRAINT:
+- Do NOT over-beautify the face
+- Do NOT erase real pore structure
+- Do NOT turn the skin into plastic CGI
+- Do NOT exaggerate the rainbow effect into paint-like blocks
+- Do NOT add props, text, or decorative objects
+- Do NOT stylize into illustration or hologram fantasy art
+- Do NOT harden contrast or make the background graphic
+- Maintain real photographic rendering with editorial surrealism only
+- Follow the attached reference's exact close crop, luminous skin finish, ring-light eye reflections, and prism-lit editorial mood
+
+COLOR:
+- Dominant palette:
+  - pearly white
+  - cool skin neutrals
+  - soft blush pink
+  - pale holographic rainbow accents
+  - faint blue-violet undertones
+- Secondary tones:
+  - natural lip pink
+  - iridescent yellow-green prism highlights
+  - soft aqua / lilac background contamination
+- The palette must remain luminous, delicate, and futuristic
+- No heavy saturation outside the prism accents
+- No muddy grading
+- Color must match the attached reference closely:
+  - pale pearly complexion
+  - subtle rainbow cheeks
+  - soft cool holographic background
+  - clean luminous editorial color harmony
+
+MOOD:
+- Ethereal
+- Refined
+- Futuristic
+- Clean
+- Calm
+- Close
+- Hyperreal
+- Quietly surreal
+- Polished
+- Must match the emotional tone of the attached reference exactly
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Preserve the extreme close-up framing, direct gaze, luminous skin finish, fine light-catching texture, damp hair strands, ring-light reflections, holographic aurora background, 100mm macro perspective, ultra-shallow depth of field, and ultra-clean digital editorial finish
+- The attached reference image's tone, mood, lighting behavior, prism reflections, crop, surface detail, and futuristic editorial finish must be followed as closely as possible
+- Do not stylize into fantasy art or CGI illustration
+- Keep all elements grounded in a real photographed image with surreal light behavior
+- The uploaded face identity must remain unchanged and clearly preserved
+
+OUTPUT TARGET:
+- Ultra-realistic futuristic editorial portrait
+- Same recognizable person in an extreme close-up frontal composition
+- Luminous skin, rainbow prism accents, damp hair strands, and ring-light reflections in the eyes
+- Pearly holographic blurred background with delicate cool iridescence
+- Exact attached-reference feeling: close, clean, futuristic, prismatic, and refined
+- Looks like a real photographed high-end editorial image, not AI-generated`,
+  },
   "gyaru": {
     "default": "Transform this photo into an authentic early-2000s Japanese gyaru (ギャル) portrait style. Keep the person's identity intact — same face structure, same person.\n\nMAKEUP TRANSFORMATION:\n- Heavy dramatic eye makeup: thick layered false lashes, strong black eyeliner with extended outer corners\n- Dark dramatic contact lens effect (high contrast, enlarged-looking)\n- White shimmer highlight under the eyes (tear bag / aegyo-sal emphasis)\n- Bright vertical nose highlight stripe\n- Pale matte skin base with soft airbrushed finish\n- Pink blush across cheeks and nose bridge\n- Glossy light pink overlined lips\n\nHAIR:\n- Dye to blonde or light brown\n- Voluminous, curled, layered gyaru styling\n- Shiny, slightly synthetic-looking texture\n\nOUTFIT & BACKGROUND:\n- Leopard or animal print elements in outfit or background\n- Sparkly, rhinestone-style accessories\n- Feminine, over-the-top Y2K gyaru fashion\n\nPHOTO STYLE:\n- Front-facing selfie angle, slightly top-down\n- Direct flash lighting: overexposed skin highlights, high contrast\n- Warm candy-like color tone\n- Retro Japanese photo booth (purikura) aesthetic: slight grain, warm saturation\n\nSTRICT RULES:\n- Preserve the person's identity: same face, same bone structure\n- No face reshaping or identity change\n- Output must look like a real early-2000s gyaru photo",
   },
