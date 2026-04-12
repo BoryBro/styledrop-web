@@ -48,6 +48,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "dreamy-wildflower": "자연",
   "dreamy-celebratory": "자연",
   "romantic-night-twoshot": "무드",
+  astronaut: "컨셉",
   "bronze-statue-bench": "컨셉",
   "yakuza": "컨셉",
 };
@@ -88,6 +89,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/romantic-night-twoshot-before.jpg?v=2",
     afterImg: "/thumbnails/romantic-night-twoshot-after.jpg?v=2",
     popular: true,
+  },
+  {
+    id: "astronaut",
+    name: "우주 비행사",
+    desc: "별이 흩어진 우주 배경 앞에 선 한국 우주비행사 에디토리얼 포트레이트",
+    bgColor: "#08111d",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/astronaut-before.jpg?v=1",
+    afterImg: "/thumbnails/astronaut-after.jpg?v=1",
   },
   {
     id: "idol-photocard",

@@ -2758,6 +2758,171 @@ OUTPUT TARGET:
 - Cool-toned atmosphere with warm light accents
 - Looks like a real film still or editorial photograph, not AI-generated`
   },
+  "astronaut": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a straight-on medium shot of a young Korean astronaut standing in front of a dark celestial backdrop scattered with shining stars.
+
+This must look like a real high-resolution editorial photograph with a softly diffused, slightly milked, high-end digital finish — crisp but veiled, cool-toned, high-tech, and physically believable. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject’s face with the uploaded user’s face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain a calm, neutral, slightly serious expression unless minimal adjustment is required
+- CRITICAL: The face must feel naturally integrated into the spacesuit and helmet environment — same lighting direction, same contrast, same skin texture, same visor tint, same reflection breakup, and same overall image sharpness
+- The face must NOT look pasted, over-cleaned, or overly beautified
+- The face must sit slightly deeper inside the helmet and read slightly dimmer than the bright exterior suit
+- Match head, neck, and perspective seamlessly within the helmet opening
+- Preserve real skin texture and facial structure, but allow subtle softening consistent with visor glass, optical diffusion, and premium editorial post-processing
+- No structural beautification, no plastic skin, no artificial symmetry correction
+- The final result must adapt naturally regardless of gender while preserving the same recognizable identity
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like a real photographed subject inside a helmet, not a composited beauty portrait
+- The face must not fill the visor opening too perfectly; leave realistic dark space, glass thickness, and optical separation around it
+- Reflection hotspots and visor glare must partially interrupt facial clarity in a physically believable way
+- Capture using a professional full-frame digital / digital-cinema camera system
+- Lens: 50mm standard prime (or 65mm cinema equivalent)
+- Diffusion filter: 1/8 Black Pro-Mist or equivalent subtle diffusion filter
+- Aperture: f/4–f/5.6 to keep the full helmet, suit structure, and star field crisp
+- Shutter speed: ~1/125 sec
+- ISO: 200–400
+- White balance: 4300K–5000K
+- Dynamic range: preserve bright suit whites while allowing the visor interior to sit slightly darker
+- No digital over-sharpening; retain soft highlight bloom and natural optical falloff
+
+HAIR:
+- Natural hair mostly contained within the helmet
+- Any visible hair must remain minimal, natural, and subdued
+- No visible styling beyond what is realistically seen through the visor
+
+CLOTHING:
+- Thick, heavily insulated white astronaut spacesuit
+- Prominent seams, reinforced paneling, and metallic fastenings
+- Structured chest panels, harness-like straps, and rigid equipment modules
+- Visible suit markings and printed text including “REPUBLIC OF KOREA” and a Korean flag patch
+- Materials must feel physically real: layered fabric, composite components, subtle sheen, and realistic surface wear
+- No artificial plastic look
+
+POSE / COMPOSITION:
+- Straight-on medium shot
+- Subject centered at eye level
+- Upright, neutral, grounded posture
+- Medium framing with helmet, shoulders, chest unit, and upper torso clearly visible
+- Strong negative space around the astronaut
+- Composition must feel calm, frontal, and precise
+- Slight asymmetry from visible suit-mounted equipment must remain
+
+PROP / EQUIPMENT:
+- Full astronaut helmet with glossy gold-tinted visor
+- Visor must partially reflect the surrounding star field and lighting sources
+- Backpack / life-support housing visible behind the shoulders
+- Cylindrical side-mounted equipment visible near one side of the helmet
+- Chest markings, printed text, and suit patches must remain legible but secondary
+- Reflections must feel physical, not decorative
+
+SCENE:
+- Dark celestial backdrop with scattered silvery stars
+- Deep black emptiness dominates the environment
+- Stars must vary in size, brightness, and intensity
+- Include a few brighter star blooms and many smaller points
+- Background must feel open, mysterious, and minimal
+- No fantasy nebula, no exaggerated cosmic elements
+
+LIGHTING:
+- Artificial, staged lighting emulating cosmic conditions
+- Strong cool blue highlights defining the suit edges and contours
+- Gentle white rim lighting separating the astronaut from the black background
+- Low frontal fill maintaining subject readability without flattening the face
+- The face inside the visor must remain slightly darker than the exterior suit
+- Warm gold reflections and bright highlight hotspots must appear on the visor edges
+- Soft specular reflections must appear on the visor and chest area
+- No even beauty lighting, no flat frontal illumination
+
+DEPTH & OPTICS:
+- Moderate focal length with natural compression
+- Full subject and star field remain in crisp focus
+- No bokeh
+- No visible distortion
+- Micro-contrast slightly reduced by visor glass and diffusion filter
+- Subtle halation around brighter stars and visor highlights
+- Clean but not clinical optical rendering
+
+PHOTO STYLE:
+- High-resolution digital editorial photography
+- Subtle post-processed enhancement for clarity and low-noise rendering
+- Softly polished, pale highlight treatment across the suit and visor
+- Slightly lowered micro-contrast and gentle bloom create the characteristic hazy, milky, retouched finish
+- Facial detail must remain real but lightly veiled by glass, diffusion, and controlled post-processing
+- No HDR exaggeration
+- No hard-edged sharpening
+- No plastic CGI finish
+- Must feel like a real photographed image with tasteful premium retouching
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Slight visor reflections and mild internal contrast loss
+- Mild highlight halation on bright stars and visor hotspots
+- Tiny variation in star brightness, edge sharpness, and bloom
+- Slight edge falloff and micro softness away from the center
+- Minimal but non-zero sensor noise in the deepest blacks
+- Subtle glass thickness, glare, and tiny surface imperfections on the visor
+- No perfectly uniform clarity across every element
+
+EXPOSURE & RESPONSE:
+- Expose primarily for the white suit, allowing the face inside the visor to sit slightly lower in exposure
+- Deep blacks must remain rich without heavy crushing
+- White suit panels and reflective visor areas must have soft highlight roll-off
+- Contrast must stay restrained and controlled
+- Bright suit whites, cold blue highlights, and dim visor interior must coexist naturally
+- No flat global exposure balance
+
+ANTI-AI CONSTRAINT:
+- Do NOT turn the face into a perfect beauty portrait
+- Do NOT make the visor completely transparent, perfectly clean, or optically invisible
+- Do NOT center the face too perfectly inside a generic helmet opening
+- Do NOT produce uniform star spacing or wallpaper-like stars
+- Do NOT make the suit surfaces plastic, glossy, or hyper-detailed
+- Do NOT produce hyper-sharp skin, excessive symmetry, or cosmetic facial cleanup
+- Maintain the soft, pale, slightly processed editorial finish of a real photographed image
+
+COLOR:
+- Dominant palette:
+  - Crisp white
+  - Metallic silver
+  - Deep black
+  - Cold blue highlights
+- Secondary accent:
+  - Warm gold visor reflections
+- Maintain a cold, high-tech, otherworldly palette
+- No warm overall shift
+- No oversaturation
+
+MOOD:
+- Adventurous
+- Awe-inspiring
+- Futuristic
+- Calm
+- Mysterious
+- Technologically confident
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Preserve the gold-tinted visor, Korean flag / “REPUBLIC OF KOREA” markings, thick insulated suit, centered eye-level composition, black star field, and cool blue lighting
+- Keep the face slightly recessed and slightly darker behind the visor
+- Keep the soft, milky, slightly post-processed finish
+- Do not stylize into fantasy sci-fi
+- Keep all elements physically believable
+
+OUTPUT TARGET:
+- Ultra-realistic astronaut editorial portrait
+- Same recognizable person inside a Korean-marked spacesuit
+- Dark star field background
+- Cool blue edge light, soft white rim light, warm visor reflections
+- Soft, pale, slightly diffused processed finish matching a real photographed image
+- Looks captured and retouched, not AI-generated`
+  },
   "bronze-statue-bench": {
     "default": `Transform the uploaded photo into a realistic European-style park statue scene featuring a seated bronze human figure on an ornate metal bench, preserving the exact composition, pose, and environmental structure of the original image.
 
