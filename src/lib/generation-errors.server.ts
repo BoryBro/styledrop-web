@@ -21,6 +21,8 @@ export type RecentGenerationError = {
   message: string | null;
   finish_reason: string | null;
   created_at: string;
+  latestSuccessAt: string | null;
+  isResolved: boolean;
 };
 
 export type GenerationErrorSummary = {
@@ -31,6 +33,8 @@ export type GenerationErrorSummary = {
   errorRate: number;
   topErrorType: string;
   lastErrorAt: string;
+  latestSuccessAt: string | null;
+  isResolved: boolean;
 };
 
 function getSupabase() {
@@ -98,9 +102,46 @@ export async function getGenerationErrorOverview() {
       throw recentRes.error || last24hErrorRes.error;
     }
 
+    const recentRows = recentRes.data ?? [];
+    const last24hErrorRows = last24hErrorRes.data ?? [];
     const successCounts: Record<string, number> = {};
     for (const row of last24hSuccessRes.data ?? []) {
       successCounts[row.style_id] = (successCounts[row.style_id] ?? 0) + 1;
+    }
+
+    const relevantErrorRows = [...recentRows, ...last24hErrorRows];
+    const relevantStyleIds = Array.from(
+      new Set(
+        relevantErrorRows
+          .map((row) => row.style_id)
+          .filter((styleId): styleId is string => typeof styleId === "string" && styleId.length > 0)
+      )
+    );
+
+    const latestSuccessByStyle = new Map<string, string>();
+
+    if (relevantStyleIds.length > 0 && relevantErrorRows.length > 0) {
+      const oldestRelevantErrorAt = relevantErrorRows.reduce((oldest, row) => (
+        row.created_at < oldest ? row.created_at : oldest
+      ), relevantErrorRows[0].created_at);
+
+      const successAfterErrorRes = await supabase
+        .from("style_usage")
+        .select("style_id, created_at")
+        .in("style_id", relevantStyleIds)
+        .gte("created_at", oldestRelevantErrorAt)
+        .order("created_at", { ascending: false })
+        .limit(10000);
+
+      if (successAfterErrorRes.error) {
+        throw successAfterErrorRes.error;
+      }
+
+      for (const row of successAfterErrorRes.data ?? []) {
+        if (!latestSuccessByStyle.has(row.style_id)) {
+          latestSuccessByStyle.set(row.style_id, row.created_at);
+        }
+      }
     }
 
     const summaryMap = new Map<string, {
@@ -127,6 +168,8 @@ export async function getGenerationErrorOverview() {
         const successCount24h = successCounts[styleId] ?? 0;
         const totalAttempts = successCount24h + value.errorCount;
         const topErrorType = Object.entries(value.typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "unknown";
+        const latestSuccessAt = latestSuccessByStyle.get(styleId) ?? null;
+        const isResolved = latestSuccessAt ? latestSuccessAt > value.lastErrorAt : false;
         return {
           style_id: styleId,
           style_name: STYLE_LABELS[styleId] ?? styleId,
@@ -135,17 +178,28 @@ export async function getGenerationErrorOverview() {
           errorRate: totalAttempts > 0 ? Math.round((value.errorCount / totalAttempts) * 100) : 0,
           topErrorType,
           lastErrorAt: value.lastErrorAt,
+          latestSuccessAt,
+          isResolved,
         };
       })
       .sort((a, b) => {
+        if (Number(a.isResolved) !== Number(b.isResolved)) {
+          return Number(a.isResolved) - Number(b.isResolved);
+        }
         if (b.errorCount !== a.errorCount) return b.errorCount - a.errorCount;
         return a.style_name.localeCompare(b.style_name, "ko");
       });
 
-    const recentGenerationErrors: RecentGenerationError[] = (recentRes.data ?? []).map((row) => ({
-      ...row,
-      style_name: STYLE_LABELS[row.style_id] ?? row.style_id,
-    }));
+    const recentGenerationErrors: RecentGenerationError[] = recentRows.map((row) => {
+      const latestSuccessAt = latestSuccessByStyle.get(row.style_id) ?? null;
+      const isResolved = latestSuccessAt ? latestSuccessAt > row.created_at : false;
+      return {
+        ...row,
+        style_name: STYLE_LABELS[row.style_id] ?? row.style_id,
+        latestSuccessAt,
+        isResolved,
+      };
+    });
 
     return {
       generationErrorTotal24h: (last24hErrorRes.data ?? []).length,
