@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const PACKAGES: Record<string, { amount: number; credits: number; name: string }> = {
-  basic:  { amount: 1900, credits: 10, name: "기본 크레딧 10회" },
-  plus:   { amount: 4900, credits: 30, name: "플러스 크레딧 30회" },
-  pro:    { amount: 9900, credits: 70, name: "프로 크레딧 70회" },
-};
+import { PAYMENT_PACKAGES, type PaymentPackageId } from "@/lib/payment-policy";
 
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
   try {
@@ -19,7 +14,7 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
   const { packageId } = await request.json();
-  const pkg = PACKAGES[packageId];
+  const pkg = PAYMENT_PACKAGES[packageId as PaymentPackageId];
   if (!pkg) return NextResponse.json({ error: "유효하지 않은 패키지입니다." }, { status: 400 });
 
   const paymentId = `sd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;

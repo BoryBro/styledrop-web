@@ -7,6 +7,7 @@ import {
   applyStyleControl,
   type StyleControlState,
 } from "@/lib/style-controls";
+import { REFUND_UNIT_PRICE } from "@/lib/payment-policy";
 import { ALL_STYLES } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
@@ -21,7 +22,17 @@ type UserItem = {
   created_at: string | null;
   last_login_at: string | null;
 };
-type PaymentItem = { id: string; user_id: string; amount: number; credits: number; status: string; created_at: string };
+type PaymentItem = {
+  id: string;
+  user_id: string;
+  amount: number;
+  credits: number;
+  status: string;
+  created_at: string;
+  refunded_amount?: number | null;
+  refunded_at?: string | null;
+  refund_type?: string | null;
+};
 type StyleStat = { style_id: string; style_name: string; count: number };
 type GenerationErrorSummary = {
   style_id: string;
@@ -1175,9 +1186,15 @@ export default function AdminPage() {
                 {stats.paymentList.slice(0, 20).map((p) => {
                   const user = stats.userList.find(u => u.id === p.user_id);
                   const date = new Date(p.created_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-                  const isRefunded = p.status === "refunded";
+                  const isRefunded = p.status === "refunded" || p.status === "partially_refunded";
                   const isLoading = refundingId === p.id;
                   const msg = refundMsg?.id === p.id ? refundMsg : null;
+                  const refundBadge =
+                    p.status === "partially_refunded"
+                      ? `부분환불 ${((p.refunded_amount ?? 0)).toLocaleString()}원`
+                      : p.status === "refunded"
+                        ? "환불됨"
+                        : null;
                   return (
                     <div key={p.id} className="py-3 border-b border-gray-100 last:border-0 flex items-center justify-between gap-2">
                       <div className="flex flex-col gap-0.5 min-w-0">
@@ -1186,7 +1203,7 @@ export default function AdminPage() {
                         {msg && <span className={`text-[12px] ${msg.ok ? "text-[#C9571A]" : "text-red-500"}`}>{msg.msg}</span>}
                       </div>
                       {isRefunded ? (
-                        <span className="text-[12px] text-gray-400 flex-shrink-0">환불됨</span>
+                        <span className="text-[12px] text-gray-400 flex-shrink-0">{refundBadge}</span>
                       ) : (
                         <button
                           onClick={async () => {
@@ -1204,11 +1221,11 @@ export default function AdminPage() {
                               return;
                             }
                             if (!preview.canRefund) {
-                              setRefundMsg({ id: p.id, ok: false, msg: `사용분 공제(${preview.usedCredits}회×190원) 후 환불 가능 금액 없음` });
+                              setRefundMsg({ id: p.id, ok: false, msg: `사용분 공제(${preview.usedCredits}회×${REFUND_UNIT_PRICE}원) 후 환불 가능 금액 없음` });
                               return;
                             }
                             const confirmMsg = preview.wasPartial
-                              ? `${user?.nickname ?? "유저"} · 부분환불 ${preview.refundAmount.toLocaleString()}원\n(사용 ${preview.usedCredits}회 × 190원 = ${(preview.usedCredits * 190).toLocaleString()}원 공제)\n\n진행하시겠어요?`
+                              ? `${user?.nickname ?? "유저"} · 부분환불 ${preview.refundAmount.toLocaleString()}원\n(사용 ${preview.usedCredits}회 × ${REFUND_UNIT_PRICE}원 = ${(preview.usedCredits * REFUND_UNIT_PRICE).toLocaleString()}원 공제)\n\n진행하시겠어요?`
                               : `${user?.nickname ?? "유저"} · 전액환불 ${preview.refundAmount.toLocaleString()}원\n\n진행하시겠어요?`;
                             if (!confirm(confirmMsg)) return;
                             setRefundingId(p.id);

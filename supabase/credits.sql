@@ -24,7 +24,11 @@ CREATE TABLE IF NOT EXISTS payments (
   user_id TEXT NOT NULL,
   amount INTEGER NOT NULL,       -- 결제 금액 (원)
   credits INTEGER NOT NULL,      -- 지급 크레딧 수
-  status TEXT NOT NULL DEFAULT 'pending', -- pending | paid | failed | cancelled
+  status TEXT NOT NULL DEFAULT 'pending', -- pending | paid | failed | cancelled | refunded | partially_refunded
+  refunded_amount INTEGER NOT NULL DEFAULT 0,
+  refunded_at TIMESTAMPTZ,
+  refund_type TEXT,
+  refund_reason TEXT,
   pg_provider TEXT,              -- kakaopay | tosspay | naverpay
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

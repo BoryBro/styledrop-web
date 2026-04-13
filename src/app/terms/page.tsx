@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { REFUND_WINDOW_DAYS } from "@/lib/payment-policy";
 
 export default function TermsOfService() {
   return (
@@ -74,7 +75,7 @@ export default function TermsOfService() {
         <section>
           <h2 className="text-xl font-bold mb-3 text-white">제 6조 (환불 정책)</h2>
           <ul className="list-disc pl-5 space-y-2 text-white/70">
-            <li>미사용 크레딧에 한하여 결제일로부터 7일 이내 전액 환불 요청이 가능합니다.</li>
+            <li>미사용 크레딧에 한하여 결제일로부터 {REFUND_WINDOW_DAYS}일 이내 전액 환불 요청이 가능합니다.</li>
             <li>크레딧을 일부라도 사용한 경우, 사용분 및 관련 수수료·정산 비용 등을 공제한 후 잔여 금액만 환불될 수 있습니다.</li>
             <li>환불 요청은 고객센터(support@styledrop.cloud)를 통해 접수하며, 처리 기간은 영업일 기준 3~5일입니다.</li>
             <li>결제 오류 또는 시스템 장애로 인한 이중 결제의 경우 전액 환불 처리합니다.</li>

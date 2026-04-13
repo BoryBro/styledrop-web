@@ -6,6 +6,19 @@ import { applyStyleControl } from "@/lib/style-controls";
 import { getGeminiBillingSnapshot, hasGeminiBillingConfig } from "@/lib/google-billing.server";
 import { ALL_STYLES, STYLE_LABELS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
+import { getNetRevenueAmount } from "@/lib/payment-policy";
+
+type PaymentRow = {
+  id: string;
+  amount: number;
+  credits: number;
+  user_id: string;
+  status: string;
+  created_at: string;
+  refunded_amount?: number | null;
+  refunded_at?: string | null;
+  refund_type?: string | null;
+};
 
 export async function POST(request: NextRequest) {
   const { password } = await request.json();
@@ -63,8 +76,8 @@ export async function POST(request: NextRequest) {
     supabase.from("users").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
     supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
     supabase.from("style_usage").select("style_id").gte("created_at", todayIso),
-    supabase.from("payments").select("id, amount, credits, user_id, status, created_at").order("created_at", { ascending: false }),
-    supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", todayIso),
+    supabase.from("payments").select("*").order("created_at", { ascending: false }),
+    supabase.from("payments").select("*").gte("created_at", todayIso),
     supabase
       .from("users")
       .select("id, nickname, created_at, last_login_at")
@@ -85,8 +98,8 @@ export async function POST(request: NextRequest) {
     supabase.from("audition_history").select("id", { count: "exact", head: true }).gte("created_at", APR_REFERENCE_BILLING.from).lte("created_at", APR_REFERENCE_BILLING.to),
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).eq("style_id", "audition").gte("created_at", APR_REFERENCE_BILLING.from).lte("created_at", APR_REFERENCE_BILLING.to),
     // 월별 매출
-    supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
-    supabase.from("payments").select("amount").eq("status", "paid").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
+    supabase.from("payments").select("*").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
+    supabase.from("payments").select("*").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
     // 4월 공유/저장 이벤트 카운트
     supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "share_kakao").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
     supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "share_link_copy").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
@@ -108,11 +121,15 @@ export async function POST(request: NextRequest) {
   }
 
   // 결제 통계
-  const payments = paymentsRes.data ?? [];
-  const paidPayments = payments.filter(p => p.status === "paid");
-  const totalRevenue = paidPayments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
-  const totalPaymentCount = paidPayments.length;
-  const todayRevenue = (todayPaymentsRes.data ?? []).reduce((sum, p) => sum + (p.amount ?? 0), 0);
+  const payments = (paymentsRes.data ?? []) as PaymentRow[];
+  const totalRevenue = payments.reduce((sum, payment) => sum + getNetRevenueAmount(payment), 0);
+  const totalPaymentCount = payments.filter((payment) =>
+    payment.status === "paid" || payment.status === "refunded" || payment.status === "partially_refunded"
+  ).length;
+  const todayRevenue = ((todayPaymentsRes.data ?? []) as PaymentRow[]).reduce(
+    (sum, payment) => sum + getNetRevenueAmount(payment),
+    0,
+  );
 
   const usage = usageRes.data ?? [];
   const events = eventsRes.data ?? [];
@@ -336,7 +353,7 @@ export async function POST(request: NextRequest) {
         auditionCount: marAuditionCount,
         auditionStillCount: marAuditionStillCount,
         apiCost: marResolvedApiCost,
-        revenue: (marRevenueRes.data ?? []).reduce((s: number, p: { amount: number }) => s + (p.amount ?? 0), 0),
+        revenue: ((marRevenueRes.data ?? []) as PaymentRow[]).reduce((sum, payment) => sum + getNetRevenueAmount(payment), 0),
         costSource: marCostSource,
         currency: marBillingSnapshot?.currency ?? "KRW",
       },
@@ -345,7 +362,7 @@ export async function POST(request: NextRequest) {
         auditionCount: aprAuditionCount,
         auditionStillCount: aprAuditionStillCount,
         apiCost: aprResolvedApiCost,
-        revenue: (aprRevenueRes.data ?? []).reduce((s: number, p: { amount: number }) => s + (p.amount ?? 0), 0),
+        revenue: ((aprRevenueRes.data ?? []) as PaymentRow[]).reduce((sum, payment) => sum + getNetRevenueAmount(payment), 0),
         shareKakao: aprShareKakaoRes.count ?? 0,
         shareLink: aprShareLinkRes.count ?? 0,
         saveImage: aprSaveRes.count ?? 0,

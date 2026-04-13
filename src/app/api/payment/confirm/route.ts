@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { addCreditsWithPolicy } from "@/lib/credits.server";
 import { getCreditExpiryIso } from "@/lib/credits";
-
-const PACKAGES: Record<string, { amount: number; credits: number }> = {
-  basic:  { amount: 1900, credits: 10 },
-  plus:   { amount: 4900, credits: 30 },
-  pro:    { amount: 9900, credits: 70 },
-};
+import { PAYMENT_PACKAGES, type PaymentPackageId } from "@/lib/payment-policy";
 
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
   try {
@@ -26,7 +21,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "필수 파라미터 누락" }, { status: 400 });
   }
 
-  const pkg = PACKAGES[packageId];
+  const pkg = PAYMENT_PACKAGES[packageId as PaymentPackageId];
   if (!pkg) return NextResponse.json({ error: "유효하지 않은 패키지" }, { status: 400 });
 
   // PortOne v2 결제 검증

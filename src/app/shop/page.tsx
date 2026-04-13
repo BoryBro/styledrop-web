@@ -5,28 +5,29 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as PortOne from "@portone/browser-sdk/v2";
 import { CREDIT_VALIDITY_TEXT } from "@/lib/credits";
+import { PAYMENT_PACKAGES, REFUND_UNIT_PRICE, REFUND_WINDOW_DAYS } from "@/lib/payment-policy";
 
 const PACKAGES = [
   {
     id: "basic",
-    credits: 10,
-    price: 1900,
+    credits: PAYMENT_PACKAGES.basic.credits,
+    price: PAYMENT_PACKAGES.basic.amount,
     priceStr: "1,900",
     per: "190원/회",
     label: null,
   },
   {
     id: "plus",
-    credits: 30,
-    price: 4900,
+    credits: PAYMENT_PACKAGES.plus.credits,
+    price: PAYMENT_PACKAGES.plus.amount,
     priceStr: "4,900",
     per: "163원/회",
     label: "인기",
   },
   {
     id: "pro",
-    credits: 70,
-    price: 9900,
+    credits: PAYMENT_PACKAGES.pro.credits,
+    price: PAYMENT_PACKAGES.pro.amount,
     priceStr: "9,900",
     per: "141원/회",
     label: "최고혜택",
@@ -279,13 +280,13 @@ export default function ShopPage() {
               <div className="flex flex-col gap-3 text-[13px] text-[#888] leading-relaxed">
                 <div className="bg-[#1A1A1A] rounded-2xl p-4 flex flex-col gap-2">
                   <p className="text-white/70 font-semibold text-[13px]">환불 조건</p>
-                  <p>• 미사용 크레딧에 한해 결제일로부터 <span className="text-white/60">7일 이내</span> 전액 환불 가능</p>
+                  <p>• 미사용 크레딧에 한해 결제일로부터 <span className="text-white/60">{REFUND_WINDOW_DAYS}일 이내</span> 전액 환불 가능</p>
                   <p>• 1회 이상 사용 시 <span className="text-white/60">부분 환불</span> 적용</p>
                   <div className="bg-[#0D0D0D] rounded-xl p-3 mt-1 text-[12px] text-[#777] space-y-1.5">
                     <p className="text-white/50 font-semibold">부분 환불 계산 방식</p>
-                    <p>환불금 = 결제 금액 − (사용 크레딧 수 × <span className="text-white/60">190원</span>)</p>
+                    <p>환불금 = 결제 금액 − (사용 크레딧 수 × <span className="text-white/60">{REFUND_UNIT_PRICE}원</span>)</p>
                     <p className="text-[#666]">예) 30회 패키지(4,900원)에서 5회 사용 시</p>
-                    <p className="text-[#666]">→ 4,900 − (5 × 190) = <span className="text-white/60">3,950원 환불</span></p>
+                    <p className="text-[#666]">→ 4,900 − (5 × {REFUND_UNIT_PRICE}) = <span className="text-white/60">3,950원 환불</span></p>
                     <p className="text-[11px] text-[#555] pt-1">* 공제액이 결제금 이상이면 환불 불가</p>
                   </div>
                   <p>• 결제 오류·이중결제는 전액 환불 처리</p>

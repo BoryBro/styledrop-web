@@ -948,8 +948,6 @@ export async function POST(request: NextRequest) {
   }
 
   const session = parseSession(request);
-  let refundedOnError = false;
-  let deductedCredits = 0;
 
   try {
     if (!session) {
@@ -973,21 +971,6 @@ export async function POST(request: NextRequest) {
         { error: "크레딧이 부족해요. AI 오디션은 5크레딧이 필요합니다!" },
         { status: 429 }
       );
-    }
-
-    for (let index = 0; index < 5; index += 1) {
-      const { error } = await supabase.rpc("deduct_credit", { p_user_id: session.id });
-      if (error) {
-        if (deductedCredits > 0) {
-          await supabase.rpc("add_credits", { p_user_id: session.id, p_credits: deductedCredits });
-          refundedOnError = true;
-        }
-        return NextResponse.json(
-          { error: "크레딧 차감에 실패했어요. 다시 시도해주세요." },
-          { status: 500 }
-        );
-      }
-      deductedCredits += 1;
     }
 
     const g: string[] = (Array.isArray(genres) && genres.length === 3) ? genres : ["장르1", "장르2", "장르3"];
@@ -1073,22 +1056,21 @@ export async function POST(request: NextRequest) {
       throw new Error("응답 구조가 올바르지 않습니다.");
     }
 
+    const { error: deductError } = await supabase.rpc("deduct_credit", {
+      p_user_id: session.id,
+      p_amount: 5,
+    });
+    if (deductError) {
+      return NextResponse.json(
+        { error: "크레딧 차감에 실패했어요. 다시 시도해주세요." },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(result);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[audition/analyze] error:", msg);
-
-    if (session && deductedCredits > 0 && !refundedOnError) {
-      try {
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_KEY!
-        );
-        await supabase.rpc("add_credits", { p_user_id: session.id, p_credits: deductedCredits });
-      } catch (refundError) {
-        console.error("[audition/analyze] refund error:", refundError);
-      }
-    }
 
     return NextResponse.json(
       { error: process.env.NODE_ENV === "development" ? msg : "감독님이 자리를 비웠습니다. 잠시 후 다시 시도해주세요." },
