@@ -861,8 +861,12 @@ export default function AdminPage() {
                 <MiniCard label="문제 카드" value={`${stats.generationErrorSummary.length}개`} accent={stats.generationErrorSummary.length > 0} />
               </div>
 
+              <div className="md:hidden rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[12px] text-gray-500">
+                모바일에서는 요약만 보여줍니다. 카드별 원인과 최근 오류 내역은 데스크톱에서 확인하세요.
+              </div>
+
               {stats.generationErrorSummary.length > 0 ? (
-                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                <div className="hidden md:block rounded-xl border border-gray-200 overflow-hidden">
                   {stats.generationErrorSummary.slice(0, 6).map((item) => (
                     <div key={item.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
                       <div className="min-w-0 flex-1">
@@ -882,7 +886,7 @@ export default function AdminPage() {
               )}
 
               {stats.recentGenerationErrors.length > 0 && (
-                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                <div className="hidden md:block rounded-xl border border-gray-200 overflow-hidden">
                   {stats.recentGenerationErrors.slice(0, 5).map((item) => (
                     <div key={item.id} className="px-3 py-2.5 border-b border-gray-100 last:border-0">
                       <div className="flex items-center justify-between gap-2">
