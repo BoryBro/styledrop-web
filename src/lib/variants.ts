@@ -23,6 +23,6 @@ export const STYLE_VARIANTS: Record<string, Variant[]> = {
   ],
   "yakuza": [
     { id: "default", label: "야쿠자", desc: "이레즈미 조직원 무드의 80~90년대 범죄 다큐 포트레이트", thumbnail: "/thumbnails/yakuza-after.jpg" },
-    { id: "mafia", label: "마피아", desc: "바디가드와 시가가 함께 있는 다크 올드머니 범죄 에디토리얼", thumbnail: "/thumbnails/mafia-after.jpg?v=1" },
+    { id: "mafia", label: "마피아", desc: "바디가드와 시가가 함께 있는 다크 올드머니 범죄 에디토리얼", thumbnail: "/thumbnails/mafia-after.jpg?v=2" },
   ],
 };
