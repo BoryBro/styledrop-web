@@ -6,7 +6,8 @@ type CreditSourceType =
   | "reward"
   | "signup_bonus"
   | "reviewer"
-  | "manual";
+  | "manual"
+  | "refund";
 
 export async function getAvailableCredits(supabase: SupabaseClient, userId: string) {
   const rpcRes = await supabase.rpc("get_available_credits", { p_user_id: userId });
