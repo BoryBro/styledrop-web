@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = "https://styledrop.cloud";
+const BASE_URL = "https://www.styledrop.cloud";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

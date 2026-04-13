@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/admin/", "/reviewer-login/", "/mypage/", "/result/"],
       },
     ],
-    sitemap: "https://styledrop.cloud/sitemap.xml",
+    sitemap: "https://www.styledrop.cloud/sitemap.xml",
   };
 }
