@@ -21,6 +21,7 @@ type UserItem = {
   nickname: string | null;
   created_at: string | null;
   last_login_at: string | null;
+  last_activity_at?: string | null;
 };
 type PaymentItem = {
   id: string;
@@ -42,6 +43,8 @@ type GenerationErrorSummary = {
   errorRate: number;
   topErrorType: string;
   lastErrorAt: string;
+  latestSuccessAt: string | null;
+  isResolved: boolean;
 };
 type RecentGenerationError = {
   id: number;
@@ -52,12 +55,31 @@ type RecentGenerationError = {
   message: string | null;
   finish_reason: string | null;
   created_at: string;
+  latestSuccessAt: string | null;
+  isResolved: boolean;
+};
+type RecentGenerationRefund = {
+  id: string;
+  user_id: string | null;
+  nickname: string | null;
+  style_id: string;
+  style_name: string;
+  credits: number;
+  reason: string | null;
+  message: string | null;
+  created_at: string;
 };
 type Stats = {
   styleControls: StyleControlState[];
   generationErrorTotal24h: number;
   generationErrorSummary: GenerationErrorSummary[];
   recentGenerationErrors: RecentGenerationError[];
+  generationRefundTotal24h: number;
+  generationRefundCredits24h: number;
+  generationRefundUserCount24h: number;
+  recentGenerationRefunds: RecentGenerationRefund[];
+  ghostUserCount: number;
+  ghostUsersPreview: UserItem[];
   stylePerformanceList: {
     style_id: string;
     style_name: string;
@@ -161,6 +183,86 @@ function relativeTime(iso: string) {
   if (hours < 24) return `${hours}시간 전`;
   const days = Math.floor(hours / 24);
   return `${days}일 전`;
+}
+
+function refundReasonLabel(reason?: string | null) {
+  if (reason === "no_image") return "이미지 미생성";
+  if (reason === "exception") return "예외";
+  return "실패";
+}
+
+function generationErrorTypeLabel(errorType?: string | null) {
+  if (errorType === "exception") return "예외";
+  if (errorType === "no_image") return "이미지 미생성";
+  if (!errorType || errorType === "unknown") return "알 수 없음";
+  return errorType;
+}
+
+function parseGenerationErrorMessage(message?: string | null) {
+  if (!message) {
+    return {
+      summary: "상세 메시지가 남지 않았습니다.",
+      code: null as number | null,
+      pretty: null as string | null,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(message) as {
+      error?: { code?: number; message?: string; status?: string };
+    };
+    const code = typeof parsed?.error?.code === "number" ? parsed.error.code : null;
+    const parts = [
+      code ? `코드 ${code}` : null,
+      parsed?.error?.status ? String(parsed.error.status) : null,
+      parsed?.error?.message ? String(parsed.error.message) : null,
+    ].filter((part): part is string => Boolean(part));
+
+    return {
+      summary: parts.length > 0 ? parts.join(" · ") : message,
+      code,
+      pretty: JSON.stringify(parsed, null, 2),
+    };
+  } catch {
+    return {
+      summary: message,
+      code: null as number | null,
+      pretty: null as string | null,
+    };
+  }
+}
+
+function getGenerationIssueMeta(item: {
+  isResolved: boolean;
+  latestSuccessAt?: string | null;
+  lastErrorAt: string;
+  errorRate?: number;
+}) {
+  if (item.isResolved && item.latestSuccessAt) {
+    return {
+      label: "복구됨",
+      badgeClass: "bg-[#EEF8F1] text-[#18794E] border border-[#B7E1C4]",
+      detail: `오류 이후 ${relativeTime(item.latestSuccessAt)} 다시 성공했습니다.`,
+      action: "조치 불필요",
+      needsAction: false,
+    };
+  }
+
+  return {
+    label: "미해결",
+    badgeClass: "bg-red-50 text-red-600 border border-red-200",
+    detail: item.errorRate === 100
+      ? "오류 이후 성공 기록이 없습니다. 생성 중지 검토가 필요합니다."
+      : "오류 이후 성공 기록이 없어 재현 확인이 필요합니다.",
+    action: item.errorRate === 100 ? "생성 중지 검토" : "재현 확인",
+    needsAction: true,
+  };
+}
+
+function compactUserLabel(nickname?: string | null, userId?: string | null) {
+  if (nickname && nickname.trim().length > 0) return nickname.trim();
+  if (!userId) return "알 수 없음";
+  return `${userId.slice(0, 4)}...${userId.slice(-4)}`;
 }
 
 function formatDateTime(iso?: string | null) {
@@ -515,6 +617,8 @@ export default function AdminPage() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [styleSavingId, setStyleSavingId] = useState<string | null>(null);
   const [styleControlMsg, setStyleControlMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [ghostDeleteLoading, setGhostDeleteLoading] = useState(false);
+  const [ghostDeleteMsg, setGhostDeleteMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const liveClock = fetchedAt ? new Date(fetchedAt.getTime() + elapsed * 1000) : null;
 
   const doLogin = async (pw: string) => {
@@ -647,6 +751,8 @@ export default function AdminPage() {
     return a.style_name.localeCompare(b.style_name, "ko");
   });
   const errorMap = new Map(stats.generationErrorSummary.map((item) => [item.style_id, item]));
+  const unresolvedErrorStyles = stats.generationErrorSummary.filter((item) => !item.isResolved);
+  const resolvedErrorStyles = stats.generationErrorSummary.filter((item) => item.isResolved);
   const perf24hMap = new Map(stats.stylePerformance24hList.map((item) => [item.style_id, item]));
   const lowSaveSet = new Set(
     stats.stylePerformance24hList
@@ -856,26 +962,67 @@ export default function AdminPage() {
           <div className="flex flex-col gap-1">
             <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">오류 모니터링</p>
             <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <MiniCard label="최근 24시간 오류" value={`${stats.generationErrorTotal24h}건`} accent={stats.generationErrorTotal24h > 0} />
-                <MiniCard label="문제 카드" value={`${stats.generationErrorSummary.length}개`} accent={stats.generationErrorSummary.length > 0} />
+                <MiniCard label="미해결 카드" value={`${unresolvedErrorStyles.length}개`} accent={unresolvedErrorStyles.length > 0} />
+                <MiniCard label="복구됨 카드" value={`${resolvedErrorStyles.length}개`} accent={resolvedErrorStyles.length > 0} />
+                <MiniCard label="자동 환불" value={`${stats.generationRefundTotal24h}건`} accent={stats.generationRefundTotal24h > 0} />
               </div>
 
-              <div className="md:hidden rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[12px] text-gray-500">
-                모바일에서는 요약만 보여줍니다. 카드별 원인과 최근 오류 내역은 데스크톱에서 확인하세요.
+              <div className="rounded-xl border border-[#F3D2BF] bg-[#FFF7F2] px-3 py-3 text-[12px] text-[#8A3C10]">
+                <p className="font-bold text-[12px]">이 영역의 역할</p>
+                <p className="mt-1 leading-5">
+                  최근 24시간 생성 실패를 보고, 각 카드가 <span className="font-bold">이미 복구됐는지</span> 또는 <span className="font-bold">아직 미해결인지</span>
+                  판단하는 운영판입니다. 미해결이면 아래에서 확인 후 <span className="font-bold">운영으로 이동</span>으로 내려가 생성 중지나 숨김을 검토하면 됩니다.
+                </p>
+                <p className="mt-2 text-[11px]">
+                  자동 환불 {stats.generationRefundTotal24h}건 · 복구 크레딧 +{stats.generationRefundCredits24h}
+                </p>
               </div>
 
               {stats.generationErrorSummary.length > 0 ? (
-                <div className="hidden md:block rounded-xl border border-gray-200 overflow-hidden">
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
                   {stats.generationErrorSummary.slice(0, 6).map((item) => (
-                    <div key={item.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</p>
-                        <p className="text-[11px] text-gray-500">
-                          오류 {item.errorCount} · 성공 {item.successCount24h} · 오류율 {item.errorRate}% · {item.topErrorType}
-                        </p>
-                      </div>
-                      <span className="text-[11px] text-red-600 font-bold whitespace-nowrap">{relativeTime(item.lastErrorAt)}</span>
+                    <div key={item.style_id} className="px-3 py-3 border-b border-gray-100 last:border-0">
+                      {(() => {
+                        const issue = getGenerationIssueMeta(item);
+                        return (
+                          <>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <p className="text-[13px] font-bold text-gray-900">{item.style_name}</p>
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${issue.badgeClass}`}>
+                                    {issue.label}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-gray-500 mt-1">
+                                  오류 {item.errorCount} · 성공 {item.successCount24h} · 오류율 {item.errorRate}% · {generationErrorTypeLabel(item.topErrorType)}
+                                </p>
+                                <p className={`text-[11px] mt-1 ${item.isResolved ? "text-[#18794E]" : "text-red-600"}`}>
+                                  {issue.detail}
+                                </p>
+                              </div>
+                              <span className="text-[11px] text-gray-400 whitespace-nowrap">{relativeTime(item.lastErrorAt)}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 mt-2">
+                              <span className="text-[11px] text-gray-400">
+                                마지막 오류 {formatDateTime(item.lastErrorAt)}
+                              </span>
+                              {issue.needsAction ? (
+                                <a
+                                  href="#style-ops"
+                                  className="inline-flex items-center rounded-full border border-[#F3D2BF] bg-[#FFF4ED] px-2.5 py-1 text-[11px] font-bold text-[#C9571A]"
+                                >
+                                  운영으로 이동
+                                </a>
+                              ) : (
+                                <span className="text-[11px] text-[#18794E] font-bold">{issue.action}</span>
+                              )}
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
@@ -886,25 +1033,99 @@ export default function AdminPage() {
               )}
 
               {stats.recentGenerationErrors.length > 0 && (
-                <div className="hidden md:block rounded-xl border border-gray-200 overflow-hidden">
-                  {stats.recentGenerationErrors.slice(0, 5).map((item) => (
-                    <div key={item.id} className="px-3 py-2.5 border-b border-gray-100 last:border-0">
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                  {stats.recentGenerationErrors.slice(0, 5).map((item) => {
+                    const parsed = parseGenerationErrorMessage(item.message);
+                    const issue = getGenerationIssueMeta({
+                      isResolved: item.isResolved,
+                      latestSuccessAt: item.latestSuccessAt,
+                      lastErrorAt: item.created_at,
+                    });
+                    return (
+                      <div key={item.id} className="px-3 py-3 border-b border-gray-100 last:border-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[12px] font-bold text-gray-900">{item.style_name}</span>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${issue.badgeClass}`}>
+                                {issue.label}
+                              </span>
+                              {parsed.code !== null && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                                  {parsed.code}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-gray-500 mt-1">
+                              {generationErrorTypeLabel(item.error_type)}
+                              {item.finish_reason ? ` · ${item.finish_reason}` : ""}
+                            </p>
+                            <p className="text-[12px] text-gray-700 mt-1 leading-5 break-all">
+                              {parsed.summary}
+                            </p>
+                            {item.message && (
+                              <details className="mt-2">
+                                <summary className="cursor-pointer text-[11px] font-bold text-[#C9571A]">
+                                  전체 메시지 보기
+                                </summary>
+                                <pre className="mt-2 rounded-xl bg-gray-50 border border-gray-200 px-3 py-3 text-[11px] leading-5 text-gray-600 whitespace-pre-wrap break-all overflow-x-auto">
+                                  {parsed.pretty ?? item.message}
+                                </pre>
+                              </details>
+                            )}
+                            <div className="flex items-center justify-between gap-2 mt-2">
+                              <span className={`text-[11px] ${item.isResolved ? "text-[#18794E]" : "text-red-600"}`}>
+                                {issue.detail}
+                              </span>
+                              {issue.needsAction && (
+                                <a
+                                  href="#style-ops"
+                                  className="inline-flex items-center rounded-full border border-[#F3D2BF] bg-[#FFF4ED] px-2.5 py-1 text-[11px] font-bold text-[#C9571A]"
+                                >
+                                  운영으로 이동
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-[11px] text-gray-400 whitespace-nowrap">{relativeTime(item.created_at)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {stats.recentGenerationRefunds.length > 0 ? (
+                <div className="rounded-xl border border-[#F3D2BF] overflow-hidden">
+                  {stats.recentGenerationRefunds.slice(0, 5).map((item) => (
+                    <div key={item.id} className="px-3 py-2.5 border-b border-[#F7E1D2] last:border-0 bg-[#FFFDFC]">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[12px] font-bold text-gray-900 truncate">{item.style_name}</span>
-                        <span className="text-[11px] text-gray-400 whitespace-nowrap">{relativeTime(item.created_at)}</span>
+                        <span className="text-[11px] text-[#C9571A] font-bold whitespace-nowrap">+{item.credits}크레딧</span>
                       </div>
                       <p className="text-[11px] text-gray-500 mt-0.5 truncate">
-                        {item.error_type}{item.finish_reason ? ` · ${item.finish_reason}` : ""}{item.message ? ` · ${item.message}` : ""}
+                        {compactUserLabel(item.nickname, item.user_id)} · {refundReasonLabel(item.reason)}
+                        {item.message ? ` · ${item.message}` : ""}
                       </p>
+                      <div className="flex items-center justify-between gap-2 mt-1">
+                        <span className="text-[11px] text-gray-400">
+                          영향 유저 {stats.generationRefundUserCount24h}명
+                        </span>
+                        <span className="text-[11px] text-gray-400 whitespace-nowrap">{relativeTime(item.created_at)}</span>
+                      </div>
                     </div>
                   ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[13px] text-gray-500">
+                  최근 24시간 기준 자동 환불된 생성 실패가 없어요.
                 </div>
               )}
             </div>
           </div>
 
           {/* 긴급 대응 · 스타일 운영 */}
-          <div className="flex flex-col gap-1">
+          <div id="style-ops" className="flex flex-col gap-1">
             <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">긴급 대응 · 스타일 운영</p>
             <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
               <div className="flex items-center justify-between gap-3">
@@ -1271,6 +1492,85 @@ export default function AdminPage() {
             <MiniCard label="오늘 가입" value={`${stats.todaySignupCount}명`} />
           </div>
 
+          <div className="flex flex-col gap-1">
+            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">유령계정 정리</p>
+            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-2">
+                <MiniCard label="삭제 후보" value={`${stats.ghostUserCount}명`} accent={stats.ghostUserCount > 0} />
+                <MiniCard label="기준" value="활동 0" />
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[12px] text-gray-500">
+                생성, 오디션, 결제, 의미 있는 이벤트가 없고 가입 보너스만 받은 계정을 유령계정으로 보고 정리합니다.
+              </div>
+
+              {stats.ghostUsersPreview.length > 0 ? (
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                  {stats.ghostUsersPreview.map((user) => (
+                    <div key={user.id} className="px-3 py-2.5 border-b border-gray-100 last:border-0 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-bold text-gray-900 truncate">{user.nickname ?? "닉네임 없음"}</p>
+                        <p className="text-[11px] text-gray-400 font-mono truncate">{user.id}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-[11px] text-gray-500">가입 {formatDateTime(user.created_at)}</p>
+                        <p className="text-[11px] text-gray-400">마지막 카카오 로그인 {user.last_login_at ? relativeTime(user.last_login_at) : "—"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[13px] text-gray-500">
+                  현재 삭제 후보인 유령계정이 없어요.
+                </div>
+              )}
+
+              <button
+                onClick={async () => {
+                  if (stats.ghostUserCount <= 0) return;
+                  const ok = confirm(
+                    `유령계정 ${stats.ghostUserCount}명을 삭제합니다.\n기준: 생성/오디션/결제/의미 있는 이벤트 없음\n\n진행하시겠어요?`
+                  );
+                  if (!ok) return;
+
+                  setGhostDeleteLoading(true);
+                  setGhostDeleteMsg(null);
+
+                  try {
+                    const res = await fetch("/api/admin/delete-ghost-users", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ password }),
+                    });
+                    const data = await res.json();
+
+                    setGhostDeleteMsg({
+                      ok: !!data.ok,
+                      text: data.ok
+                        ? `✓ 유령계정 ${data.deletedCount}명 삭제 완료`
+                        : `오류: ${data.error ?? "삭제 실패"}`,
+                    });
+
+                    if (data.ok) {
+                      await doLogin(password);
+                    }
+                  } finally {
+                    setGhostDeleteLoading(false);
+                  }
+                }}
+                disabled={ghostDeleteLoading || stats.ghostUserCount <= 0}
+                className="w-full bg-gray-900 hover:bg-black disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-2.5 rounded-xl transition-colors text-[14px]"
+              >
+                {ghostDeleteLoading ? "삭제 중..." : `유령계정 ${stats.ghostUserCount}명 삭제`}
+              </button>
+
+              {ghostDeleteMsg && (
+                <p className={`text-[13px] text-center ${ghostDeleteMsg.ok ? "text-[#C9571A]" : "text-red-500"}`}>
+                  {ghostDeleteMsg.text}
+                </p>
+              )}
+            </div>
+          </div>
+
           {/* 크레딧 조정 */}
           <div className="flex flex-col gap-1">
             <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">크레딧 조정</p>
@@ -1364,7 +1664,7 @@ export default function AdminPage() {
                   placeholder="닉네임 또는 ID 검색..."
                   className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
                 />
-                <span className="text-[11px] text-gray-400 whitespace-nowrap">최근 로그인순</span>
+                <span className="text-[11px] text-gray-400 whitespace-nowrap">최근 활동순</span>
               </div>
 
               <div className="rounded-xl border border-gray-200 overflow-hidden">
@@ -1404,7 +1704,7 @@ export default function AdminPage() {
                       <div className="text-right flex-shrink-0">
                         <p className="text-[11px] text-gray-500">가입 {formatDateTime(user.created_at)}</p>
                         <p className="text-[11px] text-gray-400 mt-0.5">
-                          최근 로그인 {user.last_login_at ? relativeTime(user.last_login_at) : "—"}
+                          최근 활동 {user.last_activity_at ? relativeTime(user.last_activity_at) : "—"}
                         </p>
                       </div>
                     </div>

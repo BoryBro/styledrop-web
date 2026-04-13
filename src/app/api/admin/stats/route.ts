@@ -7,6 +7,7 @@ import { getGeminiBillingSnapshot, hasGeminiBillingConfig } from "@/lib/google-b
 import { ALL_STYLES, STYLE_LABELS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 import { getNetRevenueAmount } from "@/lib/payment-policy";
+import { getGhostUserCandidates } from "@/lib/ghost-users.server";
 
 type PaymentRow = {
   id: string;
@@ -18,6 +19,25 @@ type PaymentRow = {
   refunded_amount?: number | null;
   refunded_at?: string | null;
   refund_type?: string | null;
+};
+
+type RefundEventRow = {
+  id: string | number;
+  user_id: string | null;
+  created_at: string;
+  metadata: {
+    style_id?: string;
+    variant?: string | null;
+    credits?: number | string;
+    reason?: string | null;
+    message?: string | null;
+  } | null;
+};
+
+type UserActivityRow = {
+  user_id: string | null;
+  created_at: string;
+  event_type?: string | null;
 };
 
 export async function POST(request: NextRequest) {
@@ -60,7 +80,7 @@ export async function POST(request: NextRequest) {
     ? usageWithVariant
     : await supabase.from("style_usage").select("style_id, style_name, user_id");
 
-  const [eventsRes, todayEventsRes, usersRes, todaySignupRes, todayUsageRes, todayUsageRowsRes, paymentsRes, todayPaymentsRes, userListRes,
+  const [eventsRes, todayEventsRes, refundEventsRes, usersRes, todaySignupRes, todayUsageRes, todayUsageRowsRes, paymentsRes, todayPaymentsRes, userListRes,
     marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marAuditionStillRes, aprAuditionStillRes,
     aprRefUsageRes, aprRefAuditionRes, aprRefAuditionStillRes,
     marRevenueRes, aprRevenueRes,
@@ -68,10 +88,18 @@ export async function POST(request: NextRequest) {
     marBillingSnapshot, aprBillingSnapshot,
     styleControls,
     generationErrorOverview,
+    ghostUserCandidates,
   ] = await Promise.all([
     // metadata 포함해서 공유 이벤트의 style_id 집계 가능하도록
     supabase.from("user_events").select("event_type, metadata"),
-    supabase.from("user_events").select("event_type, metadata").gte("created_at", todayIso),
+    supabase.from("user_events").select("event_type, metadata, user_id").gte("created_at", todayIso),
+    supabase
+      .from("user_events")
+      .select("id, user_id, metadata, created_at")
+      .eq("event_type", "generation_credit_refund")
+      .gte("created_at", todayIso)
+      .order("created_at", { ascending: false })
+      .limit(20),
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("users").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
     supabase.from("style_usage").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
@@ -114,9 +142,10 @@ export async function POST(request: NextRequest) {
       : Promise.resolve(null),
     loadStyleControls(),
     getGenerationErrorOverview(),
+    getGhostUserCandidates(supabase),
   ]);
 
-  if (usageRes.error || eventsRes.error) {
+  if (usageRes.error || eventsRes.error || todayEventsRes.error || refundEventsRes.error) {
     return NextResponse.json({ error: "데이터 조회 실패" }, { status: 500 });
   }
 
@@ -134,6 +163,7 @@ export async function POST(request: NextRequest) {
   const usage = usageRes.data ?? [];
   const events = eventsRes.data ?? [];
   const todayEvents = todayEventsRes.data ?? [];
+  const refundEvents = (refundEventsRes.data ?? []) as RefundEventRow[];
   const todayUsageRows = todayUsageRowsRes.data ?? [];
 
   // 전체 / 스타일별
@@ -309,18 +339,131 @@ export async function POST(request: NextRequest) {
   const marCostSource = marBillingSnapshot ? "bigquery_actual" : "manual_actual";
   const aprCostSource = aprBillingSnapshot ? "bigquery_actual" : "reference_weighted_estimate";
 
-  const userList = [...(userListRes.data ?? [])].sort((left, right) => {
-    const leftLogin = left.last_login_at ? new Date(left.last_login_at).getTime() : 0;
-    const rightLogin = right.last_login_at ? new Date(right.last_login_at).getTime() : 0;
-    if (rightLogin !== leftLogin) return rightLogin - leftLogin;
+  const userList = [...(userListRes.data ?? [])];
 
-    const leftCreated = left.created_at ? new Date(left.created_at).getTime() : 0;
-    const rightCreated = right.created_at ? new Date(right.created_at).getTime() : 0;
-    return rightCreated - leftCreated;
+  const userIds = userList.map((user) => user.id).filter((id): id is string => typeof id === "string" && id.length > 0);
+  const activityMap = new Map<string, string>();
+
+  const setLatestActivity = (userId: string | null, createdAt: string | null | undefined) => {
+    if (!userId || !createdAt) return;
+    const prev = activityMap.get(userId);
+    if (!prev || new Date(createdAt).getTime() > new Date(prev).getTime()) {
+      activityMap.set(userId, createdAt);
+    }
+  };
+
+  if (userIds.length > 0) {
+    const [usageActivityRes, auditionActivityRes, eventActivityRes] = await Promise.all([
+      supabase
+        .from("style_usage")
+        .select("user_id, created_at")
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false })
+        .limit(5000),
+      supabase
+        .from("audition_history")
+        .select("user_id, created_at")
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false })
+        .limit(5000),
+      supabase
+        .from("user_events")
+        .select("user_id, created_at, event_type")
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false })
+        .limit(5000),
+    ]);
+
+    for (const row of (usageActivityRes.data ?? []) as UserActivityRow[]) {
+      setLatestActivity(row.user_id, row.created_at);
+    }
+
+    for (const row of (auditionActivityRes.data ?? []) as UserActivityRow[]) {
+      setLatestActivity(row.user_id, row.created_at);
+    }
+
+    for (const row of (eventActivityRes.data ?? []) as UserActivityRow[]) {
+      if (row.event_type === "login" || row.event_type === "signup_bonus") continue;
+      setLatestActivity(row.user_id, row.created_at);
+    }
+  }
+
+  const userListWithActivity = userList
+    .map((user) => {
+      const actualActivityAt = activityMap.get(user.id) ?? null;
+      const lastSeenAt = [actualActivityAt, user.last_login_at, user.created_at]
+        .filter((value): value is string => typeof value === "string" && value.length > 0)
+        .sort((left, right) => new Date(right).getTime() - new Date(left).getTime())[0] ?? null;
+
+      return {
+        ...user,
+        last_activity_at: lastSeenAt,
+      };
+    })
+    .sort((left, right) => {
+      const leftActivity = left.last_activity_at ? new Date(left.last_activity_at).getTime() : 0;
+      const rightActivity = right.last_activity_at ? new Date(right.last_activity_at).getTime() : 0;
+      if (rightActivity !== leftActivity) return rightActivity - leftActivity;
+
+      const leftCreated = left.created_at ? new Date(left.created_at).getTime() : 0;
+      const rightCreated = right.created_at ? new Date(right.created_at).getTime() : 0;
+      return rightCreated - leftCreated;
+    });
+
+  const refundEvents24h = todayEvents.filter((event) => event.event_type === "generation_credit_refund");
+  const generationRefundTotal24h = refundEvents24h.length;
+  const generationRefundCredits24h = refundEvents24h.reduce((sum, event) => {
+    const rawCredits = (event.metadata as { credits?: number | string } | null)?.credits ?? 0;
+    const credits = typeof rawCredits === "number" ? rawCredits : Number(rawCredits);
+    return sum + (Number.isFinite(credits) ? credits : 0);
+  }, 0);
+  const generationRefundUserCount24h = new Set(
+    refundEvents24h
+      .map((event) => event.user_id)
+      .filter((userId): userId is string => typeof userId === "string" && userId.length > 0)
+  ).size;
+
+  const refundNicknameMap = new Map(userListWithActivity.map((user) => [user.id, user.nickname]));
+  const missingRefundUserIds = Array.from(
+    new Set(
+      refundEvents
+        .map((event) => event.user_id)
+        .filter((userId): userId is string => typeof userId === "string" && userId.length > 0 && !refundNicknameMap.has(userId))
+    )
+  );
+
+  if (missingRefundUserIds.length > 0) {
+    const { data: extraRefundUsers } = await supabase
+      .from("users")
+      .select("id, nickname")
+      .in("id", missingRefundUserIds);
+
+    for (const user of extraRefundUsers ?? []) {
+      refundNicknameMap.set(user.id, user.nickname);
+    }
+  }
+
+  const recentGenerationRefunds = refundEvents.map((event) => {
+    const metadata = event.metadata ?? {};
+    const rawCredits = metadata.credits ?? 0;
+    const credits = typeof rawCredits === "number" ? rawCredits : Number(rawCredits);
+    const styleId = typeof metadata.style_id === "string" ? metadata.style_id : "unknown";
+
+    return {
+      id: String(event.id),
+      user_id: event.user_id,
+      nickname: event.user_id ? (refundNicknameMap.get(event.user_id) ?? null) : null,
+      style_id: styleId,
+      style_name: STYLE_LABELS[styleId] ?? styleId,
+      credits: Number.isFinite(credits) ? credits : 0,
+      reason: typeof metadata.reason === "string" ? metadata.reason : null,
+      message: typeof metadata.message === "string" ? metadata.message : null,
+      created_at: event.created_at,
+    };
   });
 
   return NextResponse.json({
-    userList,
+    userList: userListWithActivity,
     paymentList: payments,
     total,
     todayTotal,
@@ -332,6 +475,12 @@ export async function POST(request: NextRequest) {
     byStyleVariants,
     styleControls,
     ...generationErrorOverview,
+    generationRefundTotal24h,
+    generationRefundCredits24h,
+    generationRefundUserCount24h,
+    recentGenerationRefunds,
+    ghostUserCount: ghostUserCandidates.length,
+    ghostUsersPreview: ghostUserCandidates.slice(0, 10),
     totalUsers: usersRes.count ?? 0,
     todaySignupCount: todaySignupRes.count ?? 0,
     uniqueLoggedInUsers,
