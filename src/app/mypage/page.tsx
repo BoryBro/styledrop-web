@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
 import { getGuestHistory, type GuestHistoryItem } from "@/lib/guest-history";
-import { STYLE_LABELS, VISIBLE_STYLE_IDS } from "@/lib/styles";
+import { MULTI_SOURCE_STYLE_IDS, STYLE_LABELS, VISIBLE_STYLE_IDS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
 type BeforeInstallPromptEvent = Event & {
@@ -39,10 +39,68 @@ type ShowcaseState = {
   createdAt: string;
 } | null;
 
+const MULTI_SOURCE_STYLE_ID_SET = new Set<string>(MULTI_SOURCE_STYLE_IDS);
+
 interface KakaoSDK {
   init: (key: string) => void;
   isInitialized: () => boolean;
   Share: { sendDefault: (options: Record<string, unknown>) => void };
+}
+
+function HistoryPreview({
+  item,
+  historyView,
+  isActive,
+}: {
+  item: HistoryItem;
+  historyView: "before" | "after";
+  isActive: boolean;
+}) {
+  const isSplitBefore =
+    historyView === "before" &&
+    Boolean(item.before_image_url) &&
+    MULTI_SOURCE_STYLE_ID_SET.has(item.style_id);
+
+  if (isSplitBefore && item.before_image_url) {
+    return (
+      <div
+        className={`relative w-full aspect-square rounded-2xl overflow-hidden bg-[#1A1A1A] transition-opacity duration-300 ${
+          isActive ? "opacity-100" : "opacity-50"
+        }`}
+      >
+        <div className="absolute inset-y-0 left-0 w-1/2 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.before_image_url}
+            alt=""
+            className="h-full w-[200%] max-w-none object-cover object-left"
+          />
+        </div>
+        <div className="absolute inset-y-0 right-0 w-1/2 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.before_image_url}
+            alt=""
+            className="h-full w-[200%] max-w-none object-cover object-right"
+          />
+        </div>
+        <div className="pointer-events-none absolute inset-y-[8%] left-1/2 z-[1] w-px -translate-x-1/2 bg-white/18 shadow-[0_0_18px_rgba(255,255,255,0.18)]" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={historyView === "before" && item.before_image_url ? item.before_image_url : item.result_image_url}
+        alt=""
+        className={`w-full aspect-square rounded-2xl object-cover bg-[#1A1A1A] transition-opacity duration-300 ${
+          isActive ? "opacity-100" : "opacity-50"
+        }`}
+      />
+    </>
+  );
 }
 
 function relativeTime(iso: string): string {
@@ -752,12 +810,7 @@ export default function MyPage() {
                               </svg>
                             </button>
                           )}
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={historyView === "before" && item.before_image_url ? item.before_image_url : item.result_image_url}
-                            alt=""
-                            className={`w-full aspect-square rounded-2xl object-cover bg-[#1A1A1A] transition-opacity duration-300 ${idx === activeIndex ? "opacity-100" : "opacity-50"}`}
-                          />
+                          <HistoryPreview item={item} historyView={historyView} isActive={idx === activeIndex} />
                           {variantLabel && idx === activeIndex && (
                             <div className="absolute top-4 right-4 z-10">
                               <span className="bg-[#C9571A] text-white text-[11px] font-bold px-3 py-1.5 rounded-full shadow-lg ring-1 ring-white/20">
