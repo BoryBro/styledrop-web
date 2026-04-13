@@ -1,7 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getAvailableCredits } from "@/lib/credits.server";
+import { readSessionFromRequest } from "@/lib/auth-session";
+import { assertBase64ImageSize, assertRequestBodySize } from "@/lib/api-abuse-guard";
+import { addCreditsWithPolicy } from "@/lib/credits.server";
 import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 
 type Scores = { 이해도: number; 표정연기: number; 창의성: number; 몰입도: number };
@@ -341,13 +343,7 @@ function normalizePhysiognomyOutput(physiognomy: Record<string, unknown>) {
 }
 
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
-  try {
-    const cookie = request.cookies.get("sd_session")?.value;
-    if (!cookie) return null;
-    return JSON.parse(Buffer.from(cookie, "base64").toString());
-  } catch {
-    return null;
-  }
+  return readSessionFromRequest(request);
 }
 
 function buildPrompt(genres: string[], cues: string[], flavor: "spicy" | "mild" = "spicy", personality?: string[]): string {
@@ -948,30 +944,88 @@ export async function POST(request: NextRequest) {
   }
 
   const session = parseSession(request);
+  let deductedCredits = 0;
+  let refundedOnError = false;
+
+  const refundCreditsIfNeeded = async (message?: string) => {
+    if (!session || deductedCredits <= 0 || refundedOnError) return;
+
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_KEY!
+      );
+      const refundRes = await addCreditsWithPolicy(supabase, {
+        userId: session.id,
+        credits: deductedCredits,
+        sourceType: "refund",
+        sourceId: `audition-analyze-refund:${session.id}:${Date.now()}`,
+      });
+
+      if (!refundRes.ok) {
+        throw refundRes.error ?? new Error("오디션 분석 크레딧 환불에 실패했어요.");
+      }
+
+      await supabase.from("user_events").insert({
+        user_id: session.id,
+        event_type: "audition_credit_refund",
+        metadata: {
+          credits: deductedCredits,
+          message: message ?? null,
+        },
+      });
+
+      refundedOnError = true;
+    } catch (refundError) {
+      console.error("[audition/analyze] refund error:", refundError);
+    }
+  };
 
   try {
     if (!session) {
       return NextResponse.json({ error: "AI 오디션은 로그인 후 이용할 수 있습니다." }, { status: 401 });
     }
 
+    assertRequestBodySize(request, 52 * 1024 * 1024);
     const { images, genres, cues, flavor, personality, physioImage } = await request.json();
 
     if (!Array.isArray(images) || images.length !== 3) {
       return NextResponse.json({ error: "이미지 3장이 필요합니다." }, { status: 400 });
+    }
+    try {
+      images.forEach((image: unknown, index: number) => {
+        if (typeof image !== "string" || !image.trim()) {
+          throw new Error(`이미지 ${index + 1}가 비어 있습니다.`);
+        }
+        assertBase64ImageSize(image, { label: `이미지 ${index + 1}` });
+      });
+
+      if (typeof physioImage === "string" && physioImage.trim()) {
+        assertBase64ImageSize(physioImage, { label: "관상 사진" });
+      }
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "이미지 확인에 실패했어요." },
+        { status: 400 }
+      );
     }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_KEY!
     );
-    const availableCredits = await getAvailableCredits(supabase, session.id);
+    const { error: deductError } = await supabase.rpc("deduct_credit", {
+      p_user_id: session.id,
+      p_amount: 5,
+    });
 
-    if (availableCredits < 5) {
+    if (deductError) {
       return NextResponse.json(
         { error: "크레딧이 부족해요. AI 오디션은 5크레딧이 필요합니다!" },
         { status: 429 }
       );
     }
+    deductedCredits = 5;
 
     const g: string[] = (Array.isArray(genres) && genres.length === 3) ? genres : ["장르1", "장르2", "장르3"];
 
@@ -1056,21 +1110,11 @@ export async function POST(request: NextRequest) {
       throw new Error("응답 구조가 올바르지 않습니다.");
     }
 
-    const { error: deductError } = await supabase.rpc("deduct_credit", {
-      p_user_id: session.id,
-      p_amount: 5,
-    });
-    if (deductError) {
-      return NextResponse.json(
-        { error: "크레딧 차감에 실패했어요. 다시 시도해주세요." },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json(result);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[audition/analyze] error:", msg);
+    await refundCreditsIfNeeded(msg);
 
     return NextResponse.json(
       { error: process.env.NODE_ENV === "development" ? msg : "감독님이 자리를 비웠습니다. 잠시 후 다시 시도해주세요." },

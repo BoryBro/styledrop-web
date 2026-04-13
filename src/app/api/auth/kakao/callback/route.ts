@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { setSessionCookie } from "@/lib/auth-session";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -77,13 +78,11 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. 세션 쿠키 설정 후 /studio로 리다이렉트
-    const session = Buffer.from(JSON.stringify({ id: userId, nickname, profileImage })).toString("base64");
     const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/studio`);
-    response.cookies.set("sd_session", session, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 30, // 30일
-      path: "/",
+    setSessionCookie(response, {
+      id: userId,
+      nickname: nickname ?? "",
+      profileImage,
     });
 
     return response;

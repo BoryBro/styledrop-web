@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readSessionFromRequest } from "@/lib/auth-session";
 import { PAYMENT_PACKAGES, type PaymentPackageId } from "@/lib/payment-policy";
 
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
-  try {
-    const cookie = request.cookies.get("sd_session")?.value;
-    if (!cookie) return null;
-    return JSON.parse(Buffer.from(cookie, "base64").toString());
-  } catch { return null; }
+  return readSessionFromRequest(request);
 }
 
 export async function POST(request: NextRequest) {

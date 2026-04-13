@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { readSessionFromRequest } from "@/lib/auth-session";
 
 function parseSession(req: NextRequest): { id: string } | null {
-  try {
-    const cookie = req.cookies.get("sd_session")?.value;
-    if (!cookie) return null;
-    return JSON.parse(Buffer.from(cookie, "base64").toString());
-  } catch { return null; }
+  return readSessionFromRequest(req);
 }
 
 function getSupabase() {

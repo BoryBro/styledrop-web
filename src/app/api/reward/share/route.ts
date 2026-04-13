@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { readSessionFromRequest } from "@/lib/auth-session";
 import { addCreditsWithPolicy, getAvailableCredits } from "@/lib/credits.server";
 
 function parseSession(request: NextRequest): { id: string } | null {
-  try {
-    const cookie = request.cookies.get("sd_session")?.value;
-    if (!cookie) return null;
-    return JSON.parse(Buffer.from(cookie, "base64").toString());
-  } catch { return null; }
+  return readSessionFromRequest(request);
 }
 
 // 오디션 결과 공유 시 1크레딧 보상 (계정당 1회)

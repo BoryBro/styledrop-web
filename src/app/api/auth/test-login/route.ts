@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { setSessionCookie } from "@/lib/auth-session";
 
 // 카카오페이 심사용 테스트 계정 로그인
 // 사용법: /api/auth/test-login?pw=어드민비밀번호
@@ -36,17 +37,12 @@ async function createTestLoginResponse(request: NextRequest) {
 
   await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 10 });
 
-  const session = Buffer.from(
-    JSON.stringify({ id: user.id, nickname: TEST_NICKNAME, profileImage: null })
-  ).toString("base64");
-
   const origin = new URL(request.url).origin;
   const response = NextResponse.redirect(`${origin}/shop`, { status: 303 });
-  response.cookies.set("sd_session", session, {
-    httpOnly: true,
-    secure: true,
-    maxAge: 60 * 60 * 24,
-    path: "/",
+  setSessionCookie(response, {
+    id: user.id,
+    nickname: TEST_NICKNAME,
+    profileImage: null,
   });
 
   return response;

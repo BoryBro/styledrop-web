@@ -4,6 +4,12 @@ import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { addWatermark } from "@/lib/watermark";
+import { readSessionFromRequest } from "@/lib/auth-session";
+import {
+  assertBase64ImageSize,
+  assertRequestBodySize,
+  enforceAnonymousDailyLimit,
+} from "@/lib/api-abuse-guard";
 import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 import {
   GUEST_LIMIT, WINDOW_MS,
@@ -126,11 +132,7 @@ const LONGFORM_SECTION_KEYS: LongformSectionKey[] = [
 ];
 
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
-  try {
-    const cookie = request.cookies.get("sd_session")?.value;
-    if (!cookie) return null;
-    return JSON.parse(Buffer.from(cookie, "base64").toString());
-  } catch { return null; }
+  return readSessionFromRequest(request);
 }
 
 function averageSceneScore(scene?: GenerateScene | null) {
@@ -291,6 +293,27 @@ export async function POST(request: NextRequest) {
       { status: 429 }
     );
   }
+  if (!session) {
+    try {
+      const allowed = await enforceAnonymousDailyLimit(request, {
+        scope: "audition-still-generate",
+        limit: GUEST_LIMIT,
+      });
+
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "무료 체험이 끝났어요. 카카오 로그인하면 5크레딧을 무료로 받을 수 있어요!" },
+          { status: 429 }
+        );
+      }
+    } catch (error) {
+      console.error("[audition/generate] anonymous throttle error:", error);
+      return NextResponse.json(
+        { error: "요청이 잠시 많아요. 잠시 후 다시 시도해주세요." },
+        { status: 503 }
+      );
+    }
+  }
 
   const cookieValue = !session ? encodeLimitCookie({ count: guestCount + 1, resetAt }) : "";
   const cookieOptions = {
@@ -302,6 +325,7 @@ export async function POST(request: NextRequest) {
   };
 
   try {
+    assertRequestBodySize(request, 18 * 1024 * 1024);
     const {
       image,
       physioImage,
@@ -330,6 +354,14 @@ export async function POST(request: NextRequest) {
 
     if (!referenceImage) {
       return NextResponse.json({ error: "관상용 정면 사진이 필요합니다." }, { status: 400 });
+    }
+    try {
+      assertBase64ImageSize(referenceImage, { label: "관상 사진" });
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "이미지 확인에 실패했어요." },
+        { status: 400 }
+      );
     }
 
     const requestedSceneIdx = Number(selectedSceneIdx);

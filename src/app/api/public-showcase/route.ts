@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { readSessionFromRequest } from "@/lib/auth-session";
 
 const OPT_IN_EVENT = "home_showcase_opt_in";
 const OPT_OUT_EVENT = "home_showcase_opt_out";
@@ -20,13 +21,7 @@ type ShowcaseEvent = {
 };
 
 function parseSession(request: NextRequest): Session {
-  try {
-    const cookie = request.cookies.get("sd_session")?.value;
-    if (!cookie) return null;
-    return JSON.parse(Buffer.from(cookie, "base64").toString());
-  } catch {
-    return null;
-  }
+  return readSessionFromRequest(request);
 }
 
 function getSupabase() {

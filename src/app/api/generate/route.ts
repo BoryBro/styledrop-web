@@ -3,7 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
+import { readSessionFromRequest } from "@/lib/auth-session";
+import {
+  assertBase64ImageSize,
+  assertRequestBodySize,
+  enforceAnonymousDailyLimit,
+} from "@/lib/api-abuse-guard";
 import { addWatermark } from "@/lib/watermark";
+import { addCreditsWithPolicy } from "@/lib/credits.server";
 import { logGenerationError } from "@/lib/generation-errors.server";
 import { loadStyleControlMap } from "@/lib/style-controls.server";
 import { STYLE_LABELS } from "@/lib/styles";
@@ -14,11 +21,7 @@ import {
 } from "@/lib/rate-limit";
 
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
-  try {
-    const cookie = request.cookies.get("sd_session")?.value;
-    if (!cookie) return null;
-    return JSON.parse(Buffer.from(cookie, "base64").toString());
-  } catch { return null; }
+  return readSessionFromRequest(request);
 }
 
 const STYLE_CONFIGS: Record<string, { temperature?: number; topP?: number; topK?: number }> = {};
@@ -5496,13 +5499,53 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
 export async function POST(request: NextRequest) {
   const session = parseSession(request);
   const now = Date.now();
+  const raw = !session ? request.cookies.get(GUEST_COOKIE)?.value : undefined;
+  const limitData = !session ? parseLimitCookie(raw) : null;
+  let guestCount = 0;
+  let resetAt = now + WINDOW_MS;
+
+  if (!session && limitData && now < limitData.resetAt) {
+    guestCount = limitData.count;
+    resetAt = limitData.resetAt;
+  }
+  if (!session && guestCount >= GUEST_LIMIT) {
+    return NextResponse.json(
+      { error: "무료 체험이 끝났어요. 카카오 로그인하면 3크레딧을 무료로 받을 수 있어요!" },
+      { status: 429 }
+    );
+  }
+  if (!session) {
+    try {
+      const allowed = await enforceAnonymousDailyLimit(request, {
+        scope: "style-generate",
+        limit: GUEST_LIMIT,
+      });
+
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "무료 체험이 끝났어요. 카카오 로그인하면 3크레딧을 무료로 받을 수 있어요!" },
+          { status: 429 }
+        );
+      }
+    } catch (error) {
+      console.error("[generate] anonymous throttle error:", error);
+      return NextResponse.json(
+        { error: "요청이 잠시 많아요. 잠시 후 다시 시도해주세요." },
+        { status: 503 }
+      );
+    }
+  }
+
   let style = "";
   let imageBase64 = "";
   let imageBase64List: string[] = [];
   let mimeType = "image/jpeg";
   let variant = "default";
+  let deductedCredits = 0;
+  let refundedOnError = false;
 
   try {
+    assertRequestBodySize(request, 28 * 1024 * 1024);
     const body = await request.json();
     style = body.style;
     imageBase64 = body.imageBase64 || "";
@@ -5518,6 +5561,19 @@ export async function POST(request: NextRequest) {
   const inputImages = imageBase64List.length > 0 ? imageBase64List : (imageBase64 ? [imageBase64] : []);
   if (!style || inputImages.length === 0) {
     return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
+  }
+  if (inputImages.length > 2) {
+    return NextResponse.json({ error: "이미지는 최대 2장까지 업로드할 수 있어요." }, { status: 400 });
+  }
+  try {
+    inputImages.forEach((image, index) => {
+      assertBase64ImageSize(image, { label: `이미지 ${index + 1}` });
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "이미지 확인에 실패했어요." },
+      { status: 400 }
+    );
   }
 
   const stylePrompts = STYLE_PROMPTS[style];
@@ -5553,22 +5609,7 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
-  }
-
-  // ── 비회원: 쿠키 기반 1회 무료 체험 ──────────────────────────────────
-  const raw = !session ? request.cookies.get(GUEST_COOKIE)?.value : undefined;
-  const limitData = !session ? parseLimitCookie(raw) : null;
-  let guestCount = 0;
-  let resetAt = now + WINDOW_MS;
-  if (!session && limitData && now < limitData.resetAt) {
-    guestCount = limitData.count;
-    resetAt = limitData.resetAt;
-  }
-  if (!session && guestCount >= GUEST_LIMIT) {
-    return NextResponse.json(
-      { error: "무료 체험이 끝났어요. 카카오 로그인하면 3크레딧을 무료로 받을 수 있어요!" },
-      { status: 429 }
-    );
+    deductedCredits = 1;
   }
 
   const cookieValue = !session ? encodeLimitCookie({ count: guestCount + 1, resetAt }) : "";
@@ -5578,6 +5619,47 @@ export async function POST(request: NextRequest) {
     sameSite: "lax" as const,
     path: "/",
     maxAge: Math.ceil((resetAt - now) / 1000),
+  };
+
+  const refundCreditIfNeeded = async (
+    reason: "no_image" | "exception",
+    message?: string | null
+  ) => {
+    if (!session || deductedCredits <= 0 || refundedOnError) return;
+
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_KEY!
+      );
+
+      const refundRes = await addCreditsWithPolicy(supabase, {
+        userId: session.id,
+        credits: deductedCredits,
+        sourceType: "refund",
+        sourceId: ["generate-refund", session.id, style || "unknown", variant || "default", String(Date.now())].join(":"),
+      });
+
+      if (!refundRes.ok) {
+        throw refundRes.error ?? new Error("크레딧 환불에 실패했어요.");
+      }
+
+      await supabase.from("user_events").insert({
+        user_id: session.id,
+        event_type: "generation_credit_refund",
+        metadata: {
+          style_id: style || "unknown",
+          variant: variant || "default",
+          credits: deductedCredits,
+          reason,
+          message: message ?? null,
+        },
+      });
+
+      refundedOnError = true;
+    } catch (refundError) {
+      console.error("[generate] refund error:", refundError);
+    }
   };
 
   try {
@@ -5651,6 +5733,7 @@ export async function POST(request: NextRequest) {
         finishReason: finishReason ?? null,
         message: textParts || "No image generated",
       });
+      await refundCreditIfNeeded("no_image", textParts || "No image generated");
     }
 
     for (const part of parts) {
@@ -5710,6 +5793,7 @@ export async function POST(request: NextRequest) {
       errorType: "exception",
       message,
     });
+    await refundCreditIfNeeded("exception", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
