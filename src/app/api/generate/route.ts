@@ -4378,6 +4378,16 @@ FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
 - Preserve pores, subtle skin variation, and natural detail
 - The final styling must adapt naturally to each uploaded person’s gender while preserving identity and romantic pairing context
 
+GENDER / BODY CONSISTENCY — DO NOT FORCE A HETERO COUPLE TEMPLATE:
+- Keep each uploaded person’s apparent gender presentation consistent with their own source image
+- If both uploaded people are women, both final subjects must remain women
+- If both uploaded people are men, both final subjects must remain men
+- Only use mixed-gender body styling if the uploaded pair is actually mixed-gender
+- Do not masculinize one subject or feminize one subject just to create contrast
+- Do not invent a default "man on one side, woman on the other" pairing
+- If both uploaded photos are the same woman or the same man, render two separate subjects while keeping both subjects consistent with that same gender presentation
+- Preserve each person’s natural body silhouette, shoulder line, neck shape, and styling direction in a believable way
+
 FACE & CAMERA:
 - Keep both subjects recognizable as the uploaded user identities
 - Preserve believable face proportions and natural structure
@@ -4399,10 +4409,15 @@ HAIR:
 - No rigid or overly polished styling
 
 CLOTHING:
-- Young man: light brown textured suit with a white shirt
-- Young woman: flowing white off-the-shoulder dress with puffed sleeves
+- Wardrobe must follow the uploaded pair identities instead of a fixed male/female template
+- If both uploaded people are women, style both final subjects as women in believable romantic eveningwear
+- If both uploaded people are men, style both final subjects as men in believable romantic eveningwear
+- If the uploaded pair is mixed-gender, mixed styling is allowed only because the uploads actually support it
+- Suitable options include a light brown textured suit with a white shirt, a flowing white off-the-shoulder dress with puffed sleeves, or other elegant evening outfits that match each uploaded person naturally
+- Do not assign the suit to one subject and the dress to the other unless that assignment fits the uploaded identities
+- Do not change body shape, shoulder build, or clothing silhouette to force one subject into a masculine role
 - Fabrics must appear physically real with natural folds, flow, and light interaction
-- Slight movement in the dress fabric to enhance softness
+- Slight movement in any flowing fabric is allowed to enhance softness
 - No synthetic or costume-like rendering
 
 POSE / COMPOSITION:
@@ -5458,6 +5473,8 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "orange-cosmic-girl": { "default": [], "flat-blue": [] },
   "subway-cctv": { "default": [] },
   "visual-kei": { "default": [] },
+  "escalator-flash-twoshot": { "default": [] },
+  "boxing-counterpunch": { "default": [] },
   "yakuza": { "default": [], "mafia": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
