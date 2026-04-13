@@ -9,6 +9,82 @@ function parseSession(request: NextRequest): { id: string; nickname: string } | 
   return readSessionFromRequest(request);
 }
 
+const VERIFY_RETRY_DELAYS_MS = [0, 800, 1600, 2400] as const;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function verifyPortOnePayment(paymentId: string, secret: string) {
+  let lastError:
+    | {
+        status: number;
+        type?: string | null;
+        message?: string | null;
+      }
+    | null = null;
+
+  for (const delay of VERIFY_RETRY_DELAYS_MS) {
+    if (delay > 0) {
+      await sleep(delay);
+    }
+
+    const verifyRes = await fetch(`https://api.portone.io/payments/${encodeURIComponent(paymentId)}`, {
+      headers: { Authorization: `PortOne ${secret}` },
+      cache: "no-store",
+    });
+
+    const payload = await verifyRes.json().catch(() => null);
+
+    if (verifyRes.ok && payload) {
+      const status = payload?.status;
+      if (status === "PAID") {
+        return { ok: true as const, payment: payload };
+      }
+
+      lastError = {
+        status: verifyRes.status,
+        type: "PAYMENT_NOT_PAID",
+        message: typeof status === "string" ? `payment status is ${status}` : "payment is not paid yet",
+      };
+
+      if (status === "READY" || status === "PENDING") {
+        continue;
+      }
+
+      break;
+    }
+
+    const type = typeof payload?.type === "string" ? payload.type : null;
+    const message = typeof payload?.message === "string" ? payload.message : null;
+
+    lastError = {
+      status: verifyRes.status,
+      type,
+      message,
+    };
+
+    const retryable =
+      verifyRes.status === 404 ||
+      verifyRes.status === 429 ||
+      verifyRes.status >= 500 ||
+      type === "PAYMENT_NOT_FOUND";
+
+    if (!retryable) {
+      break;
+    }
+  }
+
+  return {
+    ok: false as const,
+    error: lastError ?? {
+      status: 500,
+      type: "UNKNOWN_PORTONE_VERIFY_ERROR",
+      message: "unknown payment verification error",
+    },
+  };
+}
+
 export async function POST(request: NextRequest) {
   const session = parseSession(request);
   if (!session) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
@@ -23,15 +99,24 @@ export async function POST(request: NextRequest) {
 
   // PortOne v2 결제 검증
   const secret = process.env.PORTONE_API_SECRET!;
-  const verifyRes = await fetch(`https://api.portone.io/payments/${encodeURIComponent(paymentId)}`, {
-    headers: { Authorization: `PortOne ${secret}` },
-  });
+  const verification = await verifyPortOnePayment(paymentId, secret);
+  if (!verification.ok) {
+    const isRetryable =
+      verification.error.type === "PAYMENT_NOT_FOUND" ||
+      verification.error.type === "PAYMENT_NOT_PAID";
 
-  if (!verifyRes.ok) {
-    return NextResponse.json({ error: "결제 검증 실패" }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: isRetryable
+          ? "결제 승인 반영 중입니다. 잠시 후 다시 확인해 주세요."
+          : `결제 검증 실패: ${verification.error.message ?? verification.error.type ?? verification.error.status}`,
+        retryable: isRetryable,
+      },
+      { status: isRetryable ? 409 : 400 }
+    );
   }
 
-  const payment = await verifyRes.json();
+  const payment = verification.payment;
 
   // 금액 위변조 검증
   if (payment.status !== "PAID" || payment.amount.total !== pkg.amount) {

@@ -40,6 +40,10 @@ const PG_METHODS = [
 
 type Status = "idle" | "loading" | "success" | "error";
 
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default function ShopPage() {
   const [selected, setSelected] = useState("plus");
   const [status, setStatus] = useState<Status>("idle");
@@ -94,19 +98,42 @@ export default function ShopPage() {
       }
 
       // 3. 서버에서 결제 검증 + 크레딧 적립
-      const confirmRes = await fetch("/api/payment/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentId: prep.paymentId, packageId: selected }),
-      });
-      const confirm = await confirmRes.json();
-      if (!confirmRes.ok || !confirm.success) {
-        setErrorMsg(confirm.error ?? "결제 확인 실패");
+      const confirmedPaymentId = result?.paymentId ?? prep.paymentId;
+      const confirmRetryDelays = [0, 1200, 2400] as const;
+      let confirmPayload: any = null;
+      let confirmOk = false;
+
+      for (const delay of confirmRetryDelays) {
+        if (delay > 0) {
+          await sleep(delay);
+        }
+
+        const confirmRes = await fetch("/api/payment/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId: confirmedPaymentId, packageId: selected }),
+        });
+        const confirm = await confirmRes.json().catch(() => ({}));
+
+        if (confirmRes.ok && confirm.success) {
+          confirmPayload = confirm;
+          confirmOk = true;
+          break;
+        }
+
+        confirmPayload = confirm;
+        if (!confirm?.retryable) {
+          break;
+        }
+      }
+
+      if (!confirmOk) {
+        setErrorMsg(confirmPayload?.error ?? "결제 확인 실패");
         setStatus("error");
         return;
       }
 
-      setEarnedCredits(confirm.credits);
+      setEarnedCredits(confirmPayload.credits);
       setStatus("success");
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
