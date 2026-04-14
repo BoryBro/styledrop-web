@@ -125,3 +125,8 @@ body {
   45%, 55%       { left: 1%; }
   90%, 100%      { left: 99%; }
 }
+
+@keyframes story-progress-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}

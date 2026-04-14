@@ -135,7 +135,6 @@ export default function Studio() {
   const [showcaseInstagram, setShowcaseInstagram] = useState("");
   const [showcaseSubmitting, setShowcaseSubmitting] = useState(false);
   const [likedShowcaseUserIds, setLikedShowcaseUserIds] = useState<string[]>([]);
-  const [storyProgressMs, setStoryProgressMs] = useState(0);
   const [styleControls, setStyleControls] = useState<Record<string, StyleControlState>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectedStyleRef = useRef<string | null>(null);
@@ -241,40 +240,24 @@ export default function Studio() {
 
   useEffect(() => {
     if (selectedShowcaseIndex === null) {
-      setStoryProgressMs(0);
       return;
     }
 
     if (!showcaseItems[selectedShowcaseIndex]) {
       setSelectedShowcaseIndex(null);
-      setStoryProgressMs(0);
       return;
     }
 
-    setStoryProgressMs(0);
-
-    const startedAt = performance.now();
-    let frameId = 0;
-
-    const tick = (now: number) => {
-      const elapsed = now - startedAt;
-      if (elapsed >= STORY_DURATION_MS) {
-        setStoryProgressMs(STORY_DURATION_MS);
-        setSelectedShowcaseIndex((current) => {
-          if (current === null) return null;
-          if (current >= showcaseItems.length - 1) return null;
-          return current + 1;
-        });
-        return;
-      }
-      setStoryProgressMs(elapsed);
-      frameId = window.requestAnimationFrame(tick);
-    };
-
-    frameId = window.requestAnimationFrame(tick);
+    const timeoutId = window.setTimeout(() => {
+      setSelectedShowcaseIndex((current) => {
+        if (current === null) return null;
+        if (current >= showcaseItems.length - 1) return null;
+        return current + 1;
+      });
+    }, STORY_DURATION_MS);
 
     return () => {
-      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
     };
   }, [selectedShowcaseIndex, showcaseItems]);
 
@@ -451,7 +434,6 @@ export default function Studio() {
 
   const closeStoryViewer = useCallback(() => {
     setSelectedShowcaseIndex(null);
-    setStoryProgressMs(0);
   }, []);
 
   const openNextStory = useCallback(() => {
@@ -2072,12 +2054,15 @@ export default function Studio() {
                 {showcaseItems.map((item, index) => {
                   const isPast = selectedShowcaseIndex !== null && index < selectedShowcaseIndex;
                   const isCurrent = index === selectedShowcaseIndex;
-                  const fill = isPast ? 100 : isCurrent ? Math.min(100, (storyProgressMs / STORY_DURATION_MS) * 100) : 0;
                   return (
                     <div key={`${item.userId}-${item.createdAt}`} className="h-1 flex-1 overflow-hidden rounded-full bg-white/20">
                       <div
-                        className="h-full rounded-full bg-white transition-[width] duration-100"
-                        style={{ width: `${fill}%` }}
+                        key={isCurrent ? `${item.userId}-${item.createdAt}-active` : `${item.userId}-${item.createdAt}-idle`}
+                        className="h-full rounded-full bg-white origin-left will-change-transform [backface-visibility:hidden]"
+                        style={{
+                          transform: isPast ? "scaleX(1)" : "scaleX(0)",
+                          animation: isCurrent ? `story-progress-fill ${STORY_DURATION_MS}ms linear forwards` : "none",
+                        }}
                       />
                     </div>
                   );
