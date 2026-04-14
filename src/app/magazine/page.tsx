@@ -41,13 +41,13 @@ export default function MagazinePage() {
 
                 <div className="flex flex-col gap-4">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em]" style={{ color: article.accent }}>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em]" style={{ color: article.accent }}>
                       {article.eyebrow}
                     </p>
-                    <h2 className="mt-2 text-[26px] font-black tracking-[-0.05em] text-white sm:text-[32px]">
+                    <h2 className="mt-1.5 text-[14px] font-bold tracking-[-0.01em] text-white sm:text-[16px]">
                       {article.title}
                     </h2>
-                    <p className="mt-3 max-w-xl text-[14px] leading-6 text-white/48">{article.summary}</p>
+                    <p className="mt-2 max-w-xl text-[12px] leading-5 text-white/50 line-clamp-2">{article.summary}</p>
                   </div>
 
                   <Link
