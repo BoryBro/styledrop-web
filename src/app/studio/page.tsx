@@ -199,6 +199,7 @@ export default function Studio() {
   const [activeStyleCategory, setActiveStyleCategory] = useState<StyleCategoryTab>("전체");
   const generalCardsSectionRef = useRef<HTMLDivElement>(null);
   const labSectionRef = useRef<HTMLDivElement>(null);
+  const appliedStyleQueryRef = useRef<string | null>(null);
 
   const loadShowcaseItems = useCallback(() => {
     fetch("/api/public-showcase", { cache: "no-store" })
@@ -325,6 +326,34 @@ export default function Studio() {
     setActiveStyleCategory(tab);
     scrollToSection("cards");
   }, [scrollToSection]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const requestedStyleId = new URLSearchParams(window.location.search).get("style");
+    if (!requestedStyleId) return;
+    if (appliedStyleQueryRef.current === requestedStyleId) return;
+
+    const targetStyle = allStyleCards.find((style) => style.id === requestedStyleId);
+    if (!targetStyle) return;
+
+    appliedStyleQueryRef.current = requestedStyleId;
+    setSelectedStyle(requestedStyleId);
+    selectedStyleRef.current = requestedStyleId;
+    setActiveSectionTab("cards");
+
+    const category = STYLE_CATEGORY_BY_ID[requestedStyleId];
+    if (category) {
+      setActiveStyleCategory(category);
+    }
+
+    requestAnimationFrame(() => {
+      const section = generalCardsSectionRef.current;
+      if (!section) return;
+      const top = section.getBoundingClientRect().top + window.scrollY - 112;
+      window.scrollTo({ top, behavior: "smooth" });
+    });
+  }, [allStyleCards]);
 
   const imageUrlToBase64 = useCallback(async (url: string) => {
     const response = await fetch(url);
@@ -638,24 +667,30 @@ export default function Studio() {
     const canvas = document.createElement("canvas");
     const size = 1024;
     const half = size / 2;
+    const padding = 24;
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("미리보기를 만들지 못했어요.");
 
-    const drawCover = (img: HTMLImageElement, dx: number) => {
-      const scale = Math.max(half / img.width, size / img.height);
+    const drawContain = (img: HTMLImageElement, dx: number) => {
+      const frameWidth = half - padding * 2;
+      const frameHeight = size - padding * 2;
+      const scale = Math.min(frameWidth / img.width, frameHeight / img.height);
       const drawWidth = img.width * scale;
       const drawHeight = img.height * scale;
-      const offsetX = dx + (half - drawWidth) / 2;
-      const offsetY = (size - drawHeight) / 2;
+      const offsetX = dx + padding + (frameWidth - drawWidth) / 2;
+      const offsetY = padding + (frameHeight - drawHeight) / 2;
       ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
     };
 
     ctx.fillStyle = "#0A0A0A";
     ctx.fillRect(0, 0, size, size);
-    drawCover(leftImage, 0);
-    drawCover(rightImage, half);
+    ctx.fillStyle = "#121212";
+    ctx.fillRect(0, 0, half, size);
+    ctx.fillRect(half, 0, half, size);
+    drawContain(leftImage, 0);
+    drawContain(rightImage, half);
     ctx.fillStyle = "rgba(255,255,255,0.14)";
     ctx.fillRect(half - 2, 48, 4, size - 96);
     return canvas.toDataURL("image/jpeg", 0.9);
