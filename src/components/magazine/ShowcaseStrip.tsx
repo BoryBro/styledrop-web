@@ -8,6 +8,7 @@ type ShowcaseStripItem = {
   imageUrl: string;
   styleId: string | null;
   instagramHandle?: string | null;
+  likeCount?: number;
 };
 
 function displayName(item: ShowcaseStripItem) {
@@ -22,6 +23,7 @@ const MOCK_SHOWCASE_ITEMS: ShowcaseStripItem[] = Array.from({ length: 12 }, (_, 
   imageUrl: `https://images.unsplash.com/photo-${1552783753 + i}?w=400&h=400&fit=crop`,
   styleId: null,
   instagramHandle: i % 3 === 0 ? `user_${i + 1}` : undefined,
+  likeCount: Math.floor(Math.random() * 50) + 10,
 }));
 
 export function ShowcaseStrip({
@@ -48,12 +50,16 @@ export function ShowcaseStrip({
           {loopItems.map((item, index) => (
             <article
               key={`${item.userId}-${index}`}
-              className="h-[220px] w-[150px] shrink-0 overflow-hidden rounded-[24px] bg-[#0C0C0C]"
+              className="h-[220px] w-[150px] shrink-0 overflow-hidden rounded-[24px] bg-[#0C0C0C] relative group"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={item.imageUrl} alt={displayName(item)} className="h-[180px] w-full object-cover" />
-              <div className="flex h-[40px] flex-col justify-center px-3">
-                <p className="truncate text-[11px] font-semibold text-white">{displayName(item)}</p>
+              <div className="flex h-[40px] flex-col justify-between px-3 py-2">
+                <p className="truncate text-[10px] font-semibold text-white">{displayName(item)}</p>
+                <div className="flex items-center gap-1 text-[10px] text-white">
+                  <span>♡</span>
+                  <span className="font-semibold">{item.likeCount || 0}</span>
+                </div>
               </div>
             </article>
           ))}

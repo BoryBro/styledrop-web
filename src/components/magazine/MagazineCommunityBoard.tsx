@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { MOCK_BOARD_DATA } from "@/lib/magazine";
+import { ShowcaseStrip } from "./ShowcaseStrip";
 
 type BoardItem = {
   userId: string;
@@ -181,9 +182,12 @@ export function MagazineCommunityBoard({
         </p>
       </div>
 
+      {/* 사용자 결과물 - 좌우 스크롤 */}
+      <ShowcaseStrip styleIds={[styleId]} accent={accent} />
+
       {/* 헤더 + 참여 수 */}
       {!loading && payload?.items.length && (
-        <div className="flex items-baseline justify-between pt-1">
+        <div className="flex items-baseline justify-between pt-2">
           <p className="text-[11px] text-white/40 uppercase tracking-wide">{label}</p>
           <p className="text-[12px] font-semibold text-white">{payload.count}명 참여 중</p>
         </div>

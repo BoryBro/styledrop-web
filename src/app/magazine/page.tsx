@@ -31,17 +31,6 @@ export default function MagazinePage() {
                 id={article.slug}
                 className="flex flex-col gap-5"
               >
-                {/* 관련 스타일 카드 그리드 - giffgaff 스타일 */}
-                <MagazineCardGrid
-                  styleIds={article.relatedStyleIds}
-                  accent={article.accent}
-                  primaryStyleId={article.primaryStyleId}
-                  ctaLabel={article.ctaLabel}
-                />
-
-                {/* 사용자 생성 카드 쇼케이스 */}
-                <ShowcaseStrip styleIds={article.relatedStyleIds} accent={article.accent} />
-
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-2.5">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/50" style={{ color: article.accent }}>
