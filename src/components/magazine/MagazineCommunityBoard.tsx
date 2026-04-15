@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { MOCK_BOARD_DATA } from "@/lib/magazine";
 
 type BoardItem = {
   userId: string;
@@ -44,7 +45,7 @@ export function MagazineCommunityBoard({
   accent: string;
 }) {
   const [payload, setPayload] = useState<BoardPayload | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [comment, setComment] = useState("");
@@ -54,28 +55,21 @@ export function MagazineCommunityBoard({
   const encodedStyleId = useMemo(() => encodeURIComponent(styleId), [styleId]);
 
   const loadBoard = async () => {
-    setLoading(true);
-    setMessage(null);
-    try {
-      const response = await fetch(`/api/magazine-board?styleId=${encodedStyleId}`, {
-        cache: "no-store",
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || "board load failed");
-      }
+    // 하드코딩: MOCK_BOARD_DATA 직접 사용 (디자인 UI 확인용)
+    const mockItems = MOCK_BOARD_DATA[styleId as keyof typeof MOCK_BOARD_DATA] || [];
+    const payload: BoardPayload = {
+      count: mockItems.length,
+      items: mockItems.map((item) => ({
+        ...item,
+        likedByMe: false,
+      })),
+      meEligible: false,
+      meEntry: null,
+      meInstagramHandle: null,
+    };
 
-      setPayload(data);
-      setComment(data?.meEntry?.comment ?? "");
-      const initialHandle = data?.meEntry?.instagramHandle ?? data?.meInstagramHandle ?? "";
-      setInstagramHandle(initialHandle ? `@${String(initialHandle).replace(/^@+/, "")}` : "@");
-      setShareInstagram(Boolean(data?.meEntry?.instagramHandle));
-    } catch (error) {
-      setPayload(null);
-      setMessage(error instanceof Error ? error.message : "참여판을 불러오지 못했어요.");
-    } finally {
-      setLoading(false);
-    }
+    setPayload(payload);
+    setMessage(null);
   };
 
   useEffect(() => {

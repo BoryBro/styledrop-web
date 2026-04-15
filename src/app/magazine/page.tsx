@@ -29,32 +29,31 @@ export default function MagazinePage() {
               <section
                 key={article.slug}
                 id={article.slug}
-                className="flex flex-col gap-6"
+                className="flex flex-col gap-5"
               >
                 {/* 관련 스타일 카드 그리드 - giffgaff 스타일 */}
-                <MagazineCardGrid styleIds={article.relatedStyleIds} accent={article.accent} />
+                <MagazineCardGrid
+                  styleIds={article.relatedStyleIds}
+                  accent={article.accent}
+                  primaryStyleId={article.primaryStyleId}
+                  ctaLabel={article.ctaLabel}
+                />
 
                 {/* 사용자 생성 카드 쇼케이스 */}
                 <ShowcaseStrip styleIds={article.relatedStyleIds} accent={article.accent} />
 
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em]" style={{ color: article.accent }}>
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/50" style={{ color: article.accent }}>
                       {article.eyebrow}
                     </p>
-                    <h2 className="mt-1.5 text-[13px] font-bold tracking-[-0.01em] text-white sm:text-[15px]">
-                      {article.title}
-                    </h2>
-                    <p className="mt-1.5 max-w-xl text-[11px] leading-[1.4] text-white/45 line-clamp-2">{article.summary}</p>
+                    <div>
+                      <h2 className="text-[14px] font-bold leading-[1.5] text-white sm:text-[16px]">
+                        {article.title}
+                      </h2>
+                      <p className="mt-2 text-[12px] leading-[1.6] text-white/60 max-w-2xl">{article.summary}</p>
+                    </div>
                   </div>
-
-                  <Link
-                    href={`/studio?style=${encodeURIComponent(article.primaryStyleId)}`}
-                    className="inline-flex h-11 w-fit items-center justify-center rounded-full px-5 text-[14px] font-bold text-black transition-transform hover:scale-[1.01]"
-                    style={{ backgroundColor: article.accent }}
-                  >
-                    {article.ctaLabel}
-                  </Link>
 
                   <MagazineCommunityBoard
                     styleId={article.primaryStyleId}
