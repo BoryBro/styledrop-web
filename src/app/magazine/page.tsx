@@ -40,7 +40,7 @@ export default function MagazinePage() {
                 />
 
                 {/* 질문 + 댓글 */}
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
                   <MagazineCommunityBoard
                     styleId={article.primaryStyleId}
                     label={article.communityLabel}

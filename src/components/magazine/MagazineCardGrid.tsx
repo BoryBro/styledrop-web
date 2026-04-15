@@ -36,28 +36,28 @@ export function MagazineCardGrid({
         >
           <article className="flex flex-col h-full">
             {/* 이미지 - relative로 CTA 배치 위한 컨테이너 */}
-            <div className="relative w-full h-[240px] overflow-hidden bg-white/[0.05]">
+            <div className="relative w-full h-[260px] overflow-hidden bg-white/[0.05]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={style.afterImg}
                 alt={style.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
               />
 
               {/* CTA 버튼 - 오버레이 */}
               <Link
                 href={`/studio?style=${encodeURIComponent(primaryStyleId)}`}
-                className="absolute bottom-3 right-3 px-3.5 py-2 rounded-full text-[12px] font-bold text-black transition-all hover:scale-110 active:scale-95 whitespace-nowrap"
+                className="absolute bottom-4 right-4 px-4 py-2.5 rounded-full text-[13px] font-bold text-black transition-all hover:scale-110 active:scale-95 whitespace-nowrap shadow-lg hover:shadow-xl"
                 style={{ backgroundColor: accent }}
               >
                 만들어보기
               </Link>
             </div>
 
-            {/* 본문 - 제목만 */}
+            {/* 본문 - 제목 */}
             <div className="px-4 py-3 flex-1 flex items-center">
-              <h3 className="text-[13px] font-bold text-white leading-[1.4]">
-                {style.name} — {truncateDesc(style.desc, 25)}
+              <h3 className="text-[13px] font-bold text-white leading-[1.5] break-words">
+                {style.name} — {truncateDesc(style.desc, 28)}
               </h3>
             </div>
           </article>
