@@ -169,7 +169,7 @@ export function MagazineCommunityBoard({
   return (
     <section className="mt-5 flex flex-col gap-4">
       {/* 참여 주제 - 사실과 질문 */}
-      <div className="flex flex-col gap-3 py-4 px-4 rounded-[16px] border border-white/[0.15] bg-gradient-to-br from-white/[0.08] to-white/[0.02]">
+      <div className="flex flex-col gap-2">
         <div className="flex items-start gap-2">
           <span className="text-[14px] mt-0.5 shrink-0">✨</span>
           <p className="text-[12px] font-medium text-white/65 leading-[1.3]">{fact}</p>
