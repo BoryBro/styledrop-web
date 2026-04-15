@@ -167,14 +167,11 @@ export function MagazineCommunityBoard({
 
   return (
     <section className="mt-5 flex flex-col gap-4">
-      {/* 참여 주제 - 사실과 질문 */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-start gap-2">
-          <span className="text-[14px] mt-0.5 shrink-0">✨</span>
-          <p className="text-[12px] font-medium text-white/65 leading-[1.3]">{fact}</p>
-        </div>
+      {/* 참여 주제 - 질문 */}
+      <div className="flex flex-col gap-2 pt-6 pb-2">
+        <p className="text-[11px] text-white/40 leading-relaxed">{fact}</p>
         <p
-          className="text-[15px] font-bold leading-[1.5]"
+          className="text-[20px] sm:text-[22px] font-bold leading-[1.35] tracking-tight"
           style={{ color: accent }}
         >
           {question}
@@ -183,9 +180,74 @@ export function MagazineCommunityBoard({
 
       {/* 헤더 + 참여 수 */}
       {!loading && payload?.items.length && (
-        <div className="flex items-baseline justify-between pt-2">
-          <p className="text-[11px] text-white/40 uppercase tracking-wide">{label}</p>
-          <p className="text-[12px] font-semibold text-white">{payload.count}명 참여 중</p>
+        <div className="flex items-center justify-between py-3">
+          <p className="text-[11px] text-white/30 uppercase font-normal">{label}</p>
+          <p className="text-[11px] text-white/30 font-normal">{payload.count}명 참여 중</p>
+        </div>
+      )}
+
+      {/* 입력 영역 */}
+      {!loading && (
+        <div className="bg-white/[0.04] rounded-[12px] p-4 mb-2">
+          {/* 상단: 아바타 + textarea */}
+          <div className="flex items-start gap-3 mb-3">
+            <div className="h-8 w-8 rounded-full bg-white/[0.08] shrink-0" />
+            <textarea
+              value={comment}
+              onChange={(event) => setComment(event.target.value.slice(0, 100))}
+              placeholder="나의 역할을 남겨보세요..."
+              maxLength={100}
+              className="flex-1 min-h-[36px] resize-none bg-transparent border-none text-[13px] text-white placeholder:text-white/40 outline-none"
+            />
+          </div>
+
+          {/* 하단: 토글 + 버튼 */}
+          <div className="flex items-center justify-between">
+            {/* 인스타 토글 */}
+            <button
+              type="button"
+              onClick={() => setShareInstagram(!shareInstagram)}
+              className="flex items-center gap-2 text-[11px] text-white/30"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="2" y="2" width="20" height="20" rx="5"/>
+                <path d="M12 7v4M9 10h6"/>
+              </svg>
+              <span>인스타그램 공개</span>
+              <div
+                className="w-[28px] h-[16px] rounded-full ml-1 transition-colors"
+                style={{ backgroundColor: shareInstagram ? accent : "rgba(255,255,255,0.15)" }}
+              />
+            </button>
+
+            {/* 공유 버튼 */}
+            <button
+              type="button"
+              onClick={() => void handleSubmit()}
+              disabled={submitting || !comment.trim()}
+              className="px-4 h-8 rounded-full text-[12px] font-semibold text-black transition-all hover:opacity-90 disabled:opacity-40 shrink-0"
+              style={{ backgroundColor: accent }}
+            >
+              {submitting ? "저장중" : "공유"}
+            </button>
+          </div>
+
+          {/* 인스타 아이디 입력 - hidden */}
+          {shareInstagram && (
+            <input
+              type="hidden"
+              value={instagramHandle}
+              onChange={(event) => {
+                const raw = event.target.value;
+                const cleaned = raw.replace(/^@+/, "").replace(/\s+/g, "");
+                setInstagramHandle(cleaned ? `@${cleaned}` : "@");
+              }}
+            />
+          )}
+
+          {message && (
+            <p className="text-[12px] text-white/60 mt-2">{message}</p>
+          )}
         </div>
       )}
 
@@ -193,18 +255,18 @@ export function MagazineCommunityBoard({
       {loading ? (
         <p className="text-[12px] text-white/40">로드 중...</p>
       ) : payload?.items.length ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-0">
           {payload.items.slice(0, 4).map((item, index) => (
             <div
               key={`${item.userId}-${item.createdAt}`}
-              className="group flex items-start gap-4 rounded-[16px] bg-white/[0.06] px-4 py-3.5 transition-colors hover:bg-white/[0.10] border border-white/[0.08]"
+              className="flex items-start gap-4 py-4 border-b border-white/[0.06] last:border-b-0"
             >
-              {/* 아바타 - 더 큼 */}
+              {/* 아바타 */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={item.imageUrl}
                 alt={item.nickname}
-                className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-white/20"
+                className="h-9 w-9 shrink-0 rounded-full object-cover"
               />
 
               {/* 코멘트 + 하트 */}
@@ -212,25 +274,24 @@ export function MagazineCommunityBoard({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="text-[14px] font-bold text-white">{item.nickname}</p>
+                      <p className="text-[13px] font-semibold text-white">{item.nickname}</p>
                       {item.instagramHandle && (
-                        <p className="text-[11px] text-white/50 font-medium">{formatHandle(item.instagramHandle)}</p>
+                        <p className="text-[11px] text-white/25 font-medium">{formatHandle(item.instagramHandle)}</p>
                       )}
                     </div>
-                    <p className="text-[14px] text-white/85 mt-1.5 leading-[1.4]">"{item.comment}"</p>
+                    <p className="text-[13px] text-white/60 mt-1.5 leading-[1.4]">{item.comment}</p>
                   </div>
 
-                  {/* 하트 - 더 눈에 띄게 */}
+                  {/* 하트 - SVG */}
                   <button
                     type="button"
                     onClick={() => void toggleLike(item)}
-                    className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-[12px] transition-all hover:scale-110 active:scale-95 shrink-0"
-                    style={{
-                      backgroundColor: item.likedByMe ? `${accent}30` : "white/[0.08]",
-                    }}
+                    className="flex flex-col items-center justify-center gap-1 shrink-0"
                   >
-                    <span className="text-[18px]">{item.likedByMe ? "❤️" : "♡"}</span>
-                    <span className="text-[12px] font-bold" style={{ color: item.likedByMe ? accent : "white/70" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill={item.likedByMe ? accent : "none"} stroke={item.likedByMe ? accent : "rgba(255,255,255,0.25)"} strokeWidth="1.5">
+                      <path d="M12 21C12 21 3 14 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 12 5C12.09 3.81 13.76 3 15.5 3C18.58 3 21 5.42 21 8.5C21 14 12 21 12 21Z" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span className="text-[11px]" style={{ color: item.likedByMe ? accent : "rgba(255,255,255,0.25)" }}>
                       {item.likeCount}
                     </span>
                   </button>
@@ -243,60 +304,6 @@ export function MagazineCommunityBoard({
         <p className="text-[12px] text-white/40">첫 참여자가 되어보세요.</p>
       )}
 
-      {/* 입력 - 참여하기 */}
-      {!loading && payload?.meEligible && (
-        <div className="flex flex-col gap-3 pt-2 border-t border-white/[0.08]">
-          {/* 코멘트 입력 */}
-          <div className="flex gap-2.5">
-            <input
-              value={comment}
-              onChange={(event) => setComment(event.target.value.slice(0, 24))}
-              placeholder="한 줄 코멘트"
-              maxLength={24}
-              className="flex-1 h-10 rounded-[10px] border border-white/[0.12] bg-white/[0.04] px-3.5 text-[13px] text-white placeholder:text-white/40 outline-none focus:border-white/30 focus:bg-white/[0.06] transition-colors"
-            />
-            <button
-              type="button"
-              onClick={() => void handleSubmit()}
-              disabled={submitting || !comment.trim()}
-              className="px-4 h-10 rounded-[10px] text-[12px] font-semibold text-black transition-all hover:opacity-90 disabled:opacity-40 shrink-0"
-              style={{ backgroundColor: accent }}
-            >
-              {submitting ? "저장" : "공유"}
-            </button>
-          </div>
-
-          {/* 인스타 공개 - 더 명확하게 */}
-          <div className="flex items-center gap-3 px-1">
-            <label className="flex items-center gap-2.5 text-[12px] text-white/70 cursor-pointer flex-1">
-              <input
-                type="checkbox"
-                checked={shareInstagram}
-                onChange={(event) => setShareInstagram(event.target.checked)}
-                className="h-4 w-4 rounded border border-white/30 bg-transparent cursor-pointer accent-white"
-              />
-              <span className="font-medium">인스타그램 아이디 공개</span>
-            </label>
-
-            {shareInstagram && (
-              <input
-                value={instagramHandle}
-                onChange={(event) => {
-                  const raw = event.target.value;
-                  const cleaned = raw.replace(/^@+/, "").replace(/\s+/g, "");
-                  setInstagramHandle(cleaned ? `@${cleaned}` : "@");
-                }}
-                placeholder="@username"
-                className="h-8 w-32 rounded-[8px] border border-white/[0.12] bg-white/[0.04] px-2.5 text-[12px] text-white placeholder:text-white/35 outline-none focus:border-white/30 focus:bg-white/[0.06] transition-colors shrink-0"
-              />
-            )}
-          </div>
-
-          {message && (
-            <p className="text-[12px] text-white/60">{message}</p>
-          )}
-        </div>
-      )}
     </section>
   );
 }
