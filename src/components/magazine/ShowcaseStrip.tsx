@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 type ShowcaseStripItem = {
   userId: string;
@@ -8,13 +8,21 @@ type ShowcaseStripItem = {
   imageUrl: string;
   styleId: string | null;
   instagramHandle?: string | null;
-  createdAt: string;
 };
 
 function displayName(item: ShowcaseStripItem) {
   if (item.instagramHandle) return `@${item.instagramHandle}`;
   return item.nickname || "스타일드롭 유저";
 }
+
+// 하드코딩 테스트 데이터
+const MOCK_SHOWCASE_ITEMS: ShowcaseStripItem[] = Array.from({ length: 12 }, (_, i) => ({
+  userId: `user-${String(i + 1).padStart(3, "0")}`,
+  nickname: `사용자${i + 1}`,
+  imageUrl: `https://images.unsplash.com/photo-${1552783753 + i}?w=400&h=400&fit=crop`,
+  styleId: null,
+  instagramHandle: i % 3 === 0 ? `user_${i + 1}` : undefined,
+}));
 
 export function ShowcaseStrip({
   styleIds,
@@ -23,40 +31,8 @@ export function ShowcaseStrip({
   styleIds: string[];
   accent?: string;
 }) {
-  const [items, setItems] = useState<ShowcaseStripItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const query = new URLSearchParams({
-      styleIds: styleIds.join(","),
-      limit: "18",
-    });
-
-    setIsLoading(true);
-    fetch(`/api/public-showcase?${query.toString()}`, {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setItems(Array.isArray(data?.items) ? data.items : []);
-      })
-      .catch(() => {
-        setItems([]);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsLoading(false);
-      });
-
-    return () => controller.abort();
-  }, [styleIds]);
-
-  const loopItems = useMemo(() => (items.length > 0 ? [...items, ...items] : []), [items]);
-
-  if (isLoading) {
-    return null;
-  }
+  const items = MOCK_SHOWCASE_ITEMS;
+  const loopItems = useMemo(() => (items.length > 0 ? [...items, ...items] : []), []);
 
   if (items.length === 0) {
     return null;
