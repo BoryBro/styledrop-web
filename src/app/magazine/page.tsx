@@ -31,6 +31,15 @@ export default function MagazinePage() {
                 id={article.slug}
                 className="flex flex-col gap-5"
               >
+                {/* 카드 이미지 + CTA */}
+                <MagazineCardGrid
+                  styleIds={article.relatedStyleIds}
+                  accent={article.accent}
+                  primaryStyleId={article.primaryStyleId}
+                  ctaLabel={article.ctaLabel}
+                />
+
+                {/* 텍스트 + 질문 + 댓글 */}
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-2.5">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/50" style={{ color: article.accent }}>

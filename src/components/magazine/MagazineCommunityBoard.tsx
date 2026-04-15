@@ -182,9 +182,6 @@ export function MagazineCommunityBoard({
         </p>
       </div>
 
-      {/* 사용자 결과물 - 좌우 스크롤 */}
-      <ShowcaseStrip styleIds={[styleId]} accent={accent} />
-
       {/* 헤더 + 참여 수 */}
       {!loading && payload?.items.length && (
         <div className="flex items-baseline justify-between pt-2">
