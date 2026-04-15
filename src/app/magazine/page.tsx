@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function MagazinePage() {
   return (
     <main className="min-h-screen bg-[#080808] text-white">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-8 sm:px-6">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-3 py-6 sm:px-6 sm:py-8">
         {/* 뒤로 가기 */}
         <Link href="/" className="inline-flex w-fit items-center gap-2 text-[13px] font-semibold text-white/60 hover:text-white transition-colors">
           ← 뒤로 가기
@@ -44,10 +44,10 @@ export default function MagazinePage() {
                     <p className="text-[10px] font-semibold uppercase tracking-[0.28em]" style={{ color: article.accent }}>
                       {article.eyebrow}
                     </p>
-                    <h2 className="mt-1.5 text-[14px] font-bold tracking-[-0.01em] text-white sm:text-[16px]">
+                    <h2 className="mt-1.5 text-[13px] font-bold tracking-[-0.01em] text-white sm:text-[15px]">
                       {article.title}
                     </h2>
-                    <p className="mt-2 max-w-xl text-[12px] leading-5 text-white/50 line-clamp-2">{article.summary}</p>
+                    <p className="mt-1.5 max-w-xl text-[11px] leading-[1.4] text-white/45 line-clamp-2">{article.summary}</p>
                   </div>
 
                   <Link
