@@ -213,6 +213,7 @@ export default function Home() {
 
         {/* Links */}
         <div className="flex gap-5">
+          <Link href="/faq" className="text-[12px] text-white/55 hover:text-white transition-colors">FAQ</Link>
           <Link href="/terms" className="text-[12px] text-white/55 hover:text-white transition-colors">이용약관</Link>
           <Link href="/privacy" className="text-[12px] text-white/55 hover:text-white transition-colors">개인정보처리방침</Link>
         </div>
@@ -247,7 +248,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="absolute bottom-4 left-0 right-0 text-center px-4">
         <p className="text-[11px] text-white/45">
-          © 2026 StyleDrop · <Link href="/terms" className="hover:text-white/80 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/80 transition-colors">개인정보처리방침</Link>
+          © 2026 StyleDrop · <Link href="/faq" className="hover:text-white/80 transition-colors">FAQ</Link> · <Link href="/terms" className="hover:text-white/80 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/80 transition-colors">개인정보처리방침</Link> · <a href="mailto:support@styledrop.cloud" className="hover:text-white/80 transition-colors">문의</a>
         </p>
         <p className="text-[10px] text-white/28 mt-1 leading-relaxed">
           상호: 핑거 · 대표자: 문지환 · 사업자등록번호: 707-79-00261<br/>

@@ -9,7 +9,7 @@ const boldonse = Boldonse({ subsets: ["latin"], weight: "400", variable: "--font
 const outfit = Outfit({ subsets: ["latin"], weight: ["600", "700", "900"], variable: "--font-outfit" });
 const unbounded = Unbounded({ subsets: ["latin"], weight: ["600"], variable: "--font-unbounded" });
 
-const BASE_URL = "https://styledrop.cloud";
+const BASE_URL = "https://www.styledrop.cloud";
 const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT?.trim();
 
 export const metadata: Metadata = {

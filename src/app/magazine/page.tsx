@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { MagazineCommunityBoard } from "@/components/magazine/MagazineCommunityBoard";
 import { ShowcaseStrip } from "@/components/magazine/ShowcaseStrip";
+import { MagazineCardGrid } from "@/components/magazine/MagazineCardGrid";
 import { MAGAZINE_ARTICLES, getMagazineStyle } from "@/lib/magazine";
 
 export const metadata: Metadata = {
@@ -28,16 +29,13 @@ export default function MagazinePage() {
               <section
                 key={article.slug}
                 id={article.slug}
-                className="grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start"
+                className="flex flex-col gap-6"
               >
-                <div className="flex flex-col gap-4">
-                  <div className="overflow-hidden rounded-[24px]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={style.afterImg} alt={style.name} className="h-[200px] w-full object-cover sm:h-[280px]" />
-                  </div>
+                {/* 관련 스타일 카드 그리드 - giffgaff 스타일 */}
+                <MagazineCardGrid styleIds={article.relatedStyleIds} accent={article.accent} />
 
-                  <ShowcaseStrip styleIds={article.relatedStyleIds} accent={article.accent} />
-                </div>
+                {/* 사용자 생성 카드 쇼케이스 */}
+                <ShowcaseStrip styleIds={article.relatedStyleIds} accent={article.accent} />
 
                 <div className="flex flex-col gap-4">
                   <div>
@@ -70,6 +68,18 @@ export default function MagazinePage() {
             );
           })}
         </div>
+
+        <footer className="border-t border-white/8 pt-6 text-center text-[12px] text-white/45">
+          <p>
+            <Link href="/faq" className="transition-colors hover:text-white">FAQ</Link>
+            {" · "}
+            <Link href="/terms" className="transition-colors hover:text-white">이용약관</Link>
+            {" · "}
+            <Link href="/privacy" className="transition-colors hover:text-white">개인정보처리방침</Link>
+            {" · "}
+            <a href="mailto:support@styledrop.cloud" className="transition-colors hover:text-white">문의</a>
+          </p>
+        </footer>
       </div>
     </main>
   );
