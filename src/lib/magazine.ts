@@ -18,166 +18,85 @@ export type MockUser = {
   createdAt: string;
 };
 
+// 테스트 댓글 생성 함수
+function generateMockComments(styleId: string, count: number): MockUser[] {
+  const comments: { [key: string]: string[] } = {
+    "mongolian-warrior": [
+      "전사였을 것 같아요 🗡️",
+      "나는 초원의 사냥꾼이었을 거 같네",
+      "기마병이 되고 싶었을 것 같아요",
+      "정말 멋진 전사 같습니다",
+      "초원의 기사가 될 수 있을 것 같네",
+      "강한 전사의 느낌이 확 들어요",
+      "몽골 부족의 수장이 되고 싶었을 것 같아요",
+      "이 정도면 진짜 몽골 전사 맞음",
+      "화려한 복장이 너무 멋있어요",
+      "역사 속의 전사 같은 느낌",
+    ],
+    "astronaut": [
+      "달 탐사 임무를 하고 싶어요 🌙",
+      "화성 탐사선 조종사가 되고 싶음",
+      "우주 정거장 건설 임무를 원해요",
+      "우주 유영을 직접 하고 싶네요",
+      "새로운 행성을 발견하는 것이 꿈입니다",
+      "우주 망원경 관측 임무를 원해요",
+      "소행성 채굴 탐사를 해보고 싶어요",
+      "국제 우주 정거장 과학자가 되고 싶음",
+      "우주 생물 연구를 하고 싶어요",
+      "황금비율로 멋진 우주비행사네요",
+    ],
+    "western-gunslinger": [
+      "정의의 보안관이 되고 싶어요 🤠",
+      "악당을 무찌르는 영웅이 되겠습니다",
+      "서부의 전설이 되고 싶네요",
+      "정의감 가득한 모습이 정말 좋아요",
+      "황야의 영웅 같은 느낌입니다",
+      "나쁜 악당들을 혼내주고 싶어요",
+      "서부 마을을 지키는 보안관이 될래요",
+      "멋진 총잡이 같은 기운이 느껴져요",
+      "진짜 서부 영화의 주인공 같아",
+      "이 정도면 레전드 건슬링거 맞음",
+    ],
+    "boxing-counterpunch": [
+      "스피드 복싱으로 이기고 싶어요 💪",
+      "파워 펀처가 되는 게 꿈입니다",
+      "정확한 펀치로 승리하고 싶네요",
+      "링에서 최강의 파이터가 되고 싶어요",
+      "카운터 펀치 마스터가 되겠습니다",
+      "챔피언 벨트를 차고 싶어요",
+      "복싱의 예술을 극대화하고 싶음",
+      "이 정도 피지컬이면 챔피언 가능해요",
+      "기술과 파워가 완벽하게 조화됨",
+      "링의 전사 같은 멋있는 모습이네요",
+    ],
+  };
+
+  const baseComments = comments[styleId] || comments["mongolian-warrior"];
+  const users = [];
+
+  for (let i = 0; i < count; i++) {
+    const seed = (Math.random() * 10000).toString();
+    users.push({
+      userId: `user-${String(i + 1).padStart(3, "0")}`,
+      nickname: `사용자${i + 1}`,
+      profileImage: `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`,
+      imageUrl: `https://images.unsplash.com/photo-${1552783753 + i}?w=400&h=400&fit=crop`,
+      comment: baseComments[i % baseComments.length],
+      instagramHandle: Math.random() > 0.5 ? `user_${i + 1}` : null,
+      likeCount: Math.floor(Math.random() * 50) + 1,
+      createdAt: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
+    });
+  }
+
+  return users.sort((a, b) => b.likeCount - a.likeCount);
+}
+
 // 각 매거진 기사별 Mock 댓글
 export const MOCK_BOARD_DATA: Record<string, MockUser[]> = {
-  "mongolian-warrior": [
-    {
-      userId: "user-001",
-      nickname: "초원의 기사",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=01",
-      imageUrl: "https://images.unsplash.com/photo-1552783753-c77ae66cae0a?w=400&h=400&fit=crop",
-      comment: "와.. 진짜 몽골 전사의 느낌이 제대로 나왔다 💯",
-      instagramHandle: "steppe_warrior",
-      likeCount: 24,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      userId: "user-002",
-      nickname: "스튜디오의 달인",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=02",
-      imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-      comment: "초원의 바람이 흐르는 느낌 좋아요!",
-      instagramHandle: "studio_master",
-      likeCount: 18,
-      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      userId: "user-003",
-      nickname: "몽골식 패션 러버",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=03",
-      imageUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
-      comment: "옷의 주름이 정말 자연스럽네요 🙌",
-      instagramHandle: null,
-      likeCount: 15,
-      createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      userId: "user-004",
-      nickname: "사진작가의 눈",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=04",
-      imageUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop",
-      comment: "초원의 느낌을 제대로 담았다!!",
-      instagramHandle: "photo_eye",
-      likeCount: 12,
-      createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      userId: "user-005",
-      nickname: "디자인 열정가",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=05",
-      imageUrl: "https://images.unsplash.com/photo-1539571696357-5a69c006f3ff?w=400&h=400&fit=crop",
-      comment: "이 정도면 진짜 완벽한 것 같아요",
-      instagramHandle: "design_lover",
-      likeCount: 9,
-      createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(),
-    },
-  ],
-  astronaut: [
-    {
-      userId: "user-006",
-      nickname: "우주 탐험가",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=06",
-      imageUrl: "https://images.unsplash.com/photo-1507925921903-88852e721b92?w=400&h=400&fit=crop",
-      comment: "우주복의 질감이 정말 현실적이에요! 🚀",
-      instagramHandle: "space_explorer",
-      likeCount: 32,
-      createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      userId: "user-007",
-      nickname: "빛의 연금술사",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=07",
-      imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-      comment: "바이저의 반사광이 살짝 보이는 부분이 핵심이네요",
-      instagramHandle: null,
-      likeCount: 28,
-      createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      userId: "user-008",
-      nickname: "시공간의 사냥꾼",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=08",
-      imageUrl: "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=400&h=400&fit=crop",
-      comment: "이건 마치 영화 포스터 같아요! 👨‍🚀",
-      instagramHandle: "cosmic_hunter",
-      likeCount: 22,
-      createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      userId: "user-009",
-      nickname: "별 수집가",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=09",
-      imageUrl: "https://images.unsplash.com/photo-1507527173177-a41b23ade89f?w=400&h=400&fit=crop",
-      comment: "별의 위치가 자연스러워요",
-      instagramHandle: "star_collector",
-      likeCount: 18,
-      createdAt: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
-    },
-  ],
-  "western-gunslinger": [
-    {
-      userId: "user-010",
-      nickname: "총의 신수",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=10",
-      imageUrl: "https://images.unsplash.com/photo-1508700115892-201b9f999eb3?w=400&h=400&fit=crop",
-      comment: "모자 그림자의 긴장감 미쳤다 🤠",
-      instagramHandle: "gunslinger_pro",
-      likeCount: 35,
-      createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    },
-    {
-      userId: "user-011",
-      nickname: "사막의 음유시인",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=11",
-      imageUrl: "https://images.unsplash.com/photo-1552058544-f033b024eb6b?w=400&h=400&fit=crop",
-      comment: "영화 스틸 같은 분위기...",
-      instagramHandle: null,
-      likeCount: 26,
-      createdAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
-    },
-    {
-      userId: "user-012",
-      nickname: "먼지 위의 아티스트",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=12",
-      imageUrl: "https://images.unsplash.com/photo-1507027957411-b3564c78ff68?w=400&h=400&fit=crop",
-      comment: "이 정도면 정서적 강렬함 5만점",
-      instagramHandle: "dust_artist",
-      likeCount: 21,
-      createdAt: new Date(Date.now() - 120 * 60 * 1000).toISOString(),
-    },
-  ],
-  "boxing-counterpunch": [
-    {
-      userId: "user-013",
-      nickname: "링의 전사",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=13",
-      imageUrl: "https://images.unsplash.com/photo-1484359152368-6efce2effb1f?w=400&h=400&fit=crop",
-      comment: "카운터펀치의 순간을 완벽하게 담았다! 💪",
-      instagramHandle: "ring_warrior",
-      likeCount: 38,
-      createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-    },
-    {
-      userId: "user-014",
-      nickname: "스포츠 사진 마니아",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=14",
-      imageUrl: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=400&h=400&fit=crop",
-      comment: "표정이랑 포즈가 너무 자연스럽네요",
-      instagramHandle: "sports_photo",
-      likeCount: 29,
-      createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    },
-    {
-      userId: "user-015",
-      nickname: "액션의 마술사",
-      profileImage: "https://api.dicebear.com/7.x/avataaars/svg?seed=15",
-      imageUrl: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&h=400&fit=crop",
-      comment: "피부의 거친 디테일이 진짜 좋아",
-      instagramHandle: null,
-      likeCount: 16,
-      createdAt: new Date(Date.now() - 150 * 60 * 1000).toISOString(),
-    },
-  ],
+  "mongolian-warrior": generateMockComments("mongolian-warrior", 30),
+  astronaut: generateMockComments("astronaut", 30),
+  "western-gunslinger": generateMockComments("western-gunslinger", 30),
+  "boxing-counterpunch": generateMockComments("boxing-counterpunch", 30),
 };
 
 export type MagazineArticle = {
