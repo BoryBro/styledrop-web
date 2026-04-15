@@ -14,13 +14,13 @@ export const metadata: Metadata = {
 export default function MagazinePage() {
   return (
     <main className="min-h-screen bg-[#080808] text-white">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-3 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-3 py-6 sm:px-6 sm:py-8">
         {/* 뒤로 가기 */}
         <Link href="/" className="inline-flex w-fit items-center gap-2 text-[13px] font-semibold text-white/60 hover:text-white transition-colors">
           ← 뒤로 가기
         </Link>
 
-        <div className="grid gap-12">
+        <div className="grid gap-8">
           {MAGAZINE_ARTICLES.map((article) => {
             const style = getMagazineStyle(article.primaryStyleId);
             if (!style) return null;

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { MOCK_BOARD_DATA } from "@/lib/magazine";
-import { ShowcaseStrip } from "./ShowcaseStrip";
 
 type BoardItem = {
   userId: string;
