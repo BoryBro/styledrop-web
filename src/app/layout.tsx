@@ -10,6 +10,7 @@ const outfit = Outfit({ subsets: ["latin"], weight: ["600", "700", "900"], varia
 const unbounded = Unbounded({ subsets: ["latin"], weight: ["600"], variable: "--font-unbounded" });
 
 const BASE_URL = "https://styledrop.cloud";
+const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT?.trim();
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -68,6 +69,15 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
         <RevisitTracker />
         {children}
+        {ADSENSE_CLIENT ? (
+          <Script
+            id="google-adsense"
+            async
+            strategy="afterInteractive"
+            crossOrigin="anonymous"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+          />
+        ) : null}
         <Script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" strategy="afterInteractive" />
       </body>
     </html>

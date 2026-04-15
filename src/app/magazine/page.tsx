@@ -31,9 +31,9 @@ export default function MagazinePage() {
                 className="grid gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start"
               >
                 <div className="flex flex-col gap-4">
-                  <div className="overflow-hidden rounded-[28px]">
+                  <div className="overflow-hidden rounded-[24px]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={style.afterImg} alt={style.name} className="h-[280px] w-full object-cover sm:h-[360px]" />
+                    <img src={style.afterImg} alt={style.name} className="h-[200px] w-full object-cover sm:h-[280px]" />
                   </div>
 
                   <ShowcaseStrip styleIds={article.relatedStyleIds} accent={article.accent} />

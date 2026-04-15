@@ -50,6 +50,16 @@ export async function GET(request: NextRequest) {
   try {
     const session = parseSession(request);
     const supabase = getSupabase();
+    const searchParams = request.nextUrl.searchParams;
+    const styleFilter = searchParams.get("styleIds") ?? searchParams.get("styleId");
+    const styleIds = styleFilter
+      ? styleFilter
+          .split(",")
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0)
+      : [];
+    const limitParam = Number(searchParams.get("limit") ?? "0");
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? limitParam : null;
 
     const { data: events, error } = await supabase
       .from("user_events")
@@ -104,6 +114,7 @@ export async function GET(request: NextRequest) {
         };
       })
       .filter((item) => item.imageUrl)
+      .filter((item) => (styleIds.length > 0 ? styleIds.includes(item.styleId ?? "") : true))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     const meEvent = session ? latestByUser.get(session.id) : null;
@@ -117,7 +128,13 @@ export async function GET(request: NextRequest) {
           }
         : null;
 
-    return NextResponse.json({ items, me });
+    return NextResponse.json({
+      items: limit ? items.slice(0, limit) : items,
+      me:
+        me && styleIds.length > 0 && !styleIds.includes(me.styleId ?? "")
+          ? null
+          : me,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },

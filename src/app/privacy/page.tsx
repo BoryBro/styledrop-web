@@ -52,6 +52,7 @@ export default function PrivacyPolicy() {
               <p className="font-semibold text-white/90 mb-1">⑤ 서비스 이용 시 자동 수집</p>
               <ul className="list-disc pl-5 space-y-1">
                 <li>로그인 세션 쿠키, 무료 체험 제한 및 기능 유지를 위한 쿠키(Cookie)</li>
+                <li>Google AdSense 광고 노출 및 성과 측정을 위한 쿠키 또는 유사 기술 정보(광고 적용 시)</li>
                 <li>변환 스타일, 이용 기록, 공유 보상 이력, 공개 스토리 참여 이력, 서비스 이벤트 로그</li>
               </ul>
             </div>
@@ -67,6 +68,7 @@ export default function PrivacyPolicy() {
             <li>마이페이지 최근 결과, 공개 스토리, 공유 기능 제공</li>
             <li>결제 처리 및 환불 대응</li>
             <li>이용 기록 저장, 통계 집계, 운영상 오류 분석 및 악용 방지</li>
+            <li>광고 노출, 광고 성과 측정, 서비스 운영 비용 회수 및 페이지 최적화(광고 적용 시)</li>
           </ul>
         </section>
 
@@ -96,6 +98,11 @@ export default function PrivacyPolicy() {
                   <td className="py-2 pr-4">Google (Gemini API)</td>
                   <td className="py-2 pr-4">AI 이미지 생성 및 분석 처리</td>
                   <td className="py-2">처리 목적 달성 시까지</td>
+                </tr>
+                <tr className="border-b border-white/5">
+                  <td className="py-2 pr-4">Google AdSense</td>
+                  <td className="py-2 pr-4">광고 제공, 광고 측정, 광고 쿠키 처리</td>
+                  <td className="py-2">Google 정책 및 이용자 브라우저 설정에 따름</td>
                 </tr>
                 <tr className="border-b border-white/5">
                   <td className="py-2 pr-4">Supabase</td>
@@ -156,11 +163,15 @@ export default function PrivacyPolicy() {
 
         <section>
           <h2 className="text-xl font-bold mb-3 text-white">8. 쿠키 사용</h2>
-          <p className="text-white/70">로그인 상태 유지, 무료 체험 제한 관리, 서비스 흐름 유지 등을 위해 쿠키를 사용합니다. 브라우저 설정에서 쿠키 저장을 거부할 수 있으나 일부 서비스 이용이 제한될 수 있습니다.</p>
+          <div className="space-y-3 text-white/70">
+            <p>로그인 상태 유지, 무료 체험 제한 관리, 서비스 흐름 유지 등을 위해 쿠키를 사용합니다. 브라우저 설정에서 쿠키 저장을 거부할 수 있으나 일부 서비스 이용이 제한될 수 있습니다.</p>
+            <p>또한 광고가 적용되는 경우 Google AdSense가 광고 제공, 사용자별 광고 개인화 여부 판단, 광고 성과 측정 등을 위해 쿠키 또는 유사 기술을 사용할 수 있습니다.</p>
+            <p>이용자는 브라우저 설정 또는 Google 광고 설정을 통해 개인 맞춤 광고를 제한할 수 있습니다.</p>
+          </div>
         </section>
 
         <section className="pt-4 mt-6 border-t border-white/10 text-white/40 text-xs space-y-1">
-          <p>본 방침은 2026년 4월 12일부터 시행됩니다. (v2.2)</p>
+          <p>본 방침은 2026년 4월 12일부터 시행됩니다. (v2.3)</p>
           <p>개인정보 보호책임자: support@styledrop.cloud</p>
         </section>
       </div>
