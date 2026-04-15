@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FaqAccordion } from "./FaqAccordion";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -62,7 +63,7 @@ const FAQ_ITEMS = [
 export default function FaqPage() {
   return (
     <main className="min-h-screen bg-[#080808] text-white">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-12 sm:px-8 sm:py-16">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-6 py-12 sm:px-8 sm:py-16">
         <div className="flex flex-col gap-3">
           <Link
             href="/"
@@ -81,40 +82,21 @@ export default function FaqPage() {
           </div>
         </div>
 
-        <section className="rounded-[28px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:p-8">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-              <p className="text-[11px] uppercase tracking-[0.24em] text-white/35">서비스</p>
-              <p className="mt-2 text-sm font-semibold text-white">AI 사진 결과 생성 웹서비스</p>
-            </div>
-            <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-              <p className="text-[11px] uppercase tracking-[0.24em] text-white/35">로그인</p>
-              <p className="mt-2 text-sm font-semibold text-white">카카오 로그인 지원</p>
-            </div>
-            <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-              <p className="text-[11px] uppercase tracking-[0.24em] text-white/35">문의</p>
-              <a href="mailto:support@styledrop.cloud" className="mt-2 block text-sm font-semibold text-white underline underline-offset-4">
-                support@styledrop.cloud
-              </a>
-            </div>
-          </div>
+        <section className="space-y-2">
+          <p className="text-[12px] uppercase tracking-[0.24em] text-white/35">Contact</p>
+          <p className="text-[15px] leading-7 text-white/68">
+            문의:{" "}
+            <a href="mailto:support@styledrop.cloud" className="text-white underline underline-offset-4">
+              support@styledrop.cloud
+            </a>
+          </p>
         </section>
 
-        <section className="space-y-4">
-          {FAQ_ITEMS.map((item) => (
-            <article
-              key={item.question}
-              className="rounded-[24px] border border-white/8 bg-white/[0.03] p-5 shadow-[0_18px_60px_rgba(0,0,0,0.18)] sm:p-6"
-            >
-              <h2 className="text-lg font-bold tracking-[-0.02em] text-white">{item.question}</h2>
-              <p className="mt-2 text-sm leading-6 text-white/68 sm:text-[15px]">{item.answer}</p>
-            </article>
-          ))}
-        </section>
+        <FaqAccordion items={FAQ_ITEMS} />
 
-        <section className="rounded-[24px] border border-white/8 bg-white/[0.03] p-5 text-sm leading-6 text-white/62 sm:p-6">
+        <section className="border-t border-white/10 pt-6 text-sm leading-6 text-white/58">
           <p>
-            자세한 정책 문서는 <Link href="/terms" className="text-white underline underline-offset-4">이용약관</Link>,
+            자세한 정책은 <Link href="/terms" className="text-white underline underline-offset-4">이용약관</Link>,
             {" "}
             <Link href="/privacy" className="text-white underline underline-offset-4">개인정보처리방침</Link>에서 확인할 수 있습니다.
           </p>

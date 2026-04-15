@@ -49,9 +49,6 @@ export function MagazineCardGrid({
                 href={`/studio?style=${encodeURIComponent(primaryStyleId)}`}
                 className="absolute bottom-3 right-3 px-3.5 py-2 rounded-full text-[12px] font-bold text-black transition-all hover:scale-110 active:scale-95 whitespace-nowrap"
                 style={{ backgroundColor: accent }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
               >
                 만들어보기
               </Link>
