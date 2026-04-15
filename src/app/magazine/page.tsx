@@ -39,20 +39,8 @@ export default function MagazinePage() {
                   ctaLabel={article.ctaLabel}
                 />
 
-                {/* 텍스트 + 질문 + 댓글 */}
+                {/* 질문 + 댓글 */}
                 <div className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-2.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/50" style={{ color: article.accent }}>
-                      {article.eyebrow}
-                    </p>
-                    <div>
-                      <h2 className="text-[14px] font-bold leading-[1.5] text-white sm:text-[16px]">
-                        {article.title}
-                      </h2>
-                      <p className="mt-2 text-[12px] leading-[1.6] text-white/60 max-w-2xl">{article.summary}</p>
-                    </div>
-                  </div>
-
                   <MagazineCommunityBoard
                     styleId={article.primaryStyleId}
                     label={article.communityLabel}
