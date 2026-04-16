@@ -7,6 +7,7 @@ ALTER TABLE IF EXISTS public.transform_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.style_usage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.audition_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.audition_shares ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.quiz_stats ENABLE ROW LEVEL SECURITY;
 
 -- 잘못 추가된 공개 정책 제거
 DROP POLICY IF EXISTS "users: public read" ON public.users;
@@ -24,6 +25,7 @@ DROP POLICY IF EXISTS "service_only_transform_history" ON public.transform_histo
 DROP POLICY IF EXISTS "service_only_style_usage" ON public.style_usage;
 DROP POLICY IF EXISTS "service_only_audition_history" ON public.audition_history;
 DROP POLICY IF EXISTS "service_only_audition_shares" ON public.audition_shares;
+DROP POLICY IF EXISTS "service_only_quiz_stats" ON public.quiz_stats;
 
 -- 서버 API(service role) 이외 접근 차단
 CREATE POLICY "service_only_users" ON public.users
@@ -42,6 +44,9 @@ CREATE POLICY "service_only_audition_history" ON public.audition_history
   USING (false) WITH CHECK (false);
 
 CREATE POLICY "service_only_audition_shares" ON public.audition_shares
+  USING (false) WITH CHECK (false);
+
+CREATE POLICY "service_only_quiz_stats" ON public.quiz_stats
   USING (false) WITH CHECK (false);
 
 COMMIT;
