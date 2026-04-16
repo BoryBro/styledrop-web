@@ -11,7 +11,7 @@ import { REFUND_UNIT_PRICE } from "@/lib/payment-policy";
 import { ALL_STYLES } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-const ADMIN_UI_VERSION = "v2.8.0-pipelinepro";
+const ADMIN_UI_VERSION = "v2.7.0-audition-ops";
 
 type AdminTab = "ops" | "metrics" | "revenue" | "users";
 
@@ -304,7 +304,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
             key={key}
             onClick={() => setActiveMonth(key)}
             className={`flex-1 py-2 rounded-xl text-[14px] font-bold transition-colors border ${
-              activeMonth === key ? "bg-[#4F46E5] border-[#4F46E5] text-white" : "bg-gray-100 border-gray-200 text-gray-600"
+              activeMonth === key ? "bg-[#C9571A] border-[#C9571A] text-white" : "bg-gray-100 border-gray-200 text-gray-600"
             }`}
           >
             {label} <span className="text-[12px] font-normal opacity-60">{note}</span>
@@ -365,11 +365,11 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
           </div>
 
           {!isMar && !isActual && m.referenceWindow && (
-            <div className="rounded-xl bg-[#F5F3FF] border border-[#C7D2FE] px-3 py-3 flex flex-col gap-2">
+            <div className="rounded-xl bg-[#FFF7F2] border border-[#F0D5C6] px-3 py-3 flex flex-col gap-2">
               <p className="text-[13px] font-bold text-gray-900">실측 보정 기준</p>
               <div className="flex items-center justify-between">
                 <span className="text-[12px] text-gray-500">4/1~4/7 실제 Gemini 청구서</span>
-                <span className="text-[13px] font-bold text-[#4F46E5]">₩{m.referenceWindow.actualCost.toLocaleString()}</span>
+                <span className="text-[13px] font-bold text-[#C9571A]">₩{m.referenceWindow.actualCost.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[12px] text-gray-500">같은 기간 사용량</span>
@@ -407,7 +407,7 @@ function Row({ label, value, note, highlight }: { label: string; value: string |
       <span className="text-gray-500 text-[15px]">{label}</span>
       <div className="flex items-center gap-2">
         {note && <span className="text-gray-500 text-[13px] font-medium">{note}</span>}
-        <span className={`text-[17px] font-bold tabular-nums ${highlight ? "text-[#4F46E5]" : "text-gray-900"}`}>{value}</span>
+        <span className={`text-[17px] font-bold tabular-nums ${highlight ? "text-[#C9571A]" : "text-gray-900"}`}>{value}</span>
       </div>
     </div>
   );
@@ -424,7 +424,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Bar({ ratio, color = "#4F46E5" }: { ratio: number; color?: string }) {
+function Bar({ ratio, color = "#C9571A" }: { ratio: number; color?: string }) {
   return (
     <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
       <div className="h-1.5 rounded-full transition-all duration-500" style={{ width: `${ratio}%`, backgroundColor: color }} />
@@ -479,7 +479,7 @@ function ShareRow({ icon, iconBg, label, count, ratio, highlight }: {
       </div>
       <span className="flex-1 text-gray-600 text-[15px]">{label}</span>
       {ratio !== undefined && <span className="text-gray-600 text-[13px] font-semibold tabular-nums">{ratio}</span>}
-      <span className={`font-bold text-[17px] tabular-nums ${highlight ? "text-[#4F46E5]" : "text-gray-900"}`}>{count}</span>
+      <span className={`font-bold text-[17px] tabular-nums ${highlight ? "text-[#C9571A]" : "text-gray-900"}`}>{count}</span>
     </div>
   );
 }
@@ -488,7 +488,7 @@ function MiniCard({ label, value, accent }: { label: string; value: string | num
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
       <span className="text-gray-500 text-[13px]">{label}</span>
-      <span className={`text-[20px] font-extrabold tabular-nums leading-tight ${accent ? "text-[#4F46E5]" : "text-gray-900"}`}>{value}</span>
+      <span className={`text-[20px] font-extrabold tabular-nums leading-tight ${accent ? "text-[#C9571A]" : "text-gray-900"}`}>{value}</span>
     </div>
   );
 }
@@ -509,12 +509,12 @@ function AdminTabButton({
       onClick={onClick}
       className={`rounded-2xl border px-3 py-3 text-left transition-colors ${
         active
-          ? "border-[#4F46E5] bg-[#EEF2FF] text-[#4F46E5]"
+          ? "border-[#C9571A] bg-[#FFF4ED] text-[#C9571A]"
           : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
       }`}
     >
       <p className="text-[14px] font-extrabold">{label}</p>
-      <p className={`text-[11px] mt-1 ${active ? "text-[#4F46E5]/80" : "text-gray-400"}`}>{note}</p>
+      <p className={`text-[11px] mt-1 ${active ? "text-[#C9571A]/80" : "text-gray-400"}`}>{note}</p>
     </button>
   );
 }
@@ -706,25 +706,22 @@ export default function AdminPage() {
 
   if (!stats) {
     return (
-      <main
-        className="w-full max-w-sm mx-auto px-4 py-20 flex flex-col gap-6 bg-[#FAFAFA] min-h-screen"
-        style={{ fontFamily: "Pretendard, Inter, sans-serif" }}
-      >
-        <h1 className="text-2xl font-extrabold text-[#18181B] tracking-tight">Admin</h1>
+      <main className="w-full max-w-sm mx-auto px-4 py-20 flex flex-col gap-6 bg-gray-50 min-h-screen">
+        <h1 className="text-2xl font-extrabold text-gray-900">Admin</h1>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호 입력"
-            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 text-[15px] focus:outline-none focus:border-[#4F46E5] transition-colors"
+            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 text-[15px] focus:outline-none focus:border-[#C9571A] transition-colors"
             autoFocus
           />
-          {error && <p className="text-[#4F46E5] text-[15px] font-medium">{error}</p>}
+          {error && <p className="text-[#C9571A] text-[15px] font-medium">{error}</p>}
           <button
             type="submit"
             disabled={isLoading || !password}
-            className="w-full bg-[#4F46E5] hover:bg-[#4338CA] disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-3 rounded-xl transition-colors"
+            className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-3 rounded-xl transition-colors"
           >
             {isLoading ? "확인 중..." : "확인"}
           </button>
@@ -869,16 +866,13 @@ export default function AdminPage() {
           : "크레딧 조정 같은 유저 대응";
 
   return (
-    <main
-      className="w-full max-w-sm mx-auto px-4 py-10 flex flex-col gap-6 bg-[#FAFAFA] min-h-screen"
-      style={{ fontFamily: "Pretendard, Inter, sans-serif" }}
-    >
+    <main className="w-full max-w-sm mx-auto px-4 py-10 flex flex-col gap-6 bg-gray-50 min-h-screen">
 
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-extrabold text-gray-900">Admin</h1>
-          <span className="text-[10px] font-bold text-[#4F46E5] bg-[#4F46E5]/10 border border-[#4F46E5]/20 rounded-full px-2 py-0.5">
+          <span className="text-[10px] font-bold text-[#C9571A] bg-[#C9571A]/10 border border-[#C9571A]/20 rounded-full px-2 py-0.5">
             {ADMIN_UI_VERSION}
           </span>
         </div>
@@ -891,7 +885,7 @@ export default function AdminPage() {
           <button
             onClick={() => doLogin(password)}
             disabled={isLoading || !password}
-            className="text-[13px] text-[#4F46E5] hover:text-[#4338CA] disabled:text-gray-300 transition-colors"
+            className="text-[13px] text-[#C9571A] hover:text-[#B34A12] disabled:text-gray-300 transition-colors"
           >
             {isLoading ? "새로고침 중..." : "새로고침"}
           </button>
@@ -924,14 +918,14 @@ export default function AdminPage() {
                 <div key={i} className="flex items-start gap-2">
                   <button
                     onClick={() => setNotices(prev => prev.map((x, j) => j === i ? { ...x, active: !x.active } : x))}
-                    className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border transition-colors ${n.active ? "bg-[#4F46E5] border-[#4F46E5]" : "bg-white border-gray-300"}`}
+                    className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border transition-colors ${n.active ? "bg-[#C9571A] border-[#C9571A]" : "bg-white border-gray-300"}`}
                   >
                     {n.active && <svg viewBox="0 0 10 8" fill="none" className="w-full h-full p-0.5"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   </button>
                   <input
                     value={n.text}
                     onChange={e => setNotices(prev => prev.map((x, j) => j === i ? { ...x, text: e.target.value } : x))}
-                    className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] font-mono focus:outline-none focus:border-[#4F46E5]/50 transition-colors"
+                    className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] font-mono focus:outline-none focus:border-[#C9571A]/50 transition-colors"
                   />
                   <button
                     onClick={() => setNotices(prev => prev.filter((_, j) => j !== i))}
@@ -957,7 +951,7 @@ export default function AdminPage() {
                   setTimeout(() => setNoticesSaved(false), 2000);
                 }}
                 disabled={noticesSaving}
-                className="w-full bg-[#4F46E5] hover:bg-[#4338CA] disabled:bg-gray-200 text-white font-bold py-2.5 rounded-xl transition-colors text-[14px]"
+                className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-gray-200 text-white font-bold py-2.5 rounded-xl transition-colors text-[14px]"
               >
                 {noticesSaving ? "저장 중..." : noticesSaved ? "✓ 저장됨" : "저장하기"}
               </button>
@@ -975,7 +969,7 @@ export default function AdminPage() {
                 <MiniCard label="자동 환불" value={`${stats.generationRefundTotal24h}건`} accent={stats.generationRefundTotal24h > 0} />
               </div>
 
-              <div className="rounded-xl border border-[#C7D2FE] bg-[#F5F3FF] px-3 py-3 text-[12px] text-[#3730A3]">
+              <div className="rounded-xl border border-[#F3D2BF] bg-[#FFF7F2] px-3 py-3 text-[12px] text-[#8A3C10]">
                 <p className="font-bold text-[12px]">이 영역의 역할</p>
                 <p className="mt-1 leading-5">
                   최근 24시간 생성 실패를 보고, 각 카드가 <span className="font-bold">이미 복구됐는지</span> 또는 <span className="font-bold">아직 미해결인지</span>
@@ -1018,7 +1012,7 @@ export default function AdminPage() {
                               {issue.needsAction ? (
                                 <a
                                   href="#style-ops"
-                                  className="inline-flex items-center rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-2.5 py-1 text-[11px] font-bold text-[#4F46E5]"
+                                  className="inline-flex items-center rounded-full border border-[#F3D2BF] bg-[#FFF4ED] px-2.5 py-1 text-[11px] font-bold text-[#C9571A]"
                                 >
                                   운영으로 이동
                                 </a>
@@ -1071,7 +1065,7 @@ export default function AdminPage() {
                             </p>
                             {item.message && (
                               <details className="mt-2">
-                                <summary className="cursor-pointer text-[11px] font-bold text-[#4F46E5]">
+                                <summary className="cursor-pointer text-[11px] font-bold text-[#C9571A]">
                                   전체 메시지 보기
                                 </summary>
                                 <pre className="mt-2 rounded-xl bg-gray-50 border border-gray-200 px-3 py-3 text-[11px] leading-5 text-gray-600 whitespace-pre-wrap break-all overflow-x-auto">
@@ -1086,7 +1080,7 @@ export default function AdminPage() {
                               {issue.needsAction && (
                                 <a
                                   href="#style-ops"
-                                  className="inline-flex items-center rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-2.5 py-1 text-[11px] font-bold text-[#4F46E5]"
+                                  className="inline-flex items-center rounded-full border border-[#F3D2BF] bg-[#FFF4ED] px-2.5 py-1 text-[11px] font-bold text-[#C9571A]"
                                 >
                                   운영으로 이동
                                 </a>
@@ -1102,12 +1096,12 @@ export default function AdminPage() {
               )}
 
               {stats.recentGenerationRefunds.length > 0 ? (
-                <div className="rounded-xl border border-[#C7D2FE] overflow-hidden">
+                <div className="rounded-xl border border-[#F3D2BF] overflow-hidden">
                   {stats.recentGenerationRefunds.slice(0, 5).map((item) => (
-                    <div key={item.id} className="px-3 py-2.5 border-b border-[#DDD6FE] last:border-0 bg-[#FAFAFF]">
+                    <div key={item.id} className="px-3 py-2.5 border-b border-[#F7E1D2] last:border-0 bg-[#FFFDFC]">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[12px] font-bold text-gray-900 truncate">{item.style_name}</span>
-                        <span className="text-[11px] text-[#4F46E5] font-bold whitespace-nowrap">+{item.credits}크레딧</span>
+                        <span className="text-[11px] text-[#C9571A] font-bold whitespace-nowrap">+{item.credits}크레딧</span>
                       </div>
                       <p className="text-[11px] text-gray-500 mt-0.5 truncate">
                         {compactUserLabel(item.nickname, item.user_id)} · {refundReasonLabel(item.reason)}
@@ -1145,7 +1139,7 @@ export default function AdminPage() {
               {styleControlMsg && (
                 <div className={`text-[12px] px-3 py-2 rounded-xl border ${
                   styleControlMsg.ok
-                    ? "text-[#4F46E5] bg-[#F5F3FF] border-[#C7D2FE]"
+                    ? "text-[#C9571A] bg-[#FFF7F2] border-[#F3D2BF]"
                     : "text-red-600 bg-red-50 border-red-200"
                 }`}>
                   {styleControlMsg.text}
@@ -1153,7 +1147,7 @@ export default function AdminPage() {
               )}
 
               {specialFeatureControls.map(({ title, control }) => (
-                <div key={control.style_id} className="rounded-xl border border-[#C7D2FE] bg-[#F5F3FF] px-3 py-3">
+                <div key={control.style_id} className="rounded-xl border border-[#F3D2BF] bg-[#FFF7F2] px-3 py-3">
                   <div className="flex items-center gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-bold text-gray-900">{title}</p>
@@ -1178,7 +1172,7 @@ export default function AdminPage() {
                         disabled={styleSavingId === control.style_id}
                         className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
                           control.is_enabled
-                            ? "bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE]"
+                            ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]"
                             : "bg-white text-gray-600 border border-gray-300"
                         } disabled:opacity-50`}
                       >
@@ -1221,7 +1215,7 @@ export default function AdminPage() {
                           disabled={isSaving}
                           className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
                             control.is_enabled
-                              ? "bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE]"
+                              ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]"
                               : "bg-white text-gray-600 border border-gray-300"
                           } disabled:opacity-50`}
                         >
@@ -1273,13 +1267,13 @@ export default function AdminPage() {
               </div>
 
               <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
-                <p className="text-[12px] font-bold text-[#4F46E5] mb-2">공유 강세</p>
+                <p className="text-[12px] font-bold text-[#C9571A] mb-2">공유 강세</p>
                 {highlightedHighShare.length > 0 ? (
                   <div className="flex flex-col gap-2">
                     {highlightedHighShare.map((item) => (
                       <div key={item.style_id} className="flex items-center justify-between gap-2">
                         <span className="text-[13px] font-bold text-gray-900 truncate">{item.style_name}</span>
-                        <span className="text-[11px] text-[#4F46E5] font-semibold whitespace-nowrap">공유율 {item.shareRate}%</span>
+                        <span className="text-[11px] text-[#C9571A] font-semibold whitespace-nowrap">공유율 {item.shareRate}%</span>
                       </div>
                     ))}
                   </div>
@@ -1329,7 +1323,7 @@ export default function AdminPage() {
               <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
                 <span className="text-gray-500 text-[13px]">로그인 변환</span>
                 <span className="text-gray-900 text-[20px] font-extrabold tabular-nums">{stats.userCount}회</span>
-                <span className="text-[#4F46E5] text-[14px] font-bold">{stats.userRatio}%</span>
+                <span className="text-[#C9571A] text-[14px] font-bold">{stats.userRatio}%</span>
                 <Bar ratio={stats.userRatio} />
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
@@ -1363,7 +1357,7 @@ export default function AdminPage() {
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className="text-gray-800 text-[14px] font-bold truncate">{s.style_name}</span>
                           {isProblem && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-500 border border-red-200">문제</span>}
-                          {isHighShare && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE]">공유강세</span>}
+                          {isHighShare && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]">공유강세</span>}
                           {isLowSave && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">저장약세</span>}
                         </div>
                       </div>
@@ -1431,7 +1425,7 @@ export default function AdminPage() {
                       <div className="flex flex-col gap-0.5 min-w-0">
                         <span className="text-gray-900 text-[14px] font-bold truncate">{user?.nickname ?? p.user_id.slice(0, 8)}</span>
                         <span className="text-gray-500 text-[12px] font-mono">{p.amount.toLocaleString()}원 · {p.credits}크레딧 · {date}</span>
-                        {msg && <span className={`text-[12px] ${msg.ok ? "text-[#4F46E5]" : "text-red-500"}`}>{msg.msg}</span>}
+                        {msg && <span className={`text-[12px] ${msg.ok ? "text-[#C9571A]" : "text-red-500"}`}>{msg.msg}</span>}
                       </div>
                       {isRefunded ? (
                         <span className="text-[12px] text-gray-400 flex-shrink-0">{refundBadge}</span>
@@ -1570,7 +1564,7 @@ export default function AdminPage() {
               </button>
 
               {ghostDeleteMsg && (
-                <p className={`text-[13px] text-center ${ghostDeleteMsg.ok ? "text-[#4F46E5]" : "text-red-500"}`}>
+                <p className={`text-[13px] text-center ${ghostDeleteMsg.ok ? "text-[#C9571A]" : "text-red-500"}`}>
                   {ghostDeleteMsg.text}
                 </p>
               )}
@@ -1592,7 +1586,7 @@ export default function AdminPage() {
                   }}
                   onFocus={() => setShowUserDropdown(true)}
                   placeholder="닉네임 또는 ID로 검색..."
-                  className="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#4F46E5]/50 transition-colors"
+                  className="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
                 />
                 {showUserDropdown && (
                   <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto shadow-md">
@@ -1613,7 +1607,7 @@ export default function AdminPage() {
                             setShowUserDropdown(false);
                           }}
                           className={`w-full text-left px-3 py-2 text-[14px] hover:bg-gray-50 transition-colors ${
-                            creditUserId === u.id ? "text-[#4F46E5]" : "text-gray-700"
+                            creditUserId === u.id ? "text-[#C9571A]" : "text-gray-700"
                           }`}
                         >
                           {u.nickname ?? u.id.slice(0, 8)} — {u.id.slice(0, 12)}...
@@ -1634,7 +1628,7 @@ export default function AdminPage() {
                   <button
                     key={n}
                     onClick={() => setCreditAmount(String(n))}
-                    className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${creditAmount === String(n) ? "bg-[#4F46E5] text-white" : "bg-gray-100 text-gray-500 hover:text-gray-900"}`}
+                    className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${creditAmount === String(n) ? "bg-[#C9571A] text-white" : "bg-gray-100 text-gray-500 hover:text-gray-900"}`}
                   >{n}</button>
                 ))}
               </div>
@@ -1655,7 +1649,7 @@ export default function AdminPage() {
               >
                 크레딧 설정
               </button>
-              {creditMsg && <p className={`text-[13px] text-center ${creditMsg.startsWith("✓") ? "text-[#4F46E5]" : "text-red-500"}`}>{creditMsg}</p>}
+              {creditMsg && <p className={`text-[13px] text-center ${creditMsg.startsWith("✓") ? "text-[#C9571A]" : "text-red-500"}`}>{creditMsg}</p>}
             </div>
           </div>
 
@@ -1668,7 +1662,7 @@ export default function AdminPage() {
                   value={userListSearch}
                   onChange={(e) => setUserListSearch(e.target.value)}
                   placeholder="닉네임 또는 ID 검색..."
-                  className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#4F46E5]/50 transition-colors"
+                  className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
                 />
                 <span className="text-[11px] text-gray-400 whitespace-nowrap">최근 활동순</span>
               </div>
