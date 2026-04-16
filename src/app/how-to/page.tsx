@@ -1,11 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import localFont from "next/font/local";
-
-const bmkKkubulim = localFont({
-  src: "../../../public/fonts/BMKkubulim.otf",
-  display: "swap",
-});
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -95,7 +89,7 @@ export default function HowToPage() {
         <section className="rounded-[24px] border border-[#E8ECF5] bg-white p-6 shadow-[0_16px_40px_rgba(122,139,179,0.08)]">
           <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#4B82FF]">Quick Guide</p>
           <h1
-            className={`${bmkKkubulim.className} mt-3 whitespace-pre-line text-[26px] leading-[1.3] tracking-[-0.03em] text-[#1F2A44] sm:text-[30px]`}
+            className="font-['Pretendard'] mt-3 whitespace-pre-line text-[26px] font-extrabold leading-[1.3] tracking-[-0.03em] text-[#1F2A44] sm:text-[30px]"
           >
             {"4단계로 끝내는\nStyleDrop 시작법"}
           </h1>
@@ -138,7 +132,7 @@ export default function HowToPage() {
               </div>
 
               <h2
-                className={`${bmkKkubulim.className} mt-5 whitespace-pre-line text-[22px] leading-[1.38] tracking-[-0.04em] text-[#1F2A44] sm:text-[25px]`}
+                className="font-['Pretendard'] mt-5 whitespace-pre-line text-[22px] font-extrabold leading-[1.38] tracking-[-0.035em] text-[#1F2A44] sm:text-[25px]"
               >
                 {step.title}
               </h2>
@@ -179,7 +173,7 @@ export default function HowToPage() {
         <section className="mt-8 rounded-[24px] bg-[#1F2A44] p-6 text-white shadow-[0_18px_40px_rgba(31,42,68,0.18)] sm:p-7">
           <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#7FA8FF]">Ready</p>
           <h3
-            className={`${bmkKkubulim.className} mt-3 whitespace-pre-line text-[24px] leading-[1.35] tracking-[-0.03em]`}
+            className="font-['Pretendard'] mt-3 whitespace-pre-line text-[24px] font-extrabold leading-[1.35] tracking-[-0.03em]"
           >
             {"이제 내 차례예요.\n첫 장면을 만들어볼까요?"}
           </h3>
