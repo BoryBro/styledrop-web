@@ -1285,9 +1285,17 @@ export default function Studio() {
 
           <div ref={generalCardsSectionRef}>
             {/* 스타일 선택 섹션 헤더 */}
-            <div className="mb-4">
-              <h2 className="text-[20px] font-bold text-[#C9571A]">스타일 선택</h2>
-              <p className="text-[18px] font-bold text-white mt-1">원하는 스타일의 카드를 선택해봐요</p>
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-[20px] font-bold text-[#C9571A]">스타일 선택</h2>
+                <p className="mt-1 text-[18px] font-bold text-white">원하는 스타일의 카드를 선택해봐요</p>
+              </div>
+              <Link
+                href="/how-to"
+                className="inline-flex h-12 min-w-[112px] shrink-0 items-center justify-center rounded-2xl bg-[#C9571A] px-6 text-[14px] font-extrabold text-white shadow-[0_10px_24px_rgba(201,87,26,0.24)] transition-all hover:scale-[1.02] hover:bg-[#B84E19]"
+              >
+                사용방법
+              </Link>
             </div>
 
             <div className="flex flex-col gap-3">
