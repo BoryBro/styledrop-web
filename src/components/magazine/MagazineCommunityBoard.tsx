@@ -166,9 +166,9 @@ export function MagazineCommunityBoard({
   };
 
   return (
-    <section className="mt-5 flex flex-col gap-4">
+    <section className="mt-0 flex flex-col gap-2">
       {/* 참여 주제 - 질문 */}
-      <div className="flex flex-col gap-2 pt-6 pb-2">
+      <div className="flex flex-col gap-2 pt-2 pb-1">
         <p className="text-[11px] text-white/40 leading-relaxed">{fact}</p>
         <p
           className="text-[20px] sm:text-[22px] font-bold leading-[1.35] tracking-tight"
@@ -180,7 +180,7 @@ export function MagazineCommunityBoard({
 
       {/* 헤더 + 참여 수 */}
       {!loading && payload?.items.length && (
-        <div className="flex items-center justify-between py-3">
+        <div className="flex items-center justify-between py-1.5">
           <p className="text-[11px] text-white/30 uppercase font-normal">{label}</p>
           <p className="text-[11px] text-white/30 font-normal">{payload.count}명 참여 중</p>
         </div>

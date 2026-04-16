@@ -12,6 +12,10 @@ export const metadata: Metadata = {
 };
 
 export default function MagazinePage() {
+  const visibleArticles = MAGAZINE_ARTICLES.filter(
+    (article) => article.slug === "mongol-steppe-warrior",
+  );
+
   return (
     <main className="min-h-screen bg-[#080808] text-white">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-3 py-6 sm:px-6 sm:py-8">
@@ -21,7 +25,7 @@ export default function MagazinePage() {
         </Link>
 
         <div className="grid gap-8">
-          {MAGAZINE_ARTICLES.map((article) => {
+          {visibleArticles.map((article) => {
             const style = getMagazineStyle(article.primaryStyleId);
             if (!style) return null;
 
@@ -29,7 +33,7 @@ export default function MagazinePage() {
               <section
                 key={article.slug}
                 id={article.slug}
-                className="flex flex-col gap-5"
+                className="flex flex-col gap-2"
               >
                 {/* 카드 이미지 + CTA */}
                 <MagazineCardGrid
