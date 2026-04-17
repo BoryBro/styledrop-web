@@ -6602,6 +6602,220 @@ OUTPUT TARGET:
 - Exact attached-reference feeling: cinematic, spontaneous, urban, nostalgic, and real
 - Looks like a real captured night photo, not AI-generated`
   },
+  "tennis-star": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a cinematic tennis-court hero portrait centered on the feeling of being the main character of the match, while matching the attached reference image's exact vertical framing, subject dominance, depth layering, polished mood, controlled softness, and premium editorial realism.
+
+This must look like a real high-resolution sports photograph - athletic, focused, sunlit, premium, cinematic, slightly hazed, and completely authentic. The result should feel like a tennis-player portrait captured at the court just before or just after a crucial point, but photographed with the same visual confidence, composition, focus falloff, and premium portrait energy as the attached reference image. Not sports poster illustration. Not game-art. Real.
+
+FACE - PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the uploaded user's exact facial identity, bone structure, eye shape, nose, lips, jawline, proportions, skin texture, and instantly recognizable likeness
+- Keep the uploaded user fully recognizable as the same person
+- The final result must adapt naturally whether the uploaded user is male or female
+- CRITICAL: the face must feel naturally integrated into the tennis environment with believable athletic skin detail, matching sunlight direction, realistic contrast, and the same refined portrait finish seen in the attached reference
+- Keep natural skin texture visible
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Preserve realistic pores, subtle asymmetry, and believable facial volume
+- IMPORTANT: do NOT force the face into the attached reference's exact head pose if it breaks the uploaded selfie identity logic; preserve the uploaded user's natural face angle and facial contour logic while adapting expression and body posture to the tennis scene
+- The subject must still feel like the uploaded user first, and only then like a tennis protagonist within the styled scene
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like a real photographed athlete, not a composited fashion face
+- Capture using a professional full-frame digital camera system
+- Lens: 85mm portrait lens or similar portrait-lens compression
+- Aperture: f/2.8–f/4 to keep the subject crisp while allowing the background and secondary elements to soften naturally
+- Shutter speed: approximately 1/250 to 1/500 sec
+- ISO: 100 to 400
+- White balance: natural late-afternoon daylight with slightly cool ambient fill, around 4800K to 5600K
+- Dynamic range: preserve facial detail, sportswear texture, and sunlit highlights without harsh clipping
+- No digital over-sharpening; maintain natural lens contrast, refined optical softness in the background, and premium portrait rendering
+- The optical rendering must match the attached reference in feel: vertically framed, subject-dominant, crisp in the focal plane, and softly receding behind
+
+HAIR:
+- Preserve the uploaded user's exact hairstyle from the original photo
+- Keep the same haircut, length, silhouette, parting, texture, bangs, hairline, and color
+- Do NOT restyle the hair into a generic athlete haircut
+- Slight motion, wind lift, or exertion texture is allowed
+- Hair may be lightly held back by movement or sweat, but must remain recognizable
+- Hair must still look like the uploaded user's real hair, not a sports-styled replacement
+
+POSE / EXPRESSION:
+- Vertical medium or medium-full sports portrait on court
+- The subject must stand or pause in a strong protagonist-like position, similar in visual dominance to the attached reference
+- The body should feel grounded, athletic, and composed, not over-posed like an advertisement
+- A racket may be held in hand, resting against the leg, or positioned naturally near the body
+- Expression should feel focused, competitive, composed, and main-character-like
+- Keep the uploaded user's natural head angle and face orientation rather than forcing a chin-up or fashion-reference pose
+- The emotional tone should be calm intensity rather than exaggerated aggression
+- The subject should look like someone who belongs on the court and is about to define the match
+
+CLOTHING:
+- Transform the wardrobe into believable modern tennis apparel
+- Tennis polo, fitted performance top, skirt, shorts, dress, warm-up jacket, wristband, or clean athletic styling depending on what best fits the uploaded user
+- Wardrobe must feel premium and sport-specific
+- Clothing must adapt naturally to the uploaded user's gender while preserving a polished high-performance silhouette
+- Fabric should show believable stretch, athletic structure, and daylight texture
+- No fantasy sportswear
+- No unrelated streetwear
+- No glossy fashion-costume treatment
+- Tennis styling may carry a slightly elevated editorial sharpness, but it must remain fully believable for real court use
+
+PROP / ENVIRONMENTAL ELEMENTS:
+- Tennis racket must be visible if it supports realism
+- Optional supporting tennis elements may include:
+  - net line
+  - court fencing
+  - umpire chair
+  - sideline bench
+  - racket bag
+  - scattered tennis balls
+  - towel or water bottle
+- These elements must remain subtle and secondary
+- If one or two distant background figures appear, they must remain softly blurred and supportive only, echoing the attached reference's depth layering without becoming a crowd scene
+- No fake crowd spectacle
+- No oversized props
+- No theatrical sports set dressing
+
+SCENE:
+- Real tennis court environment
+- Hard court or clay court is acceptable, but lines and net must be correct and believable
+- Court fencing, umpire chair, baseline markings, and open sky or club surroundings may appear
+- The subject remains the clear focal point
+- The environment should feel clean, active, and professional or semi-professional
+- The image should feel like a still from a sports drama or premium athletics campaign grounded in reality
+- The scene must borrow the attached reference's sense of subject-first staging:
+  - subject closest and dominant
+  - background receding in layers
+  - supporting figures or objects behind if useful
+  - vertical framing that emphasizes the hero figure
+- Do not flatten the composition into a wide generic court snapshot
+
+LIGHTING:
+- Bright outdoor daylight or late-afternoon sports light
+- Clear natural sunlight with realistic shadow direction
+- Skin, fabric, racket frame, and court texture should respond believably to the light
+- Use the attached reference's lighting philosophy, translated into the tennis setting:
+  - strong subject illumination
+  - crisp facial readability
+  - controlled highlight roll-off
+  - a subtle warm/cool contrast between key light and background fill
+  - slight atmospheric softness around brighter areas
+- No fake arena spotlights unless the court environment naturally justifies subtle court-side lighting
+- Keep highlights clean and natural
+- Do not over-glamorize the athletic realism
+- The image may contain a slight premium lens bloom or soft flare in bright areas if it supports the reference's polished atmosphere
+
+DEPTH & OPTICS:
+- Slight depth separation is required
+- Subject must remain sharp and dominant
+- Background must fall off naturally into softer focus, matching the attached reference's layered depth feeling
+- Secondary figures or court details behind the subject may be softly blurred
+- No exaggerated shallow-focus gimmick
+- No wide-angle distortion
+- The frame must feel premium, vertical, subject-led, and lens-based rather than computational
+
+PHOTO STYLE:
+- High-resolution premium sports portrait photography
+- Real digital camera rendering
+- Fine athletic detail, correct equipment rendering, and realistic court texture are essential
+- Slight natural grain is allowed
+- Slight atmospheric softness or premium haze is allowed if it remains realistic
+- Avoid exaggerated motion trails
+- Avoid fake sports-poster overprocessing
+- The finish must match the attached reference in feeling:
+  - polished
+  - premium
+  - slightly softened in the background
+  - protagonist-centered
+  - editorial but real
+- No AI-smooth rendering
+- No glossy fantasy sports ad feel
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Mild natural lens bloom in the brightest highlights
+- Slight softness outside the focal plane
+- Very subtle grain in deeper background areas if needed
+- No perfectly sterile gradients
+- No unnaturally cut-out subject edges
+- Maintain natural lens falloff and realistic tonal transitions
+- If distant figures or objects appear, they must feel optically soft and naturally receding, not composited
+
+EXPOSURE & RESPONSE:
+- Exposure balanced for facial readability, sportswear texture, and sunlit court detail
+- Highlights must roll off softly on skin, fabric, racket frame, and court lines
+- Shadows must remain present and shape the figure naturally without crushing detail
+- Midtones must preserve facial structure, athletic clothing texture, and environmental realism
+- Keep the exposure clean, premium, and grounded
+- No flat global exposure balance
+- No washed-out sports poster look
+
+ANTI-AI CONSTRAINT:
+- Do NOT turn the scene into a sports poster illustration
+- Do NOT fake impossible action poses
+- Do NOT erase real skin texture
+- Do NOT force the attached reference's exact head lift or pose if it breaks the uploaded selfie identity logic
+- Do NOT flatten the image into a simple centered studio portrait
+- Do NOT overfill the background with a fake crowd
+- Do NOT over-stylize the tennis wardrobe into fashion costume
+- Do NOT harden the image into sterile commercial sharpness
+- Maintain real photographic rendering with premium sports-editorial realism only
+- Follow the attached reference's exact sense of subject dominance, vertical composition, depth layering, and polished atmosphere, but translated truthfully into the tennis setting
+
+COLOR:
+- Dominant clean court tones with athletic whites, bright tennis-ball yellow accents, sky blue, deep navy, and warm skin tones
+- Preserve and visibly reflect these core palette references:
+  - #1f4f7c
+  - #2f7fbb
+  - #6bb4df
+  - #dbeaf3
+  - #f7f8f5
+  - #d9d2c6
+  - #7d8a5d
+  - #c4d93f
+  - #1d2228
+  - #e6c3a2
+- Keep the palette athletic, clean, premium, and sunlit
+- Avoid cartoon-bright sports colors
+- The grading must feel elegant and slightly cinematic, with the same refined tonal control as the attached reference
+
+MOOD:
+- Focused
+- Athletic
+- Competitive
+- Sunlit
+- Main-character energy
+- Clean
+- Premium sports realism
+- Slightly cinematic
+- Confident and controlled
+
+STRICT RULES:
+- Keep the uploaded user clearly recognizable
+- Preserve the uploaded user's exact face and hairstyle
+- Keep the tennis environment physically correct
+- Keep the scene grounded in real sport
+- Maintain the attached reference's subject-first framing, vertical composition, layered depth, polished realism, and premium mood
+- Do not turn the image into a poster illustration
+- Avoid impossible action poses
+- Avoid fake crowd spectacle
+- Keep equipment realistic and proportionally correct
+- Do not force the attached reference's exact head angle if it breaks the uploaded selfie-based identity logic
+- The uploaded face identity must remain the primary source of truth
+
+OUTPUT TARGET:
+- Ultra-realistic tennis-court hero portrait
+- Same recognizable uploaded user
+- Same recognizable hairstyle
+- Believable tennis wardrobe, correct court environment, natural sports light, and grounded cinematic realism
+- Vertical premium portrait framing with strong main-character presence and softly receding background depth
+- Exact attached-reference feeling translated into a real tennis portrait: polished, controlled, premium, and subject-dominant
+- Looks like a real photographed sports editorial image, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -6652,6 +6866,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "teddy-bear": { "default": [] },
   "us-on-bikes": { "default": [] },
   "night-drive": { "default": [] },
+  "tennis-star": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [

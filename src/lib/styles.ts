@@ -70,6 +70,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "teddy-bear": "컨셉",
   "us-on-bikes": "무드",
   "night-drive": "무드",
+  "tennis-star": "스포츠",
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -637,6 +638,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/drive-before.jpg",
     afterImg: "/thumbnails/drive-after.jpg",
+  },
+  {
+    id: "tennis-star",
+    name: "테니스 스타",
+    desc: "코트 위 주인공 느낌의 시네마틱 프리미엄 스포츠 포트레이트",
+    bgColor: "#1f4f7c",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/tennisstar-before.jpg",
+    afterImg: "/thumbnails/tennisstar-after.jpg",
   },
 ];
 
