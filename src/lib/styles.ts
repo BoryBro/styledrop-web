@@ -68,6 +68,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "winter-snow": "무드",
   "y2k-object": "컨셉",
   "teddy-bear": "컨셉",
+  "us-on-bikes": "무드",
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -614,6 +615,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/teddy bear-before.jpg",
     afterImg: "/thumbnails/teddy bear-after.jpg",
   },
+  {
+    id: "us-on-bikes",
+    name: "우리의 웨딩 라이드",
+    desc: "35mm 필름 감성의 텐덤 자전거 웨딩 액션 포트레이트",
+    bgColor: "#7b6535",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/us on bikes-before.jpg",
+    afterImg: "/thumbnails/us on bikes-after.jpg",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */
@@ -628,4 +640,4 @@ export const STYLE_LABELS: Record<string, string> = Object.fromEntries(
 export const VISIBLE_STYLE_IDS = VISIBLE_STYLES.map((s) => s.id);
 
 /** 다중 업로드가 필요한 스타일 ID */
-export const MULTI_SOURCE_STYLE_IDS = ["romantic-night-twoshot", "escalator-flash-twoshot"] as const;
+export const MULTI_SOURCE_STYLE_IDS = ["romantic-night-twoshot", "escalator-flash-twoshot", "us-on-bikes"] as const;

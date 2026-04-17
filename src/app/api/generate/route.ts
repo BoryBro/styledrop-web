@@ -6243,6 +6243,145 @@ OUTPUT TARGET:
 - Exact attached-reference feeling: playful, quirky, polished, surreal, and high-fashion
 - Looks like a real photographed editorial campaign image, not AI-generated`
   },
+  "us-on-bikes": {
+    "default": `Images 1 and 2 are uploaded source identities for a single combined edit. Use both uploaded people exactly as the only identity source and create one final image. Additional instructions:
+Use the uploaded image or uploaded images as the base and transform them, not generate a new person.
+
+Transform the uploaded photo set into a wide action portrait of exactly two adults riding a tandem bicycle outdoors in wedding-day styling, matching the exact composition, motion, expression energy, wardrobe, background streaking, and lo-fi 35mm film mood of the attached reference image.
+
+This must look like a real high-resolution editorial photograph captured on aged 35mm film — jubilant, carefree, spontaneous, slightly rough, softly dreamy, and physically believable. Not illustration. Not painterly. Not fantasy wedding art. Real.
+
+SUBJECT COUNT / IDENTITY SOURCE — MUST FOLLOW EXACTLY:
+- Exactly two adults only
+- No extra people, silhouettes, or background figures
+- Use only the uploaded identities (no invention)
+- Map person 1 → rear rider (bridal), person 2 → front rider (groom)
+- Preserve both identities separately (no merging/remixing)
+- Both faces must remain fully visible and clearly recognizable (no sunglasses or face obstruction)
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Use only uploaded faces, preserving structure, proportions, and likeness
+- Rear rider: exuberant, chaotic expression (mouth open)
+- Front rider: playful, glancing back
+- Faces must match scene lighting, softness, grain, and motion
+- No pasted look, no beautification, no plastic skin, no symmetry correction
+- Maintain natural texture, asymmetry, and volume
+
+CAMERA / OPTICS:
+- 35mm film aesthetic, 40–50mm lens
+- Side-tracking panning shot: subjects readable, background streaked
+- Medium-to-fast film with visible grain and low-light roughness
+- Warm faded color response, soft contrast
+- No digital sharpening, retain analog softness and halation
+
+HAIR:
+- Preserve original hairstyle, texture, silhouette, and color
+- Rear rider may include veil integrated naturally
+- No wig-like or unrelated styling
+
+CLOTHING:
+- Rear: short white bridal dress + rugged brown lace-up boots
+- Front: black tuxedo, white shirt, bow tie
+- No sunglasses on either subject
+- Real fabrics only (airy dress, matte suit, textured boots)
+- No branding
+
+POSE / COMPOSITION:
+- Wide side-on action shot
+- Tandem bicycle in motion, left-to-right
+- Rear rider leaning outward, one foot on frame, raising bottle
+- Front rider pedaling, glancing back
+- Must feel spontaneous, mid-ride, not posed
+
+SCENE:
+- Outdoor grassy field, rural feel
+- Background motion-blurred horizontally
+- No city, no architecture, no distractions
+
+LIGHTING:
+- Natural daylight, warm and slightly faded
+- Low contrast, soft highlights
+- No flash or cinematic lighting
+
+DEPTH:
+- Subjects readable, background blurred
+- Slight softness acceptable
+- No modern clean separation
+
+PHOTO STYLE:
+- 35mm film, grainy, soft, warm-faded
+- Slight scan softness, halation, motion artifacts
+- Documentary, spontaneous feel
+- No HDR, no glossy polish
+
+REAL FILM IMPERFECTIONS (CRITICAL):
+- Visible grain, softness, motion artifacts
+- Slight tonal compression, halation
+- Uneven color response
+- No sterile gradients or clean cutouts
+
+EXPOSURE:
+- Balanced for dress, suit, and motion background
+- Soft highlight roll-off
+- Shadows readable, not crushed
+- Filmic midtones, no digital crispness
+
+ANTI-AI:
+- No modern clean wedding look
+- Do not remove grain, motion blur, softness
+- Do not over-sharpen or stylize
+- Keep chaotic, real, film-like energy
+
+COLOR:
+- Use warm earthy palette:
+  #7b6535 #715b30 #69512c #1a130f #837140 #5e4527
+  #fcebe5 #f2dcce #3e301f #ddccbc
+- Muted, analog, no oversaturation
+
+MOOD:
+- Jubilant, carefree, playful, wild, nostalgic, lo-fi
+
+LO-FI / NOISE INTENSITY BOOST (CRITICAL):
+- Apply strong, clearly visible analog noise across entire image
+- Grain must be coarse, textured, obvious even at thumbnail
+- Layer film grain + sensor noise + scan noise
+- Include mild chroma noise in shadows and midtones
+- Noise must remain on faces and clothing (do not clean)
+
+LO-FI FILTER CHARACTER:
+- Heavy lo-fi scan look (aged 35mm print)
+- Uneven color response, subtle warm/cool drift
+- Slightly lifted blacks, low-contrast roll-off
+- Gentle vignette, mild desaturation
+
+IMAGE IMPERFECTIONS (ENHANCED):
+- Subtle compression artifacts and micro-blocking
+- Slight sharpness variation (center vs edges)
+- Minor exposure inconsistency
+- Very subtle dust, specks, film dirt
+- Slight highlight bloom / halation
+
+MOTION + LO-FI:
+- Grain visible inside motion blur
+- Slight edge breakup and smear allowed
+- Avoid clean digital motion rendering
+
+ANTI-CLEANUP (STRICT):
+- No denoising
+- No sharpening
+- No gradient smoothing
+- No skin polishing
+- No grain removal
+- No clean digital finish
+
+OUTPUT TARGET:
+- Ultra-realistic 35mm film wedding-action photo
+- Exactly two people, identities preserved
+- Tandem bike, bottle, dress, boots, tux intact
+- Motion-blurred field background
+- Strong grain, softness, lo-fi texture
+- Feels like a real scanned analog photo, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -6291,6 +6430,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "winter-snow": { "default": [] },
   "y2k-object": { "white": [], "pastel": [] },
   "teddy-bear": { "default": [] },
+  "us-on-bikes": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
