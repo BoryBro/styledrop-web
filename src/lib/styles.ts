@@ -65,6 +65,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "bronze-statue-bench": "컨셉",
   "yakuza": "컨셉",
   "rainy-crosswalk": "무드",
+  "winter-snow": "무드",
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -577,6 +578,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/Rainy_crosswalk-before.jpg",
     afterImg: "/thumbnails/Rainy_crosswalk-after.jpg",
+  },
+  {
+    id: "winter-snow",
+    name: "눈 내리는 밤",
+    desc: "한겨울 밤 폭설 속, 플래시로 찍은 캔디드 윈터 포트레이트",
+    bgColor: "#151d1d",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/winter-before.jpg",
+    afterImg: "/thumbnails/winter-after.jpg",
   },
 ];
 

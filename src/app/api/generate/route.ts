@@ -5570,6 +5570,227 @@ OUTPUT TARGET:
 - Premium cinematic street-photo quality
 - Emotionally readable, restrained, stylish, and fully photographic`
   },
+  "winter-snow": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a low-angle medium winter portrait captured outdoors during intense nighttime snowfall, matching the exact scene, snow density, flash behavior, dreamy blur, layered snow depth, clothing texture, color palette, and lively seasonal mood of the attached reference image.
+
+This must look like a real high-resolution winter photograph with a candid consumer-camera feel — cold, playful, lively, dreamy, slightly hazy, and physically believable. Not illustration. Not painterly. Not holiday-card fantasy. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject's face with the uploaded user's face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, skin texture, and instantly recognizable likeness
+- Keep the uploaded user fully recognizable as the same person
+- CRITICAL: the face must feel naturally integrated into the snowy night environment with believable cold-weather skin behavior, lighting direction, contrast, flash response, and detail
+- Preserve realistic skin texture, fine pores, lip texture, and believable facial volume
+- A faint natural winter flush on the cheeks and nose is allowed
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- No heavy makeup transformation unless already implied by the original image
+- IMPORTANT: do NOT force the face into an exaggerated upward head tilt; preserve the uploaded user's natural selfie-like face angle and facial orientation, adapting only the expression and body language to the snowy scene
+- The joyful winter reaction must come from expression and atmosphere, not from replacing the uploaded user's natural face pose with a different face angle
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like a real photographed subject hit by strong direct flash during snowfall, not a composited fantasy face
+- Capture using a consumer-level digital camera or compact point-and-shoot aesthetic with strong on-camera flash
+- Lens: 35mm to 50mm equivalent
+- Aperture: around f/2.8 to f/4
+- Shutter speed: approximately 1/60 to 1/125 sec
+- ISO: 800 to 1600
+- White balance: neutral-cool winter night balance with flash-neutral skin rendering
+- Dynamic range: preserve flash-lit skin, jacket highlights, and bright snow without flattening the black night background
+- No digital over-sharpening; maintain flash bloom, slight haze, mild grain, and realistic consumer-camera softness
+- Optical rendering must match the attached reference: direct flash, near-lens snow bloom, layered snowfall, and a slightly dreamy low-light snapshot feel
+
+HAIR:
+- Preserve the uploaded user's exact hairstyle from the original photo
+- Keep the same haircut, length, silhouette, parting, texture, bangs, hairline, and color
+- Do NOT restyle the hair into a different winter-fashion hairstyle
+- Tiny snowflakes may rest on the hair naturally
+- Hair may appear slightly cold, lightly dampened, or touched by snow, but it must still look like the user's real hair
+- If a winter hat is present in the final styling, the visible hairline and exposed hair must still remain faithful to the uploaded user
+
+POSE / EXPRESSION:
+- Low-angle medium shot
+- Subject standing outdoors on a balcony or similar elevated outdoor edge
+- Arms slightly out to the sides in a spontaneous playful winter gesture
+- Expression should feel joyful, delighted, playful, or caught in a candid moment of enjoying the snowfall
+- The mouth may be slightly open or smiling naturally, but the uploaded user's original face angle must remain respected
+- The pose must feel spontaneous and lived-in, not posed like a fashion campaign
+- The subject must feel like they are reacting to the snow in real time, while still preserving the uploaded user's natural face orientation
+
+CLOTHING:
+- Puffy glossy winter jacket with a visible small outdoor brand logo, matching the attached reference feel
+- Thick knitted scarf in tan and gray tones
+- Woolen gloves
+- Dark faux-fur winter hat
+- Winter clothing must adapt naturally to the uploaded user's gender while preserving the exact cold-weather bundled silhouette and styling mood of the attached reference
+- Fabrics must show believable winter texture:
+  - glossy padded jacket surface
+  - thick knit scarf texture
+  - soft wool glove texture
+  - plush faux-fur hat texture
+- Snow should visibly collect in a natural way on hat, shoulders, sleeves, gloves, and jacket seams
+- Keep wardrobe realistic, modern, wearable, and cold-weather appropriate
+- No random luxury fashion swap
+- No fantasy winter costume
+
+PROP / ENVIRONMENTAL ELEMENTS:
+- Metal balcony railing visible behind the subject
+- A patch of green holiday-style lights visible in the lower right corner
+- Heavy snowfall at multiple depths
+- Large near-lens snow clusters and smaller distant flakes must both be present
+- Snow must vary in size, blur, and brightness:
+  - some flakes very large and close to lens
+  - some mid-sized and semi-focused
+  - many small distant flakes in the black background
+- The snow must feel thick, active, and layered, not decorative or evenly spaced
+- Snow must appear naturally illuminated by flash, with bright white and pale gray bokeh-like discs and streaks
+
+SCENE:
+- Outdoor balcony or terrace at night
+- Deep nearly black winter sky background
+- The background must remain dark and simple, allowing the flash-lit snow to dominate
+- The scene must feel like a candid winter-night snapshot
+- No extra buildings or scenery need to distract from the subject
+- The frame must match the attached reference in feeling:
+  - dark night backdrop
+  - balcony railing
+  - strong direct flash
+  - heavy snowfall filling the frame
+  - subtle green light detail in the lower right
+- The world must remain intimate, immediate, and weather-driven
+
+LIGHTING:
+- Strong direct on-camera flash as the primary lighting source
+- Flash must illuminate the subject and snow strongly
+- Sharp highlights and glints must appear on the glossy jacket
+- Flash must create pronounced snow texture and large glowing snow discs near the lens
+- The background should remain deep and dark, with the subject popping forward under flash
+- Lighting must match the attached reference exactly in feeling:
+  - harsh direct flash
+  - bright snow bloom
+  - visible flash haze
+  - cold night background
+  - glossy jacket highlights
+  - lively winter-night contrast
+- No soft studio lighting
+- No warm holiday lighting wash
+- No ambient-only moody exposure
+
+DEPTH & OPTICS:
+- Low-angle medium framing
+- Shallow to moderate depth behavior
+- Subject remains readable
+- Foreground snow near the lens becomes large, soft, and blown with flash
+- Midground snow remains layered and dynamic
+- Background snow becomes smaller, dimmer, and more numerous
+- The image must contain intentional atmospheric blur and haze from dense snowfall and flash interaction
+- No wide-angle distortion exaggeration
+- Optical rendering must feel like a real flash-lit consumer photo in active snowfall
+
+PHOTO STYLE:
+- High-resolution digital winter snapshot / candid editorial hybrid
+- Consumer-level camera feel under low light
+- Strong flash aesthetic
+- Mild grain in darker areas
+- Slight haze and bloom caused by dense snow and direct flash
+- The frame must feel intentionally a little diffuse, dreamy, and weather-softened
+- No HDR exaggeration
+- No painterly softness
+- No AI-smooth rendering
+- Must feel like a real winter-night photograph with a magical but believable atmosphere
+- The dreamy effect must come from flash, snowfall density, near-lens snow bloom, and mild haze - not from graphic overlays
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Mild grain in darker areas
+- Slight flash haze and bloom in bright snow clusters
+- A softly veiled or slightly misted look from flash hitting active snowfall
+- Mild lens bloom around the brightest snow and jacket highlights
+- Slight exposure unevenness from moving snow and flash falloff
+- No perfectly sterile black background
+- No unnaturally sharp separation between subject and snow
+- Maintain the attached reference's intended slightly blurred, dreamy, flash-heavy atmosphere
+
+EXPOSURE & RESPONSE:
+- Exposure balanced for flash-lit face, jacket, scarf, gloves, and snow
+- Highlights must roll off softly on glossy jacket surfaces and bright snow discs
+- Shadows must remain deep in the background but not digitally crushed
+- Midtones must preserve winter clothing texture and facial detail
+- The image must feel slightly brightened by flash against a nearly black environment
+- No flat global exposure balance
+- Keep the strong flash contrast and winter-night immediacy of the attached reference
+
+ANTI-AI CONSTRAINT:
+- Do NOT stylize the snow into fake sparkle overlays
+- Do NOT reduce the snowfall into a light decorative flurry
+- Do NOT make all snowflakes the same size or spacing
+- Do NOT clean away the intended haze, blur, or bloom
+- Do NOT remove the consumer-camera flash feel
+- Do NOT over-refine the face
+- Do NOT turn the image into a studio portrait
+- Do NOT change the uploaded user's natural face angle into an exaggerated upward pose
+- Maintain real photographic rendering with heavy snowfall, flash bloom, and candid winter energy only
+
+COLOR:
+- Dominant palette must reflect:
+  - #151d1d
+  - #1d2524
+  - #2c312f
+  - #3d413e
+  - #b2a39a
+  - #a1948b
+  - #c7b6aa
+  - #52524e
+  - #dacab9
+  - #8f847c
+  - #67625d
+  - #7c746e
+  - #f6f4ee
+  - #ebe0d3
+- Overall palette must remain muted and wintery:
+  - black night
+  - gray-white snow
+  - warm beige scarf tones
+  - subtle green holiday accent
+- Keep the palette grounded, cold, and authentic
+- No overly blue frozen-filter grading
+- No overly warm postcard color
+
+MOOD:
+- Spirited
+- Lively
+- Playful
+- Joyful
+- Cold
+- Dreamy
+- Winter-magic atmosphere
+- Childlike wonder
+- Candid and immediate
+
+STRICT RULES:
+- Keep the uploaded user clearly recognizable
+- Preserve the uploaded user's exact face and hairstyle
+- Maintain the attached reference's low-angle framing, balcony setting, heavy varied snowfall, direct flash, dark background, glossy winter jacket, scarf, gloves, hat, green light accent, and intended hazy dreamy atmosphere
+- Preserve the strong, varied snow presence with large and small flakes at multiple depths
+- Keep the setting realistic and grounded
+- Do not overdecorate the frame with fantasy snow effects
+- Do not add fake holiday props beyond the subtle green light context already present
+- Do not transform the shot into a studio portrait
+- Avoid fake text, fake stickers, or postcard elements
+- Do not force the face into the reference's exact upward tilt; preserve the uploaded user's natural selfie-compatible face angle while keeping the rest of the winter scene faithful
+
+OUTPUT TARGET:
+- Ultra-realistic winter-night portrait
+- Same recognizable uploaded user
+- Same recognizable hairstyle
+- Outdoor cold-weather realism with heavy falling snow, low-angle framing, strong direct flash, dark background, balcony railing, winter outerwear, and subtle green light detail
+- Spirited, dreamy, playful, and photographic
+- The snow must feel dense, layered, varied in size, and strongly flash-lit
+- The final image must carry the exact intended hazy, magical, consumer-camera winter-night feeling of the attached reference while preserving the uploaded user's natural face angle`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -5615,6 +5836,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "boxing-counterpunch": { "default": [] },
   "yakuza": { "default": [], "mafia": [] },
   "rainy-crosswalk": { "default": [] },
+  "winter-snow": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
