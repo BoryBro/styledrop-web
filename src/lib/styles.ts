@@ -71,6 +71,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "us-on-bikes": "무드",
   "night-drive": "무드",
   "tennis-star": "스포츠",
+  "alone-movie-theater": "무드",
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -649,6 +650,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/tennisstar-before.jpg",
     afterImg: "/thumbnails/tennisstar-after.jpg",
+  },
+  {
+    id: "alone-movie-theater",
+    name: "혼자 영화관",
+    desc: "텅 빈 극장 좌석 위, 시네마틱 무드의 드라마틱 인물 포트레이트",
+    bgColor: "#540f08",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Alone Movie Theater-before.jpg",
+    afterImg: "/thumbnails/Alone Movie Theater-after.jpg",
   },
 ];
 

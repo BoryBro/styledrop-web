@@ -6816,6 +6816,140 @@ OUTPUT TARGET:
 - Exact attached-reference feeling translated into a real tennis portrait: polished, controlled, premium, and subject-dominant
 - Looks like a real photographed sports editorial image, not AI-generated`
   },
+  "alone-movie-theater": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a cinematic theater portrait with the same environment, lighting, and tone as before, but update ONLY the subject's pose and camera angle to match the attached reference image exactly.
+
+This must look like a real high-resolution cinematic photograph — dramatic, high-contrast, moody, isolated, and physically believable. Not illustration. Not stylized poster art. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject's face with the uploaded user's face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, skin texture, and instantly recognizable likeness
+- Keep the uploaded user fully recognizable as the same person
+- CRITICAL: the face must feel naturally integrated into the theater environment under strong directional lighting — same light direction, same contrast falloff, same highlight intensity, and same shadow density as the rest of the scene
+- Preserve realistic skin texture, pores, and subtle facial structure
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Expression should adapt naturally to the new pose (confident, slightly playful, relaxed attitude) while maintaining realism
+- The final result must adapt naturally whether the uploaded user is male or female while preserving identity
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like a real photographed subject under strong cinematic lighting, not composited
+- Camera body: ARRI Alexa Mini LF (cinematic reference rendering)
+- Lens: 35mm–50mm lens (changed from previous to match closer, dynamic perspective)
+- Aperture: T2.8 (f/2.8 equivalent)
+- Shutter speed: 1/125 sec
+- ISO: 400
+- White balance: 3200K (warm tungsten tone)
+- Dynamic range: strong contrast retention with deep blacks and bright highlights
+- No digital over-sharpening; maintain cinematic softness and highlight bloom
+
+HAIR:
+- Preserve the uploaded user's exact hairstyle (length, silhouette, texture, hairline, color)
+- Hair reacts naturally to pose and lighting
+- Slight shadow shaping from top light allowed
+- No restyling or replacement
+
+CLOTHING:
+- Keep the same wardrobe logic as previous prompt (no changes)
+- Fabric must still respond to strong directional light with visible highlights and shadow folds
+- No costume exaggeration
+
+POSE / COMPOSITION (UPDATED — CRITICAL):
+- Subject is seated casually across theater seats, not centered upright
+- Body reclined diagonally across multiple red seats
+- One leg raised and bent toward camera, sole of shoe partially visible
+- One arm relaxed, the other bent near face (resting on chin or cheek)
+- Pose must feel spontaneous, relaxed, slightly rebellious
+- Composition is asymmetrical and dynamic
+- Subject positioned off-center
+- Camera angle:
+  - slightly top-down or diagonal angle
+  - not perfectly centered
+  - slightly closer and more intimate framing
+- Maintain visible repetition of seats but now partially obstructed by subject
+- The framing must match the attached pose reference exactly in energy and structure
+
+SCENE:
+- Same empty theater environment (UNCHANGED)
+- Red velvet seats dominate frame
+- Rows still visible but now partially broken by subject pose
+- No additional people
+
+LIGHTING (UNCHANGED — HIGH CONTRAST):
+- Strong directional overhead spotlight
+- High contrast ratio (4:1–8:1)
+- Bright highlights on face, jacket, and seat tops
+- Deep shadows in seat gaps and background
+- Background falls into darkness
+- No soft lighting
+- No fill flattening
+
+DEPTH & OPTICS:
+- Moderate shallow depth of field
+- Subject remains sharp
+- Seats closer/farther soften slightly
+- Slight perspective exaggeration due to lower focal length (35–50mm)
+- No wide distortion, but slight depth exaggeration allowed
+
+PHOTO STYLE:
+- High-resolution cinematic portrait
+- Film-like tonal response
+- Slight highlight bloom
+- No grain exaggeration unless subtle
+- No HDR
+- No painterly softness
+- No AI smoothing
+
+REAL CAMERA IMPERFECTIONS:
+- Slight lens bloom
+- Mild shadow noise
+- Slight uneven highlight rolloff
+- Natural imperfections only
+
+EXPOSURE & RESPONSE:
+- Highlight-priority exposure on subject
+- Deep blacks preserved
+- Midtones slightly compressed
+- No flat exposure
+
+COLOR:
+- Dominant palette remains:
+  - deep red (#540f08, #450906)
+  - near black (#060101, #1f0303)
+  - warm highlights (#652011, #b9a48f)
+- Maintain strong color contrast
+- No desaturation
+- No pastel shift
+
+MOOD:
+- Dramatic
+- Cinematic
+- Slightly rebellious
+- Confident
+- Introspective but relaxed
+
+STRICT RULES:
+- ALL previous logic remains unchanged except pose and camera angle
+- Must use uploaded identity
+- Must not generate a new face
+- Must maintain strong contrast lighting
+- Must maintain theater environment
+- Only pose + angle changed
+- No stylization into illustration
+
+OUTPUT TARGET:
+- Ultra-realistic cinematic theater portrait
+- Same recognizable uploaded user
+- New dynamic reclined pose across seats
+- Slightly top-down / diagonal camera angle
+- Strong contrast lighting preserved
+- Film-grade rendering
+- Looks like a real cinematic still, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -6867,6 +7001,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "us-on-bikes": { "default": [] },
   "night-drive": { "default": [] },
   "tennis-star": { "default": [] },
+  "alone-movie-theater": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
