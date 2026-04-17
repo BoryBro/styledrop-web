@@ -6950,6 +6950,172 @@ OUTPUT TARGET:
 - Film-grade rendering
 - Looks like a real cinematic still, not AI-generated`
   },
+  "9cut-grid": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a multi-frame collage styled as a 35mm film contact sheet, featuring a series of close-up and mid-shot portraits of the same subject in a playful studio setup, matching the exact layout, framing variety, lighting softness, retro film-strip design, color palette, and lo-fi analog texture of the attached reference image.
+
+This must look like a real high-resolution fashion editorial collage — playful, stylized, nostalgic, slightly lo-fi, and physically believable as a photographed contact sheet. Not illustration. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Use the uploaded user's face as the sole identity source across all frames
+- Preserve exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, skin texture, and instantly recognizable likeness
+- The subject must remain clearly recognizable in every frame, even with varied poses and crops
+- Maintain natural facial expressions ranging from neutral, playful, slightly teasing, to curious
+- CRITICAL: the face must feel naturally integrated into all frames — same lighting direction, same contrast, same skin texture, same optical quality, and same overall image sharpness as the rest of the collage
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Skin must retain realistic texture while slightly softened by editorial styling
+
+FACE & CAMERA:
+- Capture as a sequence of frames from a single photo session
+- Use mixed framing:
+  - extreme close-ups (eyes, lips)
+  - close-ups (face)
+  - medium shots (upper body)
+  - wider reclining poses
+- Lens: 50mm–85mm equivalent portrait lens
+- Aperture: f/2–f/4 depending on frame type
+- Slight variation in focus depth between frames is allowed
+- Optical rendering must feel like real photography, not composited panels
+- Maintain consistent identity across all frames
+
+HAIR:
+- Preserve the uploaded user's hairstyle (length, silhouette, color, texture)
+- If needed, adapt into a clean editorial style:
+  - long straight hair OR natural variation depending on input
+- Optional blunt bangs can be introduced ONLY if compatible with the user's original hairline
+- Hair must remain consistent across all frames
+- No wig-like rendering
+- No drastic hairstyle replacement
+
+MAKEUP / SKIN FINISH:
+- Clean editorial makeup look
+- Soft blush, subtle highlight, and glossy lips
+- Slightly enhanced youthful glow
+- Skin should feel polished but still real
+- No theatrical makeup
+- No heavy contour
+- Maintain consistent makeup across frames
+
+CLOTHING:
+- Fitted mini dress or equivalent outfit with bold playful pattern (floral, graphic, or pop-art inspired)
+- Color palette: reds, pinks, and complementary tones
+- Fabric must feel soft with slight sheen
+- If the uploaded user is male, adapt the outfit into a gender-appropriate or neutral version while preserving:
+  - same color palette
+  - same pattern logic
+  - same silhouette energy (fitted, playful, editorial)
+- No costume exaggeration
+- No luxury-brand styling
+
+POSE / COMPOSITION:
+- Multi-frame collage arranged in a grid
+- Each frame shows a different pose:
+  - holding a lollipop near lips
+  - playful bite gesture
+  - reclining pose on white surface
+  - direct gaze portrait
+  - side profile
+- Composition must match film contact sheet style:
+  - black borders
+  - frame divisions
+  - slight spacing irregularities
+- Subject must remain the focus in every frame
+- Keep poses playful and stylized but not exaggerated
+
+PROP / OBJECTS:
+- Red heart-shaped lollipop (primary recurring prop)
+- Subject interacts with it in multiple frames
+- No additional props required
+- Keep repetition intentional and stylized
+
+SCENE:
+- Clean studio environment
+- White or light neutral background
+- No visible environment details beyond studio
+- Subject may appear lying or seated on a white surface in some frames
+- Scene must feel minimal and controlled
+
+FILM CONTACT SHEET LAYOUT:
+- Black frame borders surrounding each image
+- Include film-style markings:
+  - frame numbers
+  - codes like "TX 5063" or similar
+  - vertical and horizontal film strip text
+- Add subtle misalignment and spacing variations
+- The layout must feel like scanned film negatives
+
+LIGHTING:
+- Soft, diffuse studio lighting
+- Minimal shadows
+- Even illumination across all frames
+- Slight variation in light intensity between frames is acceptable
+- Lighting must feel clean and controlled
+
+PHOTO STYLE:
+- High-resolution digital base
+- Overlaid analog film effect:
+  - visible grain
+  - dust specks
+  - slight scratches
+- Slight desaturation and tonal compression
+- Mild softness in edges
+- Lo-fi analog aesthetic layered over clean capture
+- No HDR effect
+- No overly modern polish
+
+REAL CAMERA / FILM IMPERFECTIONS:
+- Film grain (medium intensity)
+- Dust artifacts and small scratches
+- Slight color inconsistency between frames
+- Slight exposure variation
+- Mild softness and halation
+- Must feel like scanned film
+
+COLOR:
+- Dominant palette:
+  - deep reds (#ab2322)
+  - pinks
+  - warm skin tones
+  - soft neutrals (#c0bebf, #cccacc)
+- Secondary tones:
+  - muted browns (#503934, #775045)
+- Keep colors slightly faded and analog
+- Avoid oversaturation
+- Maintain warm, nostalgic tone
+
+MOOD:
+- Playful
+- Youthful
+- Stylized
+- Slightly mischievous
+- Nostalgic
+- Editorial
+- Lo-fi
+- Lightly surreal but grounded
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Only one person across all frames (same identity repeated)
+- Preserve identity consistency across all images
+- Maintain film contact sheet structure
+- Do not introduce additional people
+- Do not stylize into illustration
+- Keep all elements grounded in real photography
+
+OUTPUT TARGET:
+- Ultra-realistic film contact sheet collage
+- Same recognizable uploaded user across all frames
+- Multiple poses and crops in a grid layout
+- Red lollipop recurring across frames
+- Black film borders with markings
+- Grain, dust, and analog imperfections
+- Exact attached-reference feeling: playful, nostalgic, stylized, and editorial
+- Looks like a scanned film contact sheet, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -7002,6 +7168,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "night-drive": { "default": [] },
   "tennis-star": { "default": [] },
   "alone-movie-theater": { "default": [] },
+  "9cut-grid": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [

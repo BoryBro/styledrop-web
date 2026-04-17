@@ -72,6 +72,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "night-drive": "무드",
   "tennis-star": "스포츠",
   "alone-movie-theater": "무드",
+  "9cut-grid": "컨셉",
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -661,6 +662,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/Alone Movie Theater-before.jpg",
     afterImg: "/thumbnails/Alone Movie Theater-after.jpg",
+  },
+  {
+    id: "9cut-grid",
+    name: "9컷 필름시트",
+    desc: "35mm 필름 콘택트시트 스타일의 레트로 에디토리얼 콜라주",
+    bgColor: "#ab2322",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/9cut-grid-before.jpg",
+    afterImg: "/thumbnails/9cut-grid-after.jpg",
   },
 ];
 
