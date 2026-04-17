@@ -1,0 +1,9 @@
+필터명: 빗속 횡단보도
+스타일 ID: rainy-crosswalk
+소스: src/app/api/generate/route.ts -> STYLE_PROMPTS["rainy-crosswalk"]
+
+===== VARIANT: default =====
+
+Transform the uploaded photo into a cinematic rainy crosswalk portrait set in a real Korean city street.
+
+This must look like a real high-resolution photographic image - urban, wet, emotionally readable, premium, and completely authentic. The result should feel like a beautifully timed street-photo frame captured on a rainy evening in the middle of a crosswalk. Not illustration. Not painterly. Not anime. Not fake AI poster art. Real.

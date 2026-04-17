@@ -64,6 +64,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "boxing-counterpunch": "스포츠",
   "bronze-statue-bench": "컨셉",
   "yakuza": "컨셉",
+  "rainy-crosswalk": "무드",
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -565,6 +566,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/yakuza-before.jpg",
     afterImg: "/thumbnails/yakuza-after.jpg",
+  },
+  {
+    id: "rainy-crosswalk",
+    name: "빗속 횡단보도",
+    desc: "비 오는 도심 횡단보도 위, 시네마틱 스트릿 포트레이트로 변환",
+    bgColor: "#1d2329",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Rainy_crosswalk-before.jpg",
+    afterImg: "/thumbnails/Rainy_crosswalk-after.jpg",
   },
 ];
 

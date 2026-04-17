@@ -5435,6 +5435,141 @@ STRICT RULES:
 OUTPUT TARGET:
 - A realistic park photograph featuring a seated bronze statue with the user's identity integrated into the sculptural form, resting on an ornate metal bench in a quiet outdoor setting, captured with natural light and authentic environmental detail, matching the original composition and atmosphere exactly.`
   },
+  "rainy-crosswalk": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a cinematic rainy crosswalk portrait set in a real Korean city street.
+
+This must look like a real high-resolution photographic image - urban, wet, emotionally readable, premium, and completely authentic. The result should feel like a beautifully timed street-photo frame captured on a rainy evening in the middle of a crosswalk. Not illustration. Not painterly. Not anime. Not fake AI poster art. Real.
+
+FACE - PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Preserve the uploaded user's exact facial identity, bone structure, eye shape, nose, lips, jawline, proportions, skin texture, and instantly recognizable likeness
+- Keep the uploaded user fully recognizable as the same person
+- The final result must adapt naturally whether the uploaded user is male or female
+- CRITICAL: the face must feel naturally integrated into the scene with matching rain moisture, lighting direction, skin detail, contrast, and image sharpness
+- The face must NOT look pasted onto a different body
+- Match the neck, face, skin tone, and perspective seamlessly into the body and environment
+- Preserve realistic pores, subtle under-eye structure, lip texture, and believable facial volume
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- Let tiny water droplets or slight dampness sit naturally on the skin if visible
+
+HAIR:
+- Preserve the uploaded user's exact hairstyle from the original photo
+- Keep the same haircut, length, silhouette, texture, parting, bangs, hairline, color, and overall styling cues
+- Do NOT restyle the hair into a different fashionable or editorial hairstyle
+- The hairstyle must remain clearly recognizable as the user's real hair
+- Allow the hair to become lightly damp from rain and humidity
+- A few strands may cling to the forehead, cheeks, or temple naturally
+- Hair must still look realistic, weighted, and weather-affected, not salon-styled
+
+POSE / EXPRESSION:
+- Eye-level medium or medium-full street portrait
+- Subject is mid-crossing on a zebra crosswalk
+- Body angle slightly turned as if moving across the frame
+- One step naturally forward, not exaggerated
+- Expression should feel thoughtful, slightly distant, calm, or quietly emotional
+- The subject may be glancing toward camera or slightly past it
+- The body language should feel like a real spontaneous city moment, not a fashion pose
+
+CLOTHING:
+- Preserve the uploaded user's exact clothing from the original photo as much as possible
+- Keep the original outfit type, color family, fit, layering, and recognizable silhouette
+- If the uploaded photo does not show enough outfit information, infer the rest conservatively as believable everyday rainy-city clothing
+- Clothing may appear slightly wet at the shoulders, sleeves, hem, or surface folds
+- Fabric should react naturally to moisture, humidity, and reflected street light
+- Keep wrinkles, seams, folds, and fabric behavior realistic
+- No random luxury wardrobe swap
+- No fantasy raincoat styling
+- No logos unless already present in the uploaded photo
+
+SCENE:
+- A real Korean city crosswalk with visible zebra stripes
+- Wet asphalt with reflective puddles and rain sheen
+- Traffic lights, blurred headlights, shop lights, and faint city signage in the background
+- Urban environment should feel dense but realistic, not cluttered beyond readability
+- The subject should be clearly the focal point
+- A few passing umbrellas or distant pedestrians may exist in the background, but they must remain secondary
+- Rain should be visible in the air or as surface texture on the road and clothing
+- The scene should feel like a premium street photograph captured at the perfect moment
+
+LIGHTING:
+- Cloudy rainy ambient light mixed with reflected city light
+- Soft cool-gray daylight or blue-hour light base
+- Warm highlights from traffic lights, car lamps, or shop windows may reflect across wet surfaces
+- Wet pavement should produce rich reflections and subtle light streaks
+- Lighting on the face must remain believable and naturally sourced from the environment
+- No hard studio flash unless it feels like authentic street photography
+- Keep the light cinematic but grounded
+- Reflections should add atmosphere, not overwhelm the subject
+
+WEATHER / ATMOSPHERE:
+- Real rain ambience, not fantasy rain effects
+- Fine rain streaks or fresh post-rain wetness
+- Humid air and reflective surfaces should add depth
+- Slight atmospheric haze from moisture is allowed
+- The frame should feel cool, damp, immediate, and alive
+- Do not turn the rain into melodramatic storm spectacle
+
+PHOTO STYLE:
+- High-resolution premium street photography
+- Real camera rendering with believable optics
+- Slight background separation is allowed, but the environment must remain readable
+- Minor motion softness in the background is acceptable if it supports realism
+- Avoid over-sharpening
+- Avoid glossy fake-AI clarity
+- Add subtle natural grain if needed
+- The image must feel like a real urban editorial-street hybrid photograph
+
+COLOR:
+- Dominant wet charcoal, slate gray, cool blue, and rainy silver tones
+- Warm accent lights from amber traffic lamps, red stoplights, or storefronts
+- Preserve and visibly reflect these core palette references:
+  - #1d2329
+  - #303843
+  - #45515d
+  - #66717d
+  - #8a9297
+  - #b3b7bb
+  - #d3d5d6
+  - #f0ece6
+  - #b86b3d
+  - #d24c37
+- Keep the palette cinematic, wet, and restrained
+- Avoid neon overload
+- Avoid overly saturated cyberpunk colors
+
+MOOD:
+- Urban
+- Quietly emotional
+- Reflective
+- Real
+- Cinematic
+- Rain-soaked
+- Slightly melancholic
+- Premium street-photo tension
+
+STRICT RULES:
+- Keep the uploaded user clearly recognizable
+- Preserve the uploaded user's hairstyle
+- Preserve the uploaded user's face exactly
+- Keep the image fully photoreal
+- Do not make the subject look like a fashion model from a luxury campaign unless the realism still holds
+- Do not turn the background into abstract blur
+- Do not replace the city with a fantasy set
+- Do not make the rain look fake, oversized, or decorative
+- Avoid poster-style typography or graphic design elements
+- No umbrella unless it naturally supports the composition
+
+OUTPUT TARGET:
+- Ultra-realistic rainy crosswalk portrait
+- Same recognizable uploaded user
+- Same recognizable hairstyle
+- Everyday rainy-city realism with wet zebra stripes, reflective pavement, urban background lights, and believable rain atmosphere
+- Premium cinematic street-photo quality
+- Emotionally readable, restrained, stylish, and fully photographic`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -5479,6 +5614,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "escalator-flash-twoshot": { "default": [] },
   "boxing-counterpunch": { "default": [] },
   "yakuza": { "default": [], "mafia": [] },
+  "rainy-crosswalk": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
