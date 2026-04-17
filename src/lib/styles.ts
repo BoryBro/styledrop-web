@@ -67,6 +67,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "rainy-crosswalk": "무드",
   "winter-snow": "무드",
   "y2k-object": "컨셉",
+  "teddy-bear": "컨셉",
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -601,6 +602,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/Y2k-Object-before.jpg",
     afterImg: "/thumbnails/Y2k-Object-after.jpg",
+  },
+  {
+    id: "teddy-bear",
+    name: "테디베어 에디토리얼",
+    desc: "곰인형에 둘러싸인 아방가르드 패션 에디토리얼 포트레이트",
+    bgColor: "#ae7953",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/teddy bear-before.jpg",
+    afterImg: "/thumbnails/teddy bear-after.jpg",
   },
 ];
 

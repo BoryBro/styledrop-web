@@ -6022,6 +6022,227 @@ OUTPUT TARGET:
 - Gradient pastel background
 - Playful, modern Y2K commercial feel`
   },
+  "teddy-bear": {
+    "default": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a centered, medium fashion editorial portrait of a young East Asian subject seated on a fluffy white surface, surrounded by plush teddy bears and suspended hair sections, matching the exact composition, prop arrangement, lighting quality, texture detail, surreal styling, and high-end studio finish of the attached reference image.
+
+This must look like a real high-resolution commercial fashion photograph — clean, sharp, surreal, quirky, polished, and physically believable. Not illustration. Not painterly. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject's face with the uploaded user's face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, skin texture, and instantly recognizable likeness
+- Keep the uploaded user fully recognizable as the same person
+- Maintain a calm, neutral, slightly detached (deadpan) expression unless minimal adjustment is required
+- CRITICAL: the face must feel naturally integrated into the studio environment — same lighting direction, same contrast, same skin texture, same highlight behavior, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted, over-cleaned, or artificially beautified
+- Match head position, neck, posture, skin tone, and perspective seamlessly into the seated pose
+- Preserve realistic skin texture, pores, subtle asymmetry, and natural facial volume
+- No beautification that changes facial structure
+- No plastic skin
+- No artificial symmetry correction
+- The final result must adapt naturally whether the uploaded user is male or female while preserving the same recognizable identity and the intended avant-garde editorial tone
+- The facial rendering must inherit the same luminous, polished, high-end studio finish of the attached reference
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like a real photographed subject in a controlled studio setup, not composited
+- Capture using a professional full-frame studio camera system
+- Lens: 50mm to 85mm portrait lens
+- Aperture: f/5.6–f/8 for sharp subject clarity across the full composition
+- Shutter speed: approximately 1/125 sec
+- ISO: 100
+- White balance: neutral studio balance around 5200K
+- Dynamic range: preserve skin highlights, fabric texture, and teddy bear detail without clipping
+- No digital over-sharpening; maintain crisp but natural clarity
+- Optical rendering must match the reference: sharp, evenly resolved, high-end editorial quality
+
+HAIR:
+- Preserve the uploaded user's exact hairstyle as the base identity
+- Transform the hair into a gravity-defying sculptural arrangement:
+  - divided into multiple sections
+  - lifted outward from the head
+  - clipped with pastel-colored hair clips
+  - partially suspended by a visible clothesline
+- Hair must remain recognizable as the user's own hair in texture and color
+- Sections must feel physically real, not floating randomly
+- Hair must mirror the reference's surreal styling while preserving identity
+- No wig-like texture
+- No unrelated hairstyle replacement
+
+MAKEUP / SKIN FINISH:
+- Clean editorial makeup look
+- Smooth luminous skin with controlled highlights
+- Subtle glow on cheekbones and nose bridge
+- Natural but defined lips with soft color
+- Defined brows
+- No heavy contour
+- No theatrical makeup
+- Skin must feel polished but real
+- Match the reference's high-end commercial skin finish
+
+CLOTHING:
+- Light, minimal upper garment such as a camisole or soft top
+- Long grey rib-knit socks
+- Styling must remain soft, neutral, and cozy
+- If the uploaded user is male, adapt the same tones and textures into a gender-appropriate or neutral equivalent while preserving the overall visual concept
+- Fabrics must appear physically real:
+  - soft knit texture
+  - light fabric layering
+- No heavy fashion substitution
+- No logos or branding
+
+POSE / COMPOSITION:
+- Centered medium shot at eye level
+- Subject seated with knees raised
+- Arms wrapped around or resting against a large teddy bear
+- Body posture compact and slightly enclosed
+- Composition must match the reference:
+  - subject in center
+  - teddy bears filling both sides
+  - hair extending outward and upward
+- Maintain strong central symmetry with intentional clutter
+- No wide framing
+- No tight crop — maintain full mid-body visibility
+
+PROP / ENVIRONMENTAL ELEMENTS:
+- Multiple plush teddy bears in beige, tan, and brown tones
+- Bears positioned:
+  - seated around the subject
+  - hanging from a clothesline above
+- Pastel plastic clothespins attached to both hair and bears
+- Visible clothesline spanning horizontally across the upper frame
+- A large caramel-brown teddy bear in the foreground
+- Props must feel physically real and tactile
+- No additional objects beyond the reference
+
+SCENE:
+- Clean cream-colored studio background
+- No visible walls or corners
+- Minimalist environment with strong subject focus
+- Background must remain smooth and distraction-free
+- Scene must match the reference:
+  - clean backdrop
+  - dense prop arrangement
+  - centered subject
+- Maintain balance between minimalism and clutter
+
+LIGHTING:
+- Commercial studio lighting
+- Bright, soft, diffused illumination
+- Minimal shadow presence
+- Even light distribution across subject and props
+- Gentle highlights on skin, hair, and teddy bears
+- Lighting must match the reference exactly:
+  - shadowless feel
+  - clean high-key look
+  - soft tonal transitions
+- No dramatic lighting
+- No directional spotlight
+
+DEPTH & OPTICS:
+- Deep focus
+- Entire subject and surrounding props remain sharp
+- No strong background blur
+- No wide-angle distortion
+- Optical rendering must feel clean and controlled
+
+PHOTO STYLE:
+- High-resolution photography
+- Sharp focus
+- Clean creamy background
+- Commercial studio aesthetic
+- Avant-garde fashion editorial style
+- Surreal / quirky composition
+- Kitsch aesthetic
+- High-end minimalism with intentional clutter
+- Mix-and-match visual elements
+- Pop of color from hair clips and accessories
+- Playful prop integration
+- No grain
+- No noise
+- No HDR exaggeration
+- No painterly softness
+- No AI-smooth rendering
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Extremely minimal imperfections
+- Slight natural lens softness at edges only if needed
+- No visible grain
+- No artificial texture overlays
+- Maintain clean commercial finish
+
+EXPOSURE & RESPONSE:
+- Exposure balanced for skin clarity, fabric detail, and prop visibility
+- Highlights must remain soft and controlled
+- Shadows must remain minimal and open
+- Midtones must preserve detail across all objects
+- No overexposure
+- No flat washout
+
+ANTI-AI CONSTRAINT:
+- Do NOT simplify the prop arrangement
+- Do NOT remove the cluttered composition
+- Do NOT flatten the surreal hair structure
+- Do NOT over-smooth the face
+- Do NOT stylize into illustration
+- Maintain real photographic rendering with surreal styling only
+
+COLOR:
+- Palette must reflect:
+  - #f0ece3
+  - #333230
+  - #e3ddd2
+  - #ae7953
+  - #c3936f
+  - #945f3a
+  - #dcc7b5
+  - #746b64
+  - #55504c
+  - #754427
+  - #8d857e
+  - #0f1615
+  - #d5ae92
+  - #552b13
+  - #b0a89f
+- Dominant tones:
+  - cream white
+  - beige
+  - brown
+  - taupe
+- Accents:
+  - pastel clips
+  - soft pink lip tones
+- Maintain soft, warm, neutral palette with subtle color pops
+
+MOOD:
+- Playful surrealism
+- Warm
+- Cozy yet strange
+- Fashion-forward
+- Slightly absurd
+- Controlled and minimal yet visually dense
+- Calm and deadpan expression against chaotic styling
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Preserve the centered composition, teddy bear arrangement, suspended hair, and clean background
+- Maintain commercial studio lighting and high-resolution clarity
+- Keep the surreal and quirky styling intact
+- Adapt styling naturally for any gender without breaking the scene logic
+- Do not stylize into fantasy illustration
+- Keep all elements grounded in real photographed fashion editorial context
+
+OUTPUT TARGET:
+- Ultra-realistic avant-garde fashion editorial portrait
+- Same recognizable uploaded user
+- Same recognizable hairstyle transformed into sculptural suspended form
+- Clean studio background with dense teddy bear arrangement
+- Sharp, high-end commercial lighting and surreal composition
+- Exact attached-reference feeling: playful, quirky, polished, surreal, and high-fashion
+- Looks like a real photographed editorial campaign image, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -6069,6 +6290,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "rainy-crosswalk": { "default": [] },
   "winter-snow": { "default": [] },
   "y2k-object": { "white": [], "pastel": [] },
+  "teddy-bear": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
