@@ -69,6 +69,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "y2k-object": "컨셉",
   "teddy-bear": "컨셉",
   "us-on-bikes": "무드",
+  "night-drive": "무드",
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -626,6 +627,17 @@ export const ALL_STYLES: StyleDef[] = [
     beforeImg: "/thumbnails/us on bikes-before.jpg",
     afterImg: "/thumbnails/us on bikes-after.jpg",
   },
+  {
+    id: "night-drive",
+    name: "야간 드라이브",
+    desc: "도심 다리 위 오토바이를 타고 달리는 시네마틱 야간 웨딩 포트레이트",
+    bgColor: "#211920",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/drive-before.jpg",
+    afterImg: "/thumbnails/drive-after.jpg",
+  },
 ];
 
 /** UI에 표시되는 스타일만 (hidden === false) */
@@ -640,4 +652,4 @@ export const STYLE_LABELS: Record<string, string> = Object.fromEntries(
 export const VISIBLE_STYLE_IDS = VISIBLE_STYLES.map((s) => s.id);
 
 /** 다중 업로드가 필요한 스타일 ID */
-export const MULTI_SOURCE_STYLE_IDS = ["romantic-night-twoshot", "escalator-flash-twoshot", "us-on-bikes"] as const;
+export const MULTI_SOURCE_STYLE_IDS = ["romantic-night-twoshot", "escalator-flash-twoshot", "us-on-bikes", "night-drive"] as const;

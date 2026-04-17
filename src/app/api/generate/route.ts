@@ -6382,6 +6382,226 @@ OUTPUT TARGET:
 - Strong grain, softness, lo-fi texture
 - Feels like a real scanned analog photo, not AI-generated`
   },
+  "night-drive": {
+    "default": `Images 1 and 2 are uploaded source identities for a single combined edit. Use both uploaded people exactly as the only identity source and create one final image. Additional instructions:
+Use the uploaded image or uploaded images as the base and transform them, not generate a new person.
+
+Transform the uploaded photo set into a candid, side-on medium portrait of exactly two young East Asian adults riding a motorcycle across a city bridge at night, matching the exact composition, subject placement, lighting harshness, wardrobe styling, motion feeling, grain texture, and cinematic urban mood of the attached reference image.
+
+This must look like a real high-resolution night street photograph captured with a consumer digital camera — spontaneous, cinematic, slightly rough, urban, and physically believable. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+SUBJECT COUNT / IDENTITY SOURCE — MUST FOLLOW EXACTLY:
+- The final image must contain exactly two people only
+- No extra riders, no third subject, no crowd, no silhouettes, no background human figures
+- Use only the uploaded image identities as the source for both faces
+- This is an edit using uploaded people, not newly invented strangers
+- Two uploaded face photos are provided and both must be used
+- Map uploaded person 1 to the rear passenger and uploaded person 2 to the driver
+- Preserve each uploaded identity separately
+- Do not average, merge, remix, or partially invent either face
+- Do not turn one uploaded face into both people unless both uploaded photos are actually the same person
+- Both faces must remain readable enough to preserve identity, even with helmets and motion
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace both subjects' faces using only the uploaded face images as identity sources
+- Preserve exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Keep the uploaded identities clearly recognizable despite motion, lighting, and helmet usage
+- Rear passenger (bridal role) must have a calm, slightly distant, softly expressive gaze directed slightly off-camera
+- Driver must face forward with focused attention on the road
+- CRITICAL: both faces must feel naturally integrated into the night motorcycle scene — same lighting direction, same contrast, same skin texture, same harsh streetlight behavior, and same overall image sharpness as the rest of the photograph
+- The faces must NOT look pasted, over-cleaned, or artificially beautified
+- Match head position, neck, posture, skin tone, and perspective seamlessly into both bodies
+- Preserve realistic skin texture, subtle asymmetry, and believable facial volume
+- No beautification that alters facial structure
+- No plastic skin
+- No artificial symmetry correction
+- The final result must adapt naturally to each uploaded person's gender while preserving identity and the intended roles
+
+FACE & CAMERA:
+- Keep both subjects recognizable as the uploaded user identities
+- Maintain believable face proportions and natural structure
+- The faces must feel like a real photographed moment, not a composited fashion scene
+- Capture using a consumer-level digital camera or smartphone-like night photography aesthetic
+- Lens: 35mm to 50mm equivalent
+- Aperture: f/1.8–f/2.8 for shallow depth and low-light capture
+- Shutter speed: approximately 1/30 to 1/80 sec to allow subtle motion softness
+- ISO: 800 to 3200
+- White balance: mixed cool city light with neutral-white streetlight highlights
+- Dynamic range: preserve white dress detail, helmet highlights, and dim background lights without flattening contrast
+- No digital over-sharpening; maintain slight softness, grain, and real low-light rendering
+- Optical rendering must match the attached reference: side view, slightly soft, low-light, and documentary-like
+
+HAIR:
+- Preserve each uploaded person's real hairstyle as much as possible
+- Rear passenger may have loose hair flowing naturally from under the helmet
+- Hair must appear affected by motion and wind
+- Hair must remain identity-consistent, not restyled into a new haircut
+- No wig-like texture
+- No unrelated editorial restyling
+
+CLOTHING:
+- Rear passenger: voluminous white gown with layered fabric, ruffled sleeves, and tulle-like structure
+- Add white gloves
+- Fabric must feel airy, layered, and slightly glossy under night lighting
+- Driver: taupe jacket with casual urban structure
+- Both subjects must wear white motorcycle helmets
+- Clothing must match the attached reference in silhouette and mood
+- Fabrics must appear physically real:
+  - structured jacket
+  - layered gown
+  - smooth helmet surface
+- No fantasy costume exaggeration
+- No luxury fashion substitution
+
+POSE / COMPOSITION:
+- Side-on medium shot
+- Motorcycle moving left-to-right across frame
+- Rear passenger seated side-saddle behind the driver
+- Rear passenger holding a bouquet of white lilies
+- Driver leaning forward slightly, hands on handlebars
+- The composition must match the attached reference closely:
+  - driver in front, passenger behind
+  - both framed from torso up
+  - clear side profile structure
+  - road and bridge railing visible
+- Do not front-face the composition
+- Do not center both faces equally
+- Maintain the directional, cinematic composition
+
+PROP / ENVIRONMENTAL ELEMENTS:
+- Motorcycle with visible handlebars and front structure
+- Bouquet of white lilies in the rear passenger's hands
+- Bridge railing running horizontally behind subjects
+- Distant city lights forming bokeh
+- Blue bridge structure visible in the far background
+- No additional props beyond what supports the reference
+- No crowd or traffic overload
+
+SCENE:
+- Nighttime city bridge
+- Open road surface with asphalt tones
+- Bridge railing and distant illuminated structure
+- Background must contain blurred city lights forming a soft bokeh pattern
+- The environment must feel urban, open, and cinematic
+- The scene must match the attached reference:
+  - moving motorcycle
+  - bridge setting
+  - distant city glow
+  - no heavy traffic presence
+- The world must remain grounded, realistic, and slightly nostalgic
+
+LIGHTING:
+- Harsh white streetlight illumination
+- Strong directional highlights on faces, helmets, and white dress
+- High contrast between lit subjects and darker background
+- Specular highlights visible on helmet surfaces and glossy fabric
+- Lighting must match the attached reference exactly:
+  - bright streetlight hits
+  - deep surrounding shadows
+  - reflective surfaces catching hard light
+  - no soft studio lighting
+- No artificial cinematic lighting rigs
+- No warm indoor glow
+
+DEPTH & OPTICS:
+- Moderate shallow depth of field
+- Subjects remain readable
+- Background lights blur into soft circular bokeh
+- Slight motion softness allowed in background or edges
+- No wide-angle distortion
+- Optical rendering must feel real, handheld, and low-light
+- Depth must match the attached reference: subjects readable, background softened
+
+PHOTO STYLE:
+- High-resolution digital photography with consumer-camera feel
+- Visible mild digital noise in darker areas
+- Slight softness from low-light conditions
+- Subtle motion blur artifacts allowed
+- No HDR exaggeration
+- No painterly softness
+- No AI-smooth rendering
+- Must feel like a real captured moment, not a staged editorial
+- Match the attached reference in finish:
+  - slightly grainy
+  - slightly soft
+  - spontaneous
+  - cinematic
+  - urban
+
+REAL CAMERA IMPERFECTIONS (CRITICAL):
+- Mild grain in shadows
+- Slight motion blur from movement
+- Slight exposure unevenness from streetlight patches
+- Slight softness in edges due to low-light capture
+- No perfectly clean gradients
+- No unnatural cutout edges
+- Maintain the imperfect realism of a night street photo
+
+EXPOSURE & RESPONSE:
+- Exposure balanced for white gown, skin tones, and helmet highlights
+- Highlights must roll off softly on dress and lights
+- Shadows must remain deep but readable
+- Midtones must preserve most of the subject detail
+- The image must feel slightly contrasty and natural
+- No flat exposure
+- No over-processed clarity
+
+ANTI-AI CONSTRAINT:
+- Do NOT turn the scene into a studio fashion shoot
+- Do NOT remove grain, noise, or softness
+- Do NOT sharpen into modern digital crispness
+- Do NOT add extra characters or vehicles
+- Do NOT stylize into fantasy wedding imagery
+- Do NOT over-clean the scene
+- Maintain real photographic rendering with spontaneous night motion only
+
+COLOR:
+- Dominant palette must reflect:
+  - #211920
+  - #647973
+  - #242844
+  - #758d86
+  - #54645f
+  - #f1eee6
+  - #353030
+  - #d2d5d3
+  - #acbdbc
+  - #404a4d
+  - #8ea6a4
+- Balance cool night blues, asphalt grays, white highlights, and muted taupe tones
+- Keep the palette subdued, cinematic, and realistic
+- No oversaturated neon grading
+- No warm fantasy tone
+
+MOOD:
+- Cinematic
+- Spontaneous
+- Urban
+- Slightly nostalgic
+- Dreamlike but grounded
+- Romantic but subtle
+- Quietly dramatic
+- Must match the emotional tone of the attached reference exactly
+
+STRICT RULES:
+- Must use the uploaded identities as the base
+- Must not generate new faces
+- Exactly two subjects only
+- Preserve side-on motorcycle composition, white gown, helmet styling, bouquet, and bridge setting
+- Maintain grain, motion softness, and low-light imperfections
+- Keep environment realistic and uncluttered
+- Do not stylize into fantasy or high-fashion editorial
+- The uploaded face identities must remain clearly preserved
+
+OUTPUT TARGET:
+- Ultra-realistic nighttime motorcycle portrait
+- Exactly two East Asian adults
+- Same recognizable uploaded identities
+- Side-on riding composition with white gown, helmet, bouquet, and city bridge
+- Grainy, slightly soft, low-light digital aesthetic
+- Exact attached-reference feeling: cinematic, spontaneous, urban, nostalgic, and real
+- Looks like a real captured night photo, not AI-generated`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -6431,6 +6651,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "y2k-object": { "white": [], "pastel": [] },
   "teddy-bear": { "default": [] },
   "us-on-bikes": { "default": [] },
+  "night-drive": { "default": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [
