@@ -5791,6 +5791,237 @@ OUTPUT TARGET:
 - The snow must feel dense, layered, varied in size, and strongly flash-lit
 - The final image must carry the exact intended hazy, magical, consumer-camera winter-night feeling of the attached reference while preserving the uploaded user's natural face angle`
   },
+  "y2k-object": {
+    "white": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a high-angle medium editorial portrait against a seamless bright white backdrop, matching the exact scene, floating-object arrangement, camera angle, lens behavior, lighting softness, skin finish, pastel color palette, playful Y2K/K-pop commercial mood, and polished glossy finish of the attached reference image.
+
+This must look like a real high-resolution editorial fashion photograph with a whimsical, energetic, glossy, Y2K-inspired commercial atmosphere — bright, clean, playful, floating, and physically believable. Not illustration. Not painterly. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY:
+- Replace the subject's face using only the uploaded identity
+- Preserve exact face shape, structure, proportions, skin texture, and recognizability
+- Maintain calm, direct, slightly curious expression
+- Integrate face naturally into lighting, tone, and sharpness of the scene
+- No pasted look, no beautification, no plastic skin, no symmetry correction
+
+CAMERA:
+- Full-frame digital camera
+- 35–50mm lens, high-angle viewpoint
+- f/2.8–f/4, ISO 100–200, 1/125–1/200 sec
+- Clean daylight white balance (5000–5600K)
+- Crisp subject, slight edge softness, mild lens distortion
+
+HAIR:
+- Preserve original hairstyle exactly
+- Hair spreads outward in a floating, weightless manner
+- Natural strand behavior, no wig-like texture
+
+SKIN / MAKEUP:
+- Minimal glossy editorial finish
+- Luminous, soft highlights, natural tones
+- Clean modern K-pop / Y2K aesthetic
+- No heavy contour or artificial effects
+
+CLOTHING:
+- Powder-blue structured sporty top
+- White rib-knit inner layer
+- Navy track pants with white drawstrings
+- Maintain real fabric texture and structure
+- Adapt naturally to subject while preserving same visual logic
+
+POSE:
+- High-angle medium portrait
+- Subject centered, looking slightly upward
+- Hands raised near lower frame with soft curved fingers
+- Dynamic, playful, suspended pose
+
+OBJECTS (FLOATING):
+- Yellow-and-blue retro cassette Walkman with headphones
+- Pink Tamagotchi-style device
+- White handheld digital device
+- Yellow lollipop
+- Objects float around head and shoulders with varied depth
+
+SCENE:
+- Seamless bright white studio background
+- No visible edges, no environment details
+- Clean, minimal, commercial setup
+
+LIGHTING:
+- Soft diffuse studio lighting
+- Nearly shadowless
+- Clean, even illumination
+- Gentle highlights on skin, hair, and objects
+- No dramatic shadows or colored lighting
+
+DEPTH:
+- Face sharp
+- Slight foreground blur near bottom
+- Objects vary slightly in focus
+- Background clean and neutral
+
+PHOTO STYLE:
+- High-resolution digital editorial
+- Glossy, polished, modern commercial finish
+- No film grain, no noise
+- No HDR, no painterly softness
+
+EXPOSURE:
+- Balanced for skin, white background, and pastel colors
+- Soft highlight roll-off
+- Open shadows, preserved midtones
+
+COLOR:
+- Bright white base
+- Powder blue, navy, baby pink, butter yellow accents
+- Soft warm skin tones
+- Pastel, clean, youthful palette
+
+MOOD:
+- Whimsical
+- Energetic
+- Glossy
+- Youthful
+- Playful
+- Y2K / K-pop editorial
+
+STRICT:
+- Use uploaded identity only
+- Preserve face and hairstyle exactly
+- Maintain floating composition and high-angle framing
+- No extra props
+- No text in background
+- No stylization into illustration or CGI
+
+OUTPUT:
+- Ultra-realistic glossy editorial portrait
+- Same recognizable subject
+- Floating hair and objects
+- Bright white background
+- Playful Y2K commercial feel`,
+    "pastel": `Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a high-angle medium editorial portrait against a seamless soft pastel gradient backdrop (light lavender to pale sky-blue), matching the exact floating-object arrangement logic, camera angle, lens behavior, lighting softness, skin finish, pastel color palette, playful Y2K/K-pop commercial mood, and polished glossy finish of the attached reference image, while reinterpreting the environment with a new visual direction.
+
+This must look like a real high-resolution editorial fashion photograph with a whimsical, energetic, glossy, Y2K-inspired commercial atmosphere — bright, clean, playful, floating, and physically believable. Not illustration. Not painterly. Not CGI. Real.
+
+FACE — PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject's face with the uploaded user's face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, skin texture, and instantly recognizable likeness
+- Keep the uploaded user fully recognizable as the same person
+- Maintain a calm, direct, slightly curious, softly intense expression
+- The face must feel naturally integrated into the floating editorial setup — same lighting direction, contrast, skin texture, and sharpness as the rest of the image
+- No pasted look, no beautification, no plastic skin, no symmetry correction
+
+FACE & CAMERA:
+- Full-frame digital camera system
+- Lens: 35mm to 50mm, high-angle viewpoint
+- Aperture: f/2.8–f/4
+- ISO: 100–200
+- Shutter: 1/125–1/200
+- Clean daylight white balance (5000–5600K)
+- Slightly closer framing for stronger subject presence
+- Mild edge distortion and gentle depth falloff
+- No over-sharpening, maintain soft editorial transitions
+
+HAIR:
+- Preserve the uploaded user's exact hairstyle
+- Hair spreads outward in a floating, weightless way
+- Natural strand behavior, no wig-like texture
+
+MAKEUP / SKIN:
+- Minimal glossy editorial finish
+- Luminous skin with natural tone preserved
+- Soft highlights on cheeks, nose, lips
+- Clean K-pop / Y2K aesthetic
+- No heavy contour or artificial effects
+
+CLOTHING:
+- Powder-blue structured sporty top
+- White rib-knit inner layer
+- Navy track pants with white drawstrings
+- Maintain real fabric behavior and structure
+- Adapt naturally to subject while preserving same styling logic
+
+POSE / COMPOSITION:
+- High-angle medium portrait
+- Subject centered and closest to camera
+- Face and upper torso dominate frame
+- Hands raised near lower foreground with soft curved gesture
+- Subject looking slightly upward
+- Dynamic, floating editorial composition
+
+OBJECTS (FLOATING):
+- Replace original props with:
+  - translucent pastel spheres
+  - soft gel-like blobs
+  - glossy capsule shapes
+  - minimal candy-like objects
+- Objects float around head and shoulders
+- Vary scale, depth, and overlap naturally with hair
+- Maintain balanced floating composition
+
+SCENE:
+- Seamless pastel gradient background (lavender → sky blue)
+- No visible edges or environment
+- Clean, minimal, commercial setup
+
+LIGHTING:
+- Soft diffuse studio lighting
+- Nearly shadowless
+- Clean, even illumination
+- Slightly brighter highlights for glossy effect
+- No harsh shadows or colored lighting
+
+DEPTH & OPTICS:
+- Face sharp
+- Slight foreground blur near bottom
+- Objects vary slightly in focus depending on depth
+- Background clean and neutral
+- Real lens-based rendering
+
+PHOTO STYLE:
+- High-resolution digital editorial photography
+- Glossy, polished, contemporary finish
+- Crisp detail with soft tonal transitions
+- No film grain, no noise, no HDR exaggeration
+
+EXPOSURE:
+- Balanced for skin, pastel colors, and background
+- Soft highlight roll-off
+- Open shadows, preserved midtones
+- Bright, clean, airy result
+
+COLOR:
+- Pastel gradient base (lavender, sky blue)
+- Powder blue wardrobe tones
+- Soft candy-like accents
+- Clean, youthful palette
+- No oversaturation or muddy grading
+
+MOOD:
+- Whimsical
+- Energetic
+- Glossy
+- Youthful
+- Playful
+- Y2K / K-pop editorial
+
+STRICT RULES:
+- Must use uploaded identity only
+- Preserve face and hairstyle exactly
+- Maintain floating composition and high-angle framing
+- No text
+- No extra props beyond defined objects
+- No stylization into illustration or CGI
+
+OUTPUT TARGET:
+- Ultra-realistic glossy editorial portrait
+- Same recognizable subject
+- Floating hair and abstract pastel objects
+- Gradient pastel background
+- Playful, modern Y2K commercial feel`
+  },
 };
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
@@ -5837,6 +6068,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "yakuza": { "default": [], "mafia": [] },
   "rainy-crosswalk": { "default": [] },
   "winter-snow": { "default": [] },
+  "y2k-object": { "white": [], "pastel": [] },
   // 천사 변신 — 레퍼런스 멀티모달 활성화
   "angel": {
     "dark": [

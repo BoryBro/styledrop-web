@@ -66,6 +66,7 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   "yakuza": "컨셉",
   "rainy-crosswalk": "무드",
   "winter-snow": "무드",
+  "y2k-object": "컨셉",
 };
 
 export const ALL_STYLES: StyleDef[] = [
@@ -589,6 +590,17 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/winter-before.jpg",
     afterImg: "/thumbnails/winter-after.jpg",
+  },
+  {
+    id: "y2k-object",
+    name: "Y2K 오브제",
+    desc: "레트로 소품이 둥둥 떠다니는 Y2K 감성 글로시 에디토리얼 포트레이트",
+    bgColor: "#e8dff5",
+    tag: "NEW",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Y2k-Object-before.jpg",
+    afterImg: "/thumbnails/Y2k-Object-after.jpg",
   },
 ];
 

@@ -25,4 +25,8 @@ export const STYLE_VARIANTS: Record<string, Variant[]> = {
     { id: "default", label: "야쿠자", desc: "이레즈미 조직원 무드의 80~90년대 범죄 다큐 포트레이트", thumbnail: "/thumbnails/yakuza-after.jpg" },
     { id: "mafia", label: "마피아", desc: "바디가드와 시가가 함께 있는 다크 올드머니 범죄 에디토리얼", thumbnail: "/thumbnails/mafia-after.jpg?v=2" },
   ],
+  "y2k-object": [
+    { id: "white", label: "화이트 스튜디오", desc: "레트로 워크맨·다마고치가 떠다니는 화이트 배경 Y2K 에디토리얼", thumbnail: "/thumbnails/Y2k-Object-option 1-after.jpg" },
+    { id: "pastel", label: "파스텔 그라디언트", desc: "투명 젤리 오브제가 떠다니는 라벤더-스카이블루 파스텔 에디토리얼", thumbnail: "/thumbnails/Y2k-Object-option 2-after.jpg" },
+  ],
 };
