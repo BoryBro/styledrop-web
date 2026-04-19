@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { setCreditBalanceWithPolicy } from "@/lib/credits.server";
+import { addCreditsWithPolicy } from "@/lib/credits.server";
 
 export async function POST(request: NextRequest) {
   const { password, userId, credits } = await request.json();
@@ -14,10 +14,10 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_KEY!
   );
 
-  const result = await setCreditBalanceWithPolicy(supabase, { userId, credits });
+  const result = await addCreditsWithPolicy(supabase, { userId, credits, sourceType: "manual" });
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error?.message ?? "크레딧 설정 실패" }, { status: 500 });
+    return NextResponse.json({ error: result.error?.message ?? "크레딧 추가 실패" }, { status: 500 });
   }
   return NextResponse.json({ ok: true, userId, credits });
 }

@@ -71,6 +71,14 @@ type RecentGenerationRefund = {
 };
 type Stats = {
   styleControls: StyleControlState[];
+  requestLoadStatus: "stable" | "watch" | "queue_recommended";
+  requestsLast10m: number;
+  processingNowEstimate: number;
+  requestFailureRate24h: number;
+  avgRequestDurationMs24h: number;
+  requestCompleted24h: number;
+  generateCompleted24h: number;
+  auditionCompleted24h: number;
   generationErrorTotal24h: number;
   generationErrorSummary: GenerationErrorSummary[];
   recentGenerationErrors: RecentGenerationError[];
@@ -275,6 +283,40 @@ function formatDateTime(iso?: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatDurationMs(ms?: number) {
+  if (!ms || ms <= 0) return "—";
+  if (ms < 1000) return `${ms}ms`;
+  const seconds = ms / 1000;
+  if (seconds < 60) return `${seconds.toFixed(seconds >= 10 ? 0 : 1)}초`;
+  const minutes = Math.floor(seconds / 60);
+  const remainSeconds = Math.round(seconds % 60);
+  return `${minutes}분 ${remainSeconds}초`;
+}
+
+function getRequestLoadMeta(status: Stats["requestLoadStatus"]) {
+  if (status === "queue_recommended") {
+    return {
+      label: "큐 준비 권장",
+      className: "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]",
+      description: "지금은 요청이 몰릴 때를 대비한 대기열 설계를 시작하는 게 안전합니다.",
+    };
+  }
+
+  if (status === "watch") {
+    return {
+      label: "관찰 단계",
+      className: "bg-[#FFF9E8] text-[#9A6700] border border-[#F3E2A9]",
+      description: "아직 급한 수준은 아니지만, 실패율과 처리 시간을 계속 보면서 준비해야 합니다.",
+    };
+  }
+
+  return {
+    label: "안정",
+    className: "bg-[#EEF8F1] text-[#18794E] border border-[#B7E1C4]",
+    description: "지금은 중복 방지와 환불 보호만으로도 운영 가능한 수준입니다.",
+  };
 }
 
 function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, MonthlyCost> }) {
@@ -1642,12 +1684,12 @@ export default function AdminPage() {
                     body: JSON.stringify({ password, userId: creditUserId, credits: Number(creditAmount) }),
                   });
                   const data = await res.json();
-                  setCreditMsg(data.ok ? `✓ ${stats.userList.find(u => u.id === creditUserId)?.nickname ?? creditUserId.slice(0, 8)} → ${creditAmount}크레딧 설정됨` : `오류: ${data.error}`);
+                  setCreditMsg(data.ok ? `✓ ${stats.userList.find(u => u.id === creditUserId)?.nickname ?? creditUserId.slice(0, 8)} +${creditAmount}크레딧 추가됨` : `오류: ${data.error}`);
                   setTimeout(() => setCreditMsg(""), 3000);
                 }}
                 className="w-full bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-900 font-bold py-2.5 rounded-xl transition-colors text-[14px]"
               >
-                크레딧 설정
+                크레딧 추가
               </button>
               {creditMsg && <p className={`text-[13px] text-center ${creditMsg.startsWith("✓") ? "text-[#C9571A]" : "text-red-500"}`}>{creditMsg}</p>}
             </div>
