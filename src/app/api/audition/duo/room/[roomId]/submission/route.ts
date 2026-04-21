@@ -15,7 +15,6 @@ import {
   type DuoBattleScene,
   type DuoEvaluation,
   type DuoParticipantRole,
-  type DuoScoreLabel,
   type DuoScoreMap,
 } from "@/lib/audition-duo";
 import { addCreditsWithPolicy, getAvailableCredits } from "@/lib/credits.server";

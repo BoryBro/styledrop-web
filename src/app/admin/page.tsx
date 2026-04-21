@@ -293,40 +293,6 @@ function formatDateTime(iso?: string | null) {
   });
 }
 
-function formatDurationMs(ms?: number) {
-  if (!ms || ms <= 0) return "—";
-  if (ms < 1000) return `${ms}ms`;
-  const seconds = ms / 1000;
-  if (seconds < 60) return `${seconds.toFixed(seconds >= 10 ? 0 : 1)}초`;
-  const minutes = Math.floor(seconds / 60);
-  const remainSeconds = Math.round(seconds % 60);
-  return `${minutes}분 ${remainSeconds}초`;
-}
-
-function getRequestLoadMeta(status: Stats["requestLoadStatus"]) {
-  if (status === "queue_recommended") {
-    return {
-      label: "큐 준비 권장",
-      className: "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]",
-      description: "지금은 요청이 몰릴 때를 대비한 대기열 설계를 시작하는 게 안전합니다.",
-    };
-  }
-
-  if (status === "watch") {
-    return {
-      label: "관찰 단계",
-      className: "bg-[#FFF9E8] text-[#9A6700] border border-[#F3E2A9]",
-      description: "아직 급한 수준은 아니지만, 실패율과 처리 시간을 계속 보면서 준비해야 합니다.",
-    };
-  }
-
-  return {
-    label: "안정",
-    className: "bg-[#EEF8F1] text-[#18794E] border border-[#B7E1C4]",
-    description: "지금은 중복 방지와 환불 보호만으로도 운영 가능한 수준입니다.",
-  };
-}
-
 function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, MonthlyCost> }) {
   const [activeMonth, setActiveMonth] = useState("2026-04");
   const months = [

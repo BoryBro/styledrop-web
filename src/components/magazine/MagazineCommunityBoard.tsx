@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MOCK_BOARD_DATA } from "@/lib/magazine";
 
 type BoardItem = {
@@ -45,7 +45,7 @@ export function MagazineCommunityBoard({
   accent: string;
 }) {
   const [payload, setPayload] = useState<BoardPayload | null>(null);
-  const [loading, setLoading] = useState(false);
+  const loading = false;
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [comment, setComment] = useState("");
@@ -54,7 +54,7 @@ export function MagazineCommunityBoard({
 
   const encodedStyleId = useMemo(() => encodeURIComponent(styleId), [styleId]);
 
-  const loadBoard = async () => {
+  const loadBoard = useCallback(async () => {
     // 하드코딩: MOCK_BOARD_DATA 직접 사용 (디자인 UI 확인용)
     const mockItems = MOCK_BOARD_DATA[styleId as keyof typeof MOCK_BOARD_DATA] || [];
     const payload: BoardPayload = {
@@ -70,11 +70,11 @@ export function MagazineCommunityBoard({
 
     setPayload(payload);
     setMessage(null);
-  };
+  }, [styleId]);
 
   useEffect(() => {
     void loadBoard();
-  }, [encodedStyleId]);
+  }, [encodedStyleId, loadBoard]);
 
   const handleSubmit = async () => {
     if (!comment.trim()) {
@@ -103,26 +103,6 @@ export function MagazineCommunityBoard({
       await loadBoard();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "참여 저장에 실패했어요.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleRemove = async () => {
-    setSubmitting(true);
-    setMessage(null);
-
-    try {
-      const response = await fetch(`/api/magazine-board?styleId=${encodedStyleId}`, {
-        method: "DELETE",
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || "remove failed");
-      }
-      await loadBoard();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "참여 삭제에 실패했어요.");
     } finally {
       setSubmitting(false);
     }
@@ -256,7 +236,7 @@ export function MagazineCommunityBoard({
         <p className="text-[12px] text-white/40">로드 중...</p>
       ) : payload?.items.length ? (
         <div className="flex flex-col gap-0">
-          {payload.items.slice(0, 4).map((item, index) => (
+          {payload.items.slice(0, 4).map((item) => (
             <div
               key={`${item.userId}-${item.createdAt}`}
               className="flex items-start gap-4 py-4 border-b border-white/[0.06] last:border-b-0"

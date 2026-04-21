@@ -33,8 +33,9 @@ export function ShowcaseStrip({
   styleIds: string[];
   accent?: string;
 }) {
+  void styleIds;
   const items = MOCK_SHOWCASE_ITEMS;
-  const loopItems = useMemo(() => (items.length > 0 ? [...items, ...items] : []), []);
+  const loopItems = useMemo(() => (items.length > 0 ? [...items, ...items] : []), [items]);
 
   if (items.length === 0) {
     return null;

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 function ReviewerLoginContent() {
@@ -10,9 +11,9 @@ function ReviewerLoginContent() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col">
       <header className="h-[52px] border-b border-[#1a1a1a] flex items-center px-4">
-        <a href="/" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">
+        <Link href="/" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">
           StyleDrop
-        </a>
+        </Link>
       </header>
 
       <main className="flex-1 w-full max-w-lg mx-auto px-4 py-8 flex flex-col gap-5">

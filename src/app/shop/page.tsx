@@ -40,6 +40,28 @@ const PG_METHODS = [
 ];
 
 type Status = "idle" | "loading" | "success" | "gift_success" | "error";
+type GiftShareKakaoSDK = {
+  init?: (key: string | undefined) => void;
+  isInitialized?: () => boolean;
+  Share?: {
+    sendDefault?: (options: {
+      objectType: "text";
+      text: string;
+      link: {
+        mobileWebUrl: string;
+        webUrl: string;
+      };
+    }) => void;
+  };
+};
+type PaymentConfirmPayload = {
+  success?: boolean;
+  retryable?: boolean;
+  error?: string;
+  credits?: number;
+  code?: string;
+  expiresAt?: string;
+};
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -65,12 +87,13 @@ export default function ShopPage() {
     setIsSharingGift(true);
     try {
       const shareUrl = `${window.location.origin}/gift/${encodeURIComponent(giftCode)}`;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const Kakao = (window as any).Kakao;
-      if (!Kakao?.isInitialized()) Kakao?.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
-      if (!Kakao?.Share?.sendDefault) throw new Error("Kakao SDK unavailable");
+      const Kakao = (window as Window & { Kakao?: GiftShareKakaoSDK }).Kakao;
+      const isKakaoInitialized = Kakao?.isInitialized?.() ?? false;
+      if (!isKakaoInitialized) Kakao?.init?.(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
+      const sendDefault = Kakao?.Share?.sendDefault;
+      if (!sendDefault) throw new Error("Kakao SDK unavailable");
 
-      Kakao.Share.sendDefault({
+      sendDefault({
         objectType: "text",
         text: `StyleDrop 크레딧 선물을 보냈어 🎁\n선물 코드: ${giftCode}\n링크 열어서 코드 복사하고 마이페이지에서 등록해줘.`,
         link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
@@ -136,7 +159,7 @@ export default function ShopPage() {
       // 3. 서버에서 결제 검증 + 크레딧 적립 (또는 선물 코드 발급)
       const confirmedPaymentId = result?.paymentId ?? prep.paymentId;
       const confirmRetryDelays = [0, 1200, 2400] as const;
-      let confirmPayload: any = null;
+      let confirmPayload: PaymentConfirmPayload | null = null;
       let confirmOk = false;
       const confirmEndpoint = isGift ? "/api/payment/gift/confirm" : "/api/payment/confirm";
 
@@ -166,10 +189,17 @@ export default function ShopPage() {
         return;
       }
 
-      setEarnedCredits(confirmPayload.credits);
+      const confirmedPayload = confirmPayload;
+      if (!confirmedPayload) {
+        setErrorMsg("결제 확인 결과를 읽지 못했어요.");
+        setStatus("error");
+        return;
+      }
+
+      setEarnedCredits(confirmedPayload.credits ?? 0);
       if (isGift) {
-        setGiftCode(confirmPayload.code);
-        setGiftExpiresAt(confirmPayload.expiresAt);
+        setGiftCode(confirmedPayload.code ?? "");
+        setGiftExpiresAt(confirmedPayload.expiresAt ?? "");
         setStatus("gift_success");
       } else {
         setStatus("success");

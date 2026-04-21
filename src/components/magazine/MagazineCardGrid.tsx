@@ -46,6 +46,7 @@ export function MagazineCardGrid({
       {/* CTA 버튼 */}
       <Link
         href={`/studio?style=${encodeURIComponent(primaryStyleId)}`}
+        aria-label={ctaLabel}
         className="absolute bottom-4 right-4 px-4 py-2.5 rounded-full text-[13px] font-bold text-black transition-all hover:scale-110 active:scale-95 whitespace-nowrap shadow-lg"
         style={{ backgroundColor: accent }}
       >

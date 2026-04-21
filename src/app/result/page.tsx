@@ -8,6 +8,8 @@ import { addGuestHistoryItem } from "@/lib/guest-history";
 import { STYLE_VARIANTS } from "@/lib/variants";
 import { getShuffledQuiz, type OXQuestion } from "@/lib/ox-quiz";
 
+const LOADING_STEPS = ["사진 분석 중", "AI 스타일 학습 중", "변환 적용 중", "마무리 중"];
+
 interface KakaoSDK {
   init: (key: string) => void;
   isInitialized: () => boolean;
@@ -24,7 +26,7 @@ export default function Result() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
-  const [showFallback, setShowFallback] = useState(false);
+  const [, setShowFallback] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isRateLimited, setIsRateLimited] = useState(false);
@@ -65,7 +67,6 @@ export default function Result() {
   useEffect(() => { setQuizList(getShuffledQuiz()); }, []);
 
   // 진행바 + 단계 메시지
-  const STEPS = ["사진 분석 중", "AI 스타일 학습 중", "변환 적용 중", "마무리 중"];
   useEffect(() => {
     if (status !== "loading") return;
     const TOTAL_MS = 28000;
@@ -75,7 +76,7 @@ export default function Result() {
       setProgress(Math.round(progressRef.current));
     }, 120);
     const stepTimer = setInterval(() => {
-      setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
+      setStepIndex((i) => Math.min(i + 1, LOADING_STEPS.length - 1));
     }, 7000);
     return () => { clearInterval(interval); clearInterval(stepTimer); };
   }, [status]);
