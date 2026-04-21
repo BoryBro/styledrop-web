@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FaqAccordion } from "./FaqAccordion";
+import { GoogleAd } from "@/components/ads/GoogleAd";
+import { ADSENSE_PAGE_SLOTS } from "@/lib/adsense";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -60,6 +62,14 @@ const FAQ_ITEMS = [
   },
 ];
 
+const SEO_GUIDE_LINKS = [
+  { href: "/ai-photo-transform", label: "AI 사진 변환", desc: "일반 카드와 감성형 결과 소개" },
+  { href: "/ai-profile-photo", label: "AI 프로필 사진", desc: "프로필용 결과와 무드형 출력 소개" },
+  { href: "/personal-color-test", label: "퍼스널컬러 테스트", desc: "사진 기반 톤 가이드 소개" },
+  { href: "/ai-audition", label: "AI 오디션", desc: "배역 판정 흐름과 결과 구조 소개" },
+  { href: "/physiognomy-test", label: "관상 테스트", desc: "얼굴 인상 해석과 배역 연결 소개" },
+];
+
 export default function FaqPage() {
   return (
     <main className="min-h-screen bg-[#080808] text-white">
@@ -92,7 +102,34 @@ export default function FaqPage() {
           </p>
         </section>
 
+        <section className="space-y-4 border-t border-white/10 pt-6">
+          <div className="space-y-2">
+            <p className="text-[12px] uppercase tracking-[0.24em] text-white/35">Public Guide</p>
+            <p className="text-[15px] leading-7 text-white/68">
+              검색으로 들어온 사용자가 바로 이해할 수 있도록 공개 설명 페이지를 따로 운영하고 있습니다.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {SEO_GUIDE_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-[18px] border border-white/10 px-4 py-4 transition-colors hover:border-white/20 hover:bg-white/[0.03]"
+              >
+                <p className="text-[15px] font-bold tracking-[-0.02em] text-white">{link.label}</p>
+                <p className="mt-1 text-[13px] leading-6 text-white/52">{link.desc}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         <FaqAccordion items={FAQ_ITEMS} />
+
+        <GoogleAd
+          slot={ADSENSE_PAGE_SLOTS.faq}
+          theme="light"
+          className="mt-2"
+        />
 
         <section className="border-t border-white/10 pt-6 text-sm leading-6 text-white/58">
           <p>

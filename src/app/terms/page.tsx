@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { REFUND_WINDOW_DAYS } from "@/lib/payment-policy";
+import { GoogleAd } from "@/components/ads/GoogleAd";
+import { ADSENSE_PAGE_SLOTS } from "@/lib/adsense";
 
 export default function TermsOfService() {
   return (
@@ -110,6 +112,13 @@ export default function TermsOfService() {
           <p>본 약관은 2026년 4월 12일부터 시행됩니다. (v2.2)</p>
           <p>문의: support@styledrop.cloud</p>
         </section>
+      </div>
+
+      <div className="mt-6">
+        <GoogleAd
+          slot={ADSENSE_PAGE_SLOTS.legal}
+          theme="light"
+        />
       </div>
     </main>
   );

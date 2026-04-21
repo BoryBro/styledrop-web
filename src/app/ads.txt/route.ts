@@ -1,4 +1,4 @@
-const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT?.trim();
+import { ADSENSE_CLIENT } from "@/lib/adsense";
 
 export function GET() {
   if (!ADSENSE_CLIENT?.startsWith("ca-pub-")) {

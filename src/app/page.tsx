@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { GoogleAd } from "@/components/ads/GoogleAd";
+import { ADSENSE_PAGE_SLOTS } from "@/lib/adsense";
 
 type User = { id: string; nickname: string | null; profileImage: string | null };
 type ShowcaseItem = {
@@ -13,6 +15,15 @@ type ShowcaseItem = {
   styleId: string | null;
   createdAt: string;
 };
+
+const PUBLIC_GUIDES = [
+  { href: "/ai-photo-transform", label: "AI 사진 변환" },
+  { href: "/ai-profile-photo", label: "AI 프로필 사진" },
+  { href: "/personal-color-test", label: "퍼스널컬러" },
+  { href: "/ai-audition", label: "AI 오디션" },
+  { href: "/physiognomy-test", label: "관상 테스트" },
+  { href: "/how-to", label: "사용방법" },
+];
 
 export default function Home() {
   const [isAgreed, setIsAgreed] = useState(false);
@@ -64,7 +75,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-6 relative" suppressHydrationWarning>
+    <main className="relative flex min-h-screen flex-col items-center bg-[#0A0A0A] px-6" suppressHydrationWarning>
       <video
         className="absolute inset-0 h-full w-full object-cover"
         autoPlay
@@ -95,127 +106,138 @@ export default function Home() {
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-8 w-full max-w-xs relative z-10">
+      <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center py-24">
+        <div className="flex w-full max-w-xs flex-col items-center gap-8">
 
-        {/* Logo */}
-        <div className="relative flex items-center select-none px-2" style={{ padding: "0.2em 0.5em" }} aria-label="StyleDrop">
-          <span
-            className="logo-gradient-text"
-            style={{
-              position: "relative",
-              zIndex: 1,
-              fontFamily: "var(--font-boldonse)",
-              fontWeight: 400,
-              fontSize: "2.2rem",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              lineHeight: 1.3,
-              display: "block",
-              overflow: "visible",
-            }}
-          >
-            StyleDrop
-          </span>
-        </div>
+          {/* Logo */}
+          <div className="relative flex items-center select-none px-2" style={{ padding: "0.2em 0.5em" }} aria-label="StyleDrop">
+            <span
+              className="logo-gradient-text"
+              style={{
+                position: "relative",
+                zIndex: 1,
+                fontFamily: "var(--font-boldonse)",
+                fontWeight: 400,
+                fontSize: "2.2rem",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                lineHeight: 1.3,
+                display: "block",
+                overflow: "visible",
+              }}
+            >
+              StyleDrop
+            </span>
+          </div>
 
-        {/* Subcopy */}
-        <p className="text-[18px] text-white/80 tracking-[-0.02em]">사진 한 장, 감성은 AI가</p>
+          {/* Subcopy */}
+          <p className="text-[18px] text-white/80 tracking-[-0.02em]">사진 한 장, 감성은 AI가</p>
 
-        {showcaseItems.length > 0 && (
-          <div className="w-screen max-w-none px-0 overflow-hidden">
-            <div className="mx-auto w-full max-w-md">
-              <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
-                <div
-                  className="flex gap-3 w-max px-4"
-                  style={{ animation: "showcase-marquee 22s linear infinite" }}
-                >
-                  {[...showcaseItems, ...showcaseItems].map((item, index) => (
-                    <div
-                      key={`${item.userId}-${index}`}
-                      className="h-24 w-20 shrink-0 overflow-hidden rounded-[22px] border border-white/12 bg-black/20 shadow-[0_14px_28px_rgba(0,0,0,0.24)] backdrop-blur-sm"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={item.imageUrl} alt={item.nickname} className="h-full w-full object-cover" />
-                    </div>
-                  ))}
+          {showcaseItems.length > 0 && (
+            <div className="w-screen max-w-none px-0 overflow-hidden">
+              <div className="mx-auto w-full max-w-md">
+                <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+                  <div
+                    className="flex gap-3 w-max px-4"
+                    style={{ animation: "showcase-marquee 22s linear infinite" }}
+                  >
+                    {[...showcaseItems, ...showcaseItems].map((item, index) => (
+                      <div
+                        key={`${item.userId}-${index}`}
+                        className="h-24 w-20 shrink-0 overflow-hidden rounded-[22px] border border-white/12 bg-black/20 shadow-[0_14px_28px_rgba(0,0,0,0.24)] backdrop-blur-sm"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={item.imageUrl} alt={item.nickname} className="h-full w-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* 로그인 상태 */}
-        {user === undefined ? null : user ? (
-          <div className="flex flex-col items-center gap-3 w-full">
-            <div className="flex items-center gap-2.5 bg-black/35 border border-white/10 backdrop-blur-md rounded-2xl px-4 py-2.5 w-full justify-center">
-              {user.profileImage && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
-              )}
-              <span className="text-white/80 text-sm font-medium">{user.nickname ?? "사용자"}</span>
-              <button onClick={handleLogout} className="ml-auto text-[11px] text-[#555] hover:text-white/40 transition-colors">로그아웃</button>
+          {/* 로그인 상태 */}
+          {user === undefined ? null : user ? (
+            <div className="flex flex-col items-center gap-3 w-full">
+              <div className="flex items-center gap-2.5 bg-black/35 border border-white/10 backdrop-blur-md rounded-2xl px-4 py-2.5 w-full justify-center">
+                {user.profileImage && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
+                )}
+                <span className="text-white/80 text-sm font-medium">{user.nickname ?? "사용자"}</span>
+                <button onClick={handleLogout} className="ml-auto text-[11px] text-[#555] hover:text-white/40 transition-colors">로그아웃</button>
+              </div>
+              <button
+                onClick={() => router.push("/studio")}
+                className="w-full h-[52px] bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold text-[16px] rounded-full transition-colors shadow-lg shadow-[#C9571A]/20"
+              >
+                시작하기 →
+              </button>
             </div>
-            <button
-              onClick={() => router.push("/studio")}
-              className="w-full h-[52px] bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold text-[16px] rounded-full transition-colors shadow-lg shadow-[#C9571A]/20"
-            >
-              시작하기 →
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-4 w-full">
-            {/* 카카오 로그인 버튼 */}
-            <button
-              onClick={handleKakaoLogin}
-              className="w-full h-[52px] bg-[#FEE500] hover:bg-[#F0D900] text-[#191919] font-bold text-[15px] rounded-full transition-colors flex items-center justify-center gap-2 shadow-lg shadow-black/25"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/>
+          ) : (
+            <div className="flex flex-col items-center gap-4 w-full">
+              {/* 카카오 로그인 버튼 */}
+              <button
+                onClick={handleKakaoLogin}
+                className="w-full h-[52px] bg-[#FEE500] hover:bg-[#F0D900] text-[#191919] font-bold text-[15px] rounded-full transition-colors flex items-center justify-center gap-2 shadow-lg shadow-black/25"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/>
+                </svg>
+                카카오로 시작하기
+              </button>
+
+              {/* 로그인 없이 시작 */}
+              <button
+                onClick={handleStart}
+                className="w-full h-[52px] bg-black/35 hover:bg-black/50 border border-white/10 backdrop-blur-md text-white/80 hover:text-white font-bold text-[15px] rounded-full transition-colors"
+              >
+                로그인 없이 시작하기
+              </button>
+            </div>
+          )}
+
+          {/* Checkbox + privacy notice */}
+          <label
+            className="flex items-start gap-2.5 cursor-pointer max-w-[280px]"
+            style={shaking ? { animation: "shake 0.5s ease-in-out" } : undefined}
+          >
+            <div className="relative flex items-center justify-center mt-0.5">
+              <input
+                type="checkbox"
+                checked={isAgreed}
+                onChange={(e) => setIsAgreed(e.target.checked)}
+                className={`peer appearance-none shrink-0 w-4 h-4 rounded border-2 transition-colors cursor-pointer ${
+                  shaking && !isAgreed ? "border-red-500" : "border-white/20"
+                } checked:border-[#C9571A] checked:bg-[#C9571A]`}
+              />
+              <svg
+                className="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none"
+                viewBox="0 0 14 10" fill="none"
+              >
+                <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              카카오로 시작하기
-            </button>
+            </div>
+            <span className="text-[12px] text-white/65 leading-relaxed">
+              <Link href="/terms" className="text-white/80 underline underline-offset-2">이용약관</Link> 및 <Link href="/privacy" className="text-white/80 underline underline-offset-2">개인정보처리방침</Link>에 동의하며, 업로드한 사진과 생성 결과는 서비스 제공·저장·공유 기능 범위에서 처리됩니다.
+            </span>
+          </label>
 
-            {/* 로그인 없이 시작 */}
-            <button
-              onClick={handleStart}
-              className="w-full h-[52px] bg-black/35 hover:bg-black/50 border border-white/10 backdrop-blur-md text-white/80 hover:text-white font-bold text-[15px] rounded-full transition-colors"
-            >
-              로그인 없이 시작하기
-            </button>
+          {/* Links */}
+          <div className="flex gap-5">
+            <Link href="/faq" className="text-[12px] text-white/55 hover:text-white transition-colors">FAQ</Link>
+            <Link href="/terms" className="text-[12px] text-white/55 hover:text-white transition-colors">이용약관</Link>
+            <Link href="/privacy" className="text-[12px] text-white/55 hover:text-white transition-colors">개인정보처리방침</Link>
           </div>
-        )}
 
-        {/* Checkbox + privacy notice */}
-        <label
-          className="flex items-start gap-2.5 cursor-pointer max-w-[280px]"
-          style={shaking ? { animation: "shake 0.5s ease-in-out" } : undefined}
-        >
-          <div className="relative flex items-center justify-center mt-0.5">
-            <input
-              type="checkbox"
-              checked={isAgreed}
-              onChange={(e) => setIsAgreed(e.target.checked)}
-              className={`peer appearance-none shrink-0 w-4 h-4 rounded border-2 transition-colors cursor-pointer ${
-                shaking && !isAgreed ? "border-red-500" : "border-white/20"
-              } checked:border-[#C9571A] checked:bg-[#C9571A]`}
-            />
-            <svg
-              className="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none"
-              viewBox="0 0 14 10" fill="none"
-            >
-              <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <span className="text-[12px] text-white/65 leading-relaxed">
-            <Link href="/terms" className="text-white/80 underline underline-offset-2">이용약관</Link> 및 <Link href="/privacy" className="text-white/80 underline underline-offset-2">개인정보처리방침</Link>에 동의하며, 업로드한 사진과 생성 결과는 서비스 제공·저장·공유 기능 범위에서 처리됩니다.
-          </span>
-        </label>
+        </div>
 
-        {/* Links */}
-        <div className="flex gap-5">
-          <Link href="/faq" className="text-[12px] text-white/55 hover:text-white transition-colors">FAQ</Link>
-          <Link href="/terms" className="text-[12px] text-white/55 hover:text-white transition-colors">이용약관</Link>
-          <Link href="/privacy" className="text-[12px] text-white/55 hover:text-white transition-colors">개인정보처리방침</Link>
+        <div className="mt-8 w-full max-w-md">
+          <GoogleAd
+            slot={ADSENSE_PAGE_SLOTS.home}
+            className="border-white/12 bg-black/35"
+            minHeight={110}
+          />
         </div>
       </div>
 
@@ -246,14 +268,53 @@ export default function Home() {
       `}</style>
 
       {/* Footer */}
-      <footer className="absolute bottom-4 left-0 right-0 text-center px-4">
-        <p className="text-[11px] text-white/45">
-          © 2026 StyleDrop · <Link href="/faq" className="hover:text-white/80 transition-colors">FAQ</Link> · <Link href="/terms" className="hover:text-white/80 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/80 transition-colors">개인정보처리방침</Link> · <a href="mailto:support@styledrop.cloud" className="hover:text-white/80 transition-colors">문의</a>
-        </p>
-        <p className="text-[10px] text-white/28 mt-1 leading-relaxed">
-          상호: 핑거 · 대표자: 문지환 · 사업자등록번호: 707-79-00261<br/>
-          주소: 대전광역시 서구 동서대로1030번길 8-6(내동) · 연락처: 010-5838-9960
-        </p>
+      <footer className="relative z-10 w-[calc(100%+3rem)] -mx-6 pb-0">
+        <div className="w-full border-t border-white/8 bg-black/28 px-5 py-6 shadow-[0_-18px_50px_rgba(0,0,0,0.16)] backdrop-blur-xl">
+          <div className="grid w-full gap-7 text-left">
+            <div>
+              <p className="text-[17px] font-bold tracking-[-0.03em] text-white/86">StyleDrop</p>
+              <p className="mt-3 max-w-[320px] text-[10px] leading-5 text-white/40">
+                사진 한 장으로 감성 카드, 프로필 컷, 퍼스널컬러, AI 오디션 결과까지 이어지는 AI 이미지 서비스.
+              </p>
+            </div>
+
+            <div>
+              <p className="text-[10px] font-bold text-white/68">Explore</p>
+              <div className="mt-3 grid grid-cols-3 gap-x-3 gap-y-3">
+                {PUBLIC_GUIDES.map((guide) => (
+                  <Link
+                    key={guide.href}
+                    href={guide.href}
+                    className="text-[10px] leading-4 text-white/42 transition-colors hover:text-white/78"
+                  >
+                    {guide.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[10px] font-bold text-white/68">Contact</p>
+              <div className="mt-3 grid grid-cols-1 gap-2 text-[10px] leading-5 text-white/42">
+                <p>상호: 핑거 · 대표자: 문지환</p>
+                <p>사업자등록번호: 707-79-00261</p>
+                <p>대전광역시 서구 동서대로1030번길 8-6(내동)</p>
+                <p>010-5838-9960</p>
+                <a href="mailto:support@styledrop.cloud" className="block transition-colors hover:text-white/78">
+                  support@styledrop.cloud
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex w-full flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/8 pt-4 text-[9px] text-white/32">
+            <span>© 2026 StyleDrop</span>
+            <Link href="/faq" className="transition-colors hover:text-white/70">FAQ</Link>
+            <Link href="/terms" className="transition-colors hover:text-white/70">이용약관</Link>
+            <Link href="/privacy" className="transition-colors hover:text-white/70">개인정보처리방침</Link>
+            <a href="mailto:support@styledrop.cloud" className="transition-colors hover:text-white/70">문의</a>
+          </div>
+        </div>
       </footer>
     </main>
   );

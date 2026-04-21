@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MagazineCommunityBoard } from "@/components/magazine/MagazineCommunityBoard";
-import { ShowcaseStrip } from "@/components/magazine/ShowcaseStrip";
 import { MagazineCardGrid } from "@/components/magazine/MagazineCardGrid";
+import { GoogleAd } from "@/components/ads/GoogleAd";
 import { MAGAZINE_ARTICLES, getMagazineStyle } from "@/lib/magazine";
+import { ADSENSE_PAGE_SLOTS } from "@/lib/adsense";
 
 export const metadata: Metadata = {
   title: "매거진",
@@ -57,6 +58,11 @@ export default function MagazinePage() {
             );
           })}
         </div>
+
+        <GoogleAd
+          slot={ADSENSE_PAGE_SLOTS.magazine}
+          className="mx-auto w-full max-w-3xl"
+        />
 
         <footer className="border-t border-white/8 pt-6 text-center text-[12px] text-white/45">
           <p>

@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { GoogleAd } from "@/components/ads/GoogleAd";
+import { ADSENSE_PAGE_SLOTS } from "@/lib/adsense";
 
 export default function PrivacyPolicy() {
   return (
@@ -174,6 +176,13 @@ export default function PrivacyPolicy() {
           <p>본 방침은 2026년 4월 12일부터 시행됩니다. (v2.3)</p>
           <p>개인정보 보호책임자: support@styledrop.cloud</p>
         </section>
+      </div>
+
+      <div className="mt-6">
+        <GoogleAd
+          slot={ADSENSE_PAGE_SLOTS.legal}
+          theme="light"
+        />
       </div>
     </main>
   );

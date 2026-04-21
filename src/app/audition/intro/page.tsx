@@ -168,6 +168,7 @@ export default function AuditionIntroPage() {
   const router = useRouter();
   const { isLoading: isAuditionLoading, isEnabled: isAuditionEnabled } = useAuditionAvailability();
   const [flavor, setFlavor] = useState<"spicy" | "mild">("mild");
+  const [mode, setMode] = useState<"solo" | "duo">("solo");
   const typed = useTypewriter([
     "AI 오디션",
     "배역을 찾아드려요.",
@@ -429,15 +430,56 @@ export default function AuditionIntroPage() {
           </p>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 flex items-center gap-4">
-          <span className="text-[28px] flex-shrink-0">🎭</span>
-          <div>
-            <p className="text-[15px] font-bold text-gray-900 leading-snug">미션 큐는 촬영 직전에 공개됩니다</p>
-            <p className="text-[12px] text-gray-400 mt-0.5">장르만 선택하고, 실제 연기 상황은 카메라 앞에서 확인하세요</p>
+        <div>
+          <p className="mb-3 text-[11px] font-black uppercase tracking-[0.24em] text-gray-400">Mode Select</p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setMode("solo")}
+              className={`rounded-[24px] border px-4 py-4 text-left transition-colors ${
+                mode === "solo" ? "border-black bg-black text-white" : "border-gray-200 bg-[#fbfbfd] text-gray-900"
+              }`}
+            >
+              <p className="text-[15px] font-black">혼자 하기</p>
+              <p className={`mt-1 text-[12px] leading-relaxed ${mode === "solo" ? "text-white/70" : "text-gray-500"}`}>
+                3초 카운트다운 후
+                <br />
+                표정 연기로 3장 촬영
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMode("duo")}
+              className={`rounded-[24px] border px-4 py-4 text-left transition-colors ${
+                mode === "duo" ? "border-[#315EFB] bg-[#315EFB] text-white" : "border-gray-200 bg-[#fbfbfd] text-gray-900"
+              }`}
+            >
+              <p className="text-[15px] font-black">친구랑 함께하기</p>
+              <p className={`mt-1 text-[12px] leading-relaxed ${mode === "duo" ? "text-white/75" : "text-gray-500"}`}>
+                친구 초대 링크로 입장하고
+                <br />
+                배틀 모드로 같이 진행
+              </p>
+            </button>
           </div>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-5 flex flex-col gap-4">
+        <div className="bg-gray-50 rounded-2xl px-5 py-4 flex items-center gap-4">
+          <span className="text-[28px] flex-shrink-0">🎭</span>
+          <div>
+            <p className="text-[15px] font-bold text-gray-900 leading-snug">
+              {mode === "solo" ? "미션 큐는 촬영 직전에 공개됩니다" : "친구가 모두 입장하면 배틀 씬이 시작됩니다"}
+            </p>
+            <p className="text-[12px] text-gray-400 mt-0.5">
+              {mode === "solo"
+                ? "장르만 선택하고, 실제 연기 상황은 카메라 앞에서 확인하세요"
+                : "같은 방에서 같은 씬을 보고, 각자 자기 폰으로 참여하게 됩니다"}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-2xl px-5 py-5 flex flex-col gap-4">
           <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.25em]">오디션 전 확인사항</p>
           <ul className="flex flex-col gap-4">
             {[
@@ -516,7 +558,13 @@ export default function AuditionIntroPage() {
         className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-5 bg-gradient-to-t from-white via-white/95 to-transparent z-50"
       >
         <button
-          onClick={() => router.push(`/audition/solo?from_intro=1&flavor=${flavor}`)}
+          onClick={() => {
+            if (mode === "duo") {
+              router.push("/audition/friend?from_intro=1");
+              return;
+            }
+            router.push(`/audition/solo?from_intro=1&flavor=${flavor}`);
+          }}
           disabled={!agreed}
           className="w-full py-4 rounded-2xl font-black text-[17px] flex items-center justify-center gap-3 transition-all active:scale-[0.97]"
           style={{
@@ -539,7 +587,11 @@ export default function AuditionIntroPage() {
           <p className="text-center text-[12px] text-gray-400 mt-2 font-medium">위 확인사항에 동의 후 시작할 수 있어요</p>
         )}
         {agreed && (
-          <p className="text-center text-[12px] text-gray-400 mt-2 font-medium">약 2분 소요 · 관상 분석 + 연기 채점</p>
+          <p className="text-center text-[12px] text-gray-400 mt-2 font-medium">
+            {mode === "solo"
+              ? "약 2분 소요 · 관상 분석 + 연기 채점"
+              : "방 생성 후 친구 초대 · 각자 자기 폰으로 입장"}
+          </p>
         )}
       </div>
 

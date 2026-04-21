@@ -1328,6 +1328,121 @@ function AuditionResultInner() {
     finally { setIsSaving(false); }
   }, [result, isSaving, userPhotos, genres, bestSceneIdx, selectedStillSceneIdx]);
 
+  const handleDownloadStillPng = useCallback(async () => {
+    const stillImage = stillImageRef.current;
+    if (!stillImage || !result) return;
+
+    const selectedCardTheme = CARD_THEMES.find(theme => theme.id === selectedCardThemeId) ?? CARD_THEMES[0];
+    const cardSceneIdx = clamp(selectedStillSceneIdx, 0, result.scenes.length - 1);
+    const bestScene = result.scenes[bestSceneIdx];
+    const cardScene = result.scenes[cardSceneIdx] ?? bestScene;
+    const cardTitle = genreCardTitle(cardScene.genre);
+    const cardCueLine = (
+      genres[cardSceneIdx]?.cue
+      ?? genres.find((item) => item.genre === cardScene.genre)?.cue
+      ?? ""
+    ).replace(/\s+/g, " ").trim().slice(0, 48);
+
+    const SCALE = 2;
+    const CW = 677 * SCALE;
+    const CH = 938 * SCALE;
+    const canvas = document.createElement("canvas");
+    canvas.width = CW;
+    canvas.height = CH;
+    const ctx = canvas.getContext("2d")!;
+
+    ctx.fillStyle = selectedCardTheme.frameColor;
+    ctx.fillRect(0, 0, CW, CH);
+
+    const innerLeft = 0.036928 * CW;
+    const innerTop = 0.02026 * CH;
+    const innerW = 0.92615 * CW;
+    const innerH = 0.9595 * CH;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(innerLeft, innerTop, innerW, innerH, 30 * SCALE);
+    ctx.clip();
+    try {
+      const img = await loadImage(stillImage);
+      ctx.drawImage(img, innerLeft + innerW * -0.08, innerTop + innerH * -0.04, innerW * 1.16, innerH * 1.08);
+    } catch { /* skip */ }
+    const gradTop = innerTop + innerH * 0.539;
+    const gradH = innerH * 0.462;
+    const grad = ctx.createLinearGradient(0, gradTop, 0, gradTop + gradH);
+    grad.addColorStop(0, "rgba(0,0,0,0)");
+    grad.addColorStop(1, "rgba(0,0,0,0.82)");
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = grad;
+    ctx.fillRect(innerLeft + innerW * -0.263, gradTop, innerW * 1.569, gradH);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    const titleBarH = 0.0767 * CH;
+    const emojiFs = Math.round(0.035 * 677) * SCALE;
+    ctx.font = `600 ${emojiFs}px sans-serif`;
+    const titleText = `${selectedCardTheme.titleEmoji[0]} ${cardTitle.toUpperCase()} ${selectedCardTheme.titleEmoji[1]}`;
+    const titleMeasure = ctx.measureText(titleText);
+    const titleBarW = Math.min(CW * 0.78, Math.max(CW * 0.40, titleMeasure.width + emojiFs * 2));
+    const titleBarX = (CW - titleBarW) / 2;
+    ctx.save();
+    ctx.fillStyle = selectedCardTheme.frameColor;
+    ctx.beginPath();
+    ctx.roundRect(titleBarX, innerTop, titleBarW, titleBarH, [0, 0, 18 * SCALE, 18 * SCALE]);
+    ctx.fill();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#000";
+    ctx.fillText(titleText, CW / 2, innerTop + titleBarH / 2);
+    ctx.restore();
+
+    if (cardCueLine) {
+      const boxLeft = CW * 0.155;
+      const boxTop = CH * 0.663;
+      const boxW = CW * 0.69;
+      const labelFs = Math.round(0.016 * 677) * SCALE;
+      const cueFs = Math.round(0.018 * 677) * SCALE;
+      const boxH = (labelFs + cueFs + 26 * SCALE);
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,0.78)";
+      ctx.beginPath();
+      ctx.roundRect(boxLeft, boxTop, boxW, boxH, 12 * SCALE);
+      ctx.fill();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.font = `800 ${labelFs}px sans-serif`;
+      ctx.fillStyle = selectedCardTheme.accentTextColor;
+      ctx.fillText("SCENE DIRECTION", CW / 2, boxTop + 8 * SCALE);
+      ctx.font = `700 ${cueFs}px sans-serif`;
+      ctx.fillStyle = "#fff";
+      ctx.fillText(cardCueLine.slice(0, 55), CW / 2, boxTop + 8 * SCALE + labelFs + 6 * SCALE);
+      ctx.restore();
+    }
+
+    cardStickers.forEach(sticker => {
+      ctx.save();
+      ctx.translate(sticker.x * CW, sticker.y * CH);
+      ctx.rotate((sticker.rotate * Math.PI) / 180);
+      ctx.font = `${sticker.size * SCALE}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(sticker.emoji, 0, 0);
+      ctx.restore();
+    });
+
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "styledrop_stillcut.png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }, [bestSceneIdx, genres, result, selectedCardThemeId, selectedStillSceneIdx, cardStickers]);
+
   const handleKakaoShare = async () => {
     if (isSharing || !result) return;
     setIsSharing(true);
@@ -1616,6 +1731,16 @@ function AuditionResultInner() {
             ))}
           </div>
         </div>
+
+        {!cardStudioLocked && (
+          <button
+            type="button"
+            onClick={handleDownloadStillPng}
+            className="mt-4 w-full rounded-[18px] bg-[#111827] py-3.5 text-[14px] font-bold tracking-[-0.02em] text-white shadow-[0_8px_20px_rgba(0,0,0,0.18)] transition-opacity hover:opacity-80 active:opacity-60"
+          >
+            PNG 저장
+          </button>
+        )}
 
         {cardStudioLocked && (
           <div className="-mt-3 rounded-b-[28px] bg-[#fbfbfd] px-5 pb-4 pt-4 shadow-[0_14px_28px_rgba(0,0,0,0.06)]">

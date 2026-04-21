@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Montserrat, Boldonse, Outfit, Unbounded } from "next/font/google";
 import "./globals.css";
 import { RevisitTracker } from "./_RevisitTracker";
+import { ADSENSE_CLIENT } from "@/lib/adsense";
 
 const montserrat = Montserrat({ subsets: ["latin"], weight: ["700", "900"], variable: "--font-montserrat" });
 const boldonse = Boldonse({ subsets: ["latin"], weight: "400", variable: "--font-boldonse" });
@@ -10,8 +11,6 @@ const outfit = Outfit({ subsets: ["latin"], weight: ["600", "700", "900"], varia
 const unbounded = Unbounded({ subsets: ["latin"], weight: ["600"], variable: "--font-unbounded" });
 
 const BASE_URL = "https://www.styledrop.cloud";
-const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT?.trim();
-
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
@@ -73,7 +72,7 @@ export default function RootLayout({
           <Script
             id="google-adsense"
             async
-            strategy="afterInteractive"
+            strategy="beforeInteractive"
             crossOrigin="anonymous"
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
           />
