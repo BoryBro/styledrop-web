@@ -159,7 +159,7 @@ export default function HowToFlow({ mode, onClose, onComplete }: HowToFlowProps)
           <p className={`text-[13px] font-bold ${tone.label}`}>{guideStep.label}</p>
         </div>
 
-        <div className={`relative mt-4 w-full overflow-hidden rounded-[28px] bg-[#F6F8FC] ${compact ? "h-[clamp(220px,35dvh,320px)]" : "h-[clamp(248px,41dvh,360px)]"}`}>
+        <div className={`relative mt-4 w-full overflow-hidden rounded-[28px] bg-[#F6F8FC] h-[480px]`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={guideStep.image}
