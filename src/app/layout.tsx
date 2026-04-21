@@ -15,7 +15,7 @@ const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT?.trim();
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "StyleDrop — AI 스타일 분석",
+    default: "StyleDrop — AI와 함께하는 놀이터",
     template: "%s | StyleDrop",
   },
   description: "사진 한 장으로 AI가 나에게 맞는 스타일을 분석해드려요. 퍼스널컬러, 얼굴형, 패션 추천까지.",
@@ -27,20 +27,20 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     url: BASE_URL,
     siteName: "StyleDrop",
-    title: "StyleDrop — AI 스타일 분석",
+    title: "StyleDrop — AI와 함께하는 놀이터",
     description: "사진 한 장으로 AI가 나에게 맞는 스타일을 분석해드려요.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "StyleDrop — AI 스타일 분석",
+        alt: "StyleDrop — AI와 함께하는 놀이터",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "StyleDrop — AI 스타일 분석",
+    title: "StyleDrop — AI와 함께하는 놀이터",
     description: "사진 한 장으로 AI가 나에게 맞는 스타일을 분석해드려요.",
     images: ["/og-image.png"],
   },
