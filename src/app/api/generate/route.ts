@@ -1480,7 +1480,7 @@ OUTPUT TARGET:
   "holographic-butterfly": {
     "default": `Use the uploaded image as the base and transform it, not generate a new person.
 
-Transform the uploaded photo into a straight-on upper-body portrait of a young Korean woman surrounded by very large holographic butterflies against a dense violet cloud backdrop, matching the exact scene, butterfly scale, pose energy, color richness, shadow structure, lighting contrast, and mysterious editorial finish of the attached reference image.
+Transform the uploaded photo into a straight-on upper-body editorial portrait surrounded by very large holographic butterflies against a dense violet cloud backdrop, matching the exact scene, butterfly scale, pose energy, color richness, shadow structure, lighting contrast, and mysterious editorial finish of the attached reference image.
 
 This must look like a real high-resolution editorial portrait photograph with a surreal-but-photographic Y2K/Y3K-inspired atmosphere - cool, dreamy, glossy, mysterious, and physically believable within the image world. Not fantasy art. Not stylized illustration. Not CGI. Real.
 
@@ -1492,7 +1492,7 @@ FACE - PRESERVE IDENTITY, INTEGRATE NATURALLY:
 - Match head position, neck, posture, skin tone, and perspective seamlessly into the upper-body composition
 - Preserve real skin texture, pores, subtle asymmetry, and natural facial structure
 - No structural beautification, no plastic skin, no artificial symmetry correction
-- The final result must adapt naturally regardless of gender while preserving the same recognizable identity and the intended futuristic surreal editorial context
+- The final result must preserve the uploaded person's recognizable identity while adapting naturally to the intended futuristic surreal editorial context
 - The facial rendering must inherit the same polished but still real skin finish, cool color wash, and slightly moody editorial retouching visible in the attached reference
 
 FACE & CAMERA:
@@ -1505,28 +1505,29 @@ FACE & CAMERA:
 - Shutter speed: approximately 1/125 to 1/200 sec
 - ISO: 100 to 400
 - White balance: cool-neutral around 4300K to 5000K with violet-blue and pink contamination
-- Dynamic range: preserve skin detail, silver garment highlights, butterfly iridescence, and rich cloud color without clipping
+- Dynamic range: preserve skin detail, garment highlights, butterfly iridescence, and rich cloud color without clipping
 - No digital over-sharpening; maintain clean editorial clarity, smooth highlight roll-off, and soft optical falloff
 - Optical rendering must match the attached reference: close, centered but not stiff, premium, crisp in the subject plane, and atmospheric in the background
 
 HAIR:
-- Hair must be dark, long, and naturally glossy
-- Hair must remain mostly sleek but not overly perfect
-- A few loose strands must fall naturally across the face and near the cheek to match the attached reference mood
+- Preserve the uploaded subject's hairstyle identity in a refined editorial way
+- Hair should remain natural, believable, and consistent with the person's original appearance
+- Minor styling cleanup is allowed only if needed to match the editorial finish
+- No forced long-hair transformation
 - No unrelated hairstyle redesign
 - No excessive volume or exaggerated styling
-- Hair must remain elegant, slightly undone, and secondary to the face and butterflies
+- Hair must remain secondary to the face and butterflies
 
 CLOTHING:
-- Silver structured top made of solid metallic-looking fabric
+- Futuristic structured top or jacket with a sleek metallic or satin-like finish
 - The garment must remain fully covering and non-revealing
 - The surface must feel smooth, sculpted, glossy, and high-fashion
-- The outfit must visually match the attached reference in feeling: silver, clean, futuristic, fitted, and editorial
+- The outfit must visually match the attached reference in feeling: clean, futuristic, fitted, and editorial
 - Fabric must appear physically real with structured seams, smooth highlights, and crisp form
 - No transparent treatment
 - No costume-like fantasy armor styling
 - No exposed-skin emphasis
-- No wording or styling that draws attention to chest shape
+- No wording or styling that draws attention to sexualized body shape
 
 POSE / COMPOSITION:
 - Straight-on upper-body portrait
@@ -1538,7 +1539,7 @@ POSE / COMPOSITION:
 - The composition must match the attached reference closely:
   - subject centered
   - face dominant
-  - silver garment visible
+  - futuristic garment visible
   - butterflies placed near the hair, shoulders, and upper frame
   - violet cloud background filling the entire scene
 - Keep the portrait close, immersive, and visually dramatic
@@ -1584,7 +1585,7 @@ LIGHTING:
 - The scene must match the attached reference exactly in feeling:
   - richer violet-blue atmosphere
   - stronger contrast than a soft pastel portrait
-  - crisp reflective silver highlights
+  - crisp reflective highlights
   - dreamy futuristic color contamination
   - more mysterious, more dramatic, more sculptural
 - No warm natural light
@@ -1592,15 +1593,13 @@ LIGHTING:
 - No flat beauty lighting
 - No overly soft all-over illumination
 
-MAKEUP / SKIN FINISH:
-- Minimal editorial makeup look
+SKIN FINISH:
+- Minimal editorial grooming
 - Smooth even-toned skin with natural color preserved beneath cool light
-- Soft glossy finish on skin with refined highlight placement
-- Natural lip sheen with understated color
-- Subtle cool-toned color reflections on cheeks and around the eyes from the environment
-- No heavy contour
-- No theatrical makeup
-- The skin finish must match the attached reference exactly in feeling: polished, luminous, cool-toned, refined, and softly retouched while still real
+- Soft refined finish on skin with realistic highlight placement
+- Subtle cool-toned color reflections from the environment
+- No heavy cosmetic look
+- The skin finish must match the attached reference in feeling: polished, luminous, cool-toned, refined, and softly retouched while still real
 - Include the same slightly perfected beauty-editorial finish seen in the attached reference without erasing natural identity
 - The skin must feel more luminous and high-fashion than plain, but not plastic
 
@@ -1643,16 +1642,16 @@ PHOTO STYLE:
   - premium editorial realism
 
 REAL CAMERA IMPERFECTIONS (CONTROLLED):
-- Slight highlight bloom on the brightest silver and butterfly edges
+- Slight highlight bloom on the brightest garment and butterfly edges
 - Mild optical softness outside the focal plane
-- Very subtle reflective complexity across the metallic garment and butterfly wings
+- Very subtle reflective complexity across the garment and butterfly wings
 - No perfectly sterile gradients in the violet cloud background
 - No unnaturally cut-out subject edges
 - No artificial subject separation from the backdrop
 - Maintain natural lens falloff and realistic light diffusion matching the reference
 
 EXPOSURE & RESPONSE:
-- Exposure balanced for facial readability, silver garment highlights, and butterfly iridescence
+- Exposure balanced for facial readability, garment highlights, and butterfly iridescence
 - Highlights must roll off softly on skin, garment, and wings
 - Shadows must remain delicate but visible enough to shape the face and mood
 - Midtones must preserve facial structure, fabric contour, and butterfly detail
@@ -1682,7 +1681,7 @@ COLOR:
   - cool blue
   - iridescent aqua
   - soft pink-violet reflections
-  - silver highlights
+  - metallic highlights
 - Secondary tones:
   - natural skin neutrals
   - dark hair contrast
@@ -1692,7 +1691,7 @@ COLOR:
 - Color must match the attached reference closely:
   - richer purple cloud backdrop
   - blue-violet butterfly wings
-  - silver garment shine
+  - metallic garment shine
   - cool polished skin rendering
   - deeper, moodier editorial harmony
 
@@ -1711,7 +1710,7 @@ MOOD:
 STRICT RULES:
 - Must use the uploaded image identity as the base
 - Must not generate a new face
-- Preserve the centered upper-body portrait framing, direct gaze, silver structured top, oversized holographic butterflies, violet cloud background, cool polished lighting, 50mm shallow depth behavior, and clean digital editorial finish
+- Preserve the centered upper-body portrait framing, direct gaze, futuristic structured garment, oversized holographic butterflies, violet cloud background, cool polished lighting, 50mm shallow depth behavior, and clean digital editorial finish
 - The attached reference image's tone, mood, lighting behavior, crop, styling, skin finish, butterfly placement, butterfly scale, and futuristic editorial finish must be followed as closely as possible
 - Clothing and styling must remain fully covering and non-revealing
 - Any wording or styling that could make the image feel suggestive must be excluded
@@ -1722,7 +1721,7 @@ STRICT RULES:
 OUTPUT TARGET:
 - Ultra-realistic futuristic editorial portrait
 - Same recognizable person in a centered upper-body composition
-- Silver structured top, very large holographic butterflies, and violet cloud background
+- Futuristic structured garment, very large holographic butterflies, and violet cloud background
 - Cool polished lighting with iridescent blue-violet-pink butterfly reflections
 - Exact attached-reference feeling: dreamy, futuristic, polished, cool, mysterious, and refined
 - Looks like a real photographed high-end editorial image, not AI-generated`,
