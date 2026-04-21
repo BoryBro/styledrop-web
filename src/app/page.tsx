@@ -31,6 +31,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
   const [showcaseItems, setShowcaseItems] = useState<ShowcaseItem[]>([]);
   const router = useRouter();
 
@@ -269,51 +270,73 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="relative z-10 w-[calc(100%+3rem)] -mx-6 pb-0">
-        <div className="w-full border-t border-white/8 bg-black/28 px-5 py-6 shadow-[0_-18px_50px_rgba(0,0,0,0.16)] backdrop-blur-xl">
-          <div className="grid w-full gap-7 text-left">
+        <div className="w-full border-t border-white/10 px-5 py-4">
+          <div className="grid w-full gap-5 text-left">
             <div>
-              <p className="text-[17px] font-bold tracking-[-0.03em] text-white/86">StyleDrop</p>
-              <p className="mt-3 max-w-[320px] text-[10px] leading-5 text-white/40">
+              <p className="text-[18px] font-bold tracking-[-0.03em] text-white">StyleDrop</p>
+              <p className="mt-2 max-w-[320px] text-[11px] leading-5 text-white/72">
                 사진 한 장으로 감성 카드, 프로필 컷, 퍼스널컬러, AI 오디션 결과까지 이어지는 AI 이미지 서비스.
               </p>
             </div>
 
             <div>
-              <p className="text-[10px] font-bold text-white/68">Explore</p>
-              <div className="mt-3 grid grid-cols-3 gap-x-3 gap-y-3">
+              <p className="text-[11px] font-bold text-white">Explore</p>
+              <div className="mt-2 grid grid-cols-3 gap-x-4 gap-y-2">
                 {PUBLIC_GUIDES.map((guide) => (
                   <Link
                     key={guide.href}
                     href={guide.href}
-                    className="text-[10px] leading-4 text-white/42 transition-colors hover:text-white/78"
+                    className="text-[11px] leading-5 text-white/76 transition-colors hover:text-white"
                   >
                     {guide.label}
                   </Link>
                 ))}
               </div>
             </div>
-
-            <div>
-              <p className="text-[10px] font-bold text-white/68">Contact</p>
-              <div className="mt-3 grid grid-cols-1 gap-2 text-[10px] leading-5 text-white/42">
-                <p>상호: 핑거 · 대표자: 문지환</p>
-                <p>사업자등록번호: 707-79-00261</p>
-                <p>대전광역시 서구 동서대로1030번길 8-6(내동)</p>
-                <p>010-5838-9960</p>
-                <a href="mailto:support@styledrop.cloud" className="block transition-colors hover:text-white/78">
-                  support@styledrop.cloud
-                </a>
-              </div>
-            </div>
           </div>
 
-          <div className="mt-6 flex w-full flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/8 pt-4 text-[9px] text-white/32">
+          <div className="mt-4 flex w-full flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/10 pt-3 text-[10px] text-white/70">
             <span>© 2026 StyleDrop</span>
-            <Link href="/faq" className="transition-colors hover:text-white/70">FAQ</Link>
-            <Link href="/terms" className="transition-colors hover:text-white/70">이용약관</Link>
-            <Link href="/privacy" className="transition-colors hover:text-white/70">개인정보처리방침</Link>
-            <a href="mailto:support@styledrop.cloud" className="transition-colors hover:text-white/70">문의</a>
+            <Link href="/faq" className="transition-colors hover:text-white">FAQ</Link>
+            <Link href="/terms" className="transition-colors hover:text-white">이용약관</Link>
+            <Link href="/privacy" className="transition-colors hover:text-white">개인정보처리방침</Link>
+            <a href="mailto:support@styledrop.cloud" className="transition-colors hover:text-white">문의</a>
           </div>
+        </div>
+
+        <div className="w-full border-t border-white/8 px-5 py-3">
+          <button
+            type="button"
+            onClick={() => setIsContactOpen((prev) => !prev)}
+            className="flex w-full items-center justify-between text-left"
+            aria-expanded={isContactOpen}
+            aria-controls="footer-contact-panel"
+          >
+            <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-white/62">
+              Contact
+            </span>
+            <span
+              className={`text-[12px] text-white/54 transition-transform ${isContactOpen ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            >
+              ▾
+            </span>
+          </button>
+
+          {isContactOpen && (
+            <div
+              id="footer-contact-panel"
+              className="mt-2 grid grid-cols-1 gap-1 text-[10px] leading-5 text-white/50"
+            >
+              <p>상호: 핑거 · 대표자: 문지환</p>
+              <p>사업자등록번호: 707-79-00261</p>
+              <p>대전광역시 서구 동서대로1030번길 8-6(내동)</p>
+              <p>010-5838-9960</p>
+              <a href="mailto:support@styledrop.cloud" className="block transition-colors hover:text-white">
+                support@styledrop.cloud
+              </a>
+            </div>
+          )}
         </div>
       </footer>
     </main>
