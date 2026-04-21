@@ -448,33 +448,83 @@ const PROFIT_PACKAGES = [
   { id: "plus",  label: "Plus",  credits: 30, price: 4900, priceStr: "4,900" },
   { id: "pro",   label: "Pro",   credits: 70, price: 9900, priceStr: "9,900" },
 ] as const;
-const API_UNIT_COST = 111.1;
+// 실측 기준 API 단가
+const API_UNIT_COST = 111.1;          // 일반 1크레딧 → 1 API call
+const API_COST_COUPLE = 111.1;        // 2인+ 2크레딧 → 1 API call (크레딧당 55.5원)
+const API_COST_AUDITION = 333.3;      // 오디션 5크레딧 → analyze(2)+still(1) = 3 weighted ops
 const KAKAO_FEE_RATE = 0.032;
 const VAT_RATE = 0.10;
 
 function ProfitCalculator() {
   const [pkgId, setPkgId] = useState<"basic" | "plus" | "pro">("plus");
   const [buyers, setBuyers] = useState(10);
+  // 사용 분포: 세 값의 합 = 100
+  const [pctNormal, setPctNormal] = useState(60);
+  const [pctCouple, setPctCouple] = useState(20);
+  const [pctAudition, setPctAudition] = useState(20);
 
   const pkg = PROFIT_PACKAGES.find((p) => p.id === pkgId)!;
   const netPerSale = (pkg.price / (1 + VAT_RATE)) - (pkg.price * KAKAO_FEE_RATE);
-  const apiCostPerSale = pkg.credits * API_UNIT_COST;
-  const profitPerSale = netPerSale - apiCostPerSale;
+  const totalCredits = buyers * pkg.credits;
+
+  // 크레딧 분배
+  const normalCredits   = totalCredits * (pctNormal / 100);
+  const coupleCredits   = totalCredits * (pctCouple / 100);
+  const auditionCredits = totalCredits * (pctAudition / 100);
+
+  // API 호출 수 (크레딧 → 호출)
+  const normalCalls   = normalCredits * 1;          // 1크레딧 = 1호출
+  const coupleCalls   = coupleCredits / 2;           // 2크레딧 = 1호출
+  const auditionCalls = auditionCredits / 5;         // 5크레딧 = 1호출
+
+  const totalApiCost = Math.round(
+    normalCalls * API_UNIT_COST +
+    coupleCalls * API_COST_COUPLE +
+    auditionCalls * API_COST_AUDITION
+  );
   const totalRevenue = Math.round(netPerSale * buyers);
-  const totalApiCost = Math.round(apiCostPerSale * buyers);
-  const totalProfit = Math.round(profitPerSale * buyers);
-  const margin = Math.round((profitPerSale / netPerSale) * 100);
+  const totalProfit  = totalRevenue - totalApiCost;
+  const margin       = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0;
+
+  // 분포 슬라이더 핸들러 (합 100 유지)
+  const handlePctChange = (type: "normal" | "couple" | "audition", val: number) => {
+    const clamped = Math.min(100, Math.max(0, val));
+    if (type === "normal") {
+      const rest = 100 - clamped;
+      const ratio = (pctCouple + pctAudition) > 0 ? pctCouple / (pctCouple + pctAudition) : 0.5;
+      setPctNormal(clamped);
+      setPctCouple(Math.round(rest * ratio));
+      setPctAudition(100 - clamped - Math.round(rest * ratio));
+    } else if (type === "couple") {
+      const rest = 100 - clamped;
+      const ratio = (pctNormal + pctAudition) > 0 ? pctNormal / (pctNormal + pctAudition) : 0.5;
+      setPctCouple(clamped);
+      setPctNormal(Math.round(rest * ratio));
+      setPctAudition(100 - clamped - Math.round(rest * ratio));
+    } else {
+      const rest = 100 - clamped;
+      const ratio = (pctNormal + pctCouple) > 0 ? pctNormal / (pctNormal + pctCouple) : 0.5;
+      setPctAudition(clamped);
+      setPctNormal(Math.round(rest * ratio));
+      setPctCouple(100 - clamped - Math.round(rest * ratio));
+    }
+  };
+
+  const usageRows = [
+    { label: "일반 변환", note: "1cr → 1호출", pct: pctNormal, calls: Math.round(normalCalls), cost: Math.round(normalCalls * API_UNIT_COST), type: "normal" as const, color: "bg-blue-400" },
+    { label: "2인+ 변환", note: "2cr → 1호출", pct: pctCouple, calls: Math.round(coupleCalls), cost: Math.round(coupleCalls * API_COST_COUPLE), type: "couple" as const, color: "bg-purple-400" },
+    { label: "AI 오디션", note: "5cr → 1호출", pct: pctAudition, calls: Math.round(auditionCalls), cost: Math.round(auditionCalls * API_COST_AUDITION), type: "audition" as const, color: "bg-[#C9571A]" },
+  ];
 
   return (
     <div className="flex flex-col gap-1">
       <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">순이익 시뮬레이터</p>
       <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-4">
+
         {/* 패키지 선택 */}
         <div className="flex gap-2">
           {PROFIT_PACKAGES.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setPkgId(p.id)}
+            <button key={p.id} onClick={() => setPkgId(p.id)}
               className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-colors border ${
                 pkgId === p.id ? "bg-[#C9571A] border-[#C9571A] text-white" : "bg-gray-100 border-gray-200 text-gray-600 hover:border-gray-300"
               }`}
@@ -485,36 +535,66 @@ function ProfitCalculator() {
           ))}
         </div>
 
-        {/* 구매자 수 슬라이더 */}
+        {/* 구매자 수 */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="text-[13px] text-gray-500">구매자 수</span>
             <span className="text-[17px] font-bold text-gray-900 tabular-nums">{buyers}명</span>
           </div>
-          <input
-            type="range"
-            min={1}
-            max={200}
-            value={buyers}
+          <input type="range" min={1} max={200} value={buyers}
             onChange={(e) => setBuyers(Number(e.target.value))}
-            className="w-full accent-[#C9571A]"
-          />
+            className="w-full accent-[#C9571A]" />
           <div className="flex justify-between text-[11px] text-gray-400">
             <span>1명</span><span>50명</span><span>100명</span><span>200명</span>
           </div>
         </div>
 
+        {/* 사용 분포 */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] text-gray-500">사용 패턴 분포</span>
+            <span className="text-[11px] text-gray-400">합계 100%</span>
+          </div>
+          {/* 분포 바 */}
+          <div className="flex h-2 rounded-full overflow-hidden gap-px">
+            <div className="bg-blue-400 transition-all" style={{ width: `${pctNormal}%` }} />
+            <div className="bg-purple-400 transition-all" style={{ width: `${pctCouple}%` }} />
+            <div className="bg-[#C9571A] transition-all" style={{ width: `${pctAudition}%` }} />
+          </div>
+          {usageRows.map((row) => (
+            <div key={row.type} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between text-[12px]">
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full ${row.color}`} />
+                  <span className="font-semibold text-gray-700">{row.label}</span>
+                  <span className="text-gray-400">{row.note}</span>
+                </div>
+                <span className="font-bold text-gray-900 tabular-nums">{row.pct}%</span>
+              </div>
+              <input type="range" min={0} max={100} value={row.pct}
+                onChange={(e) => handlePctChange(row.type, Number(e.target.value))}
+                className="w-full accent-[#C9571A] h-1" />
+            </div>
+          ))}
+        </div>
+
         {/* 결과 */}
-        <div className="bg-gray-50 rounded-xl px-4 py-3 flex flex-col gap-2.5 border border-gray-100">
+        <div className="bg-gray-50 rounded-xl px-4 py-3 flex flex-col gap-2 border border-gray-100">
           <div className="flex justify-between text-[13px]">
             <span className="text-gray-500">순수취액 (VAT·수수료 제외)</span>
             <span className="font-bold text-gray-700">+{totalRevenue.toLocaleString()}원</span>
           </div>
-          <div className="flex justify-between text-[13px]">
-            <span className="text-gray-500">API 원가 (전량 소진 기준)</span>
-            <span className="font-bold text-red-500">−{totalApiCost.toLocaleString()}원</span>
-          </div>
-          <div className="h-px bg-gray-200" />
+          <div className="h-px bg-gray-100" />
+          {usageRows.map((row) => (
+            <div key={row.type} className="flex justify-between text-[12px]">
+              <span className="text-gray-400 flex items-center gap-1">
+                <div className={`w-1.5 h-1.5 rounded-full ${row.color}`} />
+                {row.label} {row.calls}호출
+              </span>
+              <span className="text-red-400">−{row.cost.toLocaleString()}원</span>
+            </div>
+          ))}
+          <div className="h-px bg-gray-200 mt-1" />
           <div className="flex justify-between items-center">
             <span className="text-[14px] font-bold text-gray-900">순이익</span>
             <div className="text-right">
@@ -527,7 +607,7 @@ function ProfitCalculator() {
         </div>
 
         <p className="text-[11px] text-gray-400 leading-relaxed">
-          * API 단가 111원/회 (4/1~4/7 실측 기준) · 카카오페이 3.2% · 부가세 10% 반영
+          * API 단가 111원/회 실측 · 오디션=333원/회(분석+스틸) · 카카오페이 3.2% · 부가세 10%
         </p>
       </div>
     </div>

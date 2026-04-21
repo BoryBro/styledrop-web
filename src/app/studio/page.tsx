@@ -1399,9 +1399,15 @@ export default function Studio() {
                           </svg>
                           {usageCounts === null ? "..." : formatCount(usageCounts[style.id] ?? 0)}
                         </span>
-                        <div className="flex items-center px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg backdrop-blur-md">
-                          <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">1크레딧</span>
-                        </div>
+                        {MULTI_SOURCE_STYLE_ID_SET.has(style.id) ? (
+                          <div className="flex items-center gap-1 px-2.5 py-1 bg-[#C9571A] rounded-lg shadow-lg">
+                            <span className="text-[11px] font-extrabold text-white whitespace-nowrap">✦✦ 2크레딧</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg backdrop-blur-md">
+                            <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">1크레딧</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

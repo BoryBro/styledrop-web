@@ -19,7 +19,7 @@ import {
   fingerprintBase64Image,
   hasActiveRequestEvent,
 } from "@/lib/request-lock.server";
-import { STYLE_LABELS } from "@/lib/styles";
+import { STYLE_LABELS, MULTI_SOURCE_STYLE_IDS } from "@/lib/styles";
 import {
   GUEST_LIMIT, WINDOW_MS,
   GUEST_COOKIE,
@@ -7363,8 +7363,11 @@ export async function POST(request: NextRequest) {
 
   // ── 회원: 크레딧 차감 (원자적) ──────────────────────────────────────
   if (session) {
+    const isMultiSource = (MULTI_SOURCE_STYLE_IDS as readonly string[]).includes(style);
+    const creditCost = isMultiSource ? 2 : 1;
     const { data: newCredits, error: deductError } = await supabase.rpc("deduct_credit", {
       p_user_id: session.id,
+      p_amount: creditCost,
     });
     if (deductError || newCredits === null || newCredits === undefined) {
       await logRequestEvent("generation_request_failed", {
@@ -7377,7 +7380,7 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
-    deductedCredits = 1;
+    deductedCredits = creditCost;
   }
 
   const cookieValue = !session ? encodeLimitCookie({ count: guestCount + 1, resetAt }) : "";
