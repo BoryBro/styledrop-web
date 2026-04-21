@@ -889,7 +889,6 @@ function AuditionResultInner() {
   const [copyToast, setCopyToast] = useState(false);
   const [isGeneratingStill, setIsGeneratingStill] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
-  const [shareRewardToast, setShareRewardToast] = useState(false);
   const [physioPhoto, setPhysioPhoto] = useState<string | null>(null);
   const [personalityAnswers, setPersonalityAnswers] = useState<PersonalityAnswer[]>([]);
   const [activePhysioTab, setActivePhysioTab] = useState(0);
@@ -1304,20 +1303,6 @@ function AuditionResultInner() {
     }
   };
 
-  // 공유 후 1크레딧 보상
-  const claimShareReward = () => {
-    fetch("/api/reward/share", { method: "POST" })
-      .then(r => r.json())
-      .then(d => {
-        if (d.ok) {
-          setCredits(d.credits);
-          setShareRewardToast(true);
-          setTimeout(() => setShareRewardToast(false), 3000);
-        }
-      })
-      .catch(() => {});
-  };
-
   const handleSave = useCallback(async () => {
     if (!result || isSaving) return;
     const saveSceneIdx = clamp(selectedStillSceneIdx, 0, result.scenes.length - 1);
@@ -1360,7 +1345,6 @@ function AuditionResultInner() {
         link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       });
       fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event_type: "audition_share_kakao" }) }).catch(() => {});
-      claimShareReward();
     } catch {
       navigator.clipboard?.writeText(window.location.origin + "/audition/solo");
     } finally {
@@ -1377,7 +1361,6 @@ function AuditionResultInner() {
       setCopyToast(true);
       setTimeout(() => setCopyToast(false), 2500);
       fetch("/api/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event_type: "audition_share_link_copy" }) }).catch(() => {});
-      claimShareReward();
     } catch { /* silent */ }
     finally { setIsCopying(false); }
   };
@@ -1803,14 +1786,6 @@ function AuditionResultInner() {
           50% { transform: translateY(18px); opacity: 1; }
         }
       `}</style>
-
-      {/* ── 공유 크레딧 보상 토스트 ──────────────────────── */}
-      {shareRewardToast && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-[13px] font-bold px-5 py-3 rounded-full shadow-xl flex items-center gap-2"
-          style={{ animation: "fade-up 0.3s ease-out" }}>
-          <span>🎉</span><span>1크레딧 지급됐어요!</span>
-        </div>
-      )}
 
       {/* ── 헤더 ─────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100 h-[52px] flex items-center justify-between px-4">
@@ -2240,8 +2215,6 @@ function AuditionResultInner() {
               )}
               {isSharing ? "링크 생성 중..." : "카카오로 공유하기"}
             </button>
-
-            <p className="px-1 text-[13px] font-bold text-[#C9571A]">📢 카카오로 공유하면 1크레딧 지급! (최초 1회)</p>
 
             <button
               onClick={handleCopyLink}

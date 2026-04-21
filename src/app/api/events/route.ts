@@ -9,7 +9,6 @@ const ALLOWED_EVENTS = [
   "audition_share_kakao",
   "audition_share_link_copy",
   "revisit",
-  "share_credit_reward",
 ];
 
 function parseSession(request: NextRequest): { id: string } | null {
