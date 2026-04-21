@@ -541,11 +541,11 @@ function ProfitCalculator() {
             <span className="text-[13px] text-gray-500">구매자 수</span>
             <span className="text-[17px] font-bold text-gray-900 tabular-nums">{buyers}명</span>
           </div>
-          <input type="range" min={1} max={200} value={buyers}
+          <input type="range" min={1} max={10000} value={buyers}
             onChange={(e) => setBuyers(Number(e.target.value))}
             className="w-full accent-[#C9571A]" />
           <div className="flex justify-between text-[11px] text-gray-400">
-            <span>1명</span><span>50명</span><span>100명</span><span>200명</span>
+            <span>1명</span><span>2,500명</span><span>5,000명</span><span>1만명</span>
           </div>
         </div>
 
