@@ -15,7 +15,11 @@ type GeminiBillingSnapshot = {
 function parseServiceAccountJson() {
   const inlineRaw = process.env.GCP_BILLING_SERVICE_ACCOUNT_JSON?.trim();
   const jsonPath = process.env.GCP_BILLING_SERVICE_ACCOUNT_JSON_PATH?.trim();
-  const raw = inlineRaw || (jsonPath ? readFileSync(jsonPath, "utf8").trim() : "");
+  let fileRaw = "";
+  if (jsonPath) {
+    try { fileRaw = readFileSync(jsonPath, "utf8").trim(); } catch { fileRaw = ""; }
+  }
+  const raw = inlineRaw || fileRaw;
   if (!raw) return null;
 
   try {

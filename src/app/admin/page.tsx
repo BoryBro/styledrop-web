@@ -443,6 +443,97 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
   );
 }
 
+const PROFIT_PACKAGES = [
+  { id: "basic", label: "Basic", credits: 10, price: 1900, priceStr: "1,900" },
+  { id: "plus",  label: "Plus",  credits: 30, price: 4900, priceStr: "4,900" },
+  { id: "pro",   label: "Pro",   credits: 70, price: 9900, priceStr: "9,900" },
+] as const;
+const API_UNIT_COST = 111.1;
+const KAKAO_FEE_RATE = 0.032;
+const VAT_RATE = 0.10;
+
+function ProfitCalculator() {
+  const [pkgId, setPkgId] = useState<"basic" | "plus" | "pro">("plus");
+  const [buyers, setBuyers] = useState(10);
+
+  const pkg = PROFIT_PACKAGES.find((p) => p.id === pkgId)!;
+  const netPerSale = (pkg.price / (1 + VAT_RATE)) - (pkg.price * KAKAO_FEE_RATE);
+  const apiCostPerSale = pkg.credits * API_UNIT_COST;
+  const profitPerSale = netPerSale - apiCostPerSale;
+  const totalRevenue = Math.round(netPerSale * buyers);
+  const totalApiCost = Math.round(apiCostPerSale * buyers);
+  const totalProfit = Math.round(profitPerSale * buyers);
+  const margin = Math.round((profitPerSale / netPerSale) * 100);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">순이익 시뮬레이터</p>
+      <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-4">
+        {/* 패키지 선택 */}
+        <div className="flex gap-2">
+          {PROFIT_PACKAGES.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setPkgId(p.id)}
+              className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-colors border ${
+                pkgId === p.id ? "bg-[#C9571A] border-[#C9571A] text-white" : "bg-gray-100 border-gray-200 text-gray-600 hover:border-gray-300"
+              }`}
+            >
+              {p.label}<br />
+              <span className="text-[11px] font-normal opacity-70">{p.priceStr}원 · {p.credits}회</span>
+            </button>
+          ))}
+        </div>
+
+        {/* 구매자 수 슬라이더 */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] text-gray-500">구매자 수</span>
+            <span className="text-[17px] font-bold text-gray-900 tabular-nums">{buyers}명</span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={200}
+            value={buyers}
+            onChange={(e) => setBuyers(Number(e.target.value))}
+            className="w-full accent-[#C9571A]"
+          />
+          <div className="flex justify-between text-[11px] text-gray-400">
+            <span>1명</span><span>50명</span><span>100명</span><span>200명</span>
+          </div>
+        </div>
+
+        {/* 결과 */}
+        <div className="bg-gray-50 rounded-xl px-4 py-3 flex flex-col gap-2.5 border border-gray-100">
+          <div className="flex justify-between text-[13px]">
+            <span className="text-gray-500">순수취액 (VAT·수수료 제외)</span>
+            <span className="font-bold text-gray-700">+{totalRevenue.toLocaleString()}원</span>
+          </div>
+          <div className="flex justify-between text-[13px]">
+            <span className="text-gray-500">API 원가 (전량 소진 기준)</span>
+            <span className="font-bold text-red-500">−{totalApiCost.toLocaleString()}원</span>
+          </div>
+          <div className="h-px bg-gray-200" />
+          <div className="flex justify-between items-center">
+            <span className="text-[14px] font-bold text-gray-900">순이익</span>
+            <div className="text-right">
+              <span className={`text-[22px] font-extrabold tabular-nums ${totalProfit >= 0 ? "text-[#C9571A]" : "text-red-500"}`}>
+                {totalProfit >= 0 ? "+" : ""}{totalProfit.toLocaleString()}원
+              </span>
+              <span className="text-[12px] text-gray-400 ml-2">마진 {margin}%</span>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-gray-400 leading-relaxed">
+          * API 단가 111원/회 (4/1~4/7 실측 기준) · 카카오페이 3.2% · 부가세 10% 반영
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function Row({ label, value, note, highlight }: { label: string; value: string | number; note?: string; highlight?: boolean }) {
   return (
     <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
@@ -1444,6 +1535,9 @@ export default function AdminPage() {
             <Row label="오늘 매출" value={`${stats.todayRevenue.toLocaleString()}원`} />
             <Row label="결제 건수" value={`${stats.totalPaymentCount}건`} />
           </Section>
+
+          {/* 순이익 시뮬레이터 */}
+          <ProfitCalculator />
 
           {/* 결제 목록 & 원클릭 환불 */}
           {stats.paymentList.length > 0 && (
