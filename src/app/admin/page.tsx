@@ -455,35 +455,34 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
   const accentByKey: Record<string, string> = {
     "general-card": "#C9571A",
     "multi-card": "#7C5CFA",
-    "audition-analyze": "#111827",
-    "audition-still": "#F2C94C",
+    audition: "#111827",
   };
   const trackedTotal = stats.apiUsageBreakdown.reduce((sum, item) => sum + item.count, 0);
-  const activeUsers = stats.apiUsageBreakdown.reduce((max, item) => Math.max(max, item.uniqueUsers), 0);
+  const activeUsers = Math.max(...stats.apiUsageBreakdown.map((item) => item.uniqueUsers), 0);
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">API 사용 섹션</p>
+      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">기능별 사용</p>
       <div className="bg-white rounded-2xl border border-gray-200 px-4 py-4 flex flex-col gap-3">
         <div className="grid grid-cols-3 gap-2">
-          <MiniCard label="가입 유저" value={`${stats.totalUsers}명`} accent />
-          <MiniCard label="집계 호출" value={`${trackedTotal}회`} />
-          <MiniCard label="최대 사용 유저" value={`${activeUsers}명`} />
+          <MiniCard label="전체 가입" value={`${stats.totalUsers}명`} accent />
+          <MiniCard label="총 사용" value={`${trackedTotal}회`} />
+          <MiniCard label="가장 많이 쓴 사람" value={`${activeUsers}명`} />
         </div>
 
         <div className="rounded-2xl border border-gray-200 overflow-hidden">
           <div className="grid grid-cols-[1.4fr_0.72fr_0.72fr_0.72fr] gap-2 bg-gray-50 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">
-            <span>섹션</span>
+            <span>종류</span>
             <span className="text-right">횟수</span>
-            <span className="text-right">사용 유저</span>
-            <span className="text-right">가입자 대비</span>
+            <span className="text-right">사람</span>
+            <span className="text-right">가입자 중</span>
           </div>
 
           {stats.apiUsageBreakdown.map((item) => {
             const accent = accentByKey[item.key] ?? "#C9571A";
 
             return (
-              <div key={item.key} className="border-t border-gray-100 px-3 py-3 first:border-t-0">
+              <div key={item.key} className="border-t border-gray-100 px-3 py-4 first:border-t-0">
                 <div className="grid grid-cols-[1.4fr_0.72fr_0.72fr_0.72fr] gap-2 items-start">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -494,29 +493,29 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
                   </div>
                   <div className="text-right">
                     <p className="text-[16px] font-extrabold tabular-nums text-gray-900">{item.count}회</p>
-                    <p className="text-[11px] text-gray-400">사용 비중 {item.usageRatio}%</p>
+                    <p className="text-[11px] text-gray-400">전체 중 {item.usageRatio}%</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[16px] font-extrabold tabular-nums text-gray-900">{item.uniqueUsers}명</p>
-                    <p className="text-[11px] text-gray-400">고유 유저</p>
+                    <p className="text-[11px] text-gray-400">사용한 사람</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[16px] font-extrabold tabular-nums" style={{ color: accent }}>{item.userRatio}%</p>
-                    <p className="text-[11px] text-gray-400">가입자 대비</p>
+                    <p className="text-[11px] text-gray-400">가입자 중</p>
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-col gap-2">
-                  <div>
-                    <div className="flex items-center justify-between text-[11px] text-gray-400">
-                      <span>가입자 침투율</span>
+                <div className="mt-4 grid gap-2">
+                  <div className="rounded-xl bg-gray-50 px-3 py-2">
+                    <div className="flex items-center justify-between text-[11px] text-gray-500">
+                      <span>가입자 중 사용</span>
                       <span>{item.userRatio}%</span>
                     </div>
                     <Bar ratio={item.userRatio} color={accent} />
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between text-[11px] text-gray-400">
-                      <span>전체 호출 비중</span>
+                  <div className="rounded-xl bg-gray-50 px-3 py-2">
+                    <div className="flex items-center justify-between text-[11px] text-gray-500">
+                      <span>전체 사용 중</span>
                       <span>{item.usageRatio}%</span>
                     </div>
                     <Bar ratio={item.usageRatio} color={accent} />
@@ -528,7 +527,7 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
         </div>
 
         <p className="text-[11px] leading-relaxed text-gray-400 px-1">
-          퍼스널 컬러처럼 브라우저 안에서 끝나는 기능은 이 표에서 제외했습니다. 지금은 실제 API 호출이 남는 섹션만 집계합니다.
+          퍼스널 컬러는 브라우저 안에서 끝나는 분석이라 여기서 뺐습니다. 이 표는 실제 호출이 남는 기능만 보여줍니다.
         </p>
       </div>
     </div>

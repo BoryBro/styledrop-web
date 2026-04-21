@@ -464,31 +464,27 @@ export async function POST(request: NextRequest) {
   const apiUsageBreakdownBase = [
     {
       key: "general-card",
-      label: "일반 카드",
-      note: "기본 스타일 카드 생성",
+      label: "일반",
+      note: "기본 카드",
       count: generalCardRows.length,
       uniqueUsers: collectUniqueUsers(generalCardRows).size,
     },
     {
       key: "multi-card",
-      label: "2인+ 카드",
-      note: "두 사람 합성 카드 생성",
+      label: "2인",
+      note: "두 사람 카드",
       count: multiSourceRows.length,
       uniqueUsers: collectUniqueUsers(multiSourceRows).size,
     },
     {
-      key: "audition-analyze",
-      label: "AI 오디션 분석",
-      note: "장르/성향 분석과 배역 판정",
-      count: auditionAnalyzeRows.length,
-      uniqueUsers: collectUniqueUsers(auditionAnalyzeRows).size,
-    },
-    {
-      key: "audition-still",
-      label: "오디션 스틸컷",
-      note: "분석 뒤 생성한 장면 이미지",
-      count: auditionStillRows.length,
-      uniqueUsers: collectUniqueUsers(auditionStillRows).size,
+      key: "audition",
+      label: "오디션",
+      note: "분석 + 스틸컷",
+      count: auditionAnalyzeRows.length + auditionStillRows.length,
+      uniqueUsers: new Set([
+        ...collectUniqueUsers(auditionAnalyzeRows),
+        ...collectUniqueUsers(auditionStillRows),
+      ]).size,
     },
   ] as const;
   const trackedApiUsageTotal = apiUsageBreakdownBase.reduce((sum, item) => sum + item.count, 0);
