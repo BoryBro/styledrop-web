@@ -35,6 +35,15 @@ type PaymentItem = {
   refund_type?: string | null;
 };
 type StyleStat = { style_id: string; style_name: string; count: number };
+type ApiUsageBreakdownItem = {
+  key: string;
+  label: string;
+  note: string;
+  count: number;
+  uniqueUsers: number;
+  userRatio: number;
+  usageRatio: number;
+};
 type GenerationErrorSummary = {
   style_id: string;
   style_name: string;
@@ -86,8 +95,7 @@ type Stats = {
   generationRefundCredits24h: number;
   generationRefundUserCount24h: number;
   recentGenerationRefunds: RecentGenerationRefund[];
-  ghostUserCount: number;
-  ghostUsersPreview: UserItem[];
+  apiUsageBreakdown: ApiUsageBreakdownItem[];
   stylePerformanceList: {
     style_id: string;
     style_name: string;
@@ -439,6 +447,90 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
+  const accentByKey: Record<string, string> = {
+    "general-card": "#C9571A",
+    "multi-card": "#7C5CFA",
+    "audition-analyze": "#111827",
+    "audition-still": "#F2C94C",
+  };
+  const trackedTotal = stats.apiUsageBreakdown.reduce((sum, item) => sum + item.count, 0);
+  const activeUsers = stats.apiUsageBreakdown.reduce((max, item) => Math.max(max, item.uniqueUsers), 0);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">API 사용 섹션</p>
+      <div className="bg-white rounded-2xl border border-gray-200 px-4 py-4 flex flex-col gap-3">
+        <div className="grid grid-cols-3 gap-2">
+          <MiniCard label="가입 유저" value={`${stats.totalUsers}명`} accent />
+          <MiniCard label="집계 호출" value={`${trackedTotal}회`} />
+          <MiniCard label="최대 사용 유저" value={`${activeUsers}명`} />
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="grid grid-cols-[1.4fr_0.72fr_0.72fr_0.72fr] gap-2 bg-gray-50 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">
+            <span>섹션</span>
+            <span className="text-right">횟수</span>
+            <span className="text-right">사용 유저</span>
+            <span className="text-right">가입자 대비</span>
+          </div>
+
+          {stats.apiUsageBreakdown.map((item) => {
+            const accent = accentByKey[item.key] ?? "#C9571A";
+
+            return (
+              <div key={item.key} className="border-t border-gray-100 px-3 py-3 first:border-t-0">
+                <div className="grid grid-cols-[1.4fr_0.72fr_0.72fr_0.72fr] gap-2 items-start">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: accent }} />
+                      <p className="text-[14px] font-bold text-gray-900 truncate">{item.label}</p>
+                    </div>
+                    <p className="mt-1 text-[12px] leading-5 text-gray-500">{item.note}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[16px] font-extrabold tabular-nums text-gray-900">{item.count}회</p>
+                    <p className="text-[11px] text-gray-400">사용 비중 {item.usageRatio}%</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[16px] font-extrabold tabular-nums text-gray-900">{item.uniqueUsers}명</p>
+                    <p className="text-[11px] text-gray-400">고유 유저</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[16px] font-extrabold tabular-nums" style={{ color: accent }}>{item.userRatio}%</p>
+                    <p className="text-[11px] text-gray-400">가입자 대비</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-col gap-2">
+                  <div>
+                    <div className="flex items-center justify-between text-[11px] text-gray-400">
+                      <span>가입자 침투율</span>
+                      <span>{item.userRatio}%</span>
+                    </div>
+                    <Bar ratio={item.userRatio} color={accent} />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between text-[11px] text-gray-400">
+                      <span>전체 호출 비중</span>
+                      <span>{item.usageRatio}%</span>
+                    </div>
+                    <Bar ratio={item.usageRatio} color={accent} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="text-[11px] leading-relaxed text-gray-400 px-1">
+          퍼스널 컬러처럼 브라우저 안에서 끝나는 기능은 이 표에서 제외했습니다. 지금은 실제 API 호출이 남는 섹션만 집계합니다.
+        </p>
+      </div>
     </div>
   );
 }
@@ -830,8 +922,6 @@ export default function AdminPage() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [styleSavingId, setStyleSavingId] = useState<string | null>(null);
   const [styleControlMsg, setStyleControlMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const [ghostDeleteLoading, setGhostDeleteLoading] = useState(false);
-  const [ghostDeleteMsg, setGhostDeleteMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [generationErrorDeleteLoading, setGenerationErrorDeleteLoading] = useState<string | null>(null);
   const [generationErrorDeleteMsg, setGenerationErrorDeleteMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const liveClock = fetchedAt ? new Date(fetchedAt.getTime() + elapsed * 1000) : null;
@@ -1673,6 +1763,8 @@ export default function AdminPage() {
           {/* API 비용 & 손익 */}
           <MonthlyCostSection monthlyCosts={stats.monthlyCosts ?? {}} />
 
+          <ApiUsageBreakdownSection stats={stats} />
+
           {/* 결제 현황 */}
           <Section title="결제 현황">
             <Row label="누적 매출" value={`${stats.totalRevenue.toLocaleString()}원`} highlight />
@@ -1770,85 +1862,6 @@ export default function AdminPage() {
           <div className="grid grid-cols-2 gap-2">
             <MiniCard label="전체 가입 유저" value={`${stats.totalUsers}명`} accent />
             <MiniCard label="오늘 가입" value={`${stats.todaySignupCount}명`} />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">유령계정 정리</p>
-            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-2">
-                <MiniCard label="삭제 후보" value={`${stats.ghostUserCount}명`} accent={stats.ghostUserCount > 0} />
-                <MiniCard label="기준" value="활동 0" />
-              </div>
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[12px] text-gray-500">
-                생성, 오디션, 결제, 의미 있는 이벤트가 없고 가입 보너스만 받은 계정을 유령계정으로 보고 정리합니다.
-              </div>
-
-              {stats.ghostUsersPreview.length > 0 ? (
-                <div className="rounded-xl border border-gray-200 overflow-hidden">
-                  {stats.ghostUsersPreview.map((user) => (
-                    <div key={user.id} className="px-3 py-2.5 border-b border-gray-100 last:border-0 flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-bold text-gray-900 truncate">{user.nickname ?? "닉네임 없음"}</p>
-                        <p className="text-[11px] text-gray-400 font-mono truncate">{user.id}</p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-[11px] text-gray-500">가입 {formatDateTime(user.created_at)}</p>
-                        <p className="text-[11px] text-gray-400">마지막 카카오 로그인 {user.last_login_at ? relativeTime(user.last_login_at) : "—"}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[13px] text-gray-500">
-                  현재 삭제 후보인 유령계정이 없어요.
-                </div>
-              )}
-
-              <button
-                onClick={async () => {
-                  if (stats.ghostUserCount <= 0) return;
-                  const ok = confirm(
-                    `유령계정 ${stats.ghostUserCount}명을 삭제합니다.\n기준: 생성/오디션/결제/의미 있는 이벤트 없음\n\n진행하시겠어요?`
-                  );
-                  if (!ok) return;
-
-                  setGhostDeleteLoading(true);
-                  setGhostDeleteMsg(null);
-
-                  try {
-                    const res = await fetch("/api/admin/delete-ghost-users", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ password }),
-                    });
-                    const data = await res.json();
-
-                    setGhostDeleteMsg({
-                      ok: !!data.ok,
-                      text: data.ok
-                        ? `✓ 유령계정 ${data.deletedCount}명 삭제 완료`
-                        : `오류: ${data.error ?? "삭제 실패"}`,
-                    });
-
-                    if (data.ok) {
-                      await doLogin(password);
-                    }
-                  } finally {
-                    setGhostDeleteLoading(false);
-                  }
-                }}
-                disabled={ghostDeleteLoading || stats.ghostUserCount <= 0}
-                className="w-full bg-gray-900 hover:bg-black disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-2.5 rounded-xl transition-colors text-[14px]"
-              >
-                {ghostDeleteLoading ? "삭제 중..." : `유령계정 ${stats.ghostUserCount}명 삭제`}
-              </button>
-
-              {ghostDeleteMsg && (
-                <p className={`text-[13px] text-center ${ghostDeleteMsg.ok ? "text-[#C9571A]" : "text-red-500"}`}>
-                  {ghostDeleteMsg.text}
-                </p>
-              )}
-            </div>
           </div>
 
           {/* 크레딧 조정 */}

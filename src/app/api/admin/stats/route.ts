@@ -7,7 +7,6 @@ import { getGeminiBillingSnapshot, hasGeminiBillingConfig } from "@/lib/google-b
 import { ALL_STYLES, STYLE_LABELS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 import { getNetRevenueAmount } from "@/lib/payment-policy";
-import { getGhostUserCandidates } from "@/lib/ghost-users.server";
 
 type PaymentRow = {
   id: string;
@@ -103,7 +102,6 @@ export async function POST(request: NextRequest) {
     marBillingSnapshot, aprBillingSnapshot,
     styleControls,
     generationErrorOverview,
-    ghostUserCandidates,
   ] = await Promise.all([
     // metadata 포함해서 공유 이벤트의 style_id 집계 가능하도록
     supabase.from("user_events").select("event_type, metadata, created_at"),
@@ -157,7 +155,6 @@ export async function POST(request: NextRequest) {
       : Promise.resolve(null),
     loadStyleControls(),
     getGenerationErrorOverview(),
-    getGhostUserCandidates(supabase),
   ]);
 
   if (usageRes.error || eventsRes.error || todayEventsRes.error || refundEventsRes.error) {
@@ -449,6 +446,58 @@ export async function POST(request: NextRequest) {
     })
     .sort((a, b) => b.count - a.count);
 
+  const multiSourceStyleIds = new Set(
+    ALL_STYLES.filter((style) => style.tag === "2인").map((style) => style.id)
+  );
+  const generalCardRows = usage.filter((row) => row.style_id !== "audition" && !multiSourceStyleIds.has(row.style_id));
+  const multiSourceRows = usage.filter((row) => multiSourceStyleIds.has(row.style_id));
+  const auditionStillRows = usage.filter((row) => row.style_id === "audition");
+  const auditionAnalyzeRows = events.filter((event) => event.event_type === "audition_request_succeeded");
+
+  const collectUniqueUsers = (rows: Array<{ user_id: string | null }>) =>
+    new Set(
+      rows
+        .map((row) => row.user_id)
+        .filter((userId): userId is string => typeof userId === "string" && userId.length > 0)
+    );
+
+  const apiUsageBreakdownBase = [
+    {
+      key: "general-card",
+      label: "일반 카드",
+      note: "기본 스타일 카드 생성",
+      count: generalCardRows.length,
+      uniqueUsers: collectUniqueUsers(generalCardRows).size,
+    },
+    {
+      key: "multi-card",
+      label: "2인+ 카드",
+      note: "두 사람 합성 카드 생성",
+      count: multiSourceRows.length,
+      uniqueUsers: collectUniqueUsers(multiSourceRows).size,
+    },
+    {
+      key: "audition-analyze",
+      label: "AI 오디션 분석",
+      note: "장르/성향 분석과 배역 판정",
+      count: auditionAnalyzeRows.length,
+      uniqueUsers: collectUniqueUsers(auditionAnalyzeRows).size,
+    },
+    {
+      key: "audition-still",
+      label: "오디션 스틸컷",
+      note: "분석 뒤 생성한 장면 이미지",
+      count: auditionStillRows.length,
+      uniqueUsers: collectUniqueUsers(auditionStillRows).size,
+    },
+  ] as const;
+  const trackedApiUsageTotal = apiUsageBreakdownBase.reduce((sum, item) => sum + item.count, 0);
+  const apiUsageBreakdown = apiUsageBreakdownBase.map((item) => ({
+    ...item,
+    userRatio: (usersRes.count ?? 0) > 0 ? Math.round((item.uniqueUsers / (usersRes.count ?? 0)) * 1000) / 10 : 0,
+    usageRatio: trackedApiUsageTotal > 0 ? Math.round((item.count / trackedApiUsageTotal) * 1000) / 10 : 0,
+  }));
+
   const marStyleCount = marUsageRes.count ?? 0;
   const aprStyleCount = aprUsageRes.count ?? 0;
   const marAuditionCount = marAuditionRes.count ?? 0;
@@ -623,8 +672,7 @@ export async function POST(request: NextRequest) {
     generationRefundCredits24h,
     generationRefundUserCount24h,
     recentGenerationRefunds,
-    ghostUserCount: ghostUserCandidates.length,
-    ghostUsersPreview: ghostUserCandidates.slice(0, 10),
+    apiUsageBreakdown,
     totalUsers: usersRes.count ?? 0,
     todaySignupCount: todaySignupRes.count ?? 0,
     uniqueLoggedInUsers,
