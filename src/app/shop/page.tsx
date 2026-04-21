@@ -6,6 +6,7 @@ import Link from "next/link";
 import * as PortOne from "@portone/browser-sdk/v2";
 import { CREDIT_VALIDITY_TEXT } from "@/lib/credits";
 import { PAYMENT_PACKAGES, REFUND_UNIT_PRICE, REFUND_WINDOW_DAYS } from "@/lib/payment-policy";
+import GiftCodePanel from "@/components/gift/GiftCodePanel";
 
 const PACKAGES = [
   {
@@ -54,15 +55,38 @@ export default function ShopPage() {
   const [giftExpiresAt, setGiftExpiresAt] = useState("");
   const [showRefund, setShowRefund] = useState(false);
   const [showGiftConfirm, setShowGiftConfirm] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [isSharingGift, setIsSharingGift] = useState(false);
   const router = useRouter();
 
   const pkg = PACKAGES.find((p) => p.id === selected)!;
 
-  const handleCopyCode = async () => {
-    await navigator.clipboard.writeText(giftCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleGiftKakaoShare = async () => {
+    if (!giftCode || isSharingGift) return;
+    setIsSharingGift(true);
+    try {
+      const shareUrl = `${window.location.origin}/gift/${encodeURIComponent(giftCode)}`;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const Kakao = (window as any).Kakao;
+      if (!Kakao?.isInitialized()) Kakao?.init(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
+      if (!Kakao?.Share?.sendDefault) throw new Error("Kakao SDK unavailable");
+
+      Kakao.Share.sendDefault({
+        objectType: "text",
+        text: `StyleDrop 크레딧 선물을 보냈어 🎁\n선물 코드: ${giftCode}\n링크 열어서 코드 복사하고 마이페이지에서 등록해줘.`,
+        link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+      });
+
+      fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_type: "gift_share_kakao", metadata: { surface: "shop_gift_success" } }),
+      }).catch(() => {});
+    } catch {
+      const shareUrl = `${window.location.origin}/gift/${encodeURIComponent(giftCode)}`;
+      await navigator.clipboard.writeText(shareUrl);
+    } finally {
+      window.setTimeout(() => setIsSharingGift(false), 1500);
+    }
   };
 
   const handlePay = async (pgMethod: typeof PG_METHODS[0], isGift = false, packageIdOverride?: string) => {
@@ -188,35 +212,29 @@ export default function ShopPage() {
   if (status === "gift_success") {
     const expiryDate = giftExpiresAt ? new Date(giftExpiresAt).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" }) : "";
     return (
-      <div className="min-h-dvh bg-[#0A0A0A] flex flex-col items-center justify-center px-6">
-        <div className="flex flex-col items-center gap-6 max-w-xs w-full text-center">
-          <div className="w-20 h-20 rounded-full bg-[#C9571A]/15 border-2 border-[#C9571A]/40 flex items-center justify-center text-3xl">
-            🎁
-          </div>
-          <div>
-            <p className="text-white font-bold text-2xl">선물 코드 발급 완료!</p>
-            <p className="text-[#999] text-sm mt-2">크레딧 {earnedCredits}회 선물 코드예요</p>
-            <p className="text-[#666] text-xs mt-1">유효기간: {expiryDate}까지</p>
-          </div>
-          <div className="w-full bg-[#1A1A1A] border border-[#333] rounded-2xl p-5 flex flex-col gap-3">
-            <p className="text-[#666] text-xs">선물 코드</p>
-            <p className="text-white font-mono font-extrabold text-2xl tracking-widest">{giftCode}</p>
-            <button
-              onClick={handleCopyCode}
-              className="w-full h-[44px] rounded-xl bg-[#C9571A] text-white font-bold text-[14px] transition-colors"
-            >
-              {copied ? "복사됨 ✓" : "코드 복사하기"}
-            </button>
-          </div>
-          <p className="text-[#555] text-xs leading-relaxed">
-            이 코드를 친구에게 전달하세요.<br />
-            받는 사람은 마이페이지에서 입력하면 크레딧이 지급돼요.
-          </p>
-          <button onClick={() => setStatus("idle")} className="text-sm text-[#555] hover:text-white transition-colors">
-            더 선물하기
-          </button>
-        </div>
-      </div>
+      <GiftCodePanel
+        title="선물 코드 발급 완료!"
+        subtitle={`크레딧 ${earnedCredits}회 선물 코드예요`}
+        expiryText={`유효기간: ${expiryDate}까지`}
+        giftCode={giftCode}
+        helperLines={[
+          "이 코드를 친구에게 전달하세요.",
+          "받는 사람은 링크를 열어 코드 복사 후 마이페이지에서 등록하면 돼요.",
+        ]}
+        actions={[
+          {
+            label: isSharingGift ? "카카오톡 여는 중..." : "카카오톡으로 보내기",
+            onClick: handleGiftKakaoShare,
+            className: "w-full h-[48px] rounded-xl bg-[#FEE500] text-[#191919] font-bold text-[14px] transition-opacity disabled:opacity-50",
+            disabled: isSharingGift,
+          },
+        ]}
+        footerAction={{
+          label: "더 선물하기",
+          onClick: () => setStatus("idle"),
+          className: "text-sm text-[#555] hover:text-white transition-colors",
+        }}
+      />
     );
   }
 

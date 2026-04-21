@@ -8,6 +8,7 @@ const ALLOWED_EVENTS = [
   "save_image",
   "audition_share_kakao",
   "audition_share_link_copy",
+  "gift_share_kakao",
   "revisit",
 ];
 
