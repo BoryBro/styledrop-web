@@ -38,7 +38,7 @@ const PG_METHODS = [
   { id: "kakaopay", label: "카카오페이", color: "#FEE500", textColor: "#191919", channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KAKAOPAY, payMethod: "EASY_PAY" as const },
 ];
 
-type Status = "idle" | "loading" | "success" | "error";
+type Status = "idle" | "loading" | "success" | "gift_success" | "error";
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -46,15 +46,27 @@ async function sleep(ms: number) {
 
 export default function ShopPage() {
   const [selected, setSelected] = useState("plus");
+  const [selectedGift, setSelectedGift] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [earnedCredits, setEarnedCredits] = useState(0);
+  const [giftCode, setGiftCode] = useState("");
+  const [giftExpiresAt, setGiftExpiresAt] = useState("");
   const [showRefund, setShowRefund] = useState(false);
+  const [showGiftConfirm, setShowGiftConfirm] = useState(false);
+  const [copied, setCopied] = useState(false);
   const router = useRouter();
 
   const pkg = PACKAGES.find((p) => p.id === selected)!;
 
-  const handlePay = async (pgMethod: typeof PG_METHODS[0]) => {
+  const handleCopyCode = async () => {
+    await navigator.clipboard.writeText(giftCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handlePay = async (pgMethod: typeof PG_METHODS[0], isGift = false, packageIdOverride?: string) => {
+    const packageId = packageIdOverride ?? selected;
     setStatus("loading");
     setErrorMsg("");
     try {
@@ -62,7 +74,7 @@ export default function ShopPage() {
       const prepRes = await fetch("/api/payment/prepare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packageId: selected }),
+        body: JSON.stringify({ packageId }),
       });
       const prep = await prepRes.json();
       if (!prepRes.ok) {
@@ -97,21 +109,20 @@ export default function ShopPage() {
         return;
       }
 
-      // 3. 서버에서 결제 검증 + 크레딧 적립
+      // 3. 서버에서 결제 검증 + 크레딧 적립 (또는 선물 코드 발급)
       const confirmedPaymentId = result?.paymentId ?? prep.paymentId;
       const confirmRetryDelays = [0, 1200, 2400] as const;
       let confirmPayload: any = null;
       let confirmOk = false;
+      const confirmEndpoint = isGift ? "/api/payment/gift/confirm" : "/api/payment/confirm";
 
       for (const delay of confirmRetryDelays) {
-        if (delay > 0) {
-          await sleep(delay);
-        }
+        if (delay > 0) await sleep(delay);
 
-        const confirmRes = await fetch("/api/payment/confirm", {
+        const confirmRes = await fetch(confirmEndpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentId: confirmedPaymentId, packageId: selected }),
+          body: JSON.stringify({ paymentId: confirmedPaymentId, packageId }),
         });
         const confirm = await confirmRes.json().catch(() => ({}));
 
@@ -122,9 +133,7 @@ export default function ShopPage() {
         }
 
         confirmPayload = confirm;
-        if (!confirm?.retryable) {
-          break;
-        }
+        if (!confirm?.retryable) break;
       }
 
       if (!confirmOk) {
@@ -134,7 +143,13 @@ export default function ShopPage() {
       }
 
       setEarnedCredits(confirmPayload.credits);
-      setStatus("success");
+      if (isGift) {
+        setGiftCode(confirmPayload.code);
+        setGiftExpiresAt(confirmPayload.expiresAt);
+        setStatus("gift_success");
+      } else {
+        setStatus("success");
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setErrorMsg(`결제 오류: ${msg}`);
@@ -164,6 +179,41 @@ export default function ShopPage() {
           </button>
           <button onClick={() => setStatus("idle")} className="text-sm text-[#555] hover:text-white transition-colors">
             더 충전하기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "gift_success") {
+    const expiryDate = giftExpiresAt ? new Date(giftExpiresAt).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" }) : "";
+    return (
+      <div className="min-h-dvh bg-[#0A0A0A] flex flex-col items-center justify-center px-6">
+        <div className="flex flex-col items-center gap-6 max-w-xs w-full text-center">
+          <div className="w-20 h-20 rounded-full bg-[#C9571A]/15 border-2 border-[#C9571A]/40 flex items-center justify-center text-3xl">
+            🎁
+          </div>
+          <div>
+            <p className="text-white font-bold text-2xl">선물 코드 발급 완료!</p>
+            <p className="text-[#999] text-sm mt-2">크레딧 {earnedCredits}회 선물 코드예요</p>
+            <p className="text-[#666] text-xs mt-1">유효기간: {expiryDate}까지</p>
+          </div>
+          <div className="w-full bg-[#1A1A1A] border border-[#333] rounded-2xl p-5 flex flex-col gap-3">
+            <p className="text-[#666] text-xs">선물 코드</p>
+            <p className="text-white font-mono font-extrabold text-2xl tracking-widest">{giftCode}</p>
+            <button
+              onClick={handleCopyCode}
+              className="w-full h-[44px] rounded-xl bg-[#C9571A] text-white font-bold text-[14px] transition-colors"
+            >
+              {copied ? "복사됨 ✓" : "코드 복사하기"}
+            </button>
+          </div>
+          <p className="text-[#555] text-xs leading-relaxed">
+            이 코드를 친구에게 전달하세요.<br />
+            받는 사람은 마이페이지에서 입력하면 크레딧이 지급돼요.
+          </p>
+          <button onClick={() => setStatus("idle")} className="text-sm text-[#555] hover:text-white transition-colors">
+            더 선물하기
           </button>
         </div>
       </div>
@@ -276,6 +326,86 @@ export default function ShopPage() {
             ))}
           </div>
         </div>
+
+        {/* 선물하기 */}
+        <div className="border-t border-[#1e1e1e] pt-6">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">🎁</span>
+            <p className="text-white font-bold text-[15px]">선물하기</p>
+          </div>
+          <p className="text-[12px] text-[#555] mb-3">결제 후 코드를 받아 친구에게 전달하세요</p>
+          <div className="flex flex-col gap-2.5">
+            {PACKAGES.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => { setSelectedGift(p.id); setShowGiftConfirm(true); }}
+                disabled={status === "loading"}
+                className={`relative w-full flex items-center justify-between px-4 py-4 rounded-2xl border-2 transition-all disabled:opacity-50 ${
+                  selectedGift === p.id
+                    ? "border-[#C9571A] bg-[#C9571A]/8"
+                    : "border-[#222] bg-[#111] hover:border-[#333]"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    selectedGift === p.id ? "border-[#C9571A] bg-[#C9571A]" : "border-[#444]"
+                  }`}>
+                    {selectedGift === p.id && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
+                  <div className="text-left">
+                    <p className="text-white font-bold text-[15px]">{p.credits}회 선물</p>
+                    <p className="text-[#666] text-[12px]">{p.per}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-white font-bold text-[16px]">{p.priceStr}원</p>
+                </div>
+                {p.label && (
+                  <span className={`absolute -top-2.5 left-4 text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                    p.label === "인기" ? "bg-[#C9571A] text-white" : "bg-[#333] text-[#C9571A]"
+                  }`}>
+                    {p.label}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 선물 결제 확인 모달 */}
+        {showGiftConfirm && selectedGift && (() => {
+          const giftPkg = PACKAGES.find((p) => p.id === selectedGift)!;
+          return (
+            <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-6" onClick={() => { setShowGiftConfirm(false); setSelectedGift(null); }}>
+              <div className="bg-[#141414] border border-white/10 rounded-3xl p-6 w-full max-w-sm flex flex-col gap-5" onClick={(e) => e.stopPropagation()}>
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <span className="text-4xl">🎁</span>
+                  <div>
+                    <p className="text-white font-bold text-[17px]">카카오페이로 결제하시겠습니까?</p>
+                    <p className="text-[#666] text-[13px] mt-1">{giftPkg.credits}회 선물 코드 · {giftPkg.priceStr}원</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setShowGiftConfirm(false); setSelectedGift(null); }}
+                    className="flex-1 h-[48px] rounded-2xl bg-[#222] text-white/60 font-bold text-[14px]"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={() => { setShowGiftConfirm(false); handlePay(PG_METHODS[0], true, selectedGift); }}
+                    className="flex-1 h-[48px] rounded-2xl bg-[#FEE500] text-[#191919] font-bold text-[14px] flex items-center justify-center gap-2"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+                      <path fillRule="evenodd" clipRule="evenodd" d="M11 1.5C5.753 1.5 1.5 4.838 1.5 8.955c0 2.637 1.743 4.959 4.38 6.284L4.76 19.49a.3.3 0 00.46.327l5.01-3.353c.255.02.512.031.77.031 5.247 0 9.5-3.338 9.5-7.455 0-4.117-4.253-7.455-9.5-7.455z" fill="#191919"/>
+                    </svg>
+                    결제하기
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* 안내 */}
         <div className="text-[11px] text-[#444] space-y-1 pb-4">

@@ -15,8 +15,9 @@ export type StyleDef = {
 };
 
 export type StyleCategory = "일상" | "자연" | "무드" | "컨셉" | "스포츠";
+export const MULTI_SOURCE_STYLE_TAB = "2인+" as const;
 
-export const STYLE_CATEGORY_TABS = ["전체", "일상", "자연", "무드", "컨셉", "스포츠"] as const;
+export const STYLE_CATEGORY_TABS = ["전체", "일상", "자연", "무드", "컨셉", "스포츠", MULTI_SOURCE_STYLE_TAB] as const;
 
 export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
   gyaru: "컨셉",

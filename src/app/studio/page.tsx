@@ -22,8 +22,15 @@ function showcaseDisplayName(item: { instagramHandle?: string | null; nickname: 
 }
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import HowToFlow from "@/components/how-to/HowToFlow";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
+import {
+  readHowToHiddenPreference,
+  readHowToSeenPreference,
+  writeHowToHiddenPreference,
+  writeHowToSeenPreference,
+} from "@/lib/how-to";
 import { PERSONAL_COLOR_LAB_ENABLED, TRACE_LAB_ENABLED } from "@/lib/feature-flags";
 import {
   PERSONAL_COLOR_CONTROL_ID,
@@ -31,7 +38,14 @@ import {
   resolveFeatureControlState,
   type StyleControlState,
 } from "@/lib/style-controls";
-import { ALL_STYLES, MULTI_SOURCE_STYLE_IDS, STYLE_CATEGORY_BY_ID, STYLE_CATEGORY_TABS, STYLE_LABELS } from "@/lib/styles";
+import {
+  ALL_STYLES,
+  MULTI_SOURCE_STYLE_IDS,
+  MULTI_SOURCE_STYLE_TAB,
+  STYLE_CATEGORY_BY_ID,
+  STYLE_CATEGORY_TABS,
+  STYLE_LABELS,
+} from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
 function formatCount(n: number): string {
@@ -146,6 +160,7 @@ export default function Studio() {
   const [credits, setCredits] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showNoCreditModal, setShowNoCreditModal] = useState(false);
+  const [showHowToModal, setShowHowToModal] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [variantSelectStyle, setVariantSelectStyle] = useState<StyleCard | null>(null);
   const [showCameraGuide, setShowCameraGuide] = useState(false);
@@ -303,6 +318,8 @@ export default function Studio() {
   const filteredStyles =
     activeStyleCategory === "전체"
       ? styles
+      : activeStyleCategory === MULTI_SOURCE_STYLE_TAB
+        ? styles.filter((style) => MULTI_SOURCE_STYLE_ID_SET.has(style.id))
       : styles.filter((style) => STYLE_CATEGORY_BY_ID[style.id] === activeStyleCategory);
   const showAuditionLab = !isAuditionLoading && isAuditionVisible && isAuditionEnabled;
   const personalColorControl = resolveFeatureControlState(
@@ -342,9 +359,13 @@ export default function Studio() {
     selectedStyleRef.current = requestedStyleId;
     setActiveSectionTab("cards");
 
-    const category = STYLE_CATEGORY_BY_ID[requestedStyleId];
-    if (category) {
-      setActiveStyleCategory(category);
+    if (MULTI_SOURCE_STYLE_ID_SET.has(requestedStyleId)) {
+      setActiveStyleCategory(MULTI_SOURCE_STYLE_TAB);
+    } else {
+      const category = STYLE_CATEGORY_BY_ID[requestedStyleId];
+      if (category) {
+        setActiveStyleCategory(category);
+      }
     }
 
     requestAnimationFrame(() => {
@@ -457,6 +478,24 @@ export default function Studio() {
       document.body.style.overflow = previousOverflow;
     };
   }, [selectedShowcaseIndex]);
+
+  useEffect(() => {
+    if (!showHowToModal) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showHowToModal]);
+
+  useEffect(() => {
+    if (loading) return;
+    const userId = user?.id ?? null;
+    if (readHowToHiddenPreference(userId)) return;
+    if (readHowToSeenPreference(userId)) return;
+    writeHowToSeenPreference(userId, true);
+    setShowHowToModal(true);
+  }, [loading, user?.id]);
 
   const activeShowcase = selectedShowcaseIndex !== null ? showcaseItems[selectedShowcaseIndex] ?? null : null;
   const activeShowcaseLiked = activeShowcase ? likedShowcaseUserIds.includes(activeShowcase.userId) : false;
@@ -1290,12 +1329,13 @@ export default function Studio() {
                 <h2 className="text-[20px] font-bold text-[#C9571A]">스타일 선택</h2>
                 <p className="mt-1 text-[18px] font-bold text-white">원하는 스타일의 카드를 선택해봐요</p>
               </div>
-              <Link
-                href="/how-to"
+              <button
+                type="button"
+                onClick={() => setShowHowToModal(true)}
                 className="inline-flex h-12 min-w-[112px] shrink-0 items-center justify-center rounded-2xl bg-[#C9571A] px-6 text-[14px] font-extrabold text-white shadow-[0_10px_24px_rgba(201,87,26,0.24)] transition-all hover:scale-[1.02] hover:bg-[#B84E19]"
               >
                 사용방법
-              </Link>
+              </button>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -1986,6 +2026,19 @@ export default function Studio() {
             </button>
           </div>
         </div>
+      )}
+
+      {showHowToModal && (
+        <HowToFlow
+          mode="modal"
+          onClose={() => setShowHowToModal(false)}
+          onComplete={({ hideForFuture }) => {
+            if (hideForFuture) {
+              writeHowToHiddenPreference(user?.id ?? null, true);
+            }
+            setShowHowToModal(false);
+          }}
+        />
       )}
 
       {showCameraGuide && (

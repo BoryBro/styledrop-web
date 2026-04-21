@@ -40,6 +40,21 @@ type UserActivityRow = {
   event_type?: string | null;
 };
 
+type AdminEventRow = {
+  user_id: string | null;
+  event_type: string;
+  created_at: string;
+  metadata: {
+    style_id?: string;
+    variant?: string | null;
+    credits?: number | string;
+    reason?: string | null;
+    message?: string | null;
+    request_key?: string | null;
+    duration_ms?: number | string | null;
+  } | null;
+};
+
 export async function POST(request: NextRequest) {
   const { password } = await request.json();
 
@@ -91,8 +106,8 @@ export async function POST(request: NextRequest) {
     ghostUserCandidates,
   ] = await Promise.all([
     // metadata 포함해서 공유 이벤트의 style_id 집계 가능하도록
-    supabase.from("user_events").select("event_type, metadata"),
-    supabase.from("user_events").select("event_type, metadata, user_id").gte("created_at", todayIso),
+    supabase.from("user_events").select("event_type, metadata, created_at"),
+    supabase.from("user_events").select("event_type, metadata, user_id, created_at").gte("created_at", todayIso),
     supabase
       .from("user_events")
       .select("id, user_id, metadata, created_at")
@@ -161,10 +176,131 @@ export async function POST(request: NextRequest) {
   );
 
   const usage = usageRes.data ?? [];
-  const events = eventsRes.data ?? [];
-  const todayEvents = todayEventsRes.data ?? [];
+  const events = (eventsRes.data ?? []) as AdminEventRow[];
+  const todayEvents = (todayEventsRes.data ?? []) as AdminEventRow[];
   const refundEvents = (refundEventsRes.data ?? []) as RefundEventRow[];
   const todayUsageRows = todayUsageRowsRes.data ?? [];
+
+  const requestEventTypes = new Set([
+    "generation_request_started",
+    "generation_request_succeeded",
+    "generation_request_failed",
+    "audition_request_started",
+    "audition_request_succeeded",
+    "audition_request_failed",
+  ]);
+
+  const parseDuration = (value: unknown) => {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return null;
+  };
+
+  const processingWindowMs = 15 * 60 * 1000;
+  const recentRequestWindowMs = 10 * 60 * 1000;
+  const requestNow = Date.now();
+
+  const requestMap = new Map<string, {
+    scope: "generate" | "audition";
+    startedAt: number | null;
+    finishedAt: number | null;
+    finalType: "success" | "failed" | null;
+    durationMs: number | null;
+  }>();
+
+  for (const event of todayEvents) {
+    if (!requestEventTypes.has(event.event_type)) continue;
+
+    const metadata = event.metadata ?? {};
+    const requestKey = typeof metadata.request_key === "string" ? metadata.request_key : null;
+    if (!requestKey) continue;
+
+    const scope = event.event_type.startsWith("audition_") ? "audition" : "generate";
+    const mapKey = `${scope}:${requestKey}`;
+    const current = requestMap.get(mapKey) ?? {
+      scope,
+      startedAt: null,
+      finishedAt: null,
+      finalType: null,
+      durationMs: null,
+    };
+
+    const createdAtTs = Date.parse(event.created_at);
+    const durationMs = parseDuration(metadata.duration_ms);
+
+    if (event.event_type.endsWith("_started")) {
+      current.startedAt = Number.isNaN(createdAtTs)
+        ? current.startedAt
+        : current.startedAt === null
+          ? createdAtTs
+          : Math.min(current.startedAt, createdAtTs);
+    }
+
+    if (event.event_type.endsWith("_succeeded")) {
+      current.finalType = "success";
+      current.finishedAt = Number.isNaN(createdAtTs)
+        ? current.finishedAt
+        : current.finishedAt === null
+          ? createdAtTs
+          : Math.max(current.finishedAt, createdAtTs);
+      current.durationMs = durationMs;
+    }
+
+    if (event.event_type.endsWith("_failed")) {
+      current.finalType = "failed";
+      current.finishedAt = Number.isNaN(createdAtTs)
+        ? current.finishedAt
+        : current.finishedAt === null
+          ? createdAtTs
+          : Math.max(current.finishedAt, createdAtTs);
+      current.durationMs = durationMs;
+    }
+
+    requestMap.set(mapKey, current);
+  }
+
+  const requestSummaries = Array.from(requestMap.values());
+  const requestsLast10m = requestSummaries.filter((item) =>
+    item.startedAt !== null && requestNow - item.startedAt <= recentRequestWindowMs
+  ).length;
+  const processingNowEstimate = requestSummaries.filter((item) =>
+    item.startedAt !== null &&
+    requestNow - item.startedAt <= processingWindowMs &&
+    item.finalType === null
+  ).length;
+  const completedRequests24h = requestSummaries.filter((item) => item.finalType !== null);
+  const failedRequests24h = completedRequests24h.filter((item) => item.finalType === "failed").length;
+  const requestFailureRate24h = completedRequests24h.length > 0
+    ? Math.round((failedRequests24h / completedRequests24h.length) * 1000) / 10
+    : 0;
+  const durationValues = completedRequests24h
+    .map((item) => item.durationMs)
+    .filter((value): value is number => typeof value === "number" && value > 0);
+  const avgRequestDurationMs24h = durationValues.length > 0
+    ? Math.round(durationValues.reduce((sum, value) => sum + value, 0) / durationValues.length)
+    : 0;
+  const requestCompleted24h = completedRequests24h.length;
+  const generateCompleted24h = completedRequests24h.filter((item) => item.scope === "generate").length;
+  const auditionCompleted24h = completedRequests24h.filter((item) => item.scope === "audition").length;
+
+  const requestLoadStatus = (
+    processingNowEstimate >= 6 ||
+    requestsLast10m >= 18 ||
+    requestFailureRate24h >= 12 ||
+    avgRequestDurationMs24h >= 45000
+  )
+    ? "queue_recommended"
+    : (
+      processingNowEstimate >= 3 ||
+      requestsLast10m >= 8 ||
+      requestFailureRate24h >= 5 ||
+      avgRequestDurationMs24h >= 25000
+    )
+      ? "watch"
+      : "stable";
 
   // 전체 / 스타일별
   const total = usage.length;
@@ -475,6 +611,14 @@ export async function POST(request: NextRequest) {
     byStyleVariants,
     styleControls,
     ...generationErrorOverview,
+    requestLoadStatus,
+    requestsLast10m,
+    processingNowEstimate,
+    requestFailureRate24h,
+    avgRequestDurationMs24h,
+    requestCompleted24h,
+    generateCompleted24h,
+    auditionCompleted24h,
     generationRefundTotal24h,
     generationRefundCredits24h,
     generationRefundUserCount24h,

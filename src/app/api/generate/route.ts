@@ -13,6 +13,12 @@ import { addWatermark } from "@/lib/watermark";
 import { addCreditsWithPolicy } from "@/lib/credits.server";
 import { logGenerationError } from "@/lib/generation-errors.server";
 import { loadStyleControlMap } from "@/lib/style-controls.server";
+import {
+  acquireEphemeralRequestLock,
+  createRequestFingerprint,
+  fingerprintBase64Image,
+  hasActiveRequestEvent,
+} from "@/lib/request-lock.server";
 import { STYLE_LABELS } from "@/lib/styles";
 import {
   GUEST_LIMIT, WINDOW_MS,
@@ -7188,6 +7194,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
 
 export async function POST(request: NextRequest) {
   const session = parseSession(request);
+  const requestStartedAtMs = Date.now();
   const now = Date.now();
   const raw = !session ? request.cookies.get(GUEST_COOKIE)?.value : undefined;
   const limitData = !session ? parseLimitCookie(raw) : null;
@@ -7233,6 +7240,8 @@ export async function POST(request: NextRequest) {
   let variant = "default";
   let deductedCredits = 0;
   let refundedOnError = false;
+  let requestKey = "";
+  let releaseRequestLock: (() => void) | null = null;
 
   try {
     assertRequestBodySize(request, 28 * 1024 * 1024);
@@ -7284,16 +7293,85 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  requestKey = createRequestFingerprint("generate", [
+    session?.id ?? "guest",
+    style,
+    variant,
+    ...inputImages.map(fingerprintBase64Image),
+  ]);
+
+  const requestLock = acquireEphemeralRequestLock(requestKey);
+  if (!requestLock.acquired) {
+    return NextResponse.json(
+      { error: "같은 요청이 이미 처리 중이에요. 잠시만 기다려주세요." },
+      { status: 409 }
+    );
+  }
+  releaseRequestLock = requestLock.release;
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!
+  );
+
+  const logRequestEvent = async (
+    eventType: string,
+    metadata?: Record<string, unknown>
+  ) => {
+    try {
+      await supabase.from("user_events").insert({
+        user_id: session?.id ?? null,
+        event_type: eventType,
+        metadata: {
+          request_key: requestKey,
+          style_id: style,
+          variant,
+          ...metadata,
+        },
+      });
+    } catch (eventError) {
+      console.error("[generate] request event error:", eventError);
+    }
+  };
+
+  if (session) {
+    try {
+      const alreadyActive = await hasActiveRequestEvent(supabase, {
+        userId: session.id,
+        requestKey,
+        eventTypes: [
+          "generation_request_started",
+          "generation_request_succeeded",
+          "generation_request_failed",
+        ],
+        activeEventType: "generation_request_started",
+      });
+
+      if (alreadyActive) {
+        releaseRequestLock?.();
+        return NextResponse.json(
+          { error: "같은 요청이 이미 처리 중이에요. 잠시만 기다려주세요." },
+          { status: 409 }
+        );
+      }
+    } catch (duplicateError) {
+      console.error("[generate] duplicate check error:", duplicateError);
+    }
+  }
+
+  await logRequestEvent("generation_request_started");
+
   // ── 회원: 크레딧 차감 (원자적) ──────────────────────────────────────
   if (session) {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_KEY!
-    );
     const { data: newCredits, error: deductError } = await supabase.rpc("deduct_credit", {
       p_user_id: session.id,
     });
     if (deductError || newCredits === null || newCredits === undefined) {
+      await logRequestEvent("generation_request_failed", {
+        reason: "insufficient_credits",
+        duration_ms: Date.now() - requestStartedAtMs,
+      });
+      releaseRequestLock?.();
       return NextResponse.json(
         { error: "크레딧이 없어요. 충전 후 이용해주세요!" },
         { status: 429 }
@@ -7318,16 +7396,11 @@ export async function POST(request: NextRequest) {
     if (!session || deductedCredits <= 0 || refundedOnError) return;
 
     try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_KEY!
-      );
-
       const refundRes = await addCreditsWithPolicy(supabase, {
         userId: session.id,
         credits: deductedCredits,
         sourceType: "refund",
-        sourceId: ["generate-refund", session.id, style || "unknown", variant || "default", String(Date.now())].join(":"),
+        sourceId: ["generate-refund", session.id, requestKey].join(":"),
       });
 
       if (!refundRes.ok) {
@@ -7338,6 +7411,7 @@ export async function POST(request: NextRequest) {
         user_id: session.id,
         event_type: "generation_credit_refund",
         metadata: {
+          request_key: requestKey,
           style_id: style || "unknown",
           variant: variant || "default",
           credits: deductedCredits,
@@ -7423,17 +7497,19 @@ export async function POST(request: NextRequest) {
         finishReason: finishReason ?? null,
         message: textParts || "No image generated",
       });
+      await logRequestEvent("generation_request_failed", {
+        reason: "no_image",
+        message: textParts || "No image generated",
+        duration_ms: Date.now() - requestStartedAtMs,
+      });
       await refundCreditIfNeeded("no_image", textParts || "No image generated");
+      return NextResponse.json({ error: "No image generated" }, { status: 500 });
     }
 
     for (const part of parts) {
       if (part.inlineData) {
         // Supabase 로깅 — 실패해도 이미지 응답에 영향 없음
         try {
-          const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_KEY!
-          );
           const { error } = await supabase.from("style_usage").insert({
             style_id: style,
             style_name: STYLE_LABELS[style] ?? style,
@@ -7446,7 +7522,7 @@ export async function POST(request: NextRequest) {
             await supabase.from("user_events").insert({
               user_id: session.id,
               event_type: "transform",
-              metadata: { style_id: style },
+              metadata: { style_id: style, variant, request_key: requestKey },
             });
           }
         } catch (err) {
@@ -7467,6 +7543,9 @@ export async function POST(request: NextRequest) {
           mimeType: "image/jpeg",
           shouldSaveHistory: !!session,
         });
+        await logRequestEvent("generation_request_succeeded", {
+          duration_ms: Date.now() - requestStartedAtMs,
+        });
         if (!session) res.cookies.set(GUEST_COOKIE, cookieValue, cookieOptions);
         return res;
       }
@@ -7483,7 +7562,14 @@ export async function POST(request: NextRequest) {
       errorType: "exception",
       message,
     });
+    await logRequestEvent("generation_request_failed", {
+      reason: "exception",
+      message,
+      duration_ms: Date.now() - requestStartedAtMs,
+    });
     await refundCreditIfNeeded("exception", message);
     return NextResponse.json({ error: message }, { status: 500 });
+  } finally {
+    releaseRequestLock?.();
   }
 }

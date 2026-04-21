@@ -141,6 +141,9 @@ export default function MyPage() {
   const [deleting, setDeleting] = useState(false);
   const [historyDeleteTarget, setHistoryDeleteTarget] = useState<HistoryItem | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
+  const [giftInput, setGiftInput] = useState("");
+  const [giftStatus, setGiftStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [giftMsg, setGiftMsg] = useState("");
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [historyView, setHistoryView] = useState<"before" | "after">("after");
@@ -227,6 +230,31 @@ export default function MyPage() {
       if (res.ok) window.location.href = "/";
     } catch { /* ignore */ } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleRedeemGift = async () => {
+    if (!giftInput.trim()) return;
+    setGiftStatus("loading");
+    try {
+      const res = await fetch("/api/gift/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: giftInput.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setGiftMsg(data.error ?? "코드 사용 실패");
+        setGiftStatus("error");
+      } else {
+        setGiftMsg(`크레딧 ${data.credits}회가 지급됐어요!`);
+        setGiftStatus("success");
+        setGiftInput("");
+        setCredits((prev) => (prev ?? 0) + data.credits);
+      }
+    } catch {
+      setGiftMsg("오류가 발생했어요.");
+      setGiftStatus("error");
     }
   };
 
@@ -512,6 +540,40 @@ export default function MyPage() {
               >
                 로그아웃
               </button>
+            </div>
+
+            {/* 선물 코드 입력 */}
+            <div className="rounded-2xl bg-[#1C1C1E] overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3.5">
+                <div className="w-9 h-9 rounded-xl bg-[#C9571A]/15 flex items-center justify-center flex-shrink-0 text-lg">
+                  🎁
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-[#C9571A]/60 tracking-wide uppercase">선물 코드</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input
+                      value={giftInput}
+                      onChange={(e) => { setGiftInput(e.target.value.toUpperCase()); setGiftStatus("idle"); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") void handleRedeemGift(); }}
+                      placeholder="GIFT-XXXXXX"
+                      maxLength={11}
+                      className="flex-1 bg-transparent text-[14px] font-mono text-white placeholder-white/20 outline-none min-w-0 tracking-wider"
+                    />
+                    <button
+                      onClick={() => void handleRedeemGift()}
+                      disabled={giftStatus === "loading" || !giftInput.trim()}
+                      className="bg-[#C9571A] text-white text-[12px] font-bold px-3 py-1.5 rounded-full flex-shrink-0 disabled:opacity-40 transition-opacity"
+                    >
+                      {giftStatus === "loading" ? "확인 중" : "사용"}
+                    </button>
+                  </div>
+                  {giftStatus !== "idle" && (
+                    <p className={`text-[11px] mt-1.5 ${giftStatus === "success" ? "text-green-400" : "text-red-400"}`}>
+                      {giftMsg}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* 인스타그램 아이디 */}

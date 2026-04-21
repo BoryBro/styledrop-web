@@ -4,6 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 import { readSessionFromRequest } from "@/lib/auth-session";
 import { assertBase64ImageSize, assertRequestBodySize } from "@/lib/api-abuse-guard";
 import { addCreditsWithPolicy } from "@/lib/credits.server";
+import {
+  acquireEphemeralRequestLock,
+  createRequestFingerprint,
+  fingerprintBase64Image,
+  hasActiveRequestEvent,
+} from "@/lib/request-lock.server";
 import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 
 type Scores = { 이해도: number; 표정연기: number; 창의성: number; 몰입도: number };
@@ -944,22 +950,25 @@ export async function POST(request: NextRequest) {
   }
 
   const session = parseSession(request);
+  const requestStartedAtMs = Date.now();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!
+  );
   let deductedCredits = 0;
   let refundedOnError = false;
+  let requestKey = "";
+  let releaseRequestLock: (() => void) | null = null;
 
   const refundCreditsIfNeeded = async (message?: string) => {
     if (!session || deductedCredits <= 0 || refundedOnError) return;
 
     try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_KEY!
-      );
       const refundRes = await addCreditsWithPolicy(supabase, {
         userId: session.id,
         credits: deductedCredits,
         sourceType: "refund",
-        sourceId: `audition-analyze-refund:${session.id}:${Date.now()}`,
+        sourceId: `audition-analyze-refund:${session.id}:${requestKey}`,
       });
 
       if (!refundRes.ok) {
@@ -970,6 +979,7 @@ export async function POST(request: NextRequest) {
         user_id: session.id,
         event_type: "audition_credit_refund",
         metadata: {
+          request_key: requestKey,
           credits: deductedCredits,
           message: message ?? null,
         },
@@ -1010,16 +1020,74 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_KEY!
-    );
+    requestKey = createRequestFingerprint("audition-analyze", [
+      session.id,
+      Array.isArray(genres) ? genres.join("|") : "",
+      Array.isArray(cues) ? cues.join("|") : "",
+      typeof flavor === "string" ? flavor : "",
+      Array.isArray(personality) ? personality.join("|") : "",
+      ...images.map((image: string) => fingerprintBase64Image(image)),
+      typeof physioImage === "string" && physioImage.trim()
+        ? fingerprintBase64Image(physioImage)
+        : "no-physio-image",
+    ]);
+
+    const requestLock = acquireEphemeralRequestLock(requestKey, 5 * 60 * 1000);
+    if (!requestLock.acquired) {
+      return NextResponse.json(
+        { error: "같은 오디션 요청이 이미 처리 중이에요. 잠시만 기다려주세요." },
+        { status: 409 }
+      );
+    }
+    releaseRequestLock = requestLock.release;
+
+    try {
+      const alreadyActive = await hasActiveRequestEvent(supabase, {
+        userId: session.id,
+        requestKey,
+        eventTypes: [
+          "audition_request_started",
+          "audition_request_succeeded",
+          "audition_request_failed",
+        ],
+        activeEventType: "audition_request_started",
+        windowMs: 5 * 60 * 1000,
+      });
+
+      if (alreadyActive) {
+        return NextResponse.json(
+          { error: "같은 오디션 요청이 이미 처리 중이에요. 잠시만 기다려주세요." },
+          { status: 409 }
+        );
+      }
+    } catch (duplicateError) {
+      console.error("[audition/analyze] duplicate check error:", duplicateError);
+    }
+
+    await supabase.from("user_events").insert({
+      user_id: session.id,
+      event_type: "audition_request_started",
+      metadata: {
+        request_key: requestKey,
+        credits: 5,
+      },
+    });
+
     const { error: deductError } = await supabase.rpc("deduct_credit", {
       p_user_id: session.id,
       p_amount: 5,
     });
 
     if (deductError) {
+      await supabase.from("user_events").insert({
+        user_id: session.id,
+        event_type: "audition_request_failed",
+        metadata: {
+          request_key: requestKey,
+          reason: "insufficient_credits",
+          duration_ms: Date.now() - requestStartedAtMs,
+        },
+      });
       return NextResponse.json(
         { error: "크레딧이 부족해요. AI 오디션은 5크레딧이 필요합니다!" },
         { status: 429 }
@@ -1110,15 +1178,38 @@ export async function POST(request: NextRequest) {
       throw new Error("응답 구조가 올바르지 않습니다.");
     }
 
+    await supabase.from("user_events").insert({
+      user_id: session.id,
+      event_type: "audition_request_succeeded",
+      metadata: {
+        request_key: requestKey,
+        duration_ms: Date.now() - requestStartedAtMs,
+      },
+    });
+
     return NextResponse.json(result);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[audition/analyze] error:", msg);
+    if (session && requestKey) {
+      await supabase.from("user_events").insert({
+        user_id: session.id,
+        event_type: "audition_request_failed",
+        metadata: {
+          request_key: requestKey,
+          reason: "exception",
+          message: msg,
+          duration_ms: Date.now() - requestStartedAtMs,
+        },
+      });
+    }
     await refundCreditsIfNeeded(msg);
 
     return NextResponse.json(
       { error: process.env.NODE_ENV === "development" ? msg : "감독님이 자리를 비웠습니다. 잠시 후 다시 시도해주세요." },
       { status: 500 }
     );
+  } finally {
+    releaseRequestLock?.();
   }
 }

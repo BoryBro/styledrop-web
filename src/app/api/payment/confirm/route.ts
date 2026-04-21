@@ -4,6 +4,24 @@ import { readSessionFromRequest } from "@/lib/auth-session";
 import { addCreditsWithPolicy } from "@/lib/credits.server";
 import { getCreditExpiryIso } from "@/lib/credits";
 import { PAYMENT_PACKAGES, type PaymentPackageId } from "@/lib/payment-policy";
+import nodemailer from "nodemailer";
+
+async function sendPaymentAlert(userName: string, amount: number, credits: number) {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+    });
+    await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to: process.env.GMAIL_USER,
+      subject: `[StyleDrop] 결제 완료 🎉 ${userName}`,
+      text: `${userName}님이 ${amount.toLocaleString()}원 결제 완료!\n크레딧 ${credits}개 지급됨.`,
+    });
+  } catch {
+    // 알림 실패는 결제 흐름에 영향 없음
+  }
+}
 
 function parseSession(request: NextRequest): { id: string; nickname: string } | null {
   return readSessionFromRequest(request);
@@ -161,6 +179,8 @@ export async function POST(request: NextRequest) {
   if (!addRes.ok) {
     return NextResponse.json({ error: addRes.error?.message ?? "크레딧 적립 실패" }, { status: 500 });
   }
+
+  sendPaymentAlert(session.nickname, pkg.amount, pkg.credits);
 
   return NextResponse.json({ success: true, credits: pkg.credits });
 }
