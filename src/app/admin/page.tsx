@@ -832,6 +832,8 @@ export default function AdminPage() {
   const [styleControlMsg, setStyleControlMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [ghostDeleteLoading, setGhostDeleteLoading] = useState(false);
   const [ghostDeleteMsg, setGhostDeleteMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [generationErrorDeleteLoading, setGenerationErrorDeleteLoading] = useState<string | null>(null);
+  const [generationErrorDeleteMsg, setGenerationErrorDeleteMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const liveClock = fetchedAt ? new Date(fetchedAt.getTime() + elapsed * 1000) : null;
 
   const doLogin = async (pw: string) => {
@@ -877,6 +879,34 @@ export default function AdminPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     doLogin(password);
+  };
+
+  const deleteGenerationErrors = async (ids: number[], successText: string, loadingKey: string) => {
+    if (ids.length === 0) return;
+
+    setGenerationErrorDeleteLoading(loadingKey);
+    setGenerationErrorDeleteMsg(null);
+    try {
+      const res = await fetch("/api/admin/generation-errors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, ids }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "오류 기록 삭제 실패");
+      setGenerationErrorDeleteMsg({
+        ok: true,
+        text: successText.replace("{count}", String(data.deletedCount ?? ids.length)),
+      });
+      await doLogin(password);
+    } catch (error) {
+      setGenerationErrorDeleteMsg({
+        ok: false,
+        text: error instanceof Error ? error.message : "오류 기록 삭제 실패",
+      });
+    } finally {
+      setGenerationErrorDeleteLoading(null);
+    }
   };
 
   const persistStyleControls = async (nextControls: StyleControlState[], savingId: string) => {
@@ -966,6 +996,7 @@ export default function AdminPage() {
   const errorMap = new Map(stats.generationErrorSummary.map((item) => [item.style_id, item]));
   const unresolvedErrorStyles = stats.generationErrorSummary.filter((item) => !item.isResolved);
   const resolvedErrorStyles = stats.generationErrorSummary.filter((item) => item.isResolved);
+  const unresolvedRecentGenerationErrors = stats.recentGenerationErrors.filter((item) => !item.isResolved);
   const perf24hMap = new Map(stats.stylePerformance24hList.map((item) => [item.style_id, item]));
   const lowSaveSet = new Set(
     stats.stylePerformance24hList
@@ -1173,7 +1204,25 @@ export default function AdminPage() {
 
           {/* 오류 모니터링 */}
           <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">오류 모니터링</p>
+            <div className="flex items-center justify-between gap-3 px-1 mb-1">
+              <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">오류 모니터링</p>
+              {unresolvedRecentGenerationErrors.length > 0 && (
+                <button
+                  type="button"
+                  disabled={generationErrorDeleteLoading !== null}
+                  onClick={async () => {
+                    const ids = unresolvedRecentGenerationErrors.map((item) => item.id);
+                    if (ids.length === 0) return;
+                    const ok = window.confirm(`미해결 오류 기록 ${ids.length}건을 삭제할까요?`);
+                    if (!ok) return;
+                    await deleteGenerationErrors(ids, "미해결 기록 {count}건 삭제됨", "bulk");
+                  }}
+                  className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-bold text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {generationErrorDeleteLoading === "bulk" ? "삭제 중..." : `미해결 기록 삭제 ${unresolvedRecentGenerationErrors.length}건`}
+                </button>
+              )}
+            </div>
             <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <MiniCard label="최근 24시간 오류" value={`${stats.generationErrorTotal24h}건`} accent={stats.generationErrorTotal24h > 0} />
@@ -1182,16 +1231,17 @@ export default function AdminPage() {
                 <MiniCard label="자동 환불" value={`${stats.generationRefundTotal24h}건`} accent={stats.generationRefundTotal24h > 0} />
               </div>
 
-              <div className="rounded-xl border border-[#F3D2BF] bg-[#FFF7F2] px-3 py-3 text-[12px] text-[#8A3C10]">
-                <p className="font-bold text-[12px]">이 영역의 역할</p>
-                <p className="mt-1 leading-5">
-                  최근 24시간 생성 실패를 보고, 각 카드가 <span className="font-bold">이미 복구됐는지</span> 또는 <span className="font-bold">아직 미해결인지</span>
-                  판단하는 운영판입니다. 미해결이면 아래에서 확인 후 <span className="font-bold">운영으로 이동</span>으로 내려가 생성 중지나 숨김을 검토하면 됩니다.
-                </p>
-                <p className="mt-2 text-[11px]">
-                  자동 환불 {stats.generationRefundTotal24h}건 · 복구 크레딧 +{stats.generationRefundCredits24h}
-                </p>
-              </div>
+              {generationErrorDeleteMsg && (
+                <div
+                  className={`rounded-xl px-3 py-2 text-[12px] font-medium ${
+                    generationErrorDeleteMsg.ok
+                      ? "border border-[#B7E1C4] bg-[#EEF8F1] text-[#18794E]"
+                      : "border border-red-200 bg-red-50 text-red-600"
+                  }`}
+                >
+                  {generationErrorDeleteMsg.text}
+                </div>
+              )}
 
               {stats.generationErrorSummary.length > 0 ? (
                 <div className="rounded-xl border border-gray-200 overflow-hidden">
@@ -1300,7 +1350,21 @@ export default function AdminPage() {
                               )}
                             </div>
                           </div>
-                          <span className="text-[11px] text-gray-400 whitespace-nowrap">{relativeTime(item.created_at)}</span>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="text-[11px] text-gray-400 whitespace-nowrap">{relativeTime(item.created_at)}</span>
+                            <button
+                              type="button"
+                              disabled={generationErrorDeleteLoading !== null}
+                              onClick={async () => {
+                                const ok = window.confirm("이 오류 기록을 숨길까요?");
+                                if (!ok) return;
+                                await deleteGenerationErrors([item.id], "오류 기록 {count}건 숨김 처리됨", `row:${item.id}`);
+                              }}
+                              className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[10px] font-bold text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {generationErrorDeleteLoading === `row:${item.id}` ? "처리 중..." : "숨기기"}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
