@@ -50,7 +50,27 @@ type FlashpointBlock = {
   rule: string;
 };
 
+type KakaoShareSDK = {
+  init?: (key: string | undefined) => void;
+  isInitialized?: () => boolean;
+  Share?: {
+    sendDefault?: (options: {
+      objectType: "text";
+      text: string;
+      link: {
+        mobileWebUrl: string;
+        webUrl: string;
+      };
+    }) => void;
+  };
+};
+
 const DETAIL_UNLOCK_CREDITS = 5;
+const DEFAULT_SHARE_ORIGIN = "https://www.styledrop.cloud";
+
+function generateInviteCode() {
+  return Math.random().toString(36).slice(2, 8);
+}
 
 const RELATION_OPTIONS: Array<{ id: Relation; label: string; desc: string }> = [
   { id: "friend", label: "친한 친구", desc: "유쾌하고 직설적인 톤" },
@@ -549,6 +569,10 @@ export default function TravelTogetherPage() {
   const [relation, setRelation] = useState<Relation>("friend");
   const [agreed, setAgreed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [shareOrigin, setShareOrigin] = useState(DEFAULT_SHARE_ORIGIN);
+  const [isSharingKakao, setIsSharingKakao] = useState(false);
+  const [shareStatus, setShareStatus] = useState<"idle" | "sent" | "copied">("idle");
   const [mySubmitted, setMySubmitted] = useState(false);
   const [partnerSubmitted, setPartnerSubmitted] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
@@ -571,6 +595,7 @@ export default function TravelTogetherPage() {
         partnerSubmitted?: boolean;
         myAnswers?: AnswerMap;
         unlocked?: boolean;
+        inviteCode?: string;
         partnerProfileIndex?: number;
       };
       if (parsed.step) {
@@ -584,8 +609,14 @@ export default function TravelTogetherPage() {
       if (parsed.partnerSubmitted) setPartnerSubmitted(parsed.partnerSubmitted);
       if (parsed.myAnswers) setMyAnswers(parsed.myAnswers);
       if (parsed.unlocked) setUnlocked(parsed.unlocked);
+      if (parsed.inviteCode) setInviteCode(parsed.inviteCode);
       if (typeof parsed.partnerProfileIndex === "number") setPartnerProfileIndex(parsed.partnerProfileIndex % PARTNER_PROFILES.length);
     } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setShareOrigin(window.location.origin);
   }, []);
 
   useEffect(() => {
@@ -601,11 +632,12 @@ export default function TravelTogetherPage() {
           partnerSubmitted,
           myAnswers,
           unlocked,
+          inviteCode,
           partnerProfileIndex,
         }),
       );
     } catch {}
-  }, [step, myName, partnerName, relation, mySubmitted, partnerSubmitted, myAnswers, unlocked, partnerProfileIndex]);
+  }, [step, myName, partnerName, relation, mySubmitted, partnerSubmitted, myAnswers, unlocked, inviteCode, partnerProfileIndex]);
 
   const goTo = useCallback((next: Step) => {
     setHistory((prev) => [...prev, next]);
@@ -620,15 +652,84 @@ export default function TravelTogetherPage() {
     setStep(prev);
   };
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(`https://styledrop.cloud/travel-together?room=${Math.random().toString(36).slice(2, 8)}`).catch(() => {});
+  const inviteLink = useMemo(() => {
+    const code = inviteCode || "ab12cd";
+    return `${shareOrigin}/travel-together?room=${code}`;
+  }, [inviteCode, shareOrigin]);
+
+  const writeClipboard = useCallback(async (text: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {}
+
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const copied = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      return copied;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const copyLink = async () => {
+    await writeClipboard(inviteLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   };
 
   const createRoom = () => {
+    const nextInviteCode = generateInviteCode();
+    setInviteCode(nextInviteCode);
+    setCopied(false);
+    setShareStatus("idle");
     void trackClientEvent("lab_travel_room_created");
-    setStep("link");
+    goTo("link");
+  };
+
+  const handleKakaoShare = async () => {
+    if (!inviteCode || isSharingKakao) return;
+    setIsSharingKakao(true);
+    try {
+      const Kakao = (window as Window & { Kakao?: KakaoShareSDK }).Kakao;
+      const isInitialized = Kakao?.isInitialized?.() ?? false;
+      if (!isInitialized) {
+        Kakao?.init?.(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
+      }
+
+      const sendDefault = Kakao?.Share?.sendDefault;
+      if (!sendDefault) throw new Error("Kakao SDK unavailable");
+
+      sendDefault({
+        objectType: "text",
+        text: `${myName || "친구"}님이 ${partnerName || "당신"}에게 여행 궁합 테스트를 보냈어요 ✈️\n링크 열고 같이 답하면 결과가 열립니다.`,
+        link: {
+          mobileWebUrl: inviteLink,
+          webUrl: inviteLink,
+        },
+      });
+      setShareStatus("sent");
+      setTimeout(() => setShareStatus("idle"), 1800);
+    } catch {
+      const didCopy = await writeClipboard(inviteLink);
+      if (didCopy) {
+        setShareStatus("copied");
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+        setTimeout(() => setShareStatus("idle"), 1800);
+      }
+    } finally {
+      setTimeout(() => setIsSharingKakao(false), 1200);
+    }
   };
 
   const simulatePartner = () => {
@@ -892,16 +993,21 @@ export default function TravelTogetherPage() {
             <div className="rounded-2xl p-4 flex items-center gap-3" style={{ border: `1px solid ${T.border}`, background: T.bg }}>
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-black uppercase tracking-widest mb-1" style={{ color: T.mid }}>초대 링크</p>
-                <p className="text-[13px] font-semibold text-gray-700 truncate">styledrop.cloud/travel-together?room=ab12cd</p>
+                <p className="text-[13px] font-semibold text-gray-700 truncate">{inviteLink.replace(/^https?:\/\//, "")}</p>
               </div>
               <button onClick={copyLink} className="flex-shrink-0 px-4 py-2 rounded-xl font-bold text-[13px] text-white transition-all" style={{ background: copied ? T.mid : "#111" }}>
                 {copied ? "복사됨 ✓" : "복사"}
               </button>
             </div>
 
-            <button className="w-full py-3.5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2" style={{ background: "#FEE500", color: "#191919" }}>
+            <button
+              onClick={handleKakaoShare}
+              disabled={!inviteCode || isSharingKakao}
+              className="w-full py-3.5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2 transition-all disabled:opacity-70"
+              style={{ background: "#FEE500", color: "#191919" }}
+            >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/></svg>
-              카카오톡으로 보내기
+              {isSharingKakao ? "보내는 중..." : shareStatus === "sent" ? "카카오톡 열림 ✓" : shareStatus === "copied" ? "링크 복사됨 ✓" : "카카오톡으로 보내기"}
             </button>
 
             <div className="rounded-2xl border border-gray-100 bg-gray-50 px-5 py-4">
