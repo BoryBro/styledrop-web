@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { trackClientEvent } from "@/lib/client-events";
 
 const T = {
@@ -35,7 +36,7 @@ type Question =
       category: string;
       type: "slider";
       text: string;
-      labels: [string, string];
+      scale: string[];
     };
 
 type NarrativeBlock = {
@@ -48,6 +49,21 @@ type FlashpointBlock = {
   title: string;
   body: string;
   rule: string;
+};
+
+type TravelParticipantRole = "host" | "guest";
+
+type TravelRoomView = {
+  roomId: string;
+  relation: Relation;
+  role: TravelParticipantRole;
+  myName: string;
+  partnerName: string;
+  mySubmitted: boolean;
+  partnerSubmitted: boolean;
+  myAnswers: AnswerMap | null;
+  partnerAnswers: AnswerMap | null;
+  invitePath: string;
 };
 
 type KakaoShareSDK = {
@@ -68,10 +84,6 @@ type KakaoShareSDK = {
 const DETAIL_UNLOCK_CREDITS = 5;
 const DEFAULT_SHARE_ORIGIN = "https://www.styledrop.cloud";
 
-function generateInviteCode() {
-  return Math.random().toString(36).slice(2, 8);
-}
-
 const RELATION_OPTIONS: Array<{ id: Relation; label: string; desc: string }> = [
   { id: "friend", label: "친한 친구", desc: "유쾌하고 직설적인 톤" },
   { id: "lover", label: "연인", desc: "감성적이고 로맨틱한 톤" },
@@ -80,41 +92,26 @@ const RELATION_OPTIONS: Array<{ id: Relation; label: string; desc: string }> = [
 ];
 
 const QUESTIONS: Question[] = [
-  { id: "q1", emoji: "🧳", short: "계획", category: "준비 스타일", type: "slider", text: "여행 계획은 얼마나 미리 짜?", labels: ["즉흥", "3개월 전 완성"] },
+  { id: "q1", emoji: "🧳", short: "계획", category: "준비 스타일", type: "slider", text: "여행 계획은 얼마나 미리 짜?", scale: ["당일", "1~2일 전", "3~6일 전", "1~2주 전", "3~4주 전", "한 달 이상"] },
   { id: "q2", emoji: "🏨", short: "숙소", category: "준비 스타일", type: "choice", text: "숙소 기준은?", options: ["위치", "가성비", "감성", "럭셔리"] },
   { id: "q3", emoji: "🗺️", short: "동선", category: "준비 스타일", type: "choice", text: "동선은 어떻게 짜?", options: ["분 단위 계획", "큰 틀만", "그냥 가서 봄"] },
-  { id: "q4", emoji: "💸", short: "예산", category: "준비 스타일", type: "slider", text: "여행 예산 기준은?", labels: ["극한 절약", "무제한"] },
+  { id: "q4", emoji: "💸", short: "예산", category: "준비 스타일", type: "slider", text: "여행 예산 기준은?", scale: ["극한 절약", "아껴 씀", "보통", "조금 여유", "꽤 씀", "무제한"] },
   { id: "q5", emoji: "⏰", short: "기상", category: "행동 패턴", type: "choice", text: "아침 몇 시에 일어나?", options: ["6시 이전", "8시쯤", "10시 이후", "체크아웃 직전"] },
   { id: "q6", emoji: "🍜", short: "식사", category: "행동 패턴", type: "choice", text: "식사는 어떻게 해결해?", options: ["현지 맛집 필수", "편의점도 OK", "아무거나"] },
-  { id: "q7", emoji: "🏝️", short: "코스", category: "행동 패턴", type: "slider", text: "관광지 vs 동네 골목, 어디 쪽이 더 좋아?", labels: ["관광지", "동네 골목"] },
-  { id: "q8", emoji: "📸", short: "사진", category: "행동 패턴", type: "slider", text: "사진 찍는 빈도는?", labels: ["거의 안 찍음", "매 순간 기록"] },
-  { id: "q9", emoji: "🛍️", short: "쇼핑", category: "행동 패턴", type: "slider", text: "쇼핑에 쓰는 시간과 돈은?", labels: ["거의 없음", "꽤 큼"] },
+  { id: "q7", emoji: "🏝️", short: "코스", category: "행동 패턴", type: "slider", text: "관광지 vs 동네 골목, 어디 쪽이 더 좋아?", scale: ["관광지 위주", "관광지 조금 더", "반반", "골목 조금 더", "골목 위주"] },
+  { id: "q8", emoji: "📸", short: "사진", category: "행동 패턴", type: "slider", text: "사진 찍는 빈도는?", scale: ["거의 안 찍음", "몇 장만", "적당히", "자주 찍음", "매 순간 기록"] },
+  { id: "q9", emoji: "🛍️", short: "쇼핑", category: "행동 패턴", type: "slider", text: "쇼핑에 쓰는 시간과 돈은?", scale: ["거의 없음", "잠깐만", "보이면 들어감", "꽤 큼", "여행의 메인"] },
   { id: "q10", emoji: "📱", short: "이동", category: "행동 패턴", type: "choice", text: "이동 중엔?", options: ["계속 대화", "반반", "각자 폰"] },
-  { id: "q11", emoji: "🚶", short: "밀도", category: "여행 페이스", type: "slider", text: "하루에 몇 곳 가는 게 적당해?", labels: ["1~2곳", "6곳 이상"] },
-  { id: "q12", emoji: "☕", short: "휴식", category: "여행 페이스", type: "slider", text: "카페에서 쉬는 시간은?", labels: ["거의 없음", "하루 2번 이상"] },
+  { id: "q11", emoji: "🚶", short: "밀도", category: "여행 페이스", type: "slider", text: "하루에 몇 곳 가는 게 적당해?", scale: ["1곳", "2곳", "3곳", "4~6곳", "7곳 이상"] },
+  { id: "q12", emoji: "☕", short: "휴식", category: "여행 페이스", type: "slider", text: "카페에서 쉬는 시간은?", scale: ["안 감", "잠깐 1번", "카페 1번", "카페 2번", "3번 이상"] },
   { id: "q13", emoji: "🚧", short: "변수", category: "여행 페이스", type: "choice", text: "길 막힘, 웨이팅 같은 변수가 생기면?", options: ["빠르게 대안 찾기", "그냥 기다리기", "포기하고 접기"] },
   { id: "q14", emoji: "🛏️", short: "체크인", category: "여행 페이스", type: "choice", text: "숙소 체크인 후 다시 나가?", options: ["무조건 나감", "피곤하면 쉼", "안 나감"] },
   { id: "q15", emoji: "⚖️", short: "충돌", category: "갈등 & 결정", type: "choice", text: "가고 싶은 곳이 충돌하면?", options: ["상대 맞춤", "협상", "각자 가기", "내가 양보"] },
   { id: "q16", emoji: "🍽️", short: "식당 결정", category: "갈등 & 결정", type: "choice", text: "밥 먹을 곳을 못 정하면?", options: ["내가 정함", "상대 따름", "계속 탐색"] },
-  { id: "q17", emoji: "🫥", short: "혼자 시간", category: "갈등 & 결정", type: "slider", text: "여행 중 혼자만의 시간이 필요해?", labels: ["전혀", "매우 필요"] },
+  { id: "q17", emoji: "🫥", short: "혼자 시간", category: "갈등 & 결정", type: "slider", text: "여행 중 혼자만의 시간이 필요해?", scale: ["전혀 없음", "잠깐만", "1시간 정도", "반나절", "꽤 많이"] },
   { id: "q18", emoji: "🗂️", short: "정리", category: "여행 후", type: "choice", text: "여행 사진 정리는?", options: ["당일 앨범 정리", "나중에 몰아서", "안 함"] },
-  { id: "q19", emoji: "📲", short: "업로드", category: "여행 후", type: "slider", text: "여행 후 SNS 업로드는?", labels: ["안 함", "스토리+피드 모두"] },
+  { id: "q19", emoji: "📲", short: "업로드", category: "여행 후", type: "slider", text: "여행 후 SNS 업로드는?", scale: ["안 함", "스토리 1~2개", "스토리만", "피드 1개", "스토리+피드"] },
   { id: "q20", emoji: "✈️", short: "다음 여행", category: "여행 후", type: "choice", text: "다음 여행은 언제 또 계획해?", options: ["돌아오는 길에", "1달 후", "한참 뒤", "당분간 없음"] },
-];
-
-const PARTNER_PROFILES: AnswerMap[] = [
-  {
-    q1: 78, q2: "감성", q3: "큰 틀만", q4: 62, q5: "8시쯤", q6: "현지 맛집 필수", q7: 64, q8: 88, q9: 54, q10: "계속 대화",
-    q11: 58, q12: 66, q13: "빠르게 대안 찾기", q14: "피곤하면 쉼", q15: "협상", q16: "계속 탐색", q17: 38, q18: "나중에 몰아서", q19: 82, q20: "1달 후",
-  },
-  {
-    q1: 24, q2: "가성비", q3: "그냥 가서 봄", q4: 28, q5: "10시 이후", q6: "편의점도 OK", q7: 86, q8: 30, q9: 22, q10: "각자 폰",
-    q11: 22, q12: 78, q13: "그냥 기다리기", q14: "안 나감", q15: "내가 양보", q16: "상대 따름", q17: 74, q18: "안 함", q19: 12, q20: "한참 뒤",
-  },
-  {
-    q1: 54, q2: "위치", q3: "분 단위 계획", q4: 48, q5: "6시 이전", q6: "현지 맛집 필수", q7: 35, q8: 56, q9: 48, q10: "반반",
-    q11: 82, q12: 18, q13: "빠르게 대안 찾기", q14: "무조건 나감", q15: "협상", q16: "내가 정함", q17: 26, q18: "당일 앨범 정리", q19: 58, q20: "돌아오는 길에",
-  },
 ];
 
 const DOMESTIC_SPOTS = [
@@ -149,12 +146,24 @@ function getChoicePosition(question: Extract<Question, { type: "choice" }>, answ
   return Math.round((index / (question.options.length - 1)) * 100);
 }
 
+function getSliderPosition(question: Extract<Question, { type: "slider" }>, value: AnswerValue) {
+  const numeric = Number(value);
+  const maxIndex = question.scale.length - 1;
+  if (!Number.isFinite(numeric) || maxIndex <= 0) return 50;
+  const safeIndex = Math.min(Math.max(Math.round(numeric), 0), maxIndex);
+  return Math.round((safeIndex / maxIndex) * 100);
+}
+
+function getDefaultSliderValue(question: Extract<Question, { type: "slider" }>) {
+  return Math.floor((question.scale.length - 1) / 2);
+}
+
 function getQuestionValue(questionId: string, answers: AnswerMap) {
   const question = QUESTIONS.find((item) => item.id === questionId);
   if (!question) return 50;
   const value = answers[questionId];
   if (typeof value === "undefined") return 50;
-  if (question.type === "slider") return Number(value);
+  if (question.type === "slider") return getSliderPosition(question, value);
   return getChoicePosition(question, String(value));
 }
 
@@ -221,8 +230,10 @@ function getChoiceScore(question: Extract<Question, { type: "choice" }>, myAnswe
   return Math.max(0, Math.round(100 - distance * 100));
 }
 
-function getSliderScore(myValue: number, partnerValue: number) {
-  return Math.max(0, Math.round(100 - Math.abs(myValue - partnerValue)));
+function getSliderScore(question: Extract<Question, { type: "slider" }>, myValue: number, partnerValue: number) {
+  const myPosition = getSliderPosition(question, myValue);
+  const partnerPosition = getSliderPosition(question, partnerValue);
+  return Math.max(0, Math.round(100 - Math.abs(myPosition - partnerPosition)));
 }
 
 function getTier(score: number) {
@@ -561,7 +572,12 @@ function getTravelFinalContent(myAnswers: AnswerMap, partnerAnswers: AnswerMap, 
   };
 }
 
-export default function TravelTogetherPage() {
+function TravelTogetherFallback() {
+  return <main className="min-h-screen bg-white" />;
+}
+
+function TravelTogetherPageContent() {
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("intro");
   const [history, setHistory] = useState<Step[]>(["intro"]);
   const [myName, setMyName] = useState("");
@@ -569,18 +585,52 @@ export default function TravelTogetherPage() {
   const [relation, setRelation] = useState<Relation>("friend");
   const [agreed, setAgreed] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [inviteCode, setInviteCode] = useState("");
+  const [roomId, setRoomId] = useState("");
+  const [participantToken, setParticipantToken] = useState("");
+  const [participantRole, setParticipantRole] = useState<TravelParticipantRole | null>(null);
+  const [invitePath, setInvitePath] = useState("");
   const [shareOrigin, setShareOrigin] = useState(DEFAULT_SHARE_ORIGIN);
   const [isSharingKakao, setIsSharingKakao] = useState(false);
   const [shareStatus, setShareStatus] = useState<"idle" | "sent" | "copied">("idle");
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [isSubmittingAnswers, setIsSubmittingAnswers] = useState(false);
+  const [roomError, setRoomError] = useState("");
   const [mySubmitted, setMySubmitted] = useState(false);
   const [partnerSubmitted, setPartnerSubmitted] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [qIdx, setQIdx] = useState(0);
   const [currentAnswer, setCurrentAnswer] = useState<AnswerValue>("");
-  const [slider, setSlider] = useState(50);
+  const [slider, setSlider] = useState(
+    QUESTIONS[0].type === "slider" ? getDefaultSliderValue(QUESTIONS[0]) : 0,
+  );
   const [myAnswers, setMyAnswers] = useState<AnswerMap>({});
-  const [partnerProfileIndex, setPartnerProfileIndex] = useState(0);
+  const [partnerAnswersState, setPartnerAnswersState] = useState<AnswerMap>({});
+
+  const applyRoomView = useCallback((view: TravelRoomView) => {
+    setRoomId(view.roomId);
+    setParticipantRole(view.role);
+    setRelation(view.relation);
+    setMyName(view.myName);
+    setPartnerName(view.partnerName);
+    setMySubmitted(view.mySubmitted);
+    setPartnerSubmitted(view.partnerSubmitted);
+    setMyAnswers(view.myAnswers ?? {});
+    setPartnerAnswersState(view.partnerAnswers ?? {});
+    setInvitePath(view.invitePath);
+    setRoomError("");
+  }, []);
+
+  const fetchRoomView = useCallback(async (nextRoomId: string, token: string) => {
+    const response = await fetch(`/api/travel-together/room/${encodeURIComponent(nextRoomId)}?token=${encodeURIComponent(token)}`, {
+      cache: "no-store",
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.view) {
+      throw new Error(payload?.error ?? "방을 불러오지 못했습니다.");
+    }
+    applyRoomView(payload.view as TravelRoomView);
+    return payload.view as TravelRoomView;
+  }, [applyRoomView]);
 
   useEffect(() => {
     try {
@@ -591,12 +641,15 @@ export default function TravelTogetherPage() {
         myName?: string;
         partnerName?: string;
         relation?: Relation;
+        roomId?: string;
+        participantToken?: string;
+        participantRole?: TravelParticipantRole;
+        invitePath?: string;
         mySubmitted?: boolean;
         partnerSubmitted?: boolean;
         myAnswers?: AnswerMap;
+        partnerAnswersState?: AnswerMap;
         unlocked?: boolean;
-        inviteCode?: string;
-        partnerProfileIndex?: number;
       };
       if (parsed.step) {
         setStep(parsed.step);
@@ -605,12 +658,15 @@ export default function TravelTogetherPage() {
       if (parsed.myName) setMyName(parsed.myName);
       if (parsed.partnerName) setPartnerName(parsed.partnerName);
       if (parsed.relation) setRelation(parsed.relation);
+      if (parsed.roomId) setRoomId(parsed.roomId);
+      if (parsed.participantToken) setParticipantToken(parsed.participantToken);
+      if (parsed.participantRole) setParticipantRole(parsed.participantRole);
+      if (parsed.invitePath) setInvitePath(parsed.invitePath);
       if (parsed.mySubmitted) setMySubmitted(parsed.mySubmitted);
       if (parsed.partnerSubmitted) setPartnerSubmitted(parsed.partnerSubmitted);
       if (parsed.myAnswers) setMyAnswers(parsed.myAnswers);
+      if (parsed.partnerAnswersState) setPartnerAnswersState(parsed.partnerAnswersState);
       if (parsed.unlocked) setUnlocked(parsed.unlocked);
-      if (parsed.inviteCode) setInviteCode(parsed.inviteCode);
-      if (typeof parsed.partnerProfileIndex === "number") setPartnerProfileIndex(parsed.partnerProfileIndex % PARTNER_PROFILES.length);
     } catch {}
   }, []);
 
@@ -618,6 +674,65 @@ export default function TravelTogetherPage() {
     if (typeof window === "undefined") return;
     setShareOrigin(window.location.origin);
   }, []);
+
+  useEffect(() => {
+    const nextRoomId = searchParams.get("room");
+    const nextToken = searchParams.get("token");
+    if (!nextRoomId || !nextToken) return;
+
+    setRoomId(nextRoomId);
+    setParticipantToken(nextToken);
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const view = await fetchRoomView(nextRoomId, nextToken);
+        if (cancelled) return;
+        setHistory(["intro", "waiting"]);
+        setStep("waiting");
+        if (view.mySubmitted && view.partnerSubmitted) {
+          setPartnerAnswersState(view.partnerAnswers ?? {});
+        }
+      } catch (error) {
+        if (cancelled) return;
+        setRoomError(error instanceof Error ? error.message : "초대 링크를 불러오지 못했습니다.");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchRoomView, searchParams]);
+
+  useEffect(() => {
+    if (!roomId || !participantToken) return;
+    if (searchParams.get("room") && searchParams.get("token")) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        await fetchRoomView(roomId, participantToken);
+      } catch (error) {
+        if (cancelled) return;
+        setRoomError(error instanceof Error ? error.message : "방 상태를 불러오지 못했습니다.");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchRoomView, participantToken, roomId, searchParams]);
+
+  useEffect(() => {
+    if (!roomId || !participantToken) return;
+    if (step === "questions") return;
+
+    const timer = window.setInterval(() => {
+      fetchRoomView(roomId, participantToken).catch(() => undefined);
+    }, 4000);
+
+    return () => window.clearInterval(timer);
+  }, [fetchRoomView, participantToken, roomId, step]);
 
   useEffect(() => {
     try {
@@ -628,16 +743,19 @@ export default function TravelTogetherPage() {
           myName,
           partnerName,
           relation,
+          roomId,
+          participantToken,
+          participantRole,
+          invitePath,
           mySubmitted,
           partnerSubmitted,
           myAnswers,
+          partnerAnswersState,
           unlocked,
-          inviteCode,
-          partnerProfileIndex,
         }),
       );
     } catch {}
-  }, [step, myName, partnerName, relation, mySubmitted, partnerSubmitted, myAnswers, unlocked, inviteCode, partnerProfileIndex]);
+  }, [step, myName, partnerName, relation, roomId, participantToken, participantRole, invitePath, mySubmitted, partnerSubmitted, myAnswers, partnerAnswersState, unlocked]);
 
   const goTo = useCallback((next: Step) => {
     setHistory((prev) => [...prev, next]);
@@ -653,9 +771,9 @@ export default function TravelTogetherPage() {
   };
 
   const inviteLink = useMemo(() => {
-    const code = inviteCode || "ab12cd";
-    return `${shareOrigin}/travel-together?room=${code}`;
-  }, [inviteCode, shareOrigin]);
+    if (invitePath) return `${shareOrigin}${invitePath}`;
+    return `${shareOrigin}/travel-together?room=ab12cd`;
+  }, [invitePath, shareOrigin]);
 
   const writeClipboard = useCallback(async (text: string) => {
     try {
@@ -687,17 +805,41 @@ export default function TravelTogetherPage() {
     setTimeout(() => setCopied(false), 1800);
   };
 
-  const createRoom = () => {
-    const nextInviteCode = generateInviteCode();
-    setInviteCode(nextInviteCode);
+  const createRoom = async () => {
+    if (isCreatingRoom) return;
+    setIsCreatingRoom(true);
     setCopied(false);
     setShareStatus("idle");
-    void trackClientEvent("lab_travel_room_created");
-    goTo("link");
+    setRoomError("");
+    try {
+      const response = await fetch("/api/travel-together/room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          myName: myName.trim(),
+          partnerName: partnerName.trim(),
+          relation,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.view || !payload?.participantToken) {
+        throw new Error(payload?.error ?? "초대 링크 생성에 실패했습니다.");
+      }
+
+      applyRoomView(payload.view as TravelRoomView);
+      setParticipantToken(String(payload.participantToken));
+      setInvitePath(String(payload.invitePath ?? ""));
+      void trackClientEvent("lab_travel_room_created");
+      goTo("link");
+    } catch (error) {
+      setRoomError(error instanceof Error ? error.message : "초대 링크 생성에 실패했습니다.");
+    } finally {
+      setIsCreatingRoom(false);
+    }
   };
 
   const handleKakaoShare = async () => {
-    if (!inviteCode || isSharingKakao) return;
+    if (!invitePath || isSharingKakao) return;
     setIsSharingKakao(true);
     try {
       const Kakao = (window as Window & { Kakao?: KakaoShareSDK }).Kakao;
@@ -732,32 +874,57 @@ export default function TravelTogetherPage() {
     }
   };
 
-  const simulatePartner = () => {
-    setPartnerProfileIndex((prev) => (prev + 1) % PARTNER_PROFILES.length);
-    setPartnerSubmitted(true);
-    void trackClientEvent("lab_travel_partner_ready");
-  };
-
   const question = QUESTIONS[qIdx];
   const answerReady = question?.type === "slider" ? true : String(currentAnswer).trim().length > 0;
 
-  const submitAnswer = () => {
+  const submitAnswer = async () => {
     if (!question) return;
     const value = question.type === "slider" ? slider : currentAnswer;
     const nextAnswers = { ...myAnswers, [question.id]: value };
     setMyAnswers(nextAnswers);
     if (qIdx < QUESTIONS.length - 1) {
+      const nextQuestion = QUESTIONS[qIdx + 1];
       setQIdx((prev) => prev + 1);
       setCurrentAnswer("");
-      setSlider(50);
+      if (nextQuestion?.type === "slider") {
+        setSlider(getDefaultSliderValue(nextQuestion));
+      }
       return;
     }
-    setMySubmitted(true);
-    setQIdx(0);
-    setCurrentAnswer("");
-    setSlider(50);
-    void trackClientEvent("lab_travel_response_completed");
-    setStep("waiting");
+    if (!roomId || !participantToken) {
+      setRoomError("방 정보가 없어서 응답을 제출할 수 없습니다.");
+      return;
+    }
+
+    setIsSubmittingAnswers(true);
+    setRoomError("");
+    try {
+      const response = await fetch(`/api/travel-together/room/${encodeURIComponent(roomId)}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: participantToken,
+          answers: nextAnswers,
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.view) {
+        throw new Error(payload?.error ?? "응답 제출에 실패했습니다.");
+      }
+
+      applyRoomView(payload.view as TravelRoomView);
+      setQIdx(0);
+      setCurrentAnswer("");
+      if (QUESTIONS[0].type === "slider") {
+        setSlider(getDefaultSliderValue(QUESTIONS[0]));
+      }
+      void trackClientEvent("lab_travel_response_completed");
+      setStep("waiting");
+    } catch (error) {
+      setRoomError(error instanceof Error ? error.message : "응답 제출에 실패했습니다.");
+    } finally {
+      setIsSubmittingAnswers(false);
+    }
   };
 
   const handleUnlock = () => {
@@ -766,7 +933,7 @@ export default function TravelTogetherPage() {
   };
 
   const results = useMemo(() => {
-    const partnerAnswers = PARTNER_PROFILES[partnerProfileIndex];
+    const partnerAnswers = partnerAnswersState;
     const categoryScores = new Map<string, number[]>();
 
     QUESTIONS.forEach((item) => {
@@ -776,7 +943,7 @@ export default function TravelTogetherPage() {
 
       const score =
         item.type === "slider"
-          ? getSliderScore(Number(myValue), Number(partnerValue))
+          ? getSliderScore(item, Number(myValue), Number(partnerValue))
           : getChoiceScore(item, String(myValue), String(partnerValue));
 
       categoryScores.set(item.category, [...(categoryScores.get(item.category) ?? []), score]);
@@ -812,11 +979,13 @@ export default function TravelTogetherPage() {
       finalVerdict: getFinalVerdict(overall),
       finalContent,
     };
-  }, [myAnswers, partnerProfileIndex, relation, partnerName]);
+  }, [myAnswers, partnerAnswersState, relation, partnerName]);
 
   const startTest = () => {
     setCurrentAnswer("");
-    setSlider(50);
+    if (QUESTIONS[0].type === "slider") {
+      setSlider(getDefaultSliderValue(QUESTIONS[0]));
+    }
     setQIdx(0);
     goTo("questions");
   };
@@ -841,6 +1010,12 @@ export default function TravelTogetherPage() {
           <span className="text-[9px] font-black text-gray-400 tracking-[0.2em] uppercase">Beta</span>
         </div>
       </header>
+
+      {roomError && (
+        <div className="mx-5 mt-4 rounded-2xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3">
+          <p className="text-[13px] font-semibold text-[#B91C1C]">{roomError}</p>
+        </div>
+      )}
 
       {step === "intro" && (
         <div className="flex flex-col pb-36">
@@ -872,7 +1047,7 @@ export default function TravelTogetherPage() {
               <span className="text-[14px]" style={{ color: T.text }}>궁합 티어와 최종 여행 결과를 보여줘요</span>
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
-              {["2인 여행 궁합", "20문항", "기본 결과 무료 공개", "최종 결과 5크레딧"].map((tag) => (
+              {["2인 여행 궁합", "20문항", "기본 결과 무료 공개", "상세 결과 5크레딧"].map((tag) => (
                 <span key={tag} className="text-[12px] font-bold rounded-full px-3 py-1" style={{ background: T.bg, color: T.deep, border: `1px solid ${T.border}` }}>
                   {tag}
                 </span>
@@ -886,7 +1061,7 @@ export default function TravelTogetherPage() {
               { num: "01", en: "CREATE", ko: "룸을 만들어요", desc: "상대 이름과 관계를 정하고\n초대 링크를 생성해요." },
               { num: "02", en: "INVITE", ko: "상대를 초대해요", desc: "링크를 보내고 각자\n본인 여행 스타일을 답해요." },
               { num: "03", en: "COMPARE", ko: "궁합을 비교해요", desc: "준비·행동·페이스·갈등·여행 후\n5개 축으로 비교합니다." },
-              { num: "04", en: "FINAL", ko: "최종 결과를 봐요", desc: "기본 결과 확인 후\n최종 결과를 5크레딧으로 봐요." },
+              { num: "04", en: "DETAIL", ko: "상세 결과를 봐요", desc: "기본 결과 확인 후\n상세 결과를 5크레딧으로 봐요." },
             ].map((item) => (
               <div key={item.num} className="flex gap-4 items-start">
                 <span className="text-[26px] font-black text-gray-200 leading-none flex-shrink-0 w-10 text-right tabular-nums">{item.num}</span>
@@ -974,7 +1149,7 @@ export default function TravelTogetherPage() {
               className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]"
               style={{ background: myName.trim() && partnerName.trim() ? "#111" : "#F3F4F6", color: myName.trim() && partnerName.trim() ? "#fff" : "#9CA3AF" }}
             >
-              초대 링크 만들기
+              {isCreatingRoom ? "링크 만드는 중..." : "초대 링크 만들기"}
             </button>
             {(!myName.trim() || !partnerName.trim()) && <p className="text-center text-[12px] text-gray-400 mt-2">이름 두 개를 모두 입력해주세요</p>}
           </div>
@@ -1002,7 +1177,7 @@ export default function TravelTogetherPage() {
 
             <button
               onClick={handleKakaoShare}
-              disabled={!inviteCode || isSharingKakao}
+              disabled={!invitePath || isSharingKakao}
               className="w-full py-3.5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2 transition-all disabled:opacity-70"
               style={{ background: "#FEE500", color: "#191919" }}
             >
@@ -1047,6 +1222,11 @@ export default function TravelTogetherPage() {
             <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-3" style={{ color: T.mid }}>대기 중</p>
             <h2 className="text-[28px] font-black text-gray-900 leading-tight mb-1">둘 다 답하면<br />결과가 열려요</h2>
             <p className="text-[14px] text-gray-500">{myName || "나"} / {partnerName || "상대"} 두 사람의 응답이 모두 필요합니다</p>
+            {participantRole && (
+              <p className="text-[12px] font-semibold mt-2" style={{ color: T.text }}>
+                {participantRole === "host" ? "내가 만든 방" : "초대 링크로 입장한 상태"}
+              </p>
+            )}
           </div>
 
           <div className="rounded-3xl p-5" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
@@ -1074,14 +1254,9 @@ export default function TravelTogetherPage() {
           )}
 
           {mySubmitted && !partnerSubmitted && (
-            <div className="flex flex-col gap-3">
-              <div className="rounded-2xl border border-gray-100 bg-gray-50 px-5 py-4">
-                <p className="text-[14px] font-black text-gray-900">상대 응답 기다리기</p>
-                <p className="text-[13px] text-gray-500 mt-1">상대가 답변을 마치면 결과가 열립니다.</p>
-              </div>
-              <button onClick={simulatePartner} className="w-full py-3.5 rounded-2xl font-bold text-[14px] border border-gray-200 text-gray-600 transition-all active:scale-[0.98]">
-                테스트용 상대 응답 시뮬레이션
-              </button>
+            <div className="rounded-2xl border border-gray-100 bg-gray-50 px-5 py-4">
+              <p className="text-[14px] font-black text-gray-900">상대 응답 기다리기</p>
+              <p className="text-[13px] text-gray-500 mt-1">상대가 링크에서 답변을 마치면 이 화면이 자동으로 갱신됩니다.</p>
             </div>
           )}
 
@@ -1138,17 +1313,45 @@ export default function TravelTogetherPage() {
 
             {question.type === "slider" && (
               <div className="flex flex-col gap-5">
-                <style>{`.travel-sl::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:${T.mid};cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,0.38)}.travel-sl::-webkit-slider-runnable-track{height:7px;border-radius:4px;background:linear-gradient(to right,${T.mid} var(--v,50%),#E5E7EB var(--v,50%))}.travel-sl{-webkit-appearance:none;appearance:none;outline:none}`}</style>
-                <input type="range" min={0} max={100} value={slider} onChange={(event) => setSlider(Number(event.target.value))} className="w-full travel-sl" style={{ "--v": `${slider}%` } as React.CSSProperties} />
-                <div className="flex justify-between text-[12px] font-bold text-gray-400">
-                  <span>{question.labels[0]}</span>
-                  <span>{question.labels[1]}</span>
-                </div>
+                <style>{`.travel-sl::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:${T.mid};cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,0.38)}.travel-sl::-webkit-slider-runnable-track{height:7px;border-radius:4px;background:linear-gradient(to right,${T.mid} var(--v,50%),#E5E7EB var(--v,50%))}.travel-sl::-moz-range-thumb{width:26px;height:26px;border:none;border-radius:50%;background:${T.mid};cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,0.38)}.travel-sl::-moz-range-track{height:7px;border-radius:4px;background:#E5E7EB}.travel-sl{-webkit-appearance:none;appearance:none;outline:none;background:transparent}`}</style>
+                <input
+                  type="range"
+                  min={0}
+                  max={question.scale.length - 1}
+                  step={1}
+                  value={slider}
+                  onChange={(event) => setSlider(Number(event.target.value))}
+                  className="w-full travel-sl"
+                  style={{ "--v": `${getSliderPosition(question, slider)}%` } as React.CSSProperties}
+                />
                 <div className="flex items-center justify-center">
                   <div className="px-8 py-3 rounded-2xl text-center" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
-                    <span className="text-[40px] font-black leading-none" style={{ color: T.mid }}>{slider}</span>
-                    <span className="text-[14px] text-gray-400 ml-1">/ 100</span>
+                    <span className="text-[28px] font-black leading-none" style={{ color: T.mid }}>{question.scale[slider]}</span>
                   </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {question.scale.map((label, index) => {
+                    const active = slider === index;
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => setSlider(index)}
+                        className="rounded-xl px-3 py-2 text-[12px] font-bold transition-all"
+                        style={{
+                          border: `1px solid ${active ? T.mid : "#E5E7EB"}`,
+                          background: active ? T.bg : "white",
+                          color: active ? T.text : "#6B7280",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-between text-[11px] font-bold text-gray-400">
+                  <span>{question.scale[0]}</span>
+                  <span>{question.scale[question.scale.length - 1]}</span>
                 </div>
               </div>
             )}
@@ -1156,7 +1359,7 @@ export default function TravelTogetherPage() {
 
           <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-5 bg-gradient-to-t from-white via-white/95 to-transparent z-50">
             <button onClick={answerReady ? submitAnswer : undefined} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]" style={{ background: answerReady ? "#111" : "#F3F4F6", color: answerReady ? "#fff" : "#9CA3AF" }}>
-              {qIdx < QUESTIONS.length - 1 ? "다음" : "내 답변 제출"}
+              {isSubmittingAnswers ? "제출 중..." : qIdx < QUESTIONS.length - 1 ? "다음" : "내 답변 제출"}
             </button>
             {!answerReady && <p className="text-center text-[12px] text-gray-400 mt-2">답변을 선택해주세요</p>}
           </div>
@@ -1315,7 +1518,7 @@ export default function TravelTogetherPage() {
                 <div className="px-6 py-7 flex flex-col items-center text-center gap-4">
                   <div>
                     <p className="text-[11px] font-black tracking-[0.25em] uppercase mb-2" style={{ color: "#93C5FD" }}>Final Travel Report</p>
-                    <p className="text-[22px] font-black text-white leading-tight mb-2">최종 결과 보기</p>
+                    <p className="text-[22px] font-black text-white leading-tight mb-2">상세 결과 보기</p>
                     <p className="text-[13px] leading-relaxed" style={{ color: "rgba(255,255,255,0.58)" }}>
                       서로 잘 맞는 장면 · 서로 힘들어질 순간 분석<br />
                       터지는 순간 TOP3 · 역할 분담 결과
@@ -1324,7 +1527,7 @@ export default function TravelTogetherPage() {
                   <button onClick={handleUnlock} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]" style={{ background: "#60A5FA", color: "white" }}>
                     {DETAIL_UNLOCK_CREDITS}크레딧으로 보기
                   </button>
-                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>최종 관계 결과를 한 번에 보는 구조입니다</p>
+                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>상세 여행 결과를 한 번에 보는 구조입니다</p>
                 </div>
               </section>
             </>
@@ -1332,5 +1535,13 @@ export default function TravelTogetherPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function TravelTogetherPage() {
+  return (
+    <Suspense fallback={<TravelTogetherFallback />}>
+      <TravelTogetherPageContent />
+    </Suspense>
   );
 }
