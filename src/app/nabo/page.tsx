@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { trackClientEvent } from "@/lib/client-events";
 
 // ── 팔레트 ────────────────────────────────────────────────────────
 const G = { bg: "#F0FDF4", border: "#BBF7D0", light: "#DCFCE7", mid: "#22C55E", dark: "#16A34A", text: "#15803D", deep: "#166534" } as const;
@@ -231,6 +232,7 @@ export default function NaboPage() {
       localStorage.setItem("nabo_name", myName);
       localStorage.setItem("nabo_created_at", String(at));
     } catch {}
+    void trackClientEvent("lab_nabo_room_created");
     goTo("link");
   };
 
@@ -244,6 +246,7 @@ export default function NaboPage() {
     // 실제 결제 연동 전 임시: 바로 해금
     setUnlocked(true);
     try { localStorage.setItem("nabo_unlocked", "1"); } catch {}
+    void trackClientEvent("lab_nabo_unlock");
   };
 
   // ── 질문 진행 ─────────────────────────────────────────────────
@@ -263,6 +266,7 @@ export default function NaboPage() {
     } else {
       setResponses(rs => [...rs, updated]);
       setCurResp({}); setQIdx(0); setCurAns(""); setCustomAns(""); setSlider(50);
+      void trackClientEvent("lab_nabo_response_completed");
       goTo("waiting");
     }
   };

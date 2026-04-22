@@ -1514,7 +1514,7 @@ export default function Studio() {
                               <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.8"/>
                               <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.6" strokeLinecap="round"/>
                             </svg>
-                            5명 익명 참여
+                            {usageCounts === null ? "..." : formatCount(usageCounts["nabo"] ?? 0)}
                           </span>
                           <span
                             className="text-[#22C55E] border border-[#22C55E]/40 rounded-full px-2.5 py-1 font-bold"
@@ -1614,7 +1614,7 @@ export default function Studio() {
                             <circle cx="11" cy="5.5" r="2.6" fill="currentColor" fillOpacity="0.55" />
                             <path d="M1.2 14.8c0-3.2 2.7-5.8 5.9-5.8s5.8 2.6 5.8 5.8" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.4" strokeLinecap="round" />
                           </svg>
-                          2명 궁합 테스트
+                          {usageCounts === null ? "..." : formatCount(usageCounts["travel_together"] ?? 0)}
                         </span>
                         <span
                           className="text-[#60A5FA] border border-[#60A5FA]/40 rounded-full px-2.5 py-1 font-bold"
@@ -1881,7 +1881,7 @@ export default function Studio() {
           </p>
           <p className="text-[10px] text-[#2a2a2a] mt-1 leading-relaxed">
             상호: 핑거 · 대표자: 문지환 · 사업자등록번호: 707-79-00261<br/>
-            주소: 대전광역시 서구 동서대로1030번길 8-6(내동) · 연락처: 010-5838-9960
+            주소: 대전광역시 서구 동서대로1030번길 8-6(내동) · 연락처: 0505-007-3670
           </p>
         </footer>
       </div>
