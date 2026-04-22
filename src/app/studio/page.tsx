@@ -1868,11 +1868,14 @@ export default function Studio() {
             <div className="w-10 h-1 bg-white/15 rounded-full mx-auto mb-5" />
             <p className="text-[13px] font-semibold text-white/40 text-center mb-1">2장 업로드 전용</p>
             <p className="text-[22px] font-black tracking-[-0.04em] text-white text-center">{pairUploadStyle.name}</p>
-            <p className="mt-2 text-center text-[13px] leading-6 text-white/45">
-              서로 다른 두 사람 사진을 각각 1장씩 올려주세요.
-              <br />
-              얼굴이 정면에 가깝고 또렷하게 보일수록 정확도가 좋습니다.
-            </p>
+            <div className="mt-3 text-center">
+              <p className="text-[16px] font-bold leading-6 tracking-[-0.02em] text-white">
+                서로 다른 두 사람 사진을 각각 1장씩 올려주세요.
+              </p>
+              <p className="mt-1 text-[14px] font-medium leading-6 text-white/72">
+                얼굴이 정면에 가깝고 또렷하게 보일수록 정확도가 좋습니다.
+              </p>
+            </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
               {([0, 1] as const).map((slotIndex) => {
