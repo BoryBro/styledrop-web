@@ -20,8 +20,7 @@ const PUBLIC_GUIDES = [
   { href: "/ai-photo-transform", label: "AI 사진 변환" },
   { href: "/ai-profile-photo", label: "AI 프로필 사진" },
   { href: "/personal-color-test", label: "퍼스널컬러" },
-  { href: "/ai-audition", label: "AI 오디션" },
-  { href: "/physiognomy-test", label: "관상 테스트" },
+  { href: "/ai-audition", label: "AI 오디션 · 관상" },
   { href: "/how-to", label: "사용방법" },
 ];
 
