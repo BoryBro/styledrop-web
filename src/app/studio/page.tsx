@@ -328,7 +328,8 @@ export default function Studio() {
   );
   const showPersonalColorLab = personalColorControl.is_visible;
   const isPersonalColorEnabled = personalColorControl.is_enabled;
-  const showLabSection = showAuditionLab || showPersonalColorLab;
+  const showNaboLab = true;
+  const showLabSection = showAuditionLab || showPersonalColorLab || showNaboLab;
 
   const scrollToSection = useCallback((section: StudioSectionTab) => {
     const target = section === "cards" ? generalCardsSectionRef.current : labSectionRef.current;
@@ -1443,6 +1444,97 @@ export default function Studio() {
                   <h2 className="text-[20px] font-bold text-[#C9571A]">실험실</h2>
                   <p className="text-[18px] font-bold text-white mt-1">색다른 AI 기능을 체험해봐요</p>
                 </div>
+
+                {showNaboLab && (
+                  <Link href="/nabo" className="block mb-4 active:scale-[0.97] transition-transform">
+                    <div className="relative rounded-2xl overflow-hidden bg-[#040D07] border border-white/[0.07]" style={{ aspectRatio: '4/3' }}>
+
+                      {/* ── 배경: 그린 코너 글로우 ── */}
+                      <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 10% 100%, rgba(34,197,94,0.16) 0%, transparent 70%)' }} />
+
+                      {/* ── 배경 대형 ANONYMOUS 워터마크 ── */}
+                      <span
+                        className="absolute select-none z-[1] font-unbounded font-black"
+                        style={{
+                          bottom: '-2%', right: '-4%',
+                          fontSize: 'clamp(44px, 13vw, 76px)',
+                          lineHeight: 1,
+                          letterSpacing: '-3px',
+                          color: 'rgba(255,255,255,0.03)',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >ANONYMOUS</span>
+
+                      {/* ── 상단 레이블 바 ── */}
+                      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 pt-5">
+                        <span
+                          className="font-unbounded font-medium text-[#22C55E] tracking-[0.18em] uppercase"
+                          style={{ fontSize: 'clamp(9px, 2.4vw, 11px)' }}
+                        >Anonymous Lab</span>
+                        <span className="text-[10px] font-bold text-white/30 border border-white/15 rounded-full px-2.5 py-0.5 tracking-widest uppercase"
+                          style={{ fontFamily: '"Unbounded", sans-serif' }}>Beta</span>
+                      </div>
+
+                      {/* ── 메인 타이틀 블록 ── */}
+                      <div className="absolute z-10 flex flex-col" style={{ top: '28%', left: '6%' }}>
+                        <div className="w-6 h-[2px] bg-[#22C55E] mb-3" />
+                        <span
+                          className="font-unbounded font-bold text-white/40 uppercase tracking-[0.06em] mb-1"
+                          style={{ fontSize: 'clamp(10px, 2.6vw, 13px)' }}
+                        >Who sees you?</span>
+                        <span
+                          className="text-white leading-[0.9]"
+                          style={{
+                            fontFamily: '"BMKkubulim", sans-serif',
+                            fontSize: 'clamp(46px, 14vw, 76px)',
+                            letterSpacing: '-1px',
+                          }}
+                        >내가 보는 너</span>
+                      </div>
+
+                      {/* ── 설명 텍스트 ── */}
+                      <div className="absolute z-10" style={{ top: '68%', left: '6%', right: '6%' }}>
+                        <p
+                          className="text-white/50 leading-snug"
+                          style={{ fontFamily: '"Pretendard", sans-serif', fontSize: 'clamp(11px, 2.8vw, 13px)', fontWeight: 500 }}
+                        >
+                          5명의 익명 평가 · 관계 분석 리포트<br />
+                          <span className="text-white/30">누가 뭐라 했는지는 절대 안 보여요</span>
+                        </p>
+                      </div>
+
+                      {/* ── 바텀 바: 참여 수 + 무료 + 화살표 ── */}
+                      <div className="absolute z-20 flex items-center justify-between" style={{ bottom: '6%', left: '6%', right: '6%' }}>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="flex items-center gap-1.5 text-white/40 border border-white/10 rounded-full px-2.5 py-1"
+                            style={{ fontFamily: '"Pretendard", sans-serif', fontSize: 'clamp(10px, 2.5vw, 12px)' }}
+                          >
+                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                              <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.8"/>
+                              <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.6" strokeLinecap="round"/>
+                            </svg>
+                            5명 익명 참여
+                          </span>
+                          <span
+                            className="text-[#22C55E] border border-[#22C55E]/40 rounded-full px-2.5 py-1 font-bold"
+                            style={{ fontFamily: '"Unbounded", sans-serif', fontSize: 'clamp(9px, 2.2vw, 11px)' }}
+                          >5크레딧</span>
+                        </div>
+
+                        <div className="w-9 h-9 rounded-full bg-[#22C55E] flex items-center justify-center flex-shrink-0">
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                      </div>
+
+                      {/* ── 그린 수직선 장식 (우측) ── */}
+                      <div className="absolute right-6 z-10" style={{ top: '28%', bottom: '20%', width: '1.5px', background: 'linear-gradient(to bottom, transparent, rgba(34,197,94,0.5), transparent)' }} />
+
+                    </div>
+                  </Link>
+                )}
 
                 {showAuditionLab && (
                   <Link href="/audition/intro" className="block mb-4 active:scale-[0.97] transition-transform">
