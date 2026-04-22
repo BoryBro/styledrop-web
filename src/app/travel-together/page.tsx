@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { trackClientEvent } from "@/lib/client-events";
 
 const T = {
   bg: "#EFF6FF",
@@ -36,6 +37,18 @@ type Question =
       text: string;
       labels: [string, string];
     };
+
+type NarrativeBlock = {
+  title: string;
+  body: string;
+};
+
+type FlashpointBlock = {
+  key: string;
+  title: string;
+  body: string;
+  rule: string;
+};
 
 const DETAIL_UNLOCK_CREDITS = 5;
 
@@ -109,6 +122,21 @@ const TIER_RULES = [
   { min: 15, tier: "E", name: "여행은 따로", desc: "같이 가면 한 명은 꽤 참게 될 확률이 높습니다." },
   { min: 0, tier: "F", name: "의절각", desc: "가기 전에 일정표와 룰부터 맞춰야 하는 타입입니다." },
 ];
+
+function getChoicePosition(question: Extract<Question, { type: "choice" }>, answer: string) {
+  const index = question.options.indexOf(answer);
+  if (index < 0 || question.options.length <= 1) return 50;
+  return Math.round((index / (question.options.length - 1)) * 100);
+}
+
+function getQuestionValue(questionId: string, answers: AnswerMap) {
+  const question = QUESTIONS.find((item) => item.id === questionId);
+  if (!question) return 50;
+  const value = answers[questionId];
+  if (typeof value === "undefined") return 50;
+  if (question.type === "slider") return Number(value);
+  return getChoicePosition(question, String(value));
+}
 
 function ScoreRing({ score, size = 136, color = T.mid }: { score: number; size?: number; color?: string }) {
   const [shown, setShown] = useState(0);
@@ -208,6 +236,311 @@ function getToneLine(relation: Relation, score: number, partnerName: string) {
   return `${partnerName}와는 여행지보다 방식에서 먼저 부딪힐 수 있습니다. 출발 전에 룰부터 정해야 합니다.`;
 }
 
+function getFinalVerdict(score: number) {
+  if (score >= 85) {
+    return {
+      title: "같이 가도 되는 사이",
+      body: "굳이 많은 설명이 없어도 리듬이 맞습니다. 일정과 휴식 타이밍이 크게 어긋나지 않는 편입니다.",
+    };
+  }
+  if (score >= 65) {
+    return {
+      title: "재밌지만 룰이 필요한 사이",
+      body: "같이 가면 재밌는데, 디테일에서 부딪힐 여지가 있습니다. 출발 전에 몇 가지만 정하면 훨씬 편해집니다.",
+    };
+  }
+  if (score >= 45) {
+    return {
+      title: "1박까진 가능, 3박부터 위험",
+      body: "짧게는 버틸 수 있지만 일정이 길어질수록 서로의 템포 차이가 크게 느껴질 가능성이 높습니다.",
+    };
+  }
+  return {
+    title: "여행은 따로 가는 게 평화로운 사이",
+    body: "같이 가면 누군가는 꽤 참게 될 조합입니다. 여행 자체보다 룰 정리가 더 먼저 필요한 타입입니다.",
+  };
+}
+
+function getPlanningPhrase(answers: AnswerMap) {
+  const prep = getQuestionValue("q1", answers);
+  const route = String(answers.q3 ?? "큰 틀만");
+
+  if (prep >= 70 || route === "분 단위 계획") {
+    return `일정을 미리 세워두고 동선은 "${route}" 쪽으로 굳혀두는 편입니다.`;
+  }
+  if (prep <= 35 || route === "그냥 가서 봄") {
+    return `현장에서 바꾸는 데 부담이 적고, 동선도 "${route}" 쪽에 가깝습니다.`;
+  }
+  return `큰 틀은 잡되 현장에서 조정하는 편이고, 동선은 "${route}"에 가깝습니다.`;
+}
+
+function getPacePhrase(answers: AnswerMap) {
+  const density = getQuestionValue("q11", answers);
+  const rest = getQuestionValue("q12", answers);
+  const afterCheckIn = String(answers.q14 ?? "피곤하면 쉼");
+
+  if (density >= 70 && rest <= 40) {
+    return `하루에 여러 곳을 도는 편이고, 체크인 후에도 "${afterCheckIn}" 쪽이라 템포가 빠릅니다.`;
+  }
+  if (density <= 35 && rest >= 60) {
+    return `하루 코스를 적게 잡고 쉬는 시간을 자주 가져야 편한 편입니다. 체크인 후에는 "${afterCheckIn}" 쪽에 가깝습니다.`;
+  }
+  return `무리하게 달리기보다 상황을 보며 속도를 조절하는 편이고, 체크인 후 선택도 "${afterCheckIn}"에 가깝습니다.`;
+}
+
+function getPhotoPhrase(answers: AnswerMap) {
+  const photo = getQuestionValue("q8", answers);
+  const upload = getQuestionValue("q19", answers);
+
+  if (photo >= 70 || upload >= 70) {
+    return "사진과 기록을 여행의 중요한 일부로 보는 편입니다.";
+  }
+  if (photo <= 35 && upload <= 35) {
+    return "기록보다 현장 흐름을 더 중요하게 보는 편입니다.";
+  }
+  return "기록은 남기되, 여행 흐름을 깨지 않을 정도로만 챙기는 편입니다.";
+}
+
+function getBudgetPhrase(answers: AnswerMap) {
+  const budget = getQuestionValue("q4", answers);
+  const shopping = getQuestionValue("q9", answers);
+
+  if (budget >= 65 || shopping >= 65) {
+    return "돈을 조금 더 써도 만족도가 높으면 괜찮다고 보는 편입니다.";
+  }
+  if (budget <= 35 && shopping <= 35) {
+    return "예산선을 넘지 않는 게 중요하고, 쇼핑에도 오래 머물지 않는 편입니다.";
+  }
+  return "예산과 만족도 사이에서 균형을 보려는 편입니다.";
+}
+
+function getRecoveryPhrase(answers: AnswerMap) {
+  const response = String(answers.q13 ?? "빠르게 대안 찾기");
+  const solo = getQuestionValue("q17", answers);
+
+  if (solo >= 70) {
+    return `변수가 생기면 "${response}" 쪽으로 반응하지만, 중간에 혼자 정리할 시간이 꽤 필요한 편입니다.`;
+  }
+  if (solo <= 35) {
+    return `변수가 생기면 "${response}" 쪽으로 반응하고, 여행 중에도 계속 붙어 있는 편이 크게 부담되지 않습니다.`;
+  }
+  return `변수가 생기면 "${response}" 쪽으로 반응하고, 필요하면 잠깐 혼자 정리하는 시간도 갖고 싶어합니다.`;
+}
+
+function getTravelFinalContent(myAnswers: AnswerMap, partnerAnswers: AnswerMap, myName: string, partnerName: string) {
+  const safeMyName = myName || "A";
+  const safePartnerName = partnerName || "B";
+
+  const planningMy = getQuestionValue("q1", myAnswers) + getQuestionValue("q3", myAnswers);
+  const planningPartner = getQuestionValue("q1", partnerAnswers) + getQuestionValue("q3", partnerAnswers);
+
+  const photoMy = getQuestionValue("q8", myAnswers) + getQuestionValue("q19", myAnswers) + (String(myAnswers.q2) === "감성" ? 20 : 0);
+  const photoPartner = getQuestionValue("q8", partnerAnswers) + getQuestionValue("q19", partnerAnswers) + (String(partnerAnswers.q2) === "감성" ? 20 : 0);
+
+  const budgetGuardMy = (100 - getQuestionValue("q4", myAnswers)) + (100 - getQuestionValue("q9", myAnswers));
+  const budgetGuardPartner = (100 - getQuestionValue("q4", partnerAnswers)) + (100 - getQuestionValue("q9", partnerAnswers));
+
+  const spendMy = getQuestionValue("q4", myAnswers) + getQuestionValue("q9", myAnswers);
+  const spendPartner = getQuestionValue("q4", partnerAnswers) + getQuestionValue("q9", partnerAnswers);
+
+  const paceMy =
+    getQuestionValue("q11", myAnswers) +
+    (100 - getQuestionValue("q12", myAnswers)) +
+    (String(myAnswers.q14) === "무조건 나감" ? 20 : String(myAnswers.q14) === "피곤하면 쉼" ? 8 : 0);
+  const pacePartner =
+    getQuestionValue("q11", partnerAnswers) +
+    (100 - getQuestionValue("q12", partnerAnswers)) +
+    (String(partnerAnswers.q14) === "무조건 나감" ? 20 : String(partnerAnswers.q14) === "피곤하면 쉼" ? 8 : 0);
+
+  const spontaneityMy = (100 - getQuestionValue("q1", myAnswers)) + (100 - getQuestionValue("q3", myAnswers));
+  const spontaneityPartner = (100 - getQuestionValue("q1", partnerAnswers)) + (100 - getQuestionValue("q3", partnerAnswers));
+
+  const rechargeMy = getQuestionValue("q12", myAnswers) + getQuestionValue("q17", myAnswers);
+  const rechargePartner = getQuestionValue("q12", partnerAnswers) + getQuestionValue("q17", partnerAnswers);
+
+  const moodMy = getQuestionValue("q10", myAnswers) + getQuestionValue("q8", myAnswers);
+  const moodPartner = getQuestionValue("q10", partnerAnswers) + getQuestionValue("q8", partnerAnswers);
+
+  const foodStrictMy = (100 - getQuestionValue("q6", myAnswers)) + (100 - getQuestionValue("q16", myAnswers));
+  const foodStrictPartner = (100 - getQuestionValue("q6", partnerAnswers)) + (100 - getQuestionValue("q16", partnerAnswers));
+
+  const matchCandidates: Array<NarrativeBlock & { score: number }> = [
+    {
+      title: "준비 단계에서 크게 안 부딪힐 가능성",
+      score: Math.round(100 - (Math.abs(planningMy - planningPartner) / 2)),
+      body:
+        `${safeMyName}님은 ${getPlanningPhrase(myAnswers)} ` +
+        `${safePartnerName}님도 ${getPlanningPhrase(partnerAnswers)} ` +
+        `${Math.abs(planningMy - planningPartner) < 35 ? "준비 단계에서 누가 더 앞장서야 하는지 큰 충돌 없이 정리될 가능성이 큽니다." : "완전히 같은 방식은 아니지만, 서로 어느 지점에서 타협해야 하는지는 비교적 보이는 편입니다."}`,
+    },
+    {
+      title: "여행 리듬은 그나마 비슷한 편",
+      score: Math.round(100 - (Math.abs(paceMy - pacePartner) / 2)),
+      body:
+        `${safeMyName}님은 ${getPacePhrase(myAnswers)} ` +
+        `${safePartnerName}님은 ${getPacePhrase(partnerAnswers)} ` +
+        `${Math.abs(paceMy - pacePartner) < 35 ? "둘 다 하루를 쓰는 템포가 아주 멀진 않아서, 일정만 과하게 밀어넣지 않으면 리듬이 크게 깨지지 않을 조합입니다." : "속도 차이는 있지만, 미리 쉬는 타이밍만 정하면 중간까지는 안정적으로 갈 수 있습니다."}`,
+    },
+    {
+      title: "기록 방식은 이해 가능한 범위",
+      score: Math.round(100 - (Math.abs(photoMy - photoPartner) / 2)),
+      body:
+        `${safeMyName}님은 ${getPhotoPhrase(myAnswers)} ` +
+        `${safePartnerName}님도 ${getPhotoPhrase(partnerAnswers)} ` +
+        `${Math.abs(photoMy - photoPartner) < 35 ? "기록 욕구 차이가 크지 않아 사진 때문에 흐름이 끊길 가능성은 비교적 낮습니다." : "완전히 같진 않지만, 어느 정도는 서로 맞춰줄 수 있는 구간으로 보입니다."}`,
+    },
+    {
+      title: "돈 쓰는 기준은 설명하면 통할 편",
+      score: Math.round(100 - (Math.abs(spendMy - spendPartner) / 2)),
+      body:
+        `${safeMyName}님은 ${getBudgetPhrase(myAnswers)} ` +
+        `${safePartnerName}님도 ${getBudgetPhrase(partnerAnswers)} ` +
+        `${Math.abs(spendMy - spendPartner) < 35 ? "소비 기준이 아주 멀지 않아서, 상한선만 정해두면 감정 소모가 크지 않을 가능성이 높습니다." : "지출 기준은 다르지만, 미리 숫자로 합의하면 조정 가능한 범위입니다."}`,
+    },
+  ].sort((a, b) => b.score - a.score);
+
+  const mismatchCandidates: Array<FlashpointBlock & { score: number; delta: number; partnerPressure: string; myPressure: string }> = [
+    {
+      key: "pace",
+      title: "하루 템포 차이",
+      score: Math.abs(paceMy - pacePartner),
+      delta: paceMy - pacePartner,
+      body:
+        `${safeMyName}님은 ${getPacePhrase(myAnswers)} ` +
+        `${safePartnerName}님은 ${getPacePhrase(partnerAnswers)} ` +
+        "오전엔 괜찮아도 오후부터 체감 속도 차이가 커질 수 있습니다.",
+      partnerPressure:
+        `${safeMyName}님은 ${getPacePhrase(myAnswers)} 반면 ${safePartnerName}님은 ${getPacePhrase(partnerAnswers)} ` +
+        `그래서 ${safePartnerName}님은 중간부터 쫓기는 느낌을 받을 수 있습니다.`,
+      myPressure:
+        `${safePartnerName}님은 ${getPacePhrase(partnerAnswers)} 반면 ${safeMyName}님은 ${getPacePhrase(myAnswers)} ` +
+        `그래서 ${safeMyName}님은 일정이 자꾸 끊긴다고 느낄 수 있습니다.`,
+      rule: "하루에 꼭 가야 할 곳 2곳만 먼저 고정하고, 나머지는 체력 보고 추가하기",
+    },
+    {
+      key: "food",
+      title: "식사 결정 방식 차이",
+      score:
+        Math.abs(getQuestionValue("q6", myAnswers) - getQuestionValue("q6", partnerAnswers)) +
+        Math.abs(getQuestionValue("q16", myAnswers) - getQuestionValue("q16", partnerAnswers)),
+      delta: foodStrictMy - foodStrictPartner,
+      body:
+        `${safeMyName}님은 식사를 "${String(myAnswers.q6 ?? "")}" 기준으로 보고, 못 정하면 "${String(myAnswers.q16 ?? "")}" 쪽에 가깝습니다. ` +
+        `${safePartnerName}님은 "${String(partnerAnswers.q6 ?? "")}" / "${String(partnerAnswers.q16 ?? "")}" 쪽이라 밥 먹기 전 결정 속도에서 차이가 날 수 있습니다.`,
+      partnerPressure:
+        `${safeMyName}님은 식사 기준이 더 분명하고 결정도 빠르게 내리려는 쪽입니다. ` +
+        `${safePartnerName}님은 "${String(partnerAnswers.q16 ?? "")}" 쪽이라, 밥 먹기 전부터 선택을 재촉받는 느낌이 들 수 있습니다.`,
+      myPressure:
+        `${safePartnerName}님은 식사 앞에서 더 오래 보고 결정하려는 쪽입니다. ` +
+        `${safeMyName}님은 "${String(myAnswers.q16 ?? "")}" 쪽으로 답해서, 끼니마다 시간이 길어진다고 느낄 수 있습니다.`,
+      rule: "식당 결정권은 끼니마다 번갈아 맡기기",
+    },
+    {
+      key: "photo",
+      title: "사진 찍는 텐션 차이",
+      score: Math.abs(photoMy - photoPartner),
+      delta: photoMy - photoPartner,
+      body:
+        `${safeMyName}님은 ${getPhotoPhrase(myAnswers)} ` +
+        `${safePartnerName}님은 ${getPhotoPhrase(partnerAnswers)} ` +
+        "같은 풍경을 봐도 한쪽은 멈추고 싶고 한쪽은 빨리 넘어가고 싶어질 수 있습니다.",
+      partnerPressure:
+        `${safeMyName}님은 사진과 기록을 더 강하게 남기고 싶어하는 답변을 했습니다. ` +
+        `${safePartnerName}님은 흐름을 더 중요하게 보는 편이라 사진 구간이 길어질수록 지칠 수 있습니다.`,
+      myPressure:
+        `${safePartnerName}님은 기록 욕구가 더 큰 편이라 멈춰 세우는 순간이 잦아질 수 있습니다. ` +
+        `${safeMyName}님은 현장 흐름을 더 중요하게 보는 답변을 해서 템포가 끊긴다고 느낄 수 있습니다.`,
+      rule: "사진 촬영 시간은 장소마다 10분처럼 상한을 정해두기",
+    },
+    {
+      key: "budget",
+      title: "예산과 쇼핑 감각 차이",
+      score: Math.abs(spendMy - spendPartner),
+      delta: spendMy - spendPartner,
+      body:
+        `${safeMyName}님은 ${getBudgetPhrase(myAnswers)} ` +
+        `${safePartnerName}님은 ${getBudgetPhrase(partnerAnswers)} ` +
+        "쇼핑이나 추가 지출이 생기는 순간 누가 먼저 멈추고 누가 더 밀어붙이는지가 드러날 수 있습니다.",
+      partnerPressure:
+        `${safeMyName}님은 만족도가 높으면 쓰는 쪽에 더 가깝고, ${safePartnerName}님은 예산선에 더 민감한 편입니다. ` +
+        `${safePartnerName}님은 작은 지출이 계속 누적될 때 피로를 느낄 수 있습니다.`,
+      myPressure:
+        `${safePartnerName}님은 현장에서 더 쓰는 쪽에 가깝고, ${safeMyName}님은 예산선에 더 민감한 답변을 했습니다. ` +
+        `${safeMyName}님은 소비 순간마다 브레이크를 걸어야 해서 피곤해질 수 있습니다.`,
+      rule: "하루 지출 상한과 쇼핑 예산은 따로 분리해서 먼저 정하기",
+    },
+    {
+      key: "plan",
+      title: "변수 생겼을 때 판단 충돌",
+      score:
+        Math.abs(spontaneityMy - spontaneityPartner) +
+        Math.abs(getQuestionValue("q13", myAnswers) - getQuestionValue("q13", partnerAnswers)),
+      delta: spontaneityMy - spontaneityPartner,
+      body:
+        `${safeMyName}님은 ${getPlanningPhrase(myAnswers)} ` +
+        `${safePartnerName}님은 ${getPlanningPhrase(partnerAnswers)} ` +
+        `변수가 생기면 ${safeMyName}님은 "${String(myAnswers.q13 ?? "")}", ${safePartnerName}님은 "${String(partnerAnswers.q13 ?? "")}" 쪽으로 반응합니다.`,
+      partnerPressure:
+        `${safeMyName}님은 현장에서 바꾸는 쪽으로 더 기울어 있고, ${safePartnerName}님은 준비된 흐름을 지키는 쪽에 더 가깝습니다. ` +
+        `${safePartnerName}님은 계획이 흐트러질 때 피로를 느낄 가능성이 큽니다.`,
+      myPressure:
+        `${safePartnerName}님은 계획을 굳혀두는 쪽에 더 가깝고, ${safeMyName}님은 현장 조정을 허용하는 편입니다. ` +
+        `${safeMyName}님은 매번 허락을 받고 움직이는 느낌이 들 수 있습니다.`,
+      rule: "돌발 상황이 생기면 누가 최종 결정을 내릴지 미리 정하기",
+    },
+  ].sort((a, b) => b.score - a.score);
+
+  const partnerPressure =
+    mismatchCandidates.filter((item) => item.delta > 0).sort((a, b) => b.delta - a.delta)[0] ??
+    mismatchCandidates[0];
+  const myPressure =
+    mismatchCandidates.filter((item) => item.delta < 0).sort((a, b) => a.delta - b.delta)[0] ??
+    mismatchCandidates[1] ??
+    mismatchCandidates[0];
+
+  const planner = planningMy >= planningPartner ? safeMyName : safePartnerName;
+  const restBrake = rechargeMy >= rechargePartner ? safeMyName : safePartnerName;
+  const budgetLead = budgetGuardMy >= budgetGuardPartner ? safeMyName : safePartnerName;
+  const spendLead = spendMy >= spendPartner ? safeMyName : safePartnerName;
+  const moodLead = moodMy >= moodPartner ? safeMyName : safePartnerName;
+
+  const roleStories: NarrativeBlock[] = [
+    {
+      title: "일정 큰 틀은 누가 잡는 게 나은지",
+      body: `${planner}님이 일정 큰 틀을 먼저 잡고, ${restBrake}님이 중간 휴식 타이밍에 브레이크를 거는 편이 덜 부딪힙니다. ${planner}님이 계획 관련 답변에서 더 선명하게 움직였습니다.`,
+    },
+    {
+      title: "돈 쓰는 기준은 누가 잡아야 하는지",
+      body: `${budgetLead}님이 예산 상한을 먼저 정하고, ${spendLead}님이 현장 추가 지출이 정말 필요한지 한 번 더 설명하는 구조가 안정적입니다. 두 사람의 소비 감각 차이를 그냥 두면 쇼핑 구간에서 감정이 쌓일 수 있습니다.`,
+    },
+    {
+      title: "분위기 회복은 누가 맡는 게 나은지",
+      body: `${moodLead}님이 사진이나 분위기 전환 포인트를 챙기고, ${restBrake}님이 피로 신호를 먼저 말하는 편이 좋습니다. 한쪽이 참고 있다가 터지는 패턴을 막는 역할 분담입니다.`,
+    },
+  ];
+
+  const topMismatch = mismatchCandidates[0];
+  const bestMatch = matchCandidates[0];
+
+  return {
+    verdictStory:
+      `${bestMatch.title} 쪽에서는 합의 여지가 보이지만, ${topMismatch.title} 구간에 들어가면 갑자기 감정 소모가 커질 가능성이 큽니다. ` +
+      `즉 여행 자체가 안 되는 조합이라기보다, 어디에서 리듬이 깨지는지를 먼저 알고 출발해야 덜 싸우는 타입입니다.`,
+    matchStories: matchCandidates.slice(0, 2),
+    partnerPressure: {
+      title: `${safePartnerName}님이 힘들 수 있는 순간`,
+      body: partnerPressure.delta > 0 ? partnerPressure.partnerPressure : partnerPressure.myPressure,
+    },
+    myPressure: {
+      title: `${safeMyName}님이 답답해질 수 있는 순간`,
+      body: myPressure.delta < 0 ? myPressure.myPressure : myPressure.partnerPressure,
+    },
+    flashpoints: mismatchCandidates.slice(0, 3),
+    roleStories,
+    rules: mismatchCandidates.slice(0, 3).map((item) => item.rule),
+  };
+}
+
 export default function TravelTogetherPage() {
   const [step, setStep] = useState<Step>("intro");
   const [history, setHistory] = useState<Step[]>(["intro"]);
@@ -293,9 +626,15 @@ export default function TravelTogetherPage() {
     setTimeout(() => setCopied(false), 1800);
   };
 
+  const createRoom = () => {
+    void trackClientEvent("lab_travel_room_created");
+    setStep("link");
+  };
+
   const simulatePartner = () => {
     setPartnerProfileIndex((prev) => (prev + 1) % PARTNER_PROFILES.length);
     setPartnerSubmitted(true);
+    void trackClientEvent("lab_travel_partner_ready");
   };
 
   const question = QUESTIONS[qIdx];
@@ -316,7 +655,13 @@ export default function TravelTogetherPage() {
     setQIdx(0);
     setCurrentAnswer("");
     setSlider(50);
+    void trackClientEvent("lab_travel_response_completed");
     setStep("waiting");
+  };
+
+  const handleUnlock = () => {
+    setUnlocked(true);
+    void trackClientEvent("lab_travel_unlock");
   };
 
   const results = useMemo(() => {
@@ -351,6 +696,7 @@ export default function TravelTogetherPage() {
     const photoScore = categories.find((item) => item.label === "행동 패턴")?.score ?? overall;
     const paceScore = categories.find((item) => item.label === "여행 페이스")?.score ?? overall;
     const spots = pickPreviewSpots(overall, photoScore, paceScore);
+    const finalContent = getTravelFinalContent(myAnswers, partnerAnswers, myName, partnerName);
 
     return {
       overall,
@@ -362,6 +708,8 @@ export default function TravelTogetherPage() {
       previewDomestic: spots.domestic[0],
       domestic: spots.domestic,
       overseas: spots.overseas,
+      finalVerdict: getFinalVerdict(overall),
+      finalContent,
     };
   }, [myAnswers, partnerProfileIndex, relation, partnerName]);
 
@@ -420,10 +768,10 @@ export default function TravelTogetherPage() {
             <h1 className="text-[34px] font-black text-gray-900 leading-[1.12] mb-5">우리 여행 스타일,<br />진짜 맞을까?</h1>
             <p className="text-[16px] text-gray-500 leading-relaxed max-w-[295px]">
               둘이 각자 여행 취향을 답하면<br />
-              <span className="text-[14px]" style={{ color: T.text }}>궁합 티어와 맞춤 여행지를 보여줘요</span>
+              <span className="text-[14px]" style={{ color: T.text }}>궁합 티어와 최종 여행 결과를 보여줘요</span>
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
-              {["2인 여행 궁합", "20문항", "결과 무료 공개"].map((tag) => (
+              {["2인 여행 궁합", "20문항", "기본 결과 무료 공개", "최종 결과 5크레딧"].map((tag) => (
                 <span key={tag} className="text-[12px] font-bold rounded-full px-3 py-1" style={{ background: T.bg, color: T.deep, border: `1px solid ${T.border}` }}>
                   {tag}
                 </span>
@@ -437,7 +785,7 @@ export default function TravelTogetherPage() {
               { num: "01", en: "CREATE", ko: "룸을 만들어요", desc: "상대 이름과 관계를 정하고\n초대 링크를 생성해요." },
               { num: "02", en: "INVITE", ko: "상대를 초대해요", desc: "링크를 보내고 각자\n본인 여행 스타일을 답해요." },
               { num: "03", en: "COMPARE", ko: "궁합을 비교해요", desc: "준비·행동·페이스·갈등·여행 후\n5개 축으로 비교합니다." },
-              { num: "04", en: "UNLOCK", ko: "상세 결과를 열어요", desc: "무료 결과 후\n상세 분석과 여행지 추천을 해금해요." },
+              { num: "04", en: "FINAL", ko: "최종 결과를 봐요", desc: "기본 결과 확인 후\n최종 결과를 5크레딧으로 봐요." },
             ].map((item) => (
               <div key={item.num} className="flex gap-4 items-start">
                 <span className="text-[26px] font-black text-gray-200 leading-none flex-shrink-0 w-10 text-right tabular-nums">{item.num}</span>
@@ -521,7 +869,7 @@ export default function TravelTogetherPage() {
 
           <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-5 bg-gradient-to-t from-white via-white/95 to-transparent z-50">
             <button
-              onClick={() => myName.trim() && partnerName.trim() && goTo("link")}
+              onClick={() => myName.trim() && partnerName.trim() && createRoom()}
               className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]"
               style={{ background: myName.trim() && partnerName.trim() ? "#111" : "#F3F4F6", color: myName.trim() && partnerName.trim() ? "#fff" : "#9CA3AF" }}
             >
@@ -561,9 +909,12 @@ export default function TravelTogetherPage() {
               <div className="flex flex-col gap-2.5">
                 {[
                   "궁합 점수 + 티어",
-                  "잘 맞는 포인트 / 충돌 포인트",
-                  "국내 3곳 + 해외 3곳 추천",
-                  "관계 톤에 맞는 AI 한 줄 결과",
+                  "잘 맞는 포인트 / 주의 포인트",
+                  "기본 한 줄 결과",
+                  "둘이 잘 맞는 장면",
+                  "서로 힘들어질 순간 분석",
+                  "같이 가면 터지는 순간 TOP3",
+                  "여행 역할 분담 결과",
                 ].map((text) => (
                   <div key={text} className="flex items-center gap-2.5">
                     <span className="text-base flex-shrink-0">•</span>
@@ -617,9 +968,15 @@ export default function TravelTogetherPage() {
           )}
 
           {mySubmitted && !partnerSubmitted && (
-            <button onClick={simulatePartner} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]" style={{ background: T.mid, color: "#fff" }}>
-              상대 응답 시뮬레이션
-            </button>
+            <div className="flex flex-col gap-3">
+              <div className="rounded-2xl border border-gray-100 bg-gray-50 px-5 py-4">
+                <p className="text-[14px] font-black text-gray-900">상대 응답 기다리기</p>
+                <p className="text-[13px] text-gray-500 mt-1">상대가 답변을 마치면 결과가 열립니다.</p>
+              </div>
+              <button onClick={simulatePartner} className="w-full py-3.5 rounded-2xl font-bold text-[14px] border border-gray-200 text-gray-600 transition-all active:scale-[0.98]">
+                테스트용 상대 응답 시뮬레이션
+              </button>
+            </div>
           )}
 
           {mySubmitted && partnerSubmitted && (
@@ -732,7 +1089,7 @@ export default function TravelTogetherPage() {
           </section>
 
           <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">무료 공개</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">기본 공개</p>
             <div className="rounded-2xl px-4 py-4" style={{ background: T.bg }}>
               <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: T.text }}>국내 추천 미리보기</p>
               <p className="text-[20px] font-black text-gray-900 mt-2">{results.previewDomestic.title}</p>
@@ -744,52 +1101,66 @@ export default function TravelTogetherPage() {
           {unlocked ? (
             <>
               <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-4">카테고리별 궁합</p>
-                <div className="flex flex-col gap-3">
-                  {results.categories.map((item) => (
-                    <BarRow key={item.label} label={item.label} score={item.score} />
-                  ))}
-                </div>
-              </section>
-
-              <section className="mx-6 grid grid-cols-2 gap-3 mb-4">
-                <div className="rounded-2xl border border-gray-100 bg-white px-4 py-4">
-                  <p className="text-[10px] font-bold text-gray-400 mb-1">잘 맞는 영역</p>
-                  <p className="text-[15px] font-black text-gray-900">{results.best?.label}</p>
-                  <p className="text-[12px] text-gray-500 mt-2">이 부분은 둘 다 속도가 비슷해서 갈등이 적습니다.</p>
-                </div>
-                <div className="rounded-2xl border border-gray-100 bg-white px-4 py-4">
-                  <p className="text-[10px] font-bold text-gray-400 mb-1">충돌 가능성</p>
-                  <p className="text-[15px] font-black text-gray-900">{results.worst?.label}</p>
-                  <p className="text-[12px] text-gray-500 mt-2">출발 전에 합의가 없으면 체감 차이가 크게 날 수 있습니다.</p>
-                </div>
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">최종 여행 동행 판정</p>
+                <p className="text-[24px] font-black text-gray-900 leading-tight">{results.finalVerdict.title}</p>
+                <p className="text-[14px] text-gray-600 leading-relaxed mt-3">{results.finalContent.verdictStory}</p>
               </section>
 
               <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">국내 추천 3곳</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">둘이 잘 맞는 장면</p>
                 <div className="flex flex-col gap-3">
-                  {results.domestic.map((spot) => (
-                    <div key={spot.id} className="rounded-xl px-4 py-4" style={{ background: T.bg }}>
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-[16px] font-black text-gray-900">{spot.title}</p>
-                        <span className="text-[11px] font-bold rounded-full px-2.5 py-1" style={{ color: T.text, border: `1px solid ${T.border}` }}>{spot.mood}</span>
-                      </div>
-                      <p className="text-[13px] text-gray-600 leading-relaxed mt-3">{spot.blurb}</p>
+                  {results.finalContent.matchStories.map((item) => (
+                    <div key={item.title} className="rounded-xl px-4 py-4" style={{ background: "#F8FAFC" }}>
+                      <p className="text-[15px] font-black text-gray-900">{item.title}</p>
+                      <p className="text-[13px] text-gray-600 leading-relaxed mt-2">{item.body}</p>
                     </div>
                   ))}
                 </div>
               </section>
 
               <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">해외 추천 3곳</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">{results.finalContent.partnerPressure.title}</p>
+                <p className="text-[14px] text-gray-600 leading-relaxed">{results.finalContent.partnerPressure.body}</p>
+              </section>
+
+              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">{results.finalContent.myPressure.title}</p>
+                <p className="text-[14px] text-gray-600 leading-relaxed">{results.finalContent.myPressure.body}</p>
+              </section>
+
+              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">같이 가면 터지는 순간 TOP3</p>
                 <div className="flex flex-col gap-3">
-                  {results.overseas.map((spot) => (
-                    <div key={spot.id} className="rounded-xl border border-gray-100 px-4 py-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-[16px] font-black text-gray-900">{spot.title}</p>
-                        <span className="text-[11px] font-bold rounded-full px-2.5 py-1" style={{ color: T.text, background: T.bg }}>{spot.mood}</span>
-                      </div>
-                      <p className="text-[13px] text-gray-600 leading-relaxed mt-3">{spot.blurb}</p>
+                  {results.finalContent.flashpoints.map((item, index) => (
+                    <div key={item.key} className="rounded-xl px-4 py-4" style={{ background: T.bg }}>
+                      <p className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: T.text }}>Top {index + 1}</p>
+                      <p className="text-[16px] font-black text-gray-900 mt-2">{item.title}</p>
+                      <p className="text-[13px] text-gray-600 leading-relaxed mt-2">{item.body}</p>
+                      <p className="text-[12px] font-semibold mt-3" style={{ color: T.text }}>합의 포인트 · {item.rule}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">여행 역할 분담 결과</p>
+                <div className="flex flex-col gap-3">
+                  {results.finalContent.roleStories.map((item) => (
+                    <div key={item.title} className="rounded-xl px-4 py-4" style={{ background: "#F8FAFC" }}>
+                      <p className="text-[15px] font-black text-gray-900">{item.title}</p>
+                      <p className="text-[13px] text-gray-600 leading-relaxed mt-2">{item.body}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">여행 전 합의해야 할 규칙 3가지</p>
+                <div className="flex flex-col gap-3">
+                  {results.finalContent.rules.map((rule, index) => (
+                    <div key={rule} className="rounded-xl border border-gray-100 px-4 py-4">
+                      <p className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: T.text }}>Rule {index + 1}</p>
+                      <p className="text-[14px] text-gray-700 leading-relaxed mt-2">{rule}</p>
                     </div>
                   ))}
                 </div>
@@ -799,10 +1170,21 @@ export default function TravelTogetherPage() {
             <>
               <section className="mx-6 mb-4 relative overflow-hidden rounded-2xl border border-gray-100">
                 <div className="blur-[3px] select-none pointer-events-none px-5 py-5" aria-hidden>
-                  <p className="text-[11px] font-black text-gray-400 mb-4">카테고리별 궁합</p>
+                  <p className="text-[11px] font-black text-gray-400 mb-3">최종 여행 동행 판정</p>
+                  <p className="text-[24px] font-black text-gray-900 leading-tight">{results.finalVerdict.title}</p>
+                  <p className="text-[14px] text-gray-600 leading-relaxed mt-3">{results.finalContent.verdictStory}</p>
+                </div>
+                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px]" />
+              </section>
+
+              <section className="mx-6 mb-4 relative overflow-hidden rounded-2xl border border-gray-100">
+                <div className="blur-[3px] select-none pointer-events-none px-5 py-5" aria-hidden>
+                  <p className="text-[11px] font-black text-gray-400 mb-3">둘이 잘 맞는 장면</p>
                   <div className="flex flex-col gap-3">
-                    {results.categories.slice(0, 3).map((item) => (
-                      <BarRow key={item.label} label={item.label} score={item.score} />
+                    {results.finalContent.matchStories.map((item) => (
+                      <div key={item.title} className="rounded-xl px-4 py-4" style={{ background: "#F8FAFC" }}>
+                        <p className="text-[16px] font-black text-gray-900">{item.title}</p>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -810,7 +1192,12 @@ export default function TravelTogetherPage() {
               </section>
 
               <section className="mx-6 mb-4 grid grid-cols-2 gap-3 relative overflow-hidden">
-                {["충돌 포인트", "해외 추천"].map((label) => (
+                {[
+                  `${partnerName || "상대"}가 힘들 수 있는 순간`,
+                  `${myName || "나"}가 답답해질 순간`,
+                  "여행 역할 분담 결과",
+                  "합의해야 할 규칙",
+                ].map((label) => (
                   <div key={label} className="rounded-2xl border border-gray-100 bg-white px-4 py-4 blur-[2px] select-none" aria-hidden>
                     <p className="text-[10px] font-bold text-gray-400 mb-1">{label}</p>
                     <p className="text-[15px] font-black text-gray-900">██████</p>
@@ -818,23 +1205,20 @@ export default function TravelTogetherPage() {
                 ))}
               </section>
 
-              <section className="mx-6 mb-4 rounded-3xl overflow-hidden" style={{ background: "linear-gradient(135deg, #172554 0%, #1D4ED8 100%)", border: `1px solid ${T.dark}` }}>
+              <section className="mx-6 mb-4 rounded-3xl overflow-hidden border border-[#BFDBFE] bg-[#0F172A]">
                 <div className="px-6 py-7 flex flex-col items-center text-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" style={{ background: "rgba(59,130,246,0.14)", border: "1px solid rgba(147,197,253,0.28)" }}>
-                    🔓
-                  </div>
                   <div>
-                    <p className="text-[11px] font-black tracking-[0.25em] uppercase mb-2" style={{ color: "#93C5FD" }}>Full Travel Report</p>
-                    <p className="text-[22px] font-black text-white leading-tight mb-2">상세 결과 보기</p>
+                    <p className="text-[11px] font-black tracking-[0.25em] uppercase mb-2" style={{ color: "#93C5FD" }}>Final Travel Report</p>
+                    <p className="text-[22px] font-black text-white leading-tight mb-2">최종 결과 보기</p>
                     <p className="text-[13px] leading-relaxed" style={{ color: "rgba(255,255,255,0.58)" }}>
-                      카테고리별 궁합 점수 · 충돌 포인트 전체<br />
-                      국내 3곳 + 해외 3곳 전체 추천
+                      서로 잘 맞는 장면 · 서로 힘들어질 순간 분석<br />
+                      터지는 순간 TOP3 · 역할 분담 결과
                     </p>
                   </div>
-                  <button onClick={() => setUnlocked(true)} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]" style={{ background: "#60A5FA", color: "white" }}>
-                    {DETAIL_UNLOCK_CREDITS}크레딧으로 상세 해금
+                  <button onClick={handleUnlock} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]" style={{ background: "#60A5FA", color: "white" }}>
+                    {DETAIL_UNLOCK_CREDITS}크레딧으로 보기
                   </button>
-                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>프로토타입 기준으로 한 번에 전체 공개됩니다</p>
+                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>최종 관계 결과를 한 번에 보는 구조입니다</p>
                 </div>
               </section>
             </>
