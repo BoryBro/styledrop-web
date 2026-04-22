@@ -331,7 +331,7 @@ export default function Home() {
               <p>상호: 핑거 · 대표자: 문지환</p>
               <p>사업자등록번호: 707-79-00261</p>
               <p>대전광역시 서구 동서대로1030번길 8-6(내동)</p>
-              <p>010-5838-9960</p>
+              <p>0505-007-3670</p>
               <a href="mailto:support@styledrop.cloud" className="block transition-colors hover:text-white">
                 support@styledrop.cloud
               </a>
