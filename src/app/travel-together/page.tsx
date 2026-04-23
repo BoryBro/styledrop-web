@@ -65,6 +65,7 @@ type TravelRoomView = {
   myAnswers: AnswerMap | null;
   partnerAnswers: AnswerMap | null;
   invitePath: string;
+  partnerResultPath: string | null;
   unlocked: boolean;
 };
 
@@ -599,6 +600,7 @@ function TravelTogetherPageContent() {
   const [participantToken, setParticipantToken] = useState("");
   const [participantRole, setParticipantRole] = useState<TravelParticipantRole | null>(null);
   const [invitePath, setInvitePath] = useState("");
+  const [partnerResultPath, setPartnerResultPath] = useState("");
   const [shareOrigin, setShareOrigin] = useState(DEFAULT_SHARE_ORIGIN);
   const [isSharingKakao, setIsSharingKakao] = useState(false);
   const [shareStatus, setShareStatus] = useState<"idle" | "sent" | "copied">("idle");
@@ -631,6 +633,7 @@ function TravelTogetherPageContent() {
     setMyAnswers(view.myAnswers ?? {});
     setPartnerAnswersState(view.partnerAnswers ?? {});
     setInvitePath(view.invitePath);
+    setPartnerResultPath(view.partnerResultPath ?? "");
     setUnlocked(Boolean(view.unlocked));
     setRoomError("");
   }, []);
@@ -640,6 +643,7 @@ function TravelTogetherPageContent() {
     setParticipantToken("");
     setParticipantRole(null);
     setInvitePath("");
+    setPartnerResultPath("");
     setCopied(false);
     setShareStatus("idle");
     setRoomError("");
@@ -685,6 +689,7 @@ function TravelTogetherPageContent() {
         participantToken?: string;
         participantRole?: TravelParticipantRole;
         invitePath?: string;
+        partnerResultPath?: string;
         mySubmitted?: boolean;
         partnerSubmitted?: boolean;
         myAnswers?: AnswerMap;
@@ -704,6 +709,7 @@ function TravelTogetherPageContent() {
         if (parsed.participantToken) setParticipantToken(parsed.participantToken);
         if (parsed.participantRole) setParticipantRole(parsed.participantRole);
         if (parsed.invitePath) setInvitePath(parsed.invitePath);
+        if (parsed.partnerResultPath) setPartnerResultPath(parsed.partnerResultPath);
         if (parsed.mySubmitted) setMySubmitted(parsed.mySubmitted);
         if (parsed.partnerSubmitted) setPartnerSubmitted(parsed.partnerSubmitted);
         if (parsed.myAnswers) setMyAnswers(parsed.myAnswers);
@@ -799,6 +805,7 @@ function TravelTogetherPageContent() {
           participantToken,
           participantRole,
           invitePath,
+          partnerResultPath,
           mySubmitted,
           partnerSubmitted,
           myAnswers,
@@ -807,7 +814,7 @@ function TravelTogetherPageContent() {
         }),
       );
     } catch {}
-  }, [step, myName, partnerName, relation, roomId, participantToken, participantRole, invitePath, mySubmitted, partnerSubmitted, myAnswers, partnerAnswersState, unlocked]);
+  }, [step, myName, partnerName, relation, roomId, participantToken, participantRole, invitePath, partnerResultPath, mySubmitted, partnerSubmitted, myAnswers, partnerAnswersState, unlocked]);
 
   const goTo = useCallback((next: Step) => {
     setHistory((prev) => [...prev, next]);
@@ -831,6 +838,12 @@ function TravelTogetherPageContent() {
     if (invitePath) return `${shareOrigin}${invitePath}`;
     return `${shareOrigin}/travel-together?room=ab12cd`;
   }, [invitePath, shareOrigin]);
+
+  const resultNotifyLink = useMemo(() => {
+    if (partnerResultPath) return `${shareOrigin}${partnerResultPath}`;
+    if (participantRole === "host" && invitePath) return `${shareOrigin}${invitePath}&view=result`;
+    return "";
+  }, [invitePath, participantRole, partnerResultPath, shareOrigin]);
 
   const writeClipboard = useCallback(async (text: string) => {
     try {
@@ -895,8 +908,9 @@ function TravelTogetherPageContent() {
     }
   };
 
-  const handleKakaoShare = async () => {
-    if (!invitePath || isSharingKakao) return;
+  const handleKakaoShare = async (mode: "invite" | "result" = "invite") => {
+    const shareLink = mode === "result" ? resultNotifyLink : inviteLink;
+    if (!shareLink || isSharingKakao) return;
     setIsSharingKakao(true);
     try {
       const Kakao = (window as Window & { Kakao?: KakaoShareSDK }).Kakao;
@@ -910,16 +924,18 @@ function TravelTogetherPageContent() {
 
       sendDefault({
         objectType: "text",
-        text: `${myName || "친구"}님이 ${partnerName || "당신"}에게 여행 궁합 테스트를 보냈어요 ✈️\n링크 열고 같이 답하면 결과가 열립니다.`,
+        text: mode === "result"
+          ? `${myName || "친구"}님과의 여행 궁합 결과가 열렸어요 ✈️\n링크 눌러 바로 결과를 확인해보세요.`
+          : `${myName || "친구"}님이 ${partnerName || "당신"}에게 여행 궁합 테스트를 보냈어요 ✈️\n링크 열고 같이 답하면 결과가 열립니다.`,
         link: {
-          mobileWebUrl: inviteLink,
-          webUrl: inviteLink,
+          mobileWebUrl: shareLink,
+          webUrl: shareLink,
         },
       });
       setShareStatus("sent");
       setTimeout(() => setShareStatus("idle"), 1800);
     } catch {
-      const didCopy = await writeClipboard(inviteLink);
+      const didCopy = await writeClipboard(shareLink);
       if (didCopy) {
         setShareStatus("copied");
         setCopied(true);
@@ -1291,7 +1307,7 @@ function TravelTogetherPageContent() {
             </div>
 
             <button
-              onClick={handleKakaoShare}
+              onClick={() => void handleKakaoShare("invite")}
               disabled={!invitePath || isSharingKakao}
               className="w-full py-3.5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2 transition-all disabled:opacity-70"
               style={{ background: "#FEE500", color: "#191919" }}
@@ -1376,9 +1392,21 @@ function TravelTogetherPageContent() {
           )}
 
           {mySubmitted && partnerSubmitted && (
-            <button onClick={() => goTo("results")} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]" style={{ background: T.mid, color: "#fff" }}>
-              결과 확인하기
-            </button>
+            <div className="flex flex-col gap-3">
+              <button onClick={() => goTo("results")} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]" style={{ background: T.mid, color: "#fff" }}>
+                결과 확인하기
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleKakaoShare("result")}
+                disabled={!resultNotifyLink || isSharingKakao}
+                className="w-full py-3.5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2 transition-all disabled:opacity-70"
+                style={{ background: "#FEE500", color: "#191919" }}
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/></svg>
+                {isSharingKakao ? "보내는 중..." : shareStatus === "sent" ? "카카오톡 열림 ✓" : shareStatus === "copied" ? "링크 복사됨 ✓" : "친구에게 결과 알리기"}
+              </button>
+            </div>
           )}
         </div>
       )}

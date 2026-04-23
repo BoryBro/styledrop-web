@@ -41,6 +41,7 @@ export type TravelRoomView = {
   myAnswers: TravelAnswerMap | null;
   partnerAnswers: TravelAnswerMap | null;
   invitePath: string;
+  partnerResultPath: string | null;
   unlocked: boolean;
 };
 
@@ -131,6 +132,11 @@ export function buildTravelInvitePath(room: TravelRoomState) {
   return `/travel-together?room=${encodeURIComponent(room.roomId)}&token=${encodeURIComponent(room.guest.token)}`;
 }
 
+function buildTravelResultPath(room: TravelRoomState, role: TravelParticipantRole) {
+  const token = role === "host" ? room.host.token : room.guest.token;
+  return `/travel-together?room=${encodeURIComponent(room.roomId)}&token=${encodeURIComponent(token)}&view=result`;
+}
+
 export function getTravelRole(room: TravelRoomState, token: string): TravelParticipantRole | null {
   if (token === room.host.token) return "host";
   if (token === room.guest.token) return "guest";
@@ -153,6 +159,9 @@ export function buildTravelRoomView(room: TravelRoomState, role: TravelParticipa
     myAnswers: me.answers,
     partnerAnswers: canRevealPartnerAnswers ? partner.answers : null,
     invitePath: buildTravelInvitePath(room),
+    partnerResultPath: canRevealPartnerAnswers
+      ? buildTravelResultPath(room, role === "host" ? "guest" : "host")
+      : null,
     unlocked: Boolean(room.unlockedAt),
   };
 }
