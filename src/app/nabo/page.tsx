@@ -335,7 +335,7 @@ export default function NaboPage() {
   }, [applyRoomView]);
 
   useEffect(() => {
-    if (!roomCode || !ownerToken || viewerRole !== "owner") return;
+    if (!roomCode || !ownerToken || viewerRole !== "owner" || premiumAccess) return;
 
     let cancelled = false;
     const refreshOwnerRoom = () => {
@@ -362,7 +362,7 @@ export default function NaboPage() {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [applyRoomView, ownerToken, roomCode, viewerRole]);
+  }, [applyRoomView, ownerToken, roomCode, viewerRole, premiumAccess]);
 
   // ── 응답 저장 ─────────────────────────────────────────────────
   useEffect(() => {
@@ -371,14 +371,14 @@ export default function NaboPage() {
     }
   }, [responses]);
 
-  const responseCount = Math.max(responses.length, serverResponseCount);
+  const responseCount = serverResponseCount;
   const resultAvailableTime = resultAvailableAfter
     ? new Date(resultAvailableAfter).getTime()
     : createdAt
       ? createdAt + LOCK_MS
       : 0;
   const timeLeft = resultAvailableTime ? Math.max(0, resultAvailableTime - now) : LOCK_MS;
-  const canSeeResults = timeLeft === 0 && responseCount >= 1;
+  const canSeeResults = timeLeft === 0 && serverResponseCount >= 1;
   const inviteLink = invitePath ? `${shareOrigin}${invitePath}` : `${shareOrigin}/nabo`;
 
   const goTo = useCallback((s: Step) => {
@@ -414,6 +414,7 @@ export default function NaboPage() {
     setPremiumAccess(false);
     setServerResponseCount(0);
     setCreatedAt(0);
+    setViewerRole(null);
   };
 
   const createRoom = async () => {
@@ -493,6 +494,18 @@ export default function NaboPage() {
     }
   };
 
+  const handleNativeShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `${myName || "나"}에 대해 익명으로 답해줘`,
+        text: `${myName || "친구"}님이 익명 관계 분석 링크를 보냈어요. 솔직하게 답해주세요!`,
+        url: inviteLink,
+      }).catch(() => copyLink());
+    } else {
+      copyLink();
+    }
+  };
+
   const handlePremiumAccess = async () => {
     if (!roomCode || !ownerToken || isProcessingPremiumAccess) return;
 
@@ -547,6 +560,11 @@ export default function NaboPage() {
         }),
       });
       const payload = await response.json().catch(() => ({}));
+
+      if (response.status === 409) {
+        setErrorMessage("이미 응답하셨어요. 한 기기에서 한 번만 참여할 수 있어요.");
+        return false;
+      }
 
       if (!response.ok || !payload?.view) {
         throw new Error(payload?.error ?? "응답 저장에 실패했습니다.");
@@ -774,7 +792,7 @@ export default function NaboPage() {
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/></svg>
               {isSharingKakao ? "카카오 여는 중..." : "카카오톡으로 보내기"}
             </button>
-            <button className="w-full py-3.5 rounded-2xl font-bold text-[15px] border border-gray-200 text-gray-700 flex items-center justify-center gap-2">
+            <button onClick={handleNativeShare} className="w-full py-3.5 rounded-2xl font-bold text-[15px] border border-gray-200 text-gray-700 flex items-center justify-center gap-2">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11 5.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM5 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM11 15.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.25 8.23l1.52 1.52M8.77 4.23l-1.52 1.52" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               다른 방법으로 공유
             </button>
@@ -972,8 +990,8 @@ export default function NaboPage() {
         <div className="flex flex-col pb-16">
           <section className="px-6 pt-10 pb-6 text-center">
             <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-3" style={{ color: G.mid }}>관계 분석 완료</p>
-            <h2 className="text-[28px] font-black text-gray-900 leading-tight mb-1">{R.length}명이 본 {myName}</h2>
-            <p className="text-[13px] text-gray-400">익명 응답자 {R.length}명 기준 · {new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}</p>
+            <h2 className="text-[28px] font-black text-gray-900 leading-tight mb-1">{serverResponseCount}명이 본 {myName}</h2>
+            <p className="text-[13px] text-gray-400">익명 응답자 {serverResponseCount}명 기준 · {new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}</p>
           </section>
 
           {/* ── 종합 점수 (항상 공개) ── */}
@@ -1076,7 +1094,16 @@ export default function NaboPage() {
               </section>
 
               <div className="px-6">
-                <button className="w-full py-3.5 rounded-2xl border border-gray-200 font-bold text-[15px] text-gray-600 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                <button
+                  onClick={() => {
+                    const text = `나는 ${serverResponseCount}명의 눈에 이렇게 보였어요! 익명 관계 분석 →`;
+                    if (navigator.share) {
+                      navigator.share({ title: `${myName}의 관계 분석 결과`, text, url: `${shareOrigin}/nabo` }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(`${shareOrigin}/nabo`).catch(() => {});
+                    }
+                  }}
+                  className="w-full py-3.5 rounded-2xl border border-gray-200 font-bold text-[15px] text-gray-600 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11 5.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM5 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM11 15.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.25 8.23l1.52 1.52M8.77 4.23l-1.52 1.52" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   결과 공유하기
                 </button>
