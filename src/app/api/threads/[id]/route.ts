@@ -15,7 +15,9 @@ function checkAdmin(req: NextRequest) {
 function parseScheduledAt(value: unknown): string | undefined {
   if (typeof value !== "string" || !value.trim()) return undefined;
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+  if (Number.isNaN(date.getTime())) return undefined;
+  if (date.getTime() <= Date.now()) return undefined;
+  return date.toISOString();
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -28,15 +30,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const patch: Record<string, unknown> = {};
-  if (typeof body.content === "string") patch.content = body.content.trim();
+  if (typeof body.content === "string") {
+    const content = body.content.trim();
+    if (!content || content.length > 500) {
+      return NextResponse.json({ error: "content must be 1-500 characters" }, { status: 400 });
+    }
+    patch.content = content;
+  }
   if (typeof body.image_url === "string") patch.image_url = body.image_url.trim() || null;
   if (typeof body.quality_note === "string") patch.quality_note = body.quality_note.trim() || null;
   if (typeof body.category === "string") patch.category = body.category.trim() || null;
   if (typeof body.cta_type === "string") patch.cta_type = body.cta_type.trim() || null;
+  if (typeof body.link_included === "boolean") patch.link_included = body.link_included;
   if (typeof body.image_upload_recommended === "boolean") patch.image_upload_recommended = body.image_upload_recommended;
   if (Array.isArray(body.recommended_styles)) patch.recommended_styles = body.recommended_styles.map(String);
-  const scheduledAt = parseScheduledAt(body.scheduled_at);
-  if (scheduledAt) patch.scheduled_at = scheduledAt;
+  if (typeof body.scheduled_at === "string") {
+    const scheduledAt = parseScheduledAt(body.scheduled_at);
+    if (!scheduledAt) {
+      return NextResponse.json({ error: "scheduled_at must be a future time" }, { status: 400 });
+    }
+    patch.scheduled_at = scheduledAt;
+  }
 
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });

@@ -57,6 +57,11 @@ function parseScheduledAt(value: unknown): string | null {
   return new Date(utc).toISOString();
 }
 
+function isFutureIso(value: string): boolean {
+  const date = new Date(value);
+  return !Number.isNaN(date.getTime()) && date.getTime() > Date.now();
+}
+
 export async function POST(req: NextRequest) {
   if (!checkAdmin(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
@@ -72,7 +77,7 @@ export async function POST(req: NextRequest) {
   const normalized = rows.flatMap((row, index) => {
     const content = String(row.post_text ?? row.content ?? "").replace(/\\n/g, "\n").trim();
     const scheduledAt = parseScheduledAt(row.scheduled_at);
-    if (!content || !scheduledAt || content.length > 500) return [];
+    if (!content || !scheduledAt || !isFutureIso(scheduledAt) || content.length > 500) return [];
 
     return [{
       template_id: String(row.template_id || `import_${Date.now()}_${index}`).trim(),

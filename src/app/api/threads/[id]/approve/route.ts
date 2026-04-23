@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { data: post } = await supabase
     .from("threads_posts")
-    .select("status,image_upload_recommended,image_url")
+    .select("status,image_upload_recommended,image_url,scheduled_at")
     .eq("id", id)
     .single();
 
@@ -30,6 +30,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
   if (post.status !== "approved" && post.image_upload_recommended && !post.image_url) {
     return NextResponse.json({ error: "image required before approval" }, { status: 400 });
+  }
+  if (post.status !== "approved" && new Date(post.scheduled_at).getTime() <= Date.now()) {
+    return NextResponse.json({ error: "scheduled time already passed" }, { status: 400 });
   }
 
   const newStatus = post.status === "approved" ? "draft" : "approved";

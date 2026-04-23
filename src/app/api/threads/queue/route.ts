@@ -25,6 +25,14 @@ function parseStyles(value: unknown): string[] {
   return value.split("|").map((v) => v.trim()).filter(Boolean);
 }
 
+function parseFutureDate(value: unknown): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  if (date.getTime() <= Date.now()) return null;
+  return date.toISOString();
+}
+
 // GET /api/threads/queue — 전체 목록 (최신순)
 export async function GET(req: NextRequest) {
   if (!checkAdmin(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -59,6 +67,10 @@ export async function POST(req: NextRequest) {
   if (!content || !scheduled_at) {
     return NextResponse.json({ error: "content and scheduled_at required" }, { status: 400 });
   }
+  const scheduledAt = parseFutureDate(scheduled_at);
+  if (!scheduledAt) {
+    return NextResponse.json({ error: "scheduled_at must be a future time" }, { status: 400 });
+  }
 
   const supabase = getSupabase();
   const { data, error } = await supabase
@@ -66,7 +78,7 @@ export async function POST(req: NextRequest) {
     .insert({
       content,
       image_url: image_url || null,
-      scheduled_at,
+      scheduled_at: scheduledAt,
       status: "draft",
       template_id: template_id || null,
       category: category || null,
