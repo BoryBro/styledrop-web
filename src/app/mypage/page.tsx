@@ -806,12 +806,21 @@ export default function MyPage() {
               </div>
             )}
 
-            {travelHistory.length > 0 && (
-              <div>
-                <div className="flex items-baseline gap-2 mb-4 px-1">
-                  <h2 className="text-[16px] font-bold text-white">여행 같이 간다면 기록</h2>
-                  <span className="text-[12px] text-[#555]">완료된 테스트만 보관</span>
+            <div>
+              <div className="flex items-baseline gap-2 mb-4 px-1">
+                <h2 className="text-[16px] font-bold text-white">여행 같이 간다면 기록</h2>
+                <span className="text-[12px] text-[#555]">완료된 테스트만 보관</span>
+              </div>
+              {historyLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-[#60A5FA]" style={{ animation: "spin 1s linear infinite" }} />
                 </div>
+              ) : travelHistory.length === 0 ? (
+                <div className="rounded-2xl border border-white/5 bg-[#111] px-4 py-5 text-center">
+                  <p className="text-[14px] font-bold text-white/70">아직 완료된 여행 테스트가 없어요.</p>
+                  <p className="mt-1 text-[12px] text-[#555]">두 사람이 모두 답변을 끝내면 여기에 결과가 저장됩니다.</p>
+                </div>
+              ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {travelHistory.map((item) => (
                     <Link
@@ -852,8 +861,8 @@ export default function MyPage() {
                     </Link>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* 회원 탈퇴 */}
             <div className="mt-8 flex justify-center">
