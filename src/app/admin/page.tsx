@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import {
   AUDITION_CONTROL_ID,
+  NABO_CONTROL_ID,
   PERSONAL_COLOR_CONTROL_ID,
+  TRAVEL_TOGETHER_CONTROL_ID,
   applyStyleControl,
   type StyleControlState,
 } from "@/lib/style-controls";
@@ -11,7 +13,7 @@ import { REFUND_UNIT_PRICE } from "@/lib/payment-policy";
 import { ALL_STYLES } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-const ADMIN_UI_VERSION = "v2.8.0-lab-metrics";
+const ADMIN_UI_VERSION = "v2.9.0-clean-admin";
 
 type AdminTab = "ops" | "metrics" | "revenue" | "users";
 
@@ -53,6 +55,8 @@ type LabExperimentStat = {
   todayCompletedCount: number;
   unlockCount: number;
   todayUnlockCount: number;
+  completedLabel?: string;
+  unlockLabel?: string | null;
   extraLabel?: string;
   extraCount?: number;
   todayExtraCount?: number;
@@ -271,7 +275,7 @@ function getGenerationIssueMeta(item: {
   if (item.isResolved && item.latestSuccessAt) {
     return {
       label: "복구됨",
-      badgeClass: "bg-[#EEF8F1] text-[#18794E] border border-[#B7E1C4]",
+      badgeClass: "text-[#18794E]",
       detail: `오류 이후 ${relativeTime(item.latestSuccessAt)} 다시 성공했습니다.`,
       action: "조치 불필요",
       needsAction: false,
@@ -280,7 +284,7 @@ function getGenerationIssueMeta(item: {
 
   return {
     label: "미해결",
-    badgeClass: "bg-red-50 text-red-600 border border-red-200",
+    badgeClass: "text-red-600",
     detail: item.errorRate === 100
       ? "오류 이후 성공 기록이 없습니다. 생성 중지 검토가 필요합니다."
       : "오류 이후 성공 기록이 없어 재현 확인이 필요합니다.",
@@ -326,15 +330,15 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
   const isActual = m?.costSource === "bigquery_actual" || m?.costSource === "manual_actual";
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">비용 · 매출 · 남는 돈</p>
-      <div className="flex gap-2">
+    <div className="flex flex-col gap-3">
+      <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">비용 · 매출 · 남는 돈</p>
+      <div className="-mx-4 flex border-y border-[#E7E7E7] bg-white">
         {months.map(({ key, label, note }) => (
           <button
             key={key}
             onClick={() => setActiveMonth(key)}
-            className={`flex-1 py-2 rounded-xl text-[14px] font-bold transition-colors border ${
-              activeMonth === key ? "bg-[#C9571A] border-[#C9571A] text-white" : "bg-gray-100 border-gray-200 text-gray-600"
+            className={`flex-1 border-r border-[#F0F0F0] py-3 text-[14px] font-bold transition-colors last:border-r-0 ${
+              activeMonth === key ? "text-[#C9571A]" : "text-[#8A8A8A]"
             }`}
           >
             {label} <span className="text-[12px] font-normal opacity-60">{note}</span>
@@ -342,7 +346,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
         ))}
       </div>
       {m && (
-        <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4 flex flex-col gap-3">
+        <div className="-mx-4 flex flex-col gap-4 border-y border-[#E7E7E7] bg-white px-4 py-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[15px] font-bold text-gray-900">
@@ -364,7 +368,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
             <MiniCard label="AI 원가율" value={m.revenue > 0 ? `${costRatio}%` : "—"} />
           </div>
 
-          <div className="rounded-xl bg-gray-50 border border-gray-200 px-3 py-3 flex flex-col gap-2">
+          <div className="flex flex-col gap-2 border-y border-[#F0F0F0] py-3">
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-gray-500">스타일 카드</span>
               <span className="text-[13px] font-bold text-gray-900 tabular-nums">
@@ -386,7 +390,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
                 {!isMar && <span className="text-gray-500 font-medium"> · ₩{(auditionStillCost ?? 0).toLocaleString()}</span>}
               </span>
             </div>
-            <div className="flex items-center justify-between pt-1 border-t border-gray-200">
+            <div className="flex items-center justify-between border-t border-[#F0F0F0] pt-2">
               <span className="text-[13px] text-gray-500">남는 비율</span>
               <span className={`text-[13px] font-bold tabular-nums ${profit >= 0 ? "text-green-600" : "text-red-500"}`}>
                 {m.revenue > 0 ? `${profitRatio}%` : "—"}
@@ -395,7 +399,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
           </div>
 
           {!isMar && !isActual && m.referenceWindow && (
-            <div className="rounded-xl bg-[#FFF7F2] border border-[#F0D5C6] px-3 py-3 flex flex-col gap-2">
+            <div className="flex flex-col gap-2 border-y border-[#F0D5C6] bg-[#FFF9F5] py-3">
               <p className="text-[13px] font-bold text-gray-900">실측 보정 기준</p>
               <div className="flex items-center justify-between">
                 <span className="text-[12px] text-gray-500">4/1~4/7 실제 Gemini 청구서</span>
@@ -441,17 +445,17 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
   const activeUsers = Math.max(...stats.apiUsageBreakdown.map((item) => item.uniqueUsers), 0);
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">기능별 사용</p>
-      <div className="bg-white rounded-2xl border border-gray-200 px-4 py-4 flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
+      <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">기능별 사용</p>
+      <div className="-mx-4 flex flex-col gap-4 border-y border-[#E7E7E7] bg-white px-4 py-5">
         <div className="grid grid-cols-3 gap-2">
           <MiniCard label="전체 가입" value={`${stats.totalUsers}명`} accent />
           <MiniCard label="총 사용" value={`${trackedTotal}회`} />
           <MiniCard label="가장 많이 쓴 사람" value={`${activeUsers}명`} />
         </div>
 
-        <div className="rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="grid grid-cols-[1.4fr_0.72fr_0.72fr_0.72fr] gap-2 bg-gray-50 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">
+        <div className="overflow-hidden border-y border-[#E7E7E7]">
+          <div className="grid grid-cols-[1.4fr_0.72fr_0.72fr_0.72fr] gap-2 bg-[#FAFAFA] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">
             <span>종류</span>
             <span className="text-right">횟수</span>
             <span className="text-right">사람</span>
@@ -466,7 +470,7 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
                 <div className="grid grid-cols-[1.4fr_0.72fr_0.72fr_0.72fr] gap-2 items-start">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: accent }} />
+                      <span className="h-2 w-2 flex-shrink-0" style={{ backgroundColor: accent }} />
                       <p className="text-[14px] font-bold text-gray-900 truncate">{item.label}</p>
                     </div>
                     <p className="mt-1 text-[12px] leading-5 text-gray-500">{item.note}</p>
@@ -486,14 +490,14 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
                 </div>
 
                 <div className="mt-4 grid gap-2">
-                  <div className="rounded-xl bg-gray-50 px-3 py-2">
+                  <div className="bg-[#FAFAFA] px-3 py-2">
                     <div className="flex items-center justify-between text-[11px] text-gray-500">
                       <span>가입자 중 사용</span>
                       <span>{item.userRatio}%</span>
                     </div>
                     <Bar ratio={item.userRatio} color={accent} />
                   </div>
-                  <div className="rounded-xl bg-gray-50 px-3 py-2">
+                  <div className="bg-[#FAFAFA] px-3 py-2">
                     <div className="flex items-center justify-between text-[11px] text-gray-500">
                       <span>전체 사용 중</span>
                       <span>{item.usageRatio}%</span>
@@ -588,16 +592,16 @@ function ProfitCalculator() {
   ];
 
   return (
-    <div className="flex flex-col gap-1">
-      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">순이익 시뮬레이터</p>
-      <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
+      <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">순이익 시뮬레이터</p>
+      <div className="-mx-4 flex flex-col gap-4 border-y border-[#E7E7E7] bg-white px-4 py-5">
 
         {/* 패키지 선택 */}
         <div className="flex gap-2">
           {PROFIT_PACKAGES.map((p) => (
             <button key={p.id} onClick={() => setPkgId(p.id)}
-              className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-colors border ${
-                pkgId === p.id ? "bg-[#C9571A] border-[#C9571A] text-white" : "bg-gray-100 border-gray-200 text-gray-600 hover:border-gray-300"
+              className={`flex-1 border-y py-3 text-[13px] font-bold transition-colors ${
+                pkgId === p.id ? "border-[#C9571A] text-[#C9571A]" : "border-[#E7E7E7] text-gray-500"
               }`}
             >
               {p.label}<br />
@@ -627,7 +631,7 @@ function ProfitCalculator() {
             <span className="text-[11px] text-gray-400">합계 100%</span>
           </div>
           {/* 분포 바 */}
-          <div className="flex h-2 rounded-full overflow-hidden gap-px">
+          <div className="flex h-1.5 overflow-hidden gap-px">
             <div className="bg-blue-400 transition-all" style={{ width: `${pctNormal}%` }} />
             <div className="bg-purple-400 transition-all" style={{ width: `${pctCouple}%` }} />
             <div className="bg-[#C9571A] transition-all" style={{ width: `${pctAudition}%` }} />
@@ -636,7 +640,7 @@ function ProfitCalculator() {
             <div key={row.type} className="flex flex-col gap-1">
               <div className="flex items-center justify-between text-[12px]">
                 <div className="flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-full ${row.color}`} />
+                  <div className={`h-2 w-2 ${row.color}`} />
                   <span className="font-semibold text-gray-700">{row.label}</span>
                   <span className="text-gray-400">{row.note}</span>
                 </div>
@@ -650,7 +654,7 @@ function ProfitCalculator() {
         </div>
 
         {/* 결과 */}
-        <div className="bg-gray-50 rounded-xl px-4 py-3 flex flex-col gap-2 border border-gray-100">
+        <div className="flex flex-col gap-2 border-y border-[#F0F0F0] bg-[#FAFAFA] px-1 py-3">
           <div className="flex justify-between text-[13px]">
             <span className="text-gray-500">순수취액 (VAT·수수료 제외)</span>
             <span className="font-bold text-gray-700">+{totalRevenue.toLocaleString()}원</span>
@@ -659,7 +663,7 @@ function ProfitCalculator() {
           {usageRows.map((row) => (
             <div key={row.type} className="flex justify-between text-[12px]">
               <span className="text-gray-400 flex items-center gap-1">
-                <div className={`w-1.5 h-1.5 rounded-full ${row.color}`} />
+                <div className={`h-1.5 w-1.5 ${row.color}`} />
                 {row.label} {row.calls}호출
               </span>
               <span className="text-red-400">−{row.cost.toLocaleString()}원</span>
@@ -687,7 +691,7 @@ function ProfitCalculator() {
 
 function Row({ label, value, note, highlight }: { label: string; value: string | number; note?: string; highlight?: boolean }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+    <div className="flex items-center justify-between border-b border-[#F0F0F0] py-3 last:border-0">
       <span className="text-gray-500 text-[15px]">{label}</span>
       <div className="flex items-center gap-2">
         {note && <span className="text-gray-500 text-[13px] font-medium">{note}</span>}
@@ -699,9 +703,9 @@ function Row({ label, value, note, highlight }: { label: string; value: string |
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
-      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">{title}</p>
-      <div className="bg-white rounded-2xl px-4 border border-gray-200">
+    <div className="flex flex-col gap-3">
+      <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">{title}</p>
+      <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4">
         {children}
       </div>
     </div>
@@ -710,8 +714,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Bar({ ratio, color = "#C9571A" }: { ratio: number; color?: string }) {
   return (
-    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-      <div className="h-1.5 rounded-full transition-all duration-500" style={{ width: `${ratio}%`, backgroundColor: color }} />
+    <div className="mt-1 h-1 w-full bg-[#E7E7E7]">
+      <div className="h-1 transition-all duration-500" style={{ width: `${ratio}%`, backgroundColor: color }} />
     </div>
   );
 }
@@ -757,8 +761,8 @@ function ShareRow({ icon, iconBg, label, count, ratio, highlight }: {
   count: string | number; ratio?: string; highlight?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0">
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+    <div className="flex items-center gap-3 border-b border-[#F0F0F0] py-3 last:border-0">
+      <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center ${iconBg}`}>
         {icon}
       </div>
       <span className="flex-1 text-gray-600 text-[15px]">{label}</span>
@@ -770,9 +774,84 @@ function ShareRow({ icon, iconBg, label, count, ratio, highlight }: {
 
 function MiniCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+    <div className="flex flex-col gap-1 border-t border-[#E7E7E7] bg-white px-1 py-3">
       <span className="text-gray-500 text-[13px]">{label}</span>
       <span className={`text-[20px] font-extrabold tabular-nums leading-tight ${accent ? "text-[#C9571A]" : "text-gray-900"}`}>{value}</span>
+    </div>
+  );
+}
+
+function LabExperimentTabs({ items }: { items: LabExperimentStat[] }) {
+  const [activeKey, setActiveKey] = useState(items[0]?.key ?? "");
+  const activeItem = items.find((item) => item.key === activeKey) ?? items[0];
+
+  useEffect(() => {
+    if (!items.length) return;
+    if (!items.some((item) => item.key === activeKey)) {
+      setActiveKey(items[0].key);
+    }
+  }, [activeKey, items]);
+
+  if (!items.length || !activeItem) {
+    return <p className="py-5 text-[13px] text-gray-500">실험실 지표 데이터가 아직 없어요.</p>;
+  }
+
+  return (
+    <div className="py-4">
+      <div className="-mx-4 flex gap-1 overflow-x-auto border-b border-[#E7E7E7] px-4 pb-3">
+        {items.map((item) => {
+          const isActive = item.key === activeItem.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setActiveKey(item.key)}
+              className={`shrink-0 border-b px-3 py-2 text-left transition-colors ${
+                isActive
+                  ? "border-[#C9571A] text-[#C9571A]"
+                  : "border-transparent text-gray-500"
+              }`}
+            >
+              <span className="block text-[13px] font-bold">{item.label}</span>
+              <span className="block text-[11px] text-gray-400">참여 {item.totalParticipants}회</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="pt-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[16px] font-extrabold text-gray-900">{activeItem.label}</p>
+            <p className="mt-1 text-[12px] text-gray-500">참여, 완료, 유료 전환 흐름만 압축해서 봅니다.</p>
+          </div>
+          <span className="shrink-0 text-[11px] font-semibold text-gray-400">{activeItem.key}</span>
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <MiniCard label="누적 참여" value={`${activeItem.totalParticipants}회`} accent />
+          <MiniCard label="오늘 참여" value={`${activeItem.todayParticipants}회`} />
+        </div>
+
+        <div className="mt-3 flex flex-col">
+          <Row
+            label={activeItem.completedLabel ?? "응답 완료"}
+            value={`${activeItem.completedCount}회 · 오늘 ${activeItem.todayCompletedCount}회`}
+          />
+          {activeItem.unlockLabel !== null && (
+            <Row
+              label={activeItem.unlockLabel ?? "상세 공개"}
+              value={`${activeItem.unlockCount}회 · 오늘 ${activeItem.todayUnlockCount}회`}
+            />
+          )}
+          {activeItem.extraLabel && (
+            <Row
+              label={activeItem.extraLabel}
+              value={`${activeItem.extraCount ?? 0}회 · 오늘 ${activeItem.todayExtraCount ?? 0}회`}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -791,14 +870,14 @@ function AdminTabButton({
   return (
     <button
       onClick={onClick}
-      className={`rounded-2xl border px-3 py-3 text-left transition-colors ${
+      className={`border-b px-1 py-3 text-left transition-colors ${
         active
-          ? "border-[#C9571A] bg-[#FFF4ED] text-[#C9571A]"
-          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+          ? "border-[#C9571A] text-[#C9571A]"
+          : "border-[#E7E7E7] text-gray-600"
       }`}
     >
       <p className="text-[14px] font-extrabold">{label}</p>
-      <p className={`text-[11px] mt-1 ${active ? "text-[#C9571A]/80" : "text-gray-400"}`}>{note}</p>
+      <p className={`mt-1 text-[11px] ${active ? "text-[#C9571A]/80" : "text-gray-400"}`}>{note}</p>
     </button>
   );
 }
@@ -808,19 +887,19 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
 }) {
   const [tab, setTab] = useState<"style" | "audition">("style");
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1">공유 & 바이럴</p>
+    <div className="flex flex-col gap-3">
+      <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">공유 & 바이럴</p>
       {/* 탭 버튼 */}
-      <div className="flex gap-1.5 bg-gray-100 p-1 rounded-xl">
+      <div className="-mx-4 flex border-y border-[#E7E7E7] bg-white">
         <button
           onClick={() => setTab("style")}
-          className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${tab === "style" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+          className={`flex-1 border-r border-[#F0F0F0] py-3 text-[13px] font-bold transition-colors ${tab === "style" ? "text-[#C9571A]" : "text-gray-500"}`}
         >
           스타일 카드
         </button>
         <button
           onClick={() => setTab("audition")}
-          className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${tab === "audition" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+          className={`flex-1 py-3 text-[13px] font-bold transition-colors ${tab === "audition" ? "text-[#C9571A]" : "text-gray-500"}`}
         >
           AI 오디션
         </button>
@@ -829,7 +908,7 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
       {/* 스타일 카드 탭 */}
       {tab === "style" && (
         <div className="flex flex-col gap-1">
-          <div className="bg-white rounded-2xl px-4 border border-gray-200">
+          <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4">
             <ShareRow
               icon={<KakaoIcon size={15} />} iconBg="bg-[#FEE500]"
               label="카카오 공유" count={`${stats.shareKakao}회`}
@@ -857,7 +936,7 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
 
       {/* AI 오디션 탭 */}
       {tab === "audition" && (
-        <div className="bg-white rounded-2xl px-4 border border-gray-200">
+        <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4">
           <ShareRow
             icon={<KakaoIcon />} iconBg="bg-[#FEE500]"
             label="카카오 공유" count={`${stats.auditionShareKakao}회`}
@@ -881,6 +960,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>("ops");
+  const [styleOpsView, setStyleOpsView] = useState<"cards" | "lab">("cards");
   const [styleControls, setStyleControls] = useState<StyleControlState[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -1018,26 +1098,28 @@ export default function AdminPage() {
 
   if (!stats) {
     return (
-      <main className="w-full max-w-sm mx-auto px-4 py-20 flex flex-col gap-6 bg-gray-50 min-h-screen">
-        <h1 className="text-2xl font-extrabold text-gray-900">Admin</h1>
+      <main className="flex min-h-screen w-full flex-col bg-[#F7F6F3]">
+        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-20">
+        <h1 className="mb-6 text-2xl font-black tracking-[-0.04em] text-[#111827]">Admin</h1>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호 입력"
-            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 text-[15px] focus:outline-none focus:border-[#C9571A] transition-colors"
+            className="w-full border-y border-[#E7E7E7] bg-white px-4 py-4 text-[15px] text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-[#C9571A]"
             autoFocus
           />
           {error && <p className="text-[#C9571A] text-[15px] font-medium">{error}</p>}
           <button
             type="submit"
             disabled={isLoading || !password}
-            className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-3 rounded-xl transition-colors"
+            className="w-full bg-[#111827] py-4 font-bold text-white transition-colors disabled:bg-gray-200 disabled:text-gray-400"
           >
             {isLoading ? "확인 중..." : "확인"}
           </button>
         </form>
+        </div>
       </main>
     );
   }
@@ -1046,12 +1128,17 @@ export default function AdminPage() {
   const shareRatio = stats.total > 0 ? Math.round((shareTotal / stats.total) * 100) : 0;
   const auditionControl = styleControls.find((row) => row.style_id === AUDITION_CONTROL_ID);
   const personalColorControl = styleControls.find((row) => row.style_id === PERSONAL_COLOR_CONTROL_ID);
+  const naboControl = styleControls.find((row) => row.style_id === NABO_CONTROL_ID);
+  const travelTogetherControl = styleControls.find((row) => row.style_id === TRAVEL_TOGETHER_CONTROL_ID);
   const specialFeatureControls = [
     auditionControl ? { title: "AI 오디션", control: auditionControl } : null,
     personalColorControl ? { title: "퍼스널 컬러", control: personalColorControl } : null,
+    naboControl ? { title: "내가 보는 너", control: naboControl } : null,
+    travelTogetherControl ? { title: "여행을 같이 간다면", control: travelTogetherControl } : null,
   ].filter((item): item is { title: string; control: StyleControlState } => Boolean(item));
+  const specialFeatureControlIds = new Set(specialFeatureControls.map((item) => item.control.style_id));
   const cardStyleControls = styleControls.filter(
-    (row) => row.style_id !== AUDITION_CONTROL_ID && row.style_id !== PERSONAL_COLOR_CONTROL_ID
+    (row) => !specialFeatureControlIds.has(row.style_id)
   );
   const sortedStyleControls = [...cardStyleControls].sort((a, b) => {
     const aIssue = Number(!a.is_visible || !a.is_enabled);
@@ -1179,17 +1266,18 @@ export default function AdminPage() {
           : "크레딧 조정 같은 유저 대응";
 
   return (
-    <main className="w-full max-w-sm mx-auto px-4 py-10 flex flex-col gap-6 bg-gray-50 min-h-screen">
+    <main className="flex min-h-screen w-full flex-col bg-[#F7F6F3]">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-7 px-4 py-6 pb-12">
 
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
+      <div className="-mx-4 flex items-center justify-between border-y border-[#E7E7E7] bg-white px-4 py-4">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-extrabold text-gray-900">Admin</h1>
-          <span className="text-[10px] font-bold text-[#C9571A] bg-[#C9571A]/10 border border-[#C9571A]/20 rounded-full px-2 py-0.5">
+          <h1 className="text-xl font-black tracking-[-0.04em] text-[#111827]">Admin</h1>
+          <span className="text-[10px] font-bold text-[#C9571A]">
             {ADMIN_UI_VERSION}
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 overflow-x-auto">
           {liveClock && (
             <span className="text-[12px] text-gray-400 font-mono tabular-nums">
               {liveClock.toTimeString().slice(0, 8)}
@@ -1197,7 +1285,7 @@ export default function AdminPage() {
           )}
           <a
             href="/admin/threads"
-            className="text-[13px] font-bold px-3 py-1.5 rounded-lg bg-[#22C55E] text-black hover:opacity-90 transition-opacity"
+            className="whitespace-nowrap text-[13px] font-bold text-[#111827] transition-opacity hover:opacity-70"
           >
             Threads →
           </a>
@@ -1218,21 +1306,21 @@ export default function AdminPage() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="-mx-4 grid grid-cols-4 border-y border-[#E7E7E7] bg-white px-4">
           <AdminTabButton label="운영" note="공지 · 오류 · 긴급 대응" active={activeTab === "ops"} onClick={() => setActiveTab("ops")} />
           <AdminTabButton label="지표" note="사용량 · 저장 · 공유" active={activeTab === "metrics"} onClick={() => setActiveTab("metrics")} />
           <AdminTabButton label="매출" note="비용 · 결제 · 환불" active={activeTab === "revenue"} onClick={() => setActiveTab("revenue")} />
           <AdminTabButton label="유저" note="크레딧 대응" active={activeTab === "users"} onClick={() => setActiveTab("users")} />
         </div>
-        <p className="text-[12px] text-gray-500 px-1">{tabSummary}</p>
+        <p className="px-1 text-[12px] text-[#6B7280]">{tabSummary}</p>
       </div>
 
       {activeTab === "ops" && (
         <>
           {/* 공지 관리 */}
           <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">공지 관리 (터미널)</p>
-            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
+            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">공지 관리</p>
+            <div className="-mx-4 flex flex-col gap-3 border-y border-[#E7E7E7] bg-white px-4 py-5">
               {notices.map((n, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <button
@@ -1244,7 +1332,7 @@ export default function AdminPage() {
                   <input
                     value={n.text}
                     onChange={e => setNotices(prev => prev.map((x, j) => j === i ? { ...x, text: e.target.value } : x))}
-                    className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] font-mono focus:outline-none focus:border-[#C9571A]/50 transition-colors"
+                    className="flex-1 border-y border-[#E7E7E7] bg-[#FAFAFA] px-3 py-2 text-[14px] font-mono text-gray-900 transition-colors focus:border-[#C9571A]/50 focus:outline-none"
                   />
                   <button
                     onClick={() => setNotices(prev => prev.filter((_, j) => j !== i))}
@@ -1270,7 +1358,7 @@ export default function AdminPage() {
                   setTimeout(() => setNoticesSaved(false), 2000);
                 }}
                 disabled={noticesSaving}
-                className="w-full bg-[#C9571A] hover:bg-[#B34A12] disabled:bg-gray-200 text-white font-bold py-2.5 rounded-xl transition-colors text-[14px]"
+                className="w-full bg-[#111827] py-3 text-[14px] font-bold text-white transition-colors disabled:bg-gray-200"
               >
                 {noticesSaving ? "저장 중..." : noticesSaved ? "✓ 저장됨" : "저장하기"}
               </button>
@@ -1280,7 +1368,7 @@ export default function AdminPage() {
           {/* 오류 모니터링 */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between gap-3 px-1 mb-1">
-              <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">오류 모니터링</p>
+              <p className="text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">오류 모니터링</p>
               {unresolvedRecentGenerationErrors.length > 0 && (
                 <button
                   type="button"
@@ -1292,13 +1380,13 @@ export default function AdminPage() {
                     if (!ok) return;
                     await deleteGenerationErrors(ids, "미해결 기록 {count}건 삭제됨", "bulk");
                   }}
-                  className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-bold text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center border-b border-red-300 px-1 py-1 text-[11px] font-bold text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {generationErrorDeleteLoading === "bulk" ? "삭제 중..." : `미해결 기록 삭제 ${unresolvedRecentGenerationErrors.length}건`}
                 </button>
               )}
             </div>
-            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
+            <div className="-mx-4 flex flex-col gap-4 border-y border-[#E7E7E7] bg-white px-4 py-5">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <MiniCard label="최근 24시간 오류" value={`${stats.generationErrorTotal24h}건`} accent={stats.generationErrorTotal24h > 0} />
                 <MiniCard label="미해결 카드" value={`${unresolvedErrorStyles.length}개`} accent={unresolvedErrorStyles.length > 0} />
@@ -1308,7 +1396,7 @@ export default function AdminPage() {
 
               {generationErrorDeleteMsg && (
                 <div
-                  className={`rounded-xl px-3 py-2 text-[12px] font-medium ${
+                  className={`border-y px-3 py-2 text-[12px] font-medium ${
                     generationErrorDeleteMsg.ok
                       ? "border border-[#B7E1C4] bg-[#EEF8F1] text-[#18794E]"
                       : "border border-red-200 bg-red-50 text-red-600"
@@ -1319,7 +1407,7 @@ export default function AdminPage() {
               )}
 
               {stats.generationErrorSummary.length > 0 ? (
-                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                <div className="overflow-hidden border-y border-[#E7E7E7]">
                   {stats.generationErrorSummary.slice(0, 6).map((item) => (
                     <div key={item.style_id} className="px-3 py-3 border-b border-gray-100 last:border-0">
                       {(() => {
@@ -1330,7 +1418,7 @@ export default function AdminPage() {
                               <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-1.5">
                                   <p className="text-[13px] font-bold text-gray-900">{item.style_name}</p>
-                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${issue.badgeClass}`}>
+                                  <span className={`text-[10px] px-1 py-0.5 font-bold ${issue.badgeClass}`}>
                                     {issue.label}
                                   </span>
                                 </div>
@@ -1350,7 +1438,7 @@ export default function AdminPage() {
                               {issue.needsAction ? (
                                 <a
                                   href="#style-ops"
-                                  className="inline-flex items-center rounded-full border border-[#F3D2BF] bg-[#FFF4ED] px-2.5 py-1 text-[11px] font-bold text-[#C9571A]"
+                                  className="inline-flex items-center border-b border-[#F3D2BF] px-1 py-1 text-[11px] font-bold text-[#C9571A]"
                                 >
                                   운영으로 이동
                                 </a>
@@ -1365,13 +1453,13 @@ export default function AdminPage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[13px] text-gray-500">
+                <div className="border-y border-[#E7E7E7] bg-[#FAFAFA] px-3 py-3 text-[13px] text-gray-500">
                   최근 24시간 기준 기록된 생성 오류가 없어요.
                 </div>
               )}
 
               {stats.recentGenerationErrors.length > 0 && (
-                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                <div className="overflow-hidden border-y border-[#E7E7E7]">
                   {stats.recentGenerationErrors.slice(0, 5).map((item) => {
                     const parsed = parseGenerationErrorMessage(item.message);
                     const issue = getGenerationIssueMeta({
@@ -1385,11 +1473,11 @@ export default function AdminPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span className="text-[12px] font-bold text-gray-900">{item.style_name}</span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${issue.badgeClass}`}>
+                              <span className={`text-[10px] px-1 py-0.5 font-bold ${issue.badgeClass}`}>
                                 {issue.label}
                               </span>
                               {parsed.code !== null && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                                <span className="border-b border-gray-200 px-1 py-0.5 text-[10px] text-gray-600">
                                   {parsed.code}
                                 </span>
                               )}
@@ -1406,7 +1494,7 @@ export default function AdminPage() {
                                 <summary className="cursor-pointer text-[11px] font-bold text-[#C9571A]">
                                   전체 메시지 보기
                                 </summary>
-                                <pre className="mt-2 rounded-xl bg-gray-50 border border-gray-200 px-3 py-3 text-[11px] leading-5 text-gray-600 whitespace-pre-wrap break-all overflow-x-auto">
+                                <pre className="mt-2 overflow-x-auto border-y border-[#E7E7E7] bg-[#FAFAFA] px-3 py-3 text-[11px] leading-5 text-gray-600 whitespace-pre-wrap break-all">
                                   {parsed.pretty ?? item.message}
                                 </pre>
                               </details>
@@ -1418,7 +1506,7 @@ export default function AdminPage() {
                               {issue.needsAction && (
                                 <a
                                   href="#style-ops"
-                                  className="inline-flex items-center rounded-full border border-[#F3D2BF] bg-[#FFF4ED] px-2.5 py-1 text-[11px] font-bold text-[#C9571A]"
+                                  className="inline-flex items-center border-b border-[#F3D2BF] px-1 py-1 text-[11px] font-bold text-[#C9571A]"
                                 >
                                   운영으로 이동
                                 </a>
@@ -1435,7 +1523,7 @@ export default function AdminPage() {
                                 if (!ok) return;
                                 await deleteGenerationErrors([item.id], "오류 기록 {count}건 숨김 처리됨", `row:${item.id}`);
                               }}
-                              className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[10px] font-bold text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex items-center border-b border-gray-300 px-1 py-1 text-[10px] font-bold text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {generationErrorDeleteLoading === `row:${item.id}` ? "처리 중..." : "숨기기"}
                             </button>
@@ -1448,7 +1536,7 @@ export default function AdminPage() {
               )}
 
               {stats.recentGenerationRefunds.length > 0 ? (
-                <div className="rounded-xl border border-[#F3D2BF] overflow-hidden">
+                <div className="overflow-hidden border-y border-[#F3D2BF]">
                   {stats.recentGenerationRefunds.slice(0, 5).map((item) => (
                     <div key={item.id} className="px-3 py-2.5 border-b border-[#F7E1D2] last:border-0 bg-[#FFFDFC]">
                       <div className="flex items-center justify-between gap-2">
@@ -1469,7 +1557,7 @@ export default function AdminPage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-[13px] text-gray-500">
+                <div className="border-y border-[#E7E7E7] bg-[#FAFAFA] px-3 py-3 text-[13px] text-gray-500">
                   최근 24시간 기준 자동 환불된 생성 실패가 없어요.
                 </div>
               )}
@@ -1478,8 +1566,8 @@ export default function AdminPage() {
 
           {/* 긴급 대응 · 스타일 운영 */}
           <div id="style-ops" className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">긴급 대응 · 스타일 운영</p>
-            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
+            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">긴급 대응 · 스타일 운영</p>
+            <div className="-mx-4 flex flex-col gap-4 border-y border-[#E7E7E7] bg-white px-4 py-5">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[15px] font-bold text-gray-900">카드별 즉시 숨김 / 생성 중지</p>
@@ -1489,7 +1577,7 @@ export default function AdminPage() {
               </div>
 
               {styleControlMsg && (
-                <div className={`text-[12px] px-3 py-2 rounded-xl border ${
+                <div className={`border-y px-3 py-2 text-[12px] ${
                   styleControlMsg.ok
                     ? "text-[#C9571A] bg-[#FFF7F2] border-[#F3D2BF]"
                     : "text-red-600 bg-red-50 border-red-200"
@@ -1498,97 +1586,127 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {specialFeatureControls.map(({ title, control }) => (
-                <div key={control.style_id} className="rounded-xl border border-[#F3D2BF] bg-[#FFF7F2] px-3 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-bold text-gray-900">{title}</p>
-                      <p className="text-[11px] text-gray-500">
-                        {control.is_visible && control.is_enabled ? "실험실 진입 가능" : "현재 숨김 또는 중지"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => updateStyleControl(control.style_id, { is_visible: !control.is_visible })}
-                        disabled={styleSavingId === control.style_id}
-                        className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
-                          control.is_visible
-                            ? "bg-gray-900 text-white"
-                            : "bg-white text-gray-600 border border-gray-300"
-                        } disabled:opacity-50`}
-                      >
-                        {control.is_visible ? "노출" : "숨김"}
-                      </button>
-                      <button
-                        onClick={() => updateStyleControl(control.style_id, { is_enabled: !control.is_enabled })}
-                        disabled={styleSavingId === control.style_id}
-                        className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
-                          control.is_enabled
-                            ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]"
-                            : "bg-white text-gray-600 border border-gray-300"
-                        } disabled:opacity-50`}
-                      >
-                        {control.is_enabled ? "생성" : "중지"}
-                      </button>
-                    </div>
-                    <div className="w-10 text-right">
-                      {styleSavingId === control.style_id && <span className="text-[10px] text-gray-400">저장</span>}
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              <div className="rounded-xl border border-gray-200 overflow-hidden">
-                {sortedStyleControls.map((control) => {
-                  const usageCount = stats.byStyle.find((item) => item.style_id === control.style_id)?.count ?? 0;
-                  const isSaving = styleSavingId === control.style_id;
-                  return (
-                    <div key={control.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-bold text-gray-900 truncate">{control.style_name}</p>
-                        <p className="text-[11px] text-gray-500">
-                          사용 {usageCount}회 · {control.is_visible ? "노출" : "숨김"} · {control.is_enabled ? "생성중" : "중지"}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => updateStyleControl(control.style_id, { is_visible: !control.is_visible })}
-                          disabled={isSaving}
-                          className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
-                            control.is_visible
-                              ? "bg-gray-900 text-white"
-                              : "bg-white text-gray-600 border border-gray-300"
-                          } disabled:opacity-50`}
-                        >
-                          {control.is_visible ? "노출" : "숨김"}
-                        </button>
-                        <button
-                          onClick={() => updateStyleControl(control.style_id, { is_enabled: !control.is_enabled })}
-                          disabled={isSaving}
-                          className={`h-8 px-3 rounded-full text-[12px] font-bold transition-colors ${
-                            control.is_enabled
-                              ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]"
-                              : "bg-white text-gray-600 border border-gray-300"
-                          } disabled:opacity-50`}
-                        >
-                          {control.is_enabled ? "생성" : "중지"}
-                        </button>
-                      </div>
-                      <div className="w-10 text-right">
-                        {isSaving && <span className="text-[10px] text-gray-400">저장</span>}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="-mx-4 grid grid-cols-2 border-y border-[#E7E7E7]">
+                <button
+                  type="button"
+                  onClick={() => setStyleOpsView("cards")}
+                  className={`py-3 text-[13px] font-bold transition-colors ${
+                    styleOpsView === "cards" ? "text-[#C9571A]" : "text-gray-500"
+                  }`}
+                >
+                  일반 카드 {cardStyleControls.length}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStyleOpsView("lab")}
+                  className={`py-3 text-[13px] font-bold transition-colors ${
+                    styleOpsView === "lab" ? "text-[#C9571A]" : "text-gray-500"
+                  }`}
+                >
+                  실험실 {specialFeatureControls.length}
+                </button>
               </div>
+
+              {styleOpsView === "lab" ? (
+                <div className="overflow-hidden border-y border-[#E7E7E7]">
+                  {specialFeatureControls.length > 0 ? (
+                    specialFeatureControls.map(({ title, control }) => {
+                      const isSaving = styleSavingId === control.style_id;
+                      return (
+                        <div key={control.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[13px] font-bold text-gray-900 truncate">{title}</p>
+                            <p className="text-[11px] text-gray-500">
+                              {control.is_visible && control.is_enabled ? "실험실 진입 가능" : "현재 숨김 또는 중지"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => updateStyleControl(control.style_id, { is_visible: !control.is_visible })}
+                              disabled={isSaving}
+                              className={`h-8 border-b px-2 text-[12px] font-bold transition-colors ${
+                                control.is_visible
+                                  ? "bg-gray-900 text-white"
+                                  : "bg-white text-gray-600 border border-gray-300"
+                              } disabled:opacity-50`}
+                            >
+                              {control.is_visible ? "노출" : "숨김"}
+                            </button>
+                            <button
+                              onClick={() => updateStyleControl(control.style_id, { is_enabled: !control.is_enabled })}
+                              disabled={isSaving}
+                              className={`h-8 border-b px-2 text-[12px] font-bold transition-colors ${
+                                control.is_enabled
+                                  ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]"
+                                  : "bg-white text-gray-600 border border-gray-300"
+                              } disabled:opacity-50`}
+                            >
+                              {control.is_enabled ? "생성" : "중지"}
+                            </button>
+                          </div>
+                          <div className="w-10 text-right">
+                            {isSaving && <span className="text-[10px] text-gray-400">저장</span>}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="px-3 py-4 text-[13px] text-gray-500">실험실 운영 항목이 아직 없어요.</p>
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-hidden border-y border-[#E7E7E7]">
+                  {sortedStyleControls.map((control) => {
+                    const usageCount = stats.byStyle.find((item) => item.style_id === control.style_id)?.count ?? 0;
+                    const isSaving = styleSavingId === control.style_id;
+                    return (
+                      <div key={control.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-bold text-gray-900 truncate">{control.style_name}</p>
+                          <p className="text-[11px] text-gray-500">
+                            사용 {usageCount}회 · {control.is_visible ? "노출" : "숨김"} · {control.is_enabled ? "생성중" : "중지"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => updateStyleControl(control.style_id, { is_visible: !control.is_visible })}
+                            disabled={isSaving}
+                            className={`h-8 border-b px-2 text-[12px] font-bold transition-colors ${
+                              control.is_visible
+                                ? "bg-gray-900 text-white"
+                                : "bg-white text-gray-600 border border-gray-300"
+                            } disabled:opacity-50`}
+                          >
+                            {control.is_visible ? "노출" : "숨김"}
+                          </button>
+                          <button
+                            onClick={() => updateStyleControl(control.style_id, { is_enabled: !control.is_enabled })}
+                            disabled={isSaving}
+                            className={`h-8 border-b px-2 text-[12px] font-bold transition-colors ${
+                              control.is_enabled
+                                ? "bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]"
+                                : "bg-white text-gray-600 border border-gray-300"
+                            } disabled:opacity-50`}
+                          >
+                            {control.is_enabled ? "생성" : "중지"}
+                          </button>
+                        </div>
+                        <div className="w-10 text-right">
+                          {isSaving && <span className="text-[10px] text-gray-400">저장</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
           {/* 자동 하이라이트 */}
           <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">자동 하이라이트 (24시간)</p>
+            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">자동 하이라이트 (24시간)</p>
             <div className="grid grid-cols-1 gap-2">
-              <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
+              <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4 py-4">
                 <p className="text-[12px] font-bold text-red-500 mb-2">주의 필요</p>
                 {highlightedProblems.length > 0 ? (
                   <div className="flex flex-col gap-2">
@@ -1618,7 +1736,7 @@ export default function AdminPage() {
                 )}
               </div>
 
-              <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
+              <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4 py-4">
                 <p className="text-[12px] font-bold text-[#C9571A] mb-2">공유 강세</p>
                 {highlightedHighShare.length > 0 ? (
                   <div className="flex flex-col gap-2">
@@ -1634,7 +1752,7 @@ export default function AdminPage() {
                 )}
               </div>
 
-              <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200">
+              <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4 py-4">
                 <p className="text-[12px] font-bold text-gray-700 mb-2">저장 약세</p>
                 {highlightedLowSave.length > 0 ? (
                   <div className="flex flex-col gap-2">
@@ -1658,7 +1776,7 @@ export default function AdminPage() {
         <>
           {/* 사용 현황 */}
           <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">사용 현황</p>
+            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">사용 현황</p>
             <div className="grid grid-cols-2 gap-2">
               <MiniCard label="누적 변환" value={`${stats.total}회`} accent />
               <MiniCard label="오늘 변환" value={`${stats.todayTotal}회`} />
@@ -1668,46 +1786,21 @@ export default function AdminPage() {
           </div>
 
           <Section title="실험실 신규 기능">
-            <div className="flex flex-col gap-3">
-              {stats.labExperiments.map((item) => (
-                <div key={item.key} className="rounded-2xl border border-gray-200 bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[16px] font-extrabold text-gray-900">{item.label}</p>
-                      <p className="text-[12px] text-gray-500">참여, 완료, 해금 흐름만 따로 집계합니다</p>
-                    </div>
-                    <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-semibold text-gray-500">
-                      {item.key}
-                    </span>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <MiniCard label="누적 참여" value={`${item.totalParticipants}회`} accent />
-                    <MiniCard label="오늘 참여" value={`${item.todayParticipants}회`} />
-                  </div>
-                  <div className="mt-3 flex flex-col gap-2">
-                    <Row label="응답 완료" value={`${item.completedCount}회 · 오늘 ${item.todayCompletedCount}회`} />
-                    <Row label="상세 해금" value={`${item.unlockCount}회 · 오늘 ${item.todayUnlockCount}회`} />
-                    {item.extraLabel && (
-                      <Row label={item.extraLabel} value={`${item.extraCount ?? 0}회 · 오늘 ${item.todayExtraCount ?? 0}회`} />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <LabExperimentTabs items={stats.labExperiments} />
           </Section>
 
           {/* 로그인 vs 게스트 */}
           <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">로그인 vs 게스트</p>
+            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">로그인 vs 게스트</p>
             <p className="text-[12px] text-gray-400 px-1 mb-1">변환 횟수 기준 — 1명이 여러 번 변환하면 중복 집계됨</p>
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+              <div className="flex flex-col gap-1 border-t border-[#E7E7E7] bg-white px-1 py-3">
                 <span className="text-gray-500 text-[13px]">로그인 변환</span>
                 <span className="text-gray-900 text-[20px] font-extrabold tabular-nums">{stats.userCount}회</span>
                 <span className="text-[#C9571A] text-[14px] font-bold">{stats.userRatio}%</span>
                 <Bar ratio={stats.userRatio} />
               </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col gap-1">
+              <div className="flex flex-col gap-1 border-t border-[#E7E7E7] bg-white px-1 py-3">
                 <span className="text-gray-500 text-[13px]">게스트 변환</span>
                 <span className="text-gray-900 text-[20px] font-extrabold tabular-nums">{stats.guestCount}회</span>
                 <span className="text-gray-500 text-[14px] font-bold">{stats.guestRatio}%</span>
@@ -1737,9 +1830,9 @@ export default function AdminPage() {
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className="text-gray-800 text-[14px] font-bold truncate">{s.style_name}</span>
-                          {isProblem && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-500 border border-red-200">문제</span>}
-                          {isHighShare && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FFF4ED] text-[#C9571A] border border-[#F3D2BF]">공유강세</span>}
-                          {isLowSave && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">저장약세</span>}
+                          {isProblem && <span className="border-b border-red-200 px-1 py-0.5 text-[10px] text-red-500">문제</span>}
+                          {isHighShare && <span className="border-b border-[#F3D2BF] px-1 py-0.5 text-[10px] text-[#C9571A]">공유강세</span>}
+                          {isLowSave && <span className="border-b border-gray-200 px-1 py-0.5 text-[10px] text-gray-600">저장약세</span>}
                         </div>
                       </div>
                       <span className="text-gray-900 font-bold text-[14px]">{s.count}회</span>
@@ -1757,7 +1850,7 @@ export default function AdminPage() {
                         {variants.map(v => {
                           const cnt = stats.byStyleVariants?.[s.style_id]?.[v.id] ?? 0;
                           return (
-                            <span key={v.id} className="text-[12px] text-gray-500 bg-gray-100 border border-gray-200 rounded-full px-2 py-0.5">
+                            <span key={v.id} className="border-b border-gray-200 px-1 py-0.5 text-[12px] text-gray-500">
                               {v.label}{cnt > 0 ? ` · ${cnt}회` : ""}
                             </span>
                           );
@@ -1792,8 +1885,8 @@ export default function AdminPage() {
           {/* 결제 목록 & 원클릭 환불 */}
           {stats.paymentList.length > 0 && (
             <div className="flex flex-col gap-1">
-              <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">결제 목록 & 환불</p>
-              <div className="bg-white rounded-2xl px-4 border border-gray-200 flex flex-col">
+              <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">결제 목록 & 환불</p>
+              <div className="-mx-4 flex flex-col border-y border-[#E7E7E7] bg-white px-4">
                 {stats.paymentList.slice(0, 20).map((p) => {
                   const user = stats.userList.find(u => u.id === p.user_id);
                   const date = new Date(p.created_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -1857,7 +1950,7 @@ export default function AdminPage() {
                             if (data.ok) p.status = "refunded";
                           }}
                           disabled={isLoading}
-                          className="flex-shrink-0 text-[12px] px-3 py-1.5 rounded-lg border border-gray-300 text-gray-500 hover:text-gray-900 hover:border-gray-400 transition-colors disabled:opacity-40"
+                          className="flex-shrink-0 border-b border-gray-300 px-1 py-1.5 text-[12px] text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-900 disabled:opacity-40"
                         >
                           {isLoading ? "처리중..." : "환불"}
                         </button>
@@ -1880,8 +1973,8 @@ export default function AdminPage() {
 
           {/* 크레딧 조정 */}
           <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">크레딧 조정</p>
-            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
+            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">크레딧 조정</p>
+            <div className="-mx-4 flex flex-col gap-3 border-y border-[#E7E7E7] bg-white px-4 py-5">
               <div className="relative">
                 <input
                   type="text"
@@ -1893,10 +1986,10 @@ export default function AdminPage() {
                   }}
                   onFocus={() => setShowUserDropdown(true)}
                   placeholder="닉네임 또는 ID로 검색..."
-                  className="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
+                  className="w-full border-y border-[#E7E7E7] bg-[#FAFAFA] px-3 py-2 text-[14px] text-gray-900 transition-colors focus:border-[#C9571A]/50 focus:outline-none"
                 />
                 {showUserDropdown && (
-                  <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto shadow-md">
+                  <div className="absolute top-full left-0 right-0 z-10 mt-1 max-h-48 overflow-y-auto border-y border-gray-200 bg-white shadow-md">
                     {stats.userList
                       .filter(u => {
                         if (!creditSearch) return true;
@@ -1935,7 +2028,7 @@ export default function AdminPage() {
                   <button
                     key={n}
                     onClick={() => setCreditAmount(String(n))}
-                    className={`flex-1 py-2 rounded-lg text-[13px] font-bold transition-colors ${creditAmount === String(n) ? "bg-[#C9571A] text-white" : "bg-gray-100 text-gray-500 hover:text-gray-900"}`}
+                    className={`flex-1 border-y py-2 text-[13px] font-bold transition-colors ${creditAmount === String(n) ? "border-[#C9571A] text-[#C9571A]" : "border-[#E7E7E7] text-gray-500 hover:text-gray-900"}`}
                   >{n}</button>
                 ))}
               </div>
@@ -1952,7 +2045,7 @@ export default function AdminPage() {
                   setCreditMsg(data.ok ? `✓ ${stats.userList.find(u => u.id === creditUserId)?.nickname ?? creditUserId.slice(0, 8)} +${creditAmount}크레딧 추가됨` : `오류: ${data.error}`);
                   setTimeout(() => setCreditMsg(""), 3000);
                 }}
-                className="w-full bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-900 font-bold py-2.5 rounded-xl transition-colors text-[14px]"
+                className="w-full bg-[#111827] py-3 text-[14px] font-bold text-white transition-colors"
               >
                 크레딧 추가
               </button>
@@ -1961,20 +2054,20 @@ export default function AdminPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <p className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest px-1 mb-1">가입 유저 목록</p>
-            <div className="bg-white rounded-2xl px-4 py-4 border border-gray-200 flex flex-col gap-3">
+            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">가입 유저 목록</p>
+            <div className="-mx-4 flex flex-col gap-3 border-y border-[#E7E7E7] bg-white px-4 py-5">
               <div className="flex items-center justify-between gap-3">
                 <input
                   type="text"
                   value={userListSearch}
                   onChange={(e) => setUserListSearch(e.target.value)}
                   placeholder="닉네임 또는 ID 검색..."
-                  className="flex-1 bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-[14px] focus:outline-none focus:border-[#C9571A]/50 transition-colors"
+                  className="flex-1 border-y border-[#E7E7E7] bg-[#FAFAFA] px-3 py-2 text-[14px] text-gray-900 transition-colors focus:border-[#C9571A]/50 focus:outline-none"
                 />
                 <span className="text-[11px] text-gray-400 whitespace-nowrap">최근 활동순</span>
               </div>
 
-              <div className="rounded-xl border border-gray-200 overflow-hidden">
+              <div className="overflow-hidden border-y border-[#E7E7E7]">
                 {filteredUsers.length === 0 ? (
                   <div className="px-3 py-4 text-[13px] text-gray-500">검색 결과 없음</div>
                 ) : (
@@ -1986,7 +2079,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => toggleUserIdVisibility(user.id)}
-                            className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-700"
+                            className="flex h-7 w-7 items-center justify-center border border-gray-200 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-700"
                             aria-label={visibleUserIds.includes(user.id) ? "ID 숨기기" : "ID 보기"}
                             title={visibleUserIds.includes(user.id) ? "ID 숨기기" : "ID 보기"}
                           >
@@ -2027,7 +2120,7 @@ export default function AdminPage() {
 
         </>
       )}
-
+      </div>
     </main>
   );
 }

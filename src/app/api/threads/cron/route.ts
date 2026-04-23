@@ -6,7 +6,10 @@ import { publishToThreads } from "@/lib/threads.server";
 // 승인됐고 scheduled_at이 지난 포스트를 자동 발행
 export async function GET(req: NextRequest) {
   const cronSecret = req.headers.get("x-cron-secret") ?? req.nextUrl.searchParams.get("secret");
-  if (!process.env.CRON_SECRET || cronSecret !== process.env.CRON_SECRET) {
+  const authHeader = req.headers.get("authorization");
+  const isVercelCron = authHeader === `Bearer ${process.env.CRON_SECRET}`;
+  const isManualCron = cronSecret === process.env.CRON_SECRET;
+  if (!process.env.CRON_SECRET || (!isVercelCron && !isManualCron)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -27,8 +30,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ published: 0 });
   }
 
+  const publishablePosts = duePosts.filter((post) => !(post.image_upload_recommended && !post.image_url));
+  if (publishablePosts.length === 0) {
+    return NextResponse.json({ published: 0, failed: 0, skipped: duePosts.length });
+  }
+
   const results = await Promise.allSettled(
-    duePosts.map(async (post) => {
+    publishablePosts.map(async (post) => {
       const result = await publishToThreads(post.content, post.image_url);
       if (result.ok) {
         await supabase
@@ -47,5 +55,5 @@ export async function GET(req: NextRequest) {
 
   const published = results.filter(r => r.status === "fulfilled" && r.value.ok).length;
   const failed = results.length - published;
-  return NextResponse.json({ published, failed });
+  return NextResponse.json({ published, failed, skipped: duePosts.length - publishablePosts.length });
 }

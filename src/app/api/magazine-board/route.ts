@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { readSessionFromRequest } from "@/lib/auth-session";
-import { MOCK_BOARD_DATA } from "@/lib/magazine";
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK_MAGAZINE === "true";
 const SHOWCASE_OPT_IN = "home_showcase_opt_in";
 const SHOWCASE_OPT_OUT = "home_showcase_opt_out";
 const ENTRY_UPSERT = "magazine_entry_upsert";
@@ -59,21 +57,6 @@ export async function GET(request: NextRequest) {
 
     if (!styleId) {
       return NextResponse.json({ error: "Missing styleId" }, { status: 400 });
-    }
-
-    // Mock 데이터 사용
-    if (USE_MOCK) {
-      const mockItems = MOCK_BOARD_DATA[styleId] ?? [];
-      return NextResponse.json({
-        count: mockItems.length,
-        items: mockItems.map((item) => ({
-          ...item,
-          likedByMe: Math.random() > 0.7, // 일부 사용자는 좋아요 표시
-        })),
-        meEligible: true,
-        meEntry: null,
-        meInstagramHandle: null,
-      });
     }
 
     const supabase = getSupabase();

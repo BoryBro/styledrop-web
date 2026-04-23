@@ -1,0 +1,90 @@
+{
+  "source_queue_csv": "/Users/munjihwan/Downloads/styledrop_threads_queue.csv",
+  "source_prompt_dir": "src/lib/styles/general-card-prompts",
+  "queue_summary": {
+    "total_posts": 600,
+    "image_required_posts": 240,
+    "text_only_posts": 360,
+    "status": "draft",
+    "schedule_range": "2026-04-24 10:05 ~ 2026-08-02 21:38"
+  },
+  "image_generation_policy": {
+    "target_image_ratio": "35-45%",
+    "current_image_required_count": 240,
+    "flow_outputs_per_prompt": 4,
+    "delay_between_flow_runs_seconds": [60, 120],
+    "max_regenerate_per_prompt": 1,
+    "publish_directly": false,
+    "final_status": "draft"
+  },
+  "category_to_styles": {
+    "image_result": [
+      "dreamy-wildflower",
+      "datecam-film",
+      "ulzzang-cam",
+      "idol-photocard",
+      "red-carpet-glam"
+    ],
+    "before_after": [
+      "club-flash",
+      "rainy-crosswalk",
+      "red-carpet-glam",
+      "cinematic-horseback",
+      "bronze-statue-bench"
+    ],
+    "direct_cta": [
+      "idol-photocard",
+      "dreamy-wildflower",
+      "red-carpet-glam",
+      "maid-cafe-heart",
+      "skydiving"
+    ],
+    "soft_cta": [
+      "datecam-film",
+      "dreamy-celebratory",
+      "coquette-ribbon",
+      "dark-coquette",
+      "ulzzang-cam"
+    ],
+    "text_only": []
+  },
+  "fallback_styles": [
+    "dreamy-wildflower",
+    "datecam-film",
+    "idol-photocard",
+    "red-carpet-glam",
+    "rainy-crosswalk",
+    "cinematic-horseback",
+    "ulzzang-cam",
+    "club-flash",
+    "dark-coquette",
+    "coquette-ribbon",
+    "dreamy-celebratory",
+    "bronze-statue-bench",
+    "maid-cafe-heart",
+    "skydiving",
+    "jjimjilbang-master"
+  ],
+  "quality_rules": [
+    "Do not use images with broken hands, distorted faces, duplicate faces, unreadable text artifacts, watermarks, or overly plastic skin.",
+    "The image must look like a real StyleDrop result or a credible StyleDrop promotional visual.",
+    "Prefer strong scroll-stopping visuals for direct_cta and before_after posts.",
+    "Prefer softer lifestyle visuals for soft_cta and image_result posts.",
+    "Do not attach images to text_only rows unless the queue is manually revised."
+  ],
+  "output_csv_columns": [
+    "template_id",
+    "post_text",
+    "category",
+    "cta_type",
+    "image_required",
+    "image_filename",
+    "scheduled_at",
+    "status",
+    "quality_note",
+    "style_id",
+    "flow_prompt_file",
+    "generated_batch",
+    "asset_status"
+  ]
+}

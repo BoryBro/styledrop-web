@@ -34,20 +34,6 @@ export default function MagazinePage() {
 
           return (
             <article key={article.slug}>
-
-              {/* 아이브로 + 제목 */}
-              <header className="mb-6">
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400 mb-3">
-                  {article.eyebrow}
-                </p>
-                <h1 className="text-[28px] sm:text-[34px] font-black leading-[1.15] tracking-[-0.03em] text-gray-950">
-                  {article.title}
-                </h1>
-                <p className="mt-4 text-[15px] leading-[1.8] text-gray-500">
-                  {article.summary}
-                </p>
-              </header>
-
               {/* 히어로 이미지 */}
               <div className="-mx-5 sm:-mx-6 mb-10">
                 <MagazineCardGrid
@@ -55,6 +41,7 @@ export default function MagazinePage() {
                   accent={article.accent}
                   primaryStyleId={article.primaryStyleId}
                   ctaLabel={article.ctaLabel}
+                  title={article.title}
                 />
               </div>
 
@@ -62,7 +49,6 @@ export default function MagazinePage() {
               <MagazineCommunityBoard
                 styleId={article.primaryStyleId}
                 label={article.communityLabel}
-                fact={article.communityFact}
                 question={article.communityQuestion}
                 accent={article.accent}
               />

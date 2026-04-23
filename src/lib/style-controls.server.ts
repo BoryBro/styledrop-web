@@ -3,6 +3,9 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import {
   AUDITION_CONTROL_ID,
+  NABO_CONTROL_ID,
+  PERSONAL_COLOR_CONTROL_ID,
+  TRAVEL_TOGETHER_CONTROL_ID,
   buildDefaultStyleControls,
   mergeStyleControls,
   resolveFeatureControlState,
@@ -10,7 +13,12 @@ import {
   type StyleControlRow,
   type StyleControlState,
 } from "@/lib/style-controls";
-import { AUDITION_ENABLED } from "@/lib/feature-flags";
+import {
+  AUDITION_ENABLED,
+  NABO_LAB_ENABLED,
+  PERSONAL_COLOR_LAB_ENABLED,
+  TRAVEL_TOGETHER_LAB_ENABLED,
+} from "@/lib/feature-flags";
 
 function getSupabase() {
   return createClient(
@@ -52,6 +60,21 @@ export async function loadStyleControlMap() {
 export async function loadAuditionFeatureControl() {
   const controlMap = await loadStyleControlMap();
   return resolveFeatureControlState(controlMap[AUDITION_CONTROL_ID], AUDITION_ENABLED);
+}
+
+export async function loadPersonalColorFeatureControl() {
+  const controlMap = await loadStyleControlMap();
+  return resolveFeatureControlState(controlMap[PERSONAL_COLOR_CONTROL_ID], PERSONAL_COLOR_LAB_ENABLED);
+}
+
+export async function loadNaboFeatureControl() {
+  const controlMap = await loadStyleControlMap();
+  return resolveFeatureControlState(controlMap[NABO_CONTROL_ID], NABO_LAB_ENABLED);
+}
+
+export async function loadTravelTogetherFeatureControl() {
+  const controlMap = await loadStyleControlMap();
+  return resolveFeatureControlState(controlMap[TRAVEL_TOGETHER_CONTROL_ID], TRAVEL_TOGETHER_LAB_ENABLED);
 }
 
 export async function saveStyleControls(rows: StyleControlRow[]) {

@@ -20,13 +20,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { data: post } = await supabase
     .from("threads_posts")
-    .select("status")
+    .select("status,image_upload_recommended,image_url")
     .eq("id", id)
     .single();
 
   if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (post.status === "published") {
     return NextResponse.json({ error: "already published" }, { status: 400 });
+  }
+  if (post.status !== "approved" && post.image_upload_recommended && !post.image_url) {
+    return NextResponse.json({ error: "image required before approval" }, { status: 400 });
   }
 
   const newStatus = post.status === "approved" ? "draft" : "approved";

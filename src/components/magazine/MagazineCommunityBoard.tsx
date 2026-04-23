@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MOCK_BOARD_DATA } from "@/lib/magazine";
 
 type BoardItem = {
   userId: string;
@@ -28,24 +27,14 @@ function formatHandle(handle: string | null) {
   return `@${handle.replace(/^@+/, "")}`;
 }
 
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const h = Math.floor(diff / 3600000);
-  if (h < 1) return "방금";
-  if (h < 24) return `${h}시간 전`;
-  return `${Math.floor(h / 24)}일 전`;
-}
-
 export function MagazineCommunityBoard({
   styleId,
   label,
-  fact,
   question,
   accent,
 }: {
   styleId: string;
   label: string;
-  fact: string;
   question: string;
   accent: string;
 }) {
@@ -60,20 +49,36 @@ export function MagazineCommunityBoard({
   const encodedStyleId = useMemo(() => encodeURIComponent(styleId), [styleId]);
 
   const loadBoard = useCallback(async () => {
-    const mockItems = MOCK_BOARD_DATA[styleId as keyof typeof MOCK_BOARD_DATA] || [];
-    setPayload({
-      count: mockItems.length,
-      items: mockItems.map((item) => ({ ...item, likedByMe: false })),
-      meEligible: false,
-      meEntry: null,
-      meInstagramHandle: null,
-    });
-    setMessage(null);
-  }, [styleId]);
+    try {
+      const response = await fetch(`/api/magazine-board?styleId=${encodedStyleId}`, {
+        cache: "no-store",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || "load failed");
+
+      setPayload({
+        count: typeof data?.count === "number" ? data.count : 0,
+        items: Array.isArray(data?.items) ? data.items : [],
+        meEligible: Boolean(data?.meEligible),
+        meEntry: data?.meEntry ?? null,
+        meInstagramHandle: data?.meInstagramHandle ?? null,
+      });
+      setMessage(null);
+    } catch (error) {
+      setPayload({
+        count: 0,
+        items: [],
+        meEligible: false,
+        meEntry: null,
+        meInstagramHandle: null,
+      });
+      setMessage(error instanceof Error ? error.message : "참여 정보를 불러오지 못했어요.");
+    }
+  }, [encodedStyleId]);
 
   useEffect(() => {
     void loadBoard();
-  }, [encodedStyleId, loadBoard]);
+  }, [loadBoard]);
 
   const handleSubmit = async () => {
     if (!comment.trim()) {
@@ -132,11 +137,10 @@ export function MagazineCommunityBoard({
   };
 
   return (
-    <section className="flex flex-col gap-8">
+    <section className="mx-4 flex flex-col gap-6 rounded-[22px] border border-gray-200 bg-white p-5 sm:mx-0 sm:p-6">
 
       {/* 참여 질문 */}
       <div>
-        <p className="text-[12px] text-gray-600 leading-relaxed mb-4">{fact}</p>
         <h2 className="text-[28px] sm:text-[36px] font-black leading-[1.15] tracking-[-0.03em] text-gray-950">
           {question}
         </h2>
@@ -149,16 +153,16 @@ export function MagazineCommunityBoard({
 
       {/* 입력 영역 */}
       {!submitted ? (
-        <div className="border border-gray-300 rounded-xl p-4">
+        <div>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value.slice(0, 100))}
             placeholder="내 이야기를 남겨보세요..."
             maxLength={100}
             rows={3}
-            className="w-full resize-none text-[15px] text-gray-900 placeholder:text-gray-500 outline-none leading-[1.7] bg-transparent"
+            className="w-full resize-none bg-transparent text-[18px] leading-[1.7] text-gray-900 outline-none placeholder:text-gray-400"
           />
-          <div className="flex items-center justify-between pt-3 border-t border-gray-200 mt-2">
+          <div className="mt-5 flex items-center justify-between border-t border-gray-200 pt-5">
             <div className="flex flex-col gap-1.5">
               <button
                 type="button"

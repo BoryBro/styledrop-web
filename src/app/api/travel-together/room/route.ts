@@ -5,9 +5,15 @@ import {
   createTravelRoom,
 } from "@/lib/travel-together-room.server";
 import { readSessionFromRequest } from "@/lib/auth-session";
+import { loadTravelTogetherFeatureControl } from "@/lib/style-controls.server";
 
 export async function POST(request: NextRequest) {
   try {
+    const control = await loadTravelTogetherFeatureControl();
+    if (!control.is_visible || !control.is_enabled) {
+      return NextResponse.json({ error: "현재 이용할 수 없는 실험실 기능입니다." }, { status: 403 });
+    }
+
     const session = readSessionFromRequest(request);
     const body = await request.json();
     const myName = String(body?.myName ?? "").trim();

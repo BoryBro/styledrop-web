@@ -28,6 +28,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (post.status === "published") return NextResponse.json({ error: "already published" }, { status: 400 });
   if (post.status !== "approved") return NextResponse.json({ error: "must be approved first" }, { status: 400 });
+  if (post.image_upload_recommended && !post.image_url) {
+    return NextResponse.json({ error: "image required before publishing" }, { status: 400 });
+  }
 
   const result = await publishToThreads(post.content, post.image_url);
 

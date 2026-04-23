@@ -7,6 +7,9 @@ type ThreadsPost = {
   id: string; content: string; image_url: string | null;
   scheduled_at: string; status: PostStatus; thread_id: string | null;
   error_message: string | null; published_at: string | null; created_at: string;
+  template_id?: string | null; category?: string | null; cta_type?: string | null;
+  link_included?: boolean | null; image_upload_recommended?: boolean | null;
+  recommended_styles?: string[] | null; quality_note?: string | null;
 };
 
 const STATUS_STYLE: Record<PostStatus, { label: string; bg: string; color: string }> = {
@@ -29,6 +32,48 @@ const TEMPLATES = [
   { tag: "관상/오디션",    content: "AI 감독한테 오디션 봤음\n\n\"눈빛에 서사가 있다\"\n\"이 얼굴은 주연 감이다\"\n\n기분 좋아지는 평가 받고 싶으면\n→ styledrop.cloud/ai-audition" },
   { tag: "퍼스널컬러",     content: "퍼스널컬러 검사 비용 아깝다면\n\nAI한테 물어봐요\n사진 한 장으로 즉시 분석\n\n봄웜 / 여름쿨 / 가을웜 / 겨울쿨\n→ styledrop.cloud/personal-color-test" },
 ];
+
+function parseCsv(text: string): Record<string, string>[] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"' && inQuotes && next === '"') {
+      cell += '"';
+      i++;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "," && !inQuotes) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") i++;
+      row.push(cell);
+      if (row.some((value) => value.trim() !== "")) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+
+  if (cell || row.length > 0) {
+    row.push(cell);
+    if (row.some((value) => value.trim() !== "")) rows.push(row);
+  }
+
+  const [headers, ...body] = rows;
+  if (!headers) return [];
+
+  return body.map((values) =>
+    Object.fromEntries(headers.map((header, index) => [header.trim(), values[index] ?? ""]))
+  );
+}
 
 function InsightsBadge({ postId, password }: { postId: string; password: string }) {
   const [metrics, setMetrics] = useState<Record<string, number> | null>(null);
@@ -59,8 +104,10 @@ export default function ThreadsAdminPage() {
   const [showForm, setShowForm] = useState(false);
   const [draft, setDraft]     = useState({ content: "", image_url: "", scheduled_at: "" });
   const [toast, setToast]     = useState<string | null>(null);
-  const [tab, setTab]         = useState<"pending" | "published" | "failed">("pending");
+  const [tab, setTab]         = useState<"pending" | "needsImage" | "published" | "failed">("pending");
   const [logging, setLogging] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   const toast$ = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
@@ -115,11 +162,77 @@ export default function ThreadsAdminPage() {
   };
 
   const approveAll = async () => {
-    const drafts = posts.filter(p => p.status === "draft");
+    const drafts = posts.filter(p => p.status === "draft" && !(p.image_upload_recommended && !p.image_url));
     if (!drafts.length) { toast$("승인할 초안 없음"); return; }
-    if (!confirm(`${drafts.length}개 전체 승인?`)) return;
+    if (!confirm(`${drafts.length}개 전체 승인? 이미지 필요한데 비어있는 글은 제외됩니다.`)) return;
     await Promise.all(drafts.map(p => fetch(`/api/threads/${p.id}/approve`, { method: "PATCH", headers: h(pw) })));
     await fetchPosts(pw); toast$(`${drafts.length}개 승인 완료`);
+  };
+
+  const importCsv = async (file: File | null) => {
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (!rows.length) { toast$("CSV를 읽지 못했어요"); return; }
+      const res = await fetch("/api/threads/import", {
+        method: "POST",
+        headers: h(pw),
+        body: JSON.stringify({ rows }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast$(`Import 실패: ${data.error}`);
+        return;
+      }
+      await fetchPosts(pw);
+      toast$(`${data.imported}개 import 완료 · 제외 ${data.skipped}개`);
+    } catch {
+      toast$("CSV import 실패");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const uploadImage = async (id: string, file: File | null) => {
+    if (!file) return;
+    setUploadingId(id);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`/api/threads/${id}/image`, {
+        method: "POST",
+        headers: { "x-admin-password": pw },
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast$(`업로드 실패: ${data.error}`);
+        return;
+      }
+      await fetchPosts(pw);
+      toast$("이미지 업로드 완료");
+    } catch {
+      toast$("이미지 업로드 실패");
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const setImageUrl = async (id: string, currentUrl: string | null) => {
+    const imageUrl = prompt("이미지 URL", currentUrl ?? "");
+    if (imageUrl === null) return;
+    setActionId(id);
+    const res = await fetch(`/api/threads/${id}`, {
+      method: "PATCH",
+      headers: h(pw),
+      body: JSON.stringify({ image_url: imageUrl }),
+    });
+    const data = await res.json();
+    await fetchPosts(pw);
+    setActionId(null);
+    toast$(res.ok ? "이미지 URL 저장됨" : `실패: ${data.error}`);
   };
 
   const publish = async (id: string) => {
@@ -149,9 +262,10 @@ export default function ThreadsAdminPage() {
   };
 
   const pending   = posts.filter(p => p.status === "draft" || p.status === "approved");
+  const needsImage = pending.filter(p => p.image_upload_recommended && !p.image_url);
   const published = posts.filter(p => p.status === "published");
   const failed    = posts.filter(p => p.status === "failed");
-  const tabPosts  = tab === "pending" ? pending : tab === "published" ? published : failed;
+  const tabPosts  = tab === "pending" ? pending : tab === "needsImage" ? needsImage : tab === "published" ? published : failed;
   const charOver  = draft.content.length > 500;
 
   if (!authed) {
@@ -198,6 +312,16 @@ export default function ThreadsAdminPage() {
             style={{ background: showForm ? "#333" : "#22C55E", color: showForm ? "#fff" : "#000" }}>
             {showForm ? "취소" : "+ 새 글"}
           </button>
+          <label className="cursor-pointer px-4 py-2 rounded-xl font-bold text-sm bg-white text-black">
+            {importing ? "Import..." : "CSV Import"}
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              disabled={importing}
+              onChange={(event) => void importCsv(event.target.files?.[0] ?? null)}
+            />
+          </label>
         </div>
       </header>
 
@@ -254,11 +378,11 @@ export default function ThreadsAdminPage() {
       )}
 
       <div className="border-b border-white/10 px-5 flex items-center gap-3">
-        {(["pending", "published", "failed"] as const).map(key => (
+        {(["pending", "needsImage", "published", "failed"] as const).map(key => (
           <button key={key} onClick={() => setTab(key)}
             className="py-3 text-sm font-bold border-b-2 transition-colors"
             style={{ borderColor: tab === key ? "#22C55E" : "transparent", color: tab === key ? "#fff" : "#555" }}>
-            {key === "pending" ? `대기(${pending.length})` : key === "published" ? `발행(${published.length})` : `실패(${failed.length})`}
+            {key === "pending" ? `대기(${pending.length})` : key === "needsImage" ? `이미지필요(${needsImage.length})` : key === "published" ? `발행(${published.length})` : `실패(${failed.length})`}
           </button>
         ))}
         <div className="ml-auto flex items-center gap-2">
@@ -280,6 +404,7 @@ export default function ThreadsAdminPage() {
         {tabPosts.map(post => {
           const s = STATUS_STYLE[post.status];
           const busy = actionId === post.id;
+          const missingRequiredImage = Boolean(post.image_upload_recommended && !post.image_url);
           return (
             <div key={post.id} className="bg-[#111] border border-white/[0.07] rounded-2xl p-5 flex flex-col gap-3">
               <div className="flex items-center justify-between">
@@ -289,7 +414,24 @@ export default function ThreadsAdminPage() {
                   {post.published_at && <p className="text-[11px] text-white/20">발행: {fmt(post.published_at)}</p>}
                 </div>
               </div>
+              <div className="flex flex-wrap gap-1.5">
+                {post.category && <span className="rounded-full bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-white/45">{post.category}</span>}
+                {post.cta_type && <span className="rounded-full bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-white/45">CTA {post.cta_type}</span>}
+                {post.image_upload_recommended && <span className="rounded-full bg-[#F97316]/15 px-2 py-1 text-[10px] font-bold text-[#FDBA74]">이미지 권장</span>}
+                {post.recommended_styles && post.recommended_styles.length > 0 && (
+                  <span className="rounded-full bg-[#38BDF8]/10 px-2 py-1 text-[10px] font-bold text-[#7DD3FC]">
+                    {post.recommended_styles.join(" · ")}
+                  </span>
+                )}
+              </div>
               <p className="text-[14px] text-white/80 leading-relaxed whitespace-pre-wrap">{post.content}</p>
+              {post.image_url && (
+                <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-black/30">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={post.image_url} alt="" className="max-h-72 w-full object-cover" />
+                </div>
+              )}
+              {post.quality_note && <p className="text-[12px] text-white/35 bg-white/[0.04] rounded-lg px-3 py-2">{post.quality_note}</p>}
               {post.error_message && <p className="text-[12px] text-red-400 bg-red-400/10 rounded-lg px-3 py-2">{post.error_message}</p>}
               {post.status === "published" && post.thread_id && (
                 <div className="border-t border-white/[0.06] pt-3">
@@ -298,17 +440,29 @@ export default function ThreadsAdminPage() {
               )}
               {post.status !== "published" && (
                 <div className="flex gap-2 pt-1 border-t border-white/[0.06]">
+                  <label className="cursor-pointer px-3 py-2 rounded-xl text-[13px] font-bold text-white/60 border border-white/10 disabled:opacity-40">
+                    {uploadingId === post.id ? "업로드..." : "이미지 업로드"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingId === post.id || busy}
+                      onChange={(event) => void uploadImage(post.id, event.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                  <button onClick={() => void setImageUrl(post.id, post.image_url)} disabled={busy}
+                    className="px-3 py-2 rounded-xl text-[13px] font-bold text-white/50 border border-white/10 disabled:opacity-40">URL</button>
                   {(post.status === "draft" || post.status === "approved") && (
-                    <button onClick={() => void approve(post.id)} disabled={busy}
+                    <button onClick={() => void approve(post.id)} disabled={busy || (post.status === "draft" && missingRequiredImage)}
                       className="flex-1 py-2 rounded-xl text-[13px] font-bold disabled:opacity-40"
                       style={{ background: post.status === "approved" ? "#1A1A1A" : "#22C55E", color: post.status === "approved" ? "#6B7280" : "#000", border: post.status === "approved" ? "1px solid #333" : "none" }}>
-                      {post.status === "approved" ? "승인취소" : "✓ 승인"}
+                      {post.status === "draft" && missingRequiredImage ? "이미지 필요" : post.status === "approved" ? "승인취소" : "✓ 승인"}
                     </button>
                   )}
                   {post.status === "approved" && (
-                    <button onClick={() => void publish(post.id)} disabled={busy}
+                    <button onClick={() => void publish(post.id)} disabled={busy || missingRequiredImage}
                       className="flex-1 py-2 rounded-xl text-[13px] font-bold bg-white text-black disabled:opacity-40">
-                      {busy ? "발행 중..." : "지금 발행 →"}
+                      {missingRequiredImage ? "이미지 필요" : busy ? "발행 중..." : "지금 발행 →"}
                     </button>
                   )}
                   <button onClick={() => void del(post.id)} disabled={busy}

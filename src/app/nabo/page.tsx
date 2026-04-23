@@ -10,10 +10,37 @@ const G = { bg: "#F0FDF4", border: "#BBF7D0", light: "#DCFCE7", mid: "#22C55E", 
 // ── 타입 ─────────────────────────────────────────────────────────
 type Step = "intro" | "setup" | "link" | "waiting" | "questions" | "results";
 type AnsMap = Record<string, string | number>;
+type NaboRoomViewPayload = {
+  roomCode: string;
+  role: "owner" | "respondent";
+  ownerName: string;
+  responseCount: number;
+  responseTarget: number;
+  resultAvailableAfter: string;
+  canViewResults: boolean;
+  premiumAccess: boolean;
+  invitePath: string | null;
+  ownerPath: string | null;
+};
+
+type KakaoShareSDK = {
+  init?: (key: string | undefined) => void;
+  isInitialized?: () => boolean;
+  Share?: {
+    sendDefault?: (options: {
+      objectType: "text";
+      text: string;
+      link: {
+        mobileWebUrl: string;
+        webUrl: string;
+      };
+    }) => void;
+  };
+};
 
 const EXTRA = "기타 (직접 입력) ✏️";
 const LOCK_MS = 24 * 60 * 60 * 1000;
-const UNLOCK_CREDITS = 5;
+const PREMIUM_ACCESS_CREDITS = 5;
 
 // ── 12문항 정의 ───────────────────────────────────────────────────
 const QS = [
@@ -120,6 +147,17 @@ const fmtCountdown = (ms: number) => {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
+const getNaboClientFingerprint = () => {
+  if (typeof window === "undefined") return "";
+
+  const saved = localStorage.getItem("nabo_client_fingerprint");
+  if (saved) return saved;
+
+  const next = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  localStorage.setItem("nabo_client_fingerprint", next);
+  return next;
+};
+
 // ── ScoreRing ─────────────────────────────────────────────────────
 function ScoreRing({ score, size = 130, color = G.mid }: { score: number; size?: number; color?: string }) {
   const [shown, setShown] = useState(0);
@@ -177,12 +215,56 @@ export default function NaboPage() {
   const [slider, setSlider]           = useState(50);
   const [curResp, setCurResp]         = useState<AnsMap>({});
   const [now, setNow]                 = useState(Date.now());
-  const [unlocked, setUnlocked]       = useState(false);
+  const [premiumAccess, setPremiumAccess] = useState(false);
+  const [roomCode, setRoomCode]       = useState("");
+  const [ownerToken, setOwnerToken]   = useState("");
+  const [respondentToken, setRespondentToken] = useState("");
+  const [viewerRole, setViewerRole]   = useState<"owner" | "respondent" | null>(null);
+  const [invitePath, setInvitePath]   = useState("");
+  const [shareOrigin, setShareOrigin] = useState("https://www.styledrop.cloud");
+  const [resultAvailableAfter, setResultAvailableAfter] = useState("");
+  const [serverResponseCount, setServerResponseCount] = useState(0);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
+  const [isProcessingPremiumAccess, setIsProcessingPremiumAccess] = useState(false);
+  const [isSharingKakao, setIsSharingKakao] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const applyRoomView = useCallback((
+    view: NaboRoomViewPayload,
+    tokens?: { ownerToken?: string | null; respondentToken?: string | null; invitePath?: string | null },
+  ) => {
+    setRoomCode(view.roomCode);
+    setViewerRole(view.role);
+    setMyName(view.ownerName);
+    setServerResponseCount(view.responseCount);
+    setResultAvailableAfter(view.resultAvailableAfter);
+    setPremiumAccess(view.premiumAccess);
+    if (tokens?.ownerToken) setOwnerToken(tokens.ownerToken);
+    if (tokens?.respondentToken) setRespondentToken(tokens.respondentToken);
+    if (tokens?.invitePath) setInvitePath(tokens.invitePath);
+
+    try {
+      localStorage.setItem("nabo_room_code", view.roomCode);
+      localStorage.setItem("nabo_name", view.ownerName);
+      localStorage.setItem("nabo_result_available_after", view.resultAvailableAfter);
+      localStorage.setItem("nabo_premium_access", view.premiumAccess ? "1" : "0");
+      if (tokens?.ownerToken) localStorage.setItem("nabo_owner_token", tokens.ownerToken);
+      if (tokens?.respondentToken) localStorage.setItem("nabo_respondent_token", tokens.respondentToken);
+      if (tokens?.invitePath) localStorage.setItem("nabo_invite_path", tokens.invitePath);
+    } catch {}
+  }, []);
 
   // ── 1초 ticker ───────────────────────────────────────────────
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShareOrigin(window.location.origin);
+    }
   }, []);
 
   // ── localStorage 복원 ─────────────────────────────────────────
@@ -192,14 +274,95 @@ export default function NaboPage() {
       const at = localStorage.getItem("nabo_created_at");
       const rs = localStorage.getItem("nabo_responses");
       const st = localStorage.getItem("nabo_step") as Step | null;
-      const ul = localStorage.getItem("nabo_unlocked");
+      const savedRoomCode = localStorage.getItem("nabo_room_code");
+      const savedOwnerToken = localStorage.getItem("nabo_owner_token");
+      const savedRespondentToken = localStorage.getItem("nabo_respondent_token");
+      const savedInvitePath = localStorage.getItem("nabo_invite_path");
+      const savedAvailableAfter = localStorage.getItem("nabo_result_available_after");
       if (n)  setMyName(n);
       if (at) setCreatedAt(Number(at));
       if (rs) { try { setResponses(JSON.parse(rs)); } catch {} }
       if (st && st !== "intro") { setStep(st); setStepHistory(["intro", st]); }
-      if (ul === "1") setUnlocked(true);
+      if (savedRoomCode) setRoomCode(savedRoomCode);
+      if (savedOwnerToken) setOwnerToken(savedOwnerToken);
+      if (savedRespondentToken) setRespondentToken(savedRespondentToken);
+      if (savedInvitePath) setInvitePath(savedInvitePath);
+      if (savedAvailableAfter) setResultAvailableAfter(savedAvailableAfter);
     } catch {}
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const nextRoomCode = params.get("room");
+    const nextOwnerToken = params.get("owner");
+    const nextRespondentToken = params.get("token");
+
+    if (!nextRoomCode || (!nextOwnerToken && !nextRespondentToken)) return;
+
+    const query = nextOwnerToken
+      ? `owner=${encodeURIComponent(nextOwnerToken)}`
+      : `token=${encodeURIComponent(nextRespondentToken ?? "")}`;
+
+    let cancelled = false;
+
+    fetch(`/api/nabo/room/${encodeURIComponent(nextRoomCode)}?${query}`)
+      .then(async response => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload?.error ?? "방 정보를 불러오지 못했습니다.");
+        return payload as { view?: NaboRoomViewPayload };
+      })
+      .then(payload => {
+        if (cancelled || !payload.view) return;
+        applyRoomView(payload.view, {
+          ownerToken: nextOwnerToken,
+          respondentToken: nextRespondentToken,
+          invitePath: payload.view.invitePath,
+        });
+        setStep(payload.view.role === "owner" ? "waiting" : "questions");
+        setStepHistory(["intro", payload.view.role === "owner" ? "waiting" : "questions"]);
+      })
+      .catch(error => {
+        if (!cancelled) {
+          setErrorMessage(error instanceof Error ? error.message : "방 정보를 불러오지 못했습니다.");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyRoomView]);
+
+  useEffect(() => {
+    if (!roomCode || !ownerToken || viewerRole !== "owner") return;
+
+    let cancelled = false;
+    const refreshOwnerRoom = () => {
+      fetch(`/api/nabo/room/${encodeURIComponent(roomCode)}?owner=${encodeURIComponent(ownerToken)}`)
+        .then(async response => {
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload?.error ?? "방 정보를 불러오지 못했습니다.");
+          return payload as { view?: NaboRoomViewPayload };
+        })
+        .then(payload => {
+          if (cancelled || !payload.view) return;
+          applyRoomView(payload.view, {
+            ownerToken,
+            invitePath: payload.view.invitePath,
+          });
+        })
+        .catch(() => {});
+    };
+
+    refreshOwnerRoom();
+    const timer = window.setInterval(refreshOwnerRoom, 10000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [applyRoomView, ownerToken, roomCode, viewerRole]);
 
   // ── 응답 저장 ─────────────────────────────────────────────────
   useEffect(() => {
@@ -208,8 +371,15 @@ export default function NaboPage() {
     }
   }, [responses]);
 
-  const timeLeft = createdAt ? Math.max(0, LOCK_MS - (now - createdAt)) : LOCK_MS;
-  const canSeeResults = timeLeft === 0 && responses.length >= 1;
+  const responseCount = Math.max(responses.length, serverResponseCount);
+  const resultAvailableTime = resultAvailableAfter
+    ? new Date(resultAvailableAfter).getTime()
+    : createdAt
+      ? createdAt + LOCK_MS
+      : 0;
+  const timeLeft = resultAvailableTime ? Math.max(0, resultAvailableTime - now) : LOCK_MS;
+  const canSeeResults = timeLeft === 0 && responseCount >= 1;
+  const inviteLink = invitePath ? `${shareOrigin}${invitePath}` : `${shareOrigin}/nabo`;
 
   const goTo = useCallback((s: Step) => {
     setStepHistory(h => [...h, s]);
@@ -225,28 +395,111 @@ export default function NaboPage() {
     setStep(prev);
   };
 
-  const createRoom = () => {
-    const at = Date.now();
-    setCreatedAt(at);
+  const createRoom = async () => {
+    if (isCreatingRoom) return;
+
+    setIsCreatingRoom(true);
+    setErrorMessage("");
+
     try {
-      localStorage.setItem("nabo_name", myName);
-      localStorage.setItem("nabo_created_at", String(at));
-    } catch {}
-    void trackClientEvent("lab_nabo_room_created");
-    goTo("link");
+      const response = await fetch("/api/nabo/room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerName: myName.trim() }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok || !payload?.view) {
+        throw new Error(payload?.error ?? "초대 링크 생성에 실패했습니다.");
+      }
+
+      const at = Date.now();
+      setCreatedAt(at);
+      applyRoomView(payload.view as NaboRoomViewPayload, {
+        ownerToken: payload.ownerToken,
+        invitePath: payload.invitePath,
+      });
+
+      try {
+        localStorage.setItem("nabo_created_at", String(at));
+      } catch {}
+
+      void trackClientEvent("lab_nabo_room_created");
+      goTo("link");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "초대 링크 생성에 실패했습니다.");
+    } finally {
+      setIsCreatingRoom(false);
+    }
   };
 
   const copyLink = () => {
-    navigator.clipboard.writeText(`https://styledrop.cloud/nabo?room=${Math.random().toString(36).slice(2, 8)}`).catch(() => {});
+    navigator.clipboard.writeText(inviteLink).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2200);
   };
 
-  const handleUnlock = () => {
-    // 실제 결제 연동 전 임시: 바로 해금
-    setUnlocked(true);
-    try { localStorage.setItem("nabo_unlocked", "1"); } catch {}
-    void trackClientEvent("lab_nabo_unlock");
+  const handleKakaoShareLink = async () => {
+    if (!invitePath || isSharingKakao) return;
+
+    setIsSharingKakao(true);
+    setErrorMessage("");
+
+    try {
+      const Kakao = (window as Window & { Kakao?: KakaoShareSDK }).Kakao;
+      const isInitialized = Kakao?.isInitialized?.() ?? false;
+      if (!isInitialized) {
+        Kakao?.init?.(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
+      }
+
+      const sendDefault = Kakao?.Share?.sendDefault;
+      if (!sendDefault) throw new Error("Kakao SDK unavailable");
+
+      sendDefault({
+        objectType: "text",
+        text: `${myName || "친구"}님이 익명 관계 분석 링크를 보냈어요.\n나는 어떤 사람으로 보일까요? 익명으로 답해주세요.`,
+        link: {
+          mobileWebUrl: inviteLink,
+          webUrl: inviteLink,
+        },
+      });
+      void trackClientEvent("lab_nabo_share_kakao");
+    } catch {
+      copyLink();
+      setErrorMessage("카카오 공유가 열리지 않아 링크를 복사했어요.");
+    } finally {
+      setTimeout(() => setIsSharingKakao(false), 1200);
+    }
+  };
+
+  const handlePremiumAccess = async () => {
+    if (!roomCode || !ownerToken || isProcessingPremiumAccess) return;
+
+    setIsProcessingPremiumAccess(true);
+    setErrorMessage("");
+
+    try {
+      const response = await fetch(`/api/nabo/room/${encodeURIComponent(roomCode)}/premium-access`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerToken }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok || !payload?.view) {
+        throw new Error(payload?.error ?? "전체 결과 처리에 실패했습니다.");
+      }
+
+      applyRoomView(payload.view as NaboRoomViewPayload, {
+        ownerToken,
+        invitePath: payload.view.invitePath,
+      });
+      void trackClientEvent("lab_nabo_premium_access");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "전체 결과 처리에 실패했습니다.");
+    } finally {
+      setIsProcessingPremiumAccess(false);
+    }
   };
 
   // ── 질문 진행 ─────────────────────────────────────────────────
@@ -254,9 +507,43 @@ export default function NaboPage() {
   const isSlider  = Q?.type === "slider";
   const isExtra   = curAns === EXTRA;
   const effectiveAns = isSlider ? slider : isExtra ? customAns : curAns;
-  const canNext = isSlider ? true : isExtra ? customAns.trim().length > 0 : String(curAns).trim().length > 0;
+  const canNext = !isSubmittingResponse && (isSlider ? true : isExtra ? customAns.trim().length > 0 : String(curAns).trim().length > 0);
 
-  const advance = () => {
+  const submitResponseToServer = async (answers: AnsMap) => {
+    if (!roomCode || !respondentToken || viewerRole !== "respondent") return false;
+
+    setIsSubmittingResponse(true);
+    setErrorMessage("");
+
+    try {
+      const response = await fetch(`/api/nabo/room/${encodeURIComponent(roomCode)}/response`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: respondentToken,
+          answers,
+          clientFingerprint: getNaboClientFingerprint(),
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok || !payload?.view) {
+        throw new Error(payload?.error ?? "응답 저장에 실패했습니다.");
+      }
+
+      applyRoomView(payload.view as NaboRoomViewPayload, {
+        respondentToken,
+      });
+      return true;
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "응답 저장에 실패했습니다.");
+      return false;
+    } finally {
+      setIsSubmittingResponse(false);
+    }
+  };
+
+  const advance = async () => {
     const stored = isExtra ? (customAns.trim() || "기타") : effectiveAns;
     const updated = { ...curResp, [Q.id]: stored };
     setCurResp(updated);
@@ -264,18 +551,14 @@ export default function NaboPage() {
       setQIdx(i => i + 1);
       setCurAns(""); setCustomAns(""); setSlider(50);
     } else {
+      const savedToServer = await submitResponseToServer(updated);
+      if (viewerRole === "respondent" && !savedToServer) return;
+
       setResponses(rs => [...rs, updated]);
       setCurResp({}); setQIdx(0); setCurAns(""); setCustomAns(""); setSlider(50);
       void trackClientEvent("lab_nabo_response_completed");
       goTo("waiting");
     }
-  };
-
-  const simulateAll = (skipTime = false) => {
-    const needed = MOCK.slice(0, Math.max(0, 5 - responses.length));
-    setResponses(rs => [...rs, ...needed]);
-    if (skipTime) setCreatedAt(Date.now() - LOCK_MS - 1000);
-    goTo("results");
   };
 
   // ── getOptions helper ─────────────────────────────────────────
@@ -421,13 +704,19 @@ export default function NaboPage() {
                 <p className="text-[12px] text-gray-500 leading-relaxed">누가 응답했는지 절대 알 수 없어요. 응답자 정보는 수집되지 않아요.</p>
               </div>
             </div>
+
+            {errorMessage && (
+              <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] font-bold text-red-600">
+                {errorMessage}
+              </div>
+            )}
           </section>
 
           <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-5 bg-gradient-to-t from-white via-white/95 to-transparent z-50">
-            <button onClick={() => myName.trim() && createRoom()}
+            <button onClick={() => myName.trim() && void createRoom()}
               className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]"
-              style={{ background: myName.trim() ? "#111" : "#F3F4F6", color: myName.trim() ? "#fff" : "#9CA3AF" }}>
-              초대 링크 생성 →
+              style={{ background: myName.trim() && !isCreatingRoom ? "#111" : "#F3F4F6", color: myName.trim() && !isCreatingRoom ? "#fff" : "#9CA3AF" }}>
+              {isCreatingRoom ? "링크 만드는 중..." : "초대 링크 생성 →"}
             </button>
             {!myName.trim() && <p className="text-center text-[12px] text-gray-400 mt-2">닉네임을 입력해주세요</p>}
           </div>
@@ -446,7 +735,7 @@ export default function NaboPage() {
             <div className="rounded-2xl p-4 flex items-center gap-3" style={{ border: `1px solid ${G.border}`, background: G.bg }}>
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-black uppercase tracking-widest mb-1" style={{ color: G.mid }}>익명 초대 링크</p>
-                <p className="text-[13px] font-semibold text-gray-700 truncate">styledrop.cloud/nabo?room=abc123</p>
+                <p className="text-[13px] font-semibold text-gray-700 truncate">{inviteLink.replace(/^https?:\/\//, "")}</p>
               </div>
               <button onClick={copyLink}
                 className="flex-shrink-0 px-4 py-2 rounded-xl font-bold text-[13px] text-white transition-all"
@@ -454,9 +743,14 @@ export default function NaboPage() {
                 {copied ? "복사됨 ✓" : "복사"}
               </button>
             </div>
-            <button className="w-full py-3.5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2" style={{ background: "#FEE500", color: "#191919" }}>
+            <button
+              onClick={() => void handleKakaoShareLink()}
+              disabled={isSharingKakao}
+              className="w-full py-3.5 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2 disabled:opacity-60"
+              style={{ background: "#FEE500", color: "#191919" }}
+            >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/></svg>
-              카카오톡으로 보내기
+              {isSharingKakao ? "카카오 여는 중..." : "카카오톡으로 보내기"}
             </button>
             <button className="w-full py-3.5 rounded-2xl font-bold text-[15px] border border-gray-200 text-gray-700 flex items-center justify-center gap-2">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11 5.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM5 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM11 15.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.25 8.23l1.52 1.52M8.77 4.23l-1.52 1.52" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -500,18 +794,18 @@ export default function NaboPage() {
           <div className="rounded-3xl p-5" style={{ background: G.bg, border: `1px solid ${G.border}` }}>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[13px] font-black text-gray-900">현재 응답 현황</p>
-              <p className="text-[26px] font-black" style={{ color: G.mid }}>{responses.length}<span className="text-[16px] text-gray-400"> / 5</span></p>
+              <p className="text-[26px] font-black" style={{ color: G.mid }}>{responseCount}<span className="text-[16px] text-gray-400"> / 5</span></p>
             </div>
             <div className="flex gap-2 mb-3">
               {[0,1,2,3,4].map(i => (
                 <div key={i} className="flex-1 h-2.5 rounded-full transition-all duration-500"
-                  style={{ background: i < responses.length ? G.mid : G.light }} />
+                  style={{ background: i < responseCount ? G.mid : G.light }} />
               ))}
             </div>
             <p className="text-[12px] text-gray-400">
-              {responses.length === 0 && "아직 아무도 응답하지 않았어요"}
-              {responses.length > 0 && responses.length < 5 && `${responses.length}명이 응답했어요`}
-              {responses.length >= 5 && "5명 모두 응답 완료!"}
+              {responseCount === 0 && "아직 아무도 응답하지 않았어요"}
+              {responseCount > 0 && responseCount < 5 && `${responseCount}명이 응답했어요`}
+              {responseCount >= 5 && "5명 모두 응답 완료!"}
             </p>
           </div>
 
@@ -523,7 +817,7 @@ export default function NaboPage() {
                   {fmtCountdown(timeLeft)}
                 </p>
                 <p className="text-[12px] text-gray-400 mt-2">
-                  {responses.length === 0 ? "응답이 1건 이상 있어야 공개돼요" : `${responses.length}명 응답 완료 · 시간이 지나면 자동으로 열려요`}
+                  {responseCount === 0 ? "응답이 1건 이상 있어야 공개돼요" : `${responseCount}명 응답 완료 · 시간이 지나면 자동으로 열려요`}
                 </p>
               </>
             ) : (
@@ -555,22 +849,6 @@ export default function NaboPage() {
               12문항 직접 체험 → ({responses.length + 1}번째 응답)
             </button>
           </div>
-
-          <div className="rounded-2xl border border-dashed border-gray-200 px-4 py-4">
-            <p className="text-[11px] font-bold text-gray-400 mb-3">🛠 개발 테스트용</p>
-            <div className="flex flex-col gap-2">
-              <button onClick={() => simulateAll(true)}
-                className="w-full py-3 rounded-xl font-bold text-[13px] border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
-                5명 자동 완성 + 24시간 건너뛰기 →
-              </button>
-              {responses.length > 0 && (
-                <button onClick={() => simulateAll(false)}
-                  className="w-full py-3 rounded-xl font-bold text-[13px] border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
-                  나머지 {Math.max(0, 5 - responses.length)}명만 자동 완성
-                </button>
-              )}
-            </div>
-          </div>
         </div>
       )}
 
@@ -591,6 +869,11 @@ export default function NaboPage() {
               <div className="h-full rounded-full transition-all duration-500"
                 style={{ width: `${((qIdx + 1) / QS.length) * 100}%`, background: G.mid }} />
             </div>
+            {errorMessage && (
+              <div className="mt-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] font-bold text-red-600">
+                {errorMessage}
+              </div>
+            )}
           </div>
 
           <section className="px-6 pt-7 pb-4 flex flex-col gap-5 flex-1">
@@ -652,10 +935,10 @@ export default function NaboPage() {
           </section>
 
           <div className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-5 bg-gradient-to-t from-white via-white/95 to-transparent z-50">
-            <button onClick={canNext ? advance : undefined}
+            <button onClick={canNext ? () => void advance() : undefined}
               className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]"
               style={{ background: canNext ? "#111" : "#F3F4F6", color: canNext ? "#fff" : "#9CA3AF" }}>
-              {qIdx < QS.length - 1 ? "다음 →" : "익명 제출 완료 →"}
+              {isSubmittingResponse ? "저장 중..." : qIdx < QS.length - 1 ? "다음 →" : "익명 제출 완료 →"}
             </button>
             {!canNext && <p className="text-center text-[12px] text-gray-400 mt-2">답변을 입력해주세요</p>}
           </div>
@@ -703,8 +986,8 @@ export default function NaboPage() {
             )}
           </section>
 
-          {/* ── 상세 결과: 잠금 / 해금 분기 ── */}
-          {unlocked ? (
+          {/* ── 상세 결과 공개 상태 ── */}
+          {premiumAccess ? (
             <>
               {/* 첫인상 전체 분포 */}
               <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
@@ -834,11 +1117,12 @@ export default function NaboPage() {
                     </p>
                   </div>
                   <button
-                    onClick={handleUnlock}
-                    className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]"
+                    onClick={() => void handlePremiumAccess()}
+                    disabled={isProcessingPremiumAccess}
+                    className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97] disabled:opacity-60"
                     style={{ background: G.mid, color: "white" }}
                   >
-                    {UNLOCK_CREDITS}크레딧으로 전체 해금
+                    {isProcessingPremiumAccess ? "처리 중..." : `${PREMIUM_ACCESS_CREDITS}크레딧으로 전체 결과 열기`}
                   </button>
                   <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>1회 결제로 모든 항목이 열려요</p>
                 </div>

@@ -32,9 +32,15 @@ import {
   writeHowToHiddenPreference,
   writeHowToSeenPreference,
 } from "@/lib/how-to";
-import { PERSONAL_COLOR_LAB_ENABLED } from "@/lib/feature-flags";
 import {
+  NABO_LAB_ENABLED,
+  PERSONAL_COLOR_LAB_ENABLED,
+  TRAVEL_TOGETHER_LAB_ENABLED,
+} from "@/lib/feature-flags";
+import {
+  NABO_CONTROL_ID,
   PERSONAL_COLOR_CONTROL_ID,
+  TRAVEL_TOGETHER_CONTROL_ID,
   applyStyleControl,
   resolveFeatureControlState,
   type StyleControlState,
@@ -303,10 +309,19 @@ export default function Studio() {
     styleControls[PERSONAL_COLOR_CONTROL_ID],
     PERSONAL_COLOR_LAB_ENABLED
   );
+  const naboControl = resolveFeatureControlState(
+    styleControls[NABO_CONTROL_ID],
+    NABO_LAB_ENABLED
+  );
+  const travelTogetherControl = resolveFeatureControlState(
+    styleControls[TRAVEL_TOGETHER_CONTROL_ID],
+    TRAVEL_TOGETHER_LAB_ENABLED
+  );
   const showPersonalColorLab = personalColorControl.is_visible;
   const isPersonalColorEnabled = personalColorControl.is_enabled;
-  const showNaboLab = true;
-  const showLabSection = showAuditionLab || showPersonalColorLab || showNaboLab;
+  const showNaboLab = naboControl.is_visible;
+  const showTravelTogetherLab = travelTogetherControl.is_visible;
+  const showLabSection = showAuditionLab || showPersonalColorLab || showNaboLab || showTravelTogetherLab;
 
   const scrollToSection = useCallback((section: StudioSectionTab) => {
     const target = section === "cards" ? generalCardsSectionRef.current : labSectionRef.current;
@@ -1594,6 +1609,7 @@ export default function Studio() {
                   </Link>
                 )}
 
+                {showTravelTogetherLab && (
                 <Link href="/travel-together" className="block mb-4 active:scale-[0.97] transition-transform">
                   <div className="relative rounded-2xl overflow-hidden bg-[#07101D] border border-white/[0.07]" style={{ aspectRatio: "4/3" }}>
 
@@ -1692,6 +1708,7 @@ export default function Studio() {
                     <div className="absolute right-6 z-10" style={{ top: "28%", bottom: "20%", width: "1.5px", background: "linear-gradient(to bottom, transparent, rgba(59,130,246,0.5), transparent)" }} />
                   </div>
                 </Link>
+                )}
 
                 {showAuditionLab && (
                   <Link href="/audition/intro" className="block mb-4 active:scale-[0.97] transition-transform">

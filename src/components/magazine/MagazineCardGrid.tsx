@@ -6,6 +6,7 @@ interface MagazineCardGridProps {
   accent: string;
   primaryStyleId: string;
   ctaLabel: string;
+  title?: string;
 }
 
 export function MagazineCardGrid({
@@ -13,6 +14,7 @@ export function MagazineCardGrid({
   accent,
   primaryStyleId,
   ctaLabel,
+  title,
 }: MagazineCardGridProps) {
   const styles = styleIds
     .map((id) => ALL_STYLES.find((s) => s.id === id))
@@ -23,31 +25,45 @@ export function MagazineCardGrid({
   const primary = styles.find((s) => s.id === primaryStyleId) ?? styles[0];
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4/3" }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={primary.afterImg}
-        alt={primary.name}
-        className="absolute inset-0 h-full w-full object-cover"
-        draggable={false}
-      />
+    <div className="w-full">
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4/3" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={primary.afterImg}
+          alt={primary.name}
+          className="absolute inset-0 h-full w-full object-cover"
+          draggable={false}
+        />
 
-      {/* 하단 그라디언트 */}
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" />
+        {/* 하단 텍스트 가독성용 딤 */}
+        <div className="absolute inset-x-0 bottom-0 h-[72%] bg-gradient-to-t from-black/88 via-black/50 to-transparent" />
 
-      {/* 하단 정보 + CTA */}
-      <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between p-5">
-        <p className="text-[13px] font-semibold text-white/80 leading-snug max-w-[60%]">
-          {primary.name}
-        </p>
-        <Link
-          href={`/studio?style=${encodeURIComponent(primaryStyleId)}`}
-          className="inline-flex items-center h-10 px-4 rounded-lg text-[13px] font-bold text-black transition-opacity hover:opacity-90 whitespace-nowrap"
-          style={{ backgroundColor: accent }}
-        >
-          나도 만들기 →
-        </Link>
+        {/* 카드뉴스형 하단 텍스트 */}
+        <div className="absolute inset-x-0 bottom-0 p-5 text-left sm:p-7">
+          {title && (
+            <h1 className="max-w-[560px] text-[24px] font-extrabold leading-[1.16] tracking-[-0.045em] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.55)] sm:text-[34px]">
+              {title.includes("움직이는 적일 때") ? (
+                <>
+                  몽골 부족은 멈춘 적보다
+                  <br />
+                  움직이는 적일 때 더 강했습니다
+                </>
+              ) : (
+                title
+              )}
+            </h1>
+          )}
+        </div>
       </div>
+
+      <Link
+        href={`/studio?style=${encodeURIComponent(primaryStyleId)}`}
+        className="mt-3 flex h-14 w-full items-center justify-center text-[15px] font-black text-black transition-opacity hover:opacity-90"
+        style={{ backgroundColor: accent }}
+        aria-label={ctaLabel}
+      >
+        나도 만들기 →
+      </Link>
     </div>
   );
 }

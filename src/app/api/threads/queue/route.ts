@@ -13,6 +13,18 @@ function checkAdmin(req: NextRequest) {
   return password === process.env.ADMIN_PASSWORD;
 }
 
+function parseBool(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value !== "string") return false;
+  return ["yes", "true", "1", "y"].includes(value.trim().toLowerCase());
+}
+
+function parseStyles(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String).map((v) => v.trim()).filter(Boolean);
+  if (typeof value !== "string") return [];
+  return value.split("|").map((v) => v.trim()).filter(Boolean);
+}
+
 // GET /api/threads/queue — 전체 목록 (최신순)
 export async function GET(req: NextRequest) {
   if (!checkAdmin(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -32,7 +44,18 @@ export async function POST(req: NextRequest) {
   if (!checkAdmin(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { content, image_url, scheduled_at } = body;
+  const {
+    content,
+    image_url,
+    scheduled_at,
+    template_id,
+    category,
+    cta_type,
+    link_included,
+    image_upload_recommended,
+    recommended_styles,
+    quality_note,
+  } = body;
   if (!content || !scheduled_at) {
     return NextResponse.json({ error: "content and scheduled_at required" }, { status: 400 });
   }
@@ -40,7 +63,20 @@ export async function POST(req: NextRequest) {
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from("threads_posts")
-    .insert({ content, image_url: image_url || null, scheduled_at, status: "draft" })
+    .insert({
+      content,
+      image_url: image_url || null,
+      scheduled_at,
+      status: "draft",
+      template_id: template_id || null,
+      category: category || null,
+      cta_type: cta_type || null,
+      link_included: parseBool(link_included),
+      image_upload_recommended: parseBool(image_upload_recommended),
+      recommended_styles: parseStyles(recommended_styles),
+      quality_note: quality_note || null,
+      source: "manual",
+    })
     .select()
     .single();
 
