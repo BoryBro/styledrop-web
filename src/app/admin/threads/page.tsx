@@ -155,18 +155,19 @@ function InsightsBadge({ postId, password }: { postId: string; password: string 
       headers: { "Content-Type": "application/json", "x-admin-password": password },
     }).then(r => r.json()).then(d => { if (d.metrics) setMetrics(d.metrics); }).catch(() => {});
   }, [postId, password]);
-  if (!metrics) return <span className="text-[11px] text-white/20">로딩 중...</span>;
+  if (!metrics) return <span className="text-[11px] text-[#9CA3AF]">로딩 중...</span>;
   return (
     <div className="flex gap-3 text-[12px]">
-      <span className="text-white/50">👁 {(metrics.views ?? 0).toLocaleString()}</span>
-      <span className="text-white/50">♥ {(metrics.likes ?? 0).toLocaleString()}</span>
-      <span className="text-white/50">💬 {(metrics.replies ?? 0).toLocaleString()}</span>
-      <span className="text-white/50">🔁 {(metrics.reposts ?? 0).toLocaleString()}</span>
+      <span className="text-[#6B7280]">👁 {(metrics.views ?? 0).toLocaleString()}</span>
+      <span className="text-[#6B7280]">♥ {(metrics.likes ?? 0).toLocaleString()}</span>
+      <span className="text-[#6B7280]">💬 {(metrics.replies ?? 0).toLocaleString()}</span>
+      <span className="text-[#6B7280]">🔁 {(metrics.reposts ?? 0).toLocaleString()}</span>
     </div>
   );
 }
 
 const STORAGE_KEY = "threads_admin_pw";
+const SHARED_KEY = "sd_admin_pw";
 const STUDIO_LINK = "https://www.styledrop.cloud/studio";
 const STYLEDROP_LINK_RE = /https?:\/\/(?:www\.)?styledrop\.cloud\/?(?:[\w/-]*)?/g;
 const STYLEDROP_LINK_TEST_RE = /https?:\/\/(?:www\.)?styledrop\.cloud\/?(?:[\w/-]*)?/;
@@ -239,10 +240,10 @@ export default function ThreadsAdminPage() {
     } finally { setLoading(false); }
   };
 
-  // 자동 로그인
+  // 자동 로그인 (두 어드민 페이지 SSO)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(SHARED_KEY);
       if (!saved) return;
       setPw(saved);
       fetch("/api/threads/queue", { headers: h(saved) }).then(res => {
@@ -264,7 +265,7 @@ export default function ThreadsAdminPage() {
     try {
       const res = await fetch("/api/threads/queue", { headers: h(pw) });
       if (res.ok) {
-        try { localStorage.setItem(STORAGE_KEY, pw); } catch {}
+        try { localStorage.setItem(STORAGE_KEY, pw); localStorage.setItem(SHARED_KEY, pw); } catch {}
         const data = await res.json();
         const nextPosts = data.posts ?? [];
         setPosts(nextPosts);
@@ -500,58 +501,114 @@ export default function ThreadsAdminPage() {
   const selectedSchedule = draft.scheduled_at ? new Date(draft.scheduled_at) : null;
   const selectedScheduleIsPast = Boolean(selectedSchedule && selectedSchedule.getTime() <= Date.now());
   const minSchedule = toDatetimeLocalValue(new Date(Date.now() + 60_000));
+  const todayLabel = new Date().toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  });
 
   if (!authed) {
     return (
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-6 gap-4">
-        <p className="text-white font-bold text-xl">Threads 어드민</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F5F6F8] px-6">
+        <div className="w-full max-w-sm rounded-[18px] border border-[#E5E7EB] bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <p className="text-[12px] font-black text-[#9CA3AF]">StyleDrop Admin</p>
+        <p className="mt-1 text-2xl font-black tracking-[-0.05em] text-[#111827]">Threads 관리</p>
+        <p className="mt-2 text-[13px] text-[#6B7280]">자동 발행 큐를 관리하려면 비밀번호를 입력하세요.</p>
         <input
           type="password"
           placeholder="비밀번호"
           value={pw}
           onChange={e => setPw(e.target.value)}
           onKeyDown={e => e.key === "Enter" && void login()}
-          className="w-full max-w-xs bg-[#1A1A1A] border border-white/20 rounded-2xl px-5 py-4 text-white text-base outline-none"
+          className="mt-5 w-full rounded-md border border-[#D1D5DB] bg-white px-4 py-3 text-base text-[#111827] outline-none transition-colors placeholder:text-[#9CA3AF] focus:border-[#F06B35]"
         />
         <button
           onClick={() => void login()}
           disabled={logging}
-          className="w-full max-w-xs py-4 rounded-2xl text-base font-bold text-black disabled:opacity-50"
-          style={{ backgroundColor: "#ffffff" }}
+          className="mt-3 w-full rounded-md bg-[#273142] py-3 text-base font-black text-white transition-colors hover:bg-[#1F2937] disabled:opacity-50"
         >
           {logging ? "확인 중..." : "로그인"}
         </button>
         {toast && (
-          <p className="text-red-400 text-sm">{toast}</p>
+          <p className="mt-3 text-sm font-bold text-red-500">{toast}</p>
         )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white">
+    <main className="min-h-screen overflow-x-hidden bg-[#F5F6F8] text-[#111827]">
       {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-white text-black text-sm font-bold px-5 py-2.5 rounded-full shadow-xl">
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full border border-[#E5E7EB] bg-white px-5 py-2.5 text-sm font-black text-[#111827] shadow-xl">
           {toast}
         </div>
       )}
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0A0A0A]/95 px-8 py-5 backdrop-blur">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-6">
-          <div>
-            <p className="text-2xl font-black tracking-tight">Threads 관리</p>
-            <p className="mt-1 text-[12px] font-bold text-white/30">
-              대기 {pending.length} · 이미지 필요 {needsImage.length} · 발행 {published.length} · 실패 {failed.length}
-            </p>
+      <div className="min-h-screen overflow-x-hidden">
+        <aside className="hidden w-[220px] shrink-0 border-r border-[#E5E7EB] bg-[#F1F3F5] lg:fixed lg:inset-y-0 lg:flex lg:flex-col">
+          <div className="border-b border-[#E5E7EB] px-5 py-5">
+            <p className="text-[12px] font-bold text-[#6B7280]">StyleDrop</p>
+            <p className="mt-1 text-[15px] font-black tracking-[-0.03em] text-[#111827]">관리자 콘솔</p>
+            <p className="mt-1 text-[10px] font-bold text-[#9CA3AF]">Threads Queue</p>
           </div>
-          <div className="flex items-center gap-2">
-            <a href="/admin" className="px-4 py-2.5 rounded-xl text-sm font-bold text-white/50 border border-white/10">← 어드민</a>
-            <button onClick={() => setShowForm(v => !v)}
-              className="px-5 py-2.5 rounded-xl font-bold text-sm"
-              style={{ background: showForm ? "#333" : "#22C55E", color: showForm ? "#fff" : "#000" }}>
-              {showForm ? "취소" : "+ 새 글"}
+
+          <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
+            <a
+              href="/admin"
+              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[#4B5563] transition-colors hover:bg-white/70 hover:text-[#111827]"
+            >
+              <span className="h-2 w-2 rounded-full bg-[#CBD5E1]" />
+              <span>
+                <span className="block text-[14px] font-extrabold tracking-[-0.02em]">메인 어드민</span>
+                <span className="mt-0.5 block text-[11px] text-[#9CA3AF]">운영 · 지표 · 매출</span>
+              </span>
+            </a>
+            <div className="group flex items-center gap-3 rounded-lg bg-white px-3 py-2.5 text-left text-[#111827] shadow-sm ring-1 ring-[#E5E7EB]">
+              <span className="h-2 w-2 rounded-full bg-[#F06B35]" />
+              <span>
+                <span className="block text-[14px] font-extrabold tracking-[-0.02em]">Threads 관리</span>
+                <span className="mt-0.5 block text-[11px] text-[#6B7280]">자동 발행 큐</span>
+              </span>
+            </div>
+            <div className="my-3 h-px bg-[#E5E7EB]" />
+            <button
+              onClick={() => setTab("pending")}
+              className={`rounded-lg px-3 py-2 text-left text-[13px] font-bold transition-colors ${tab === "pending" ? "bg-white text-[#111827]" : "text-[#6B7280] hover:bg-white/70"}`}
+            >
+              대기 {pending.length}
             </button>
-            <label className="cursor-pointer px-5 py-2.5 rounded-xl font-bold text-sm bg-white text-black">
+            <button
+              onClick={() => setTab("needsImage")}
+              className={`rounded-lg px-3 py-2 text-left text-[13px] font-bold transition-colors ${tab === "needsImage" ? "bg-white text-[#111827]" : "text-[#6B7280] hover:bg-white/70"}`}
+            >
+              이미지 필요 {needsImage.length}
+            </button>
+            <button
+              onClick={() => setTab("published")}
+              className={`rounded-lg px-3 py-2 text-left text-[13px] font-bold transition-colors ${tab === "published" ? "bg-white text-[#111827]" : "text-[#6B7280] hover:bg-white/70"}`}
+            >
+              발행 {published.length}
+            </button>
+            <button
+              onClick={() => setTab("failed")}
+              className={`rounded-lg px-3 py-2 text-left text-[13px] font-bold transition-colors ${tab === "failed" ? "bg-white text-[#111827]" : "text-[#6B7280] hover:bg-white/70"}`}
+            >
+              실패 {failed.length}
+            </button>
+          </nav>
+
+          <div className="border-t border-[#E5E7EB] p-3">
+            <button
+              onClick={() => setShowForm(v => !v)}
+              className={`mb-2 w-full rounded-md px-3 py-3 text-[13px] font-black transition-colors ${
+                showForm ? "border border-[#D1D5DB] bg-white text-[#4B5563]" : "bg-[#273142] text-white hover:bg-[#1F2937]"
+              }`}
+            >
+              {showForm ? "새 글 닫기" : "+ 새 글"}
+            </button>
+            <label className="block w-full cursor-pointer rounded-md border border-[#D1D5DB] bg-white px-3 py-2.5 text-center text-[12px] font-bold text-[#4B5563] transition-colors hover:text-[#111827]">
               {importing ? "Import..." : "CSV Import"}
               <input
                 type="file"
@@ -562,23 +619,91 @@ export default function ThreadsAdminPage() {
               />
             </label>
           </div>
-        </div>
-      </header>
+        </aside>
+
+        <div className="min-h-screen min-w-0 lg:ml-[220px]">
+          <header className="sticky top-0 z-40 border-b border-[#E5E7EB] bg-white">
+            <div className="flex min-h-[58px] flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+              <div className="flex min-w-0 items-center gap-4">
+                <span className="text-[13px] font-black text-[#111827]">Threads 관리</span>
+                <div className="h-4 w-px bg-[#E5E7EB]" />
+                <span className="truncate text-[13px] font-bold text-[#9CA3AF]">{todayLabel}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <a href="/admin" className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[12px] font-black text-[#111827] transition-colors hover:bg-[#F9FAFB]">
+                  메인 어드민
+                </a>
+                <button onClick={() => setShowForm(v => !v)}
+                  className={`rounded-md px-3 py-2 text-[12px] font-black transition-colors ${
+                    showForm ? "border border-[#D1D5DB] bg-white text-[#4B5563]" : "bg-[#273142] text-white hover:bg-[#1F2937]"
+                  }`}>
+                  {showForm ? "취소" : "+ 새 글"}
+                </button>
+                <label className="cursor-pointer rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[12px] font-black text-[#111827] transition-colors hover:bg-[#F9FAFB]">
+                  {importing ? "Import..." : "CSV Import"}
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    disabled={importing}
+                    onChange={(event) => void importCsv(event.target.files?.[0] ?? null)}
+                  />
+                </label>
+                <button onClick={() => void fetchPosts(pw)} className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[12px] font-black text-[#111827] transition-colors hover:bg-[#F9FAFB]">
+                  {loading ? "..." : "새로고침"}
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div className="mx-auto flex w-full max-w-[1760px] min-w-0 flex-col gap-4 px-4 py-5 lg:px-6">
+            <section className="rounded-[18px] border border-[#EAECF0] bg-white px-6 py-7 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <div className="mb-6 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+                <div className="bg-white px-4 py-4">
+                  <p className="text-[12px] font-black text-[#9CA3AF]">자동 발행 큐</p>
+                  <h1 className="mt-1 text-[28px] font-black tracking-[-0.05em] text-[#111827]">Threads 관리</h1>
+                </div>
+                <p className="max-w-xl text-[13px] leading-5 text-[#6B7280]">
+                  글 작성, 이미지 업로드, 승인, 예약 발행을 한 화면에서 처리합니다.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-px overflow-hidden border border-[#EEF0F2] bg-[#EEF0F2] md:grid-cols-4">
+                <div className="bg-white px-4 py-4">
+                  <p className="text-[12px] font-bold text-[#6B7280]">대기</p>
+                  <p className="mt-2 text-[30px] font-black tracking-[-0.05em] text-[#111827] tabular-nums">{pending.length}</p>
+                </div>
+                <div className="bg-white px-4 py-4">
+                  <p className="text-[12px] font-bold text-[#6B7280]">이미지 필요</p>
+                  <p className="mt-2 text-[30px] font-black tracking-[-0.05em] text-[#F06B35] tabular-nums">{needsImage.length}</p>
+                </div>
+                <div className="bg-white px-4 py-4">
+                  <p className="text-[12px] font-bold text-[#6B7280]">발행</p>
+                  <p className="mt-2 text-[30px] font-black tracking-[-0.05em] text-[#111827] tabular-nums">{published.length}</p>
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[#6B7280]">실패</p>
+                  <p className={`mt-2 text-[30px] font-black tracking-[-0.05em] tabular-nums ${failed.length > 0 ? "text-red-600" : "text-[#111827]"}`}>
+                    {failed.length}
+                  </p>
+                </div>
+              </div>
+            </section>
 
       {showForm && (
-        <div className="border-b border-white/10 bg-[#111] px-8 py-6">
-          <div className="mx-auto grid max-w-[1600px] grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)] gap-6">
-            <section className="rounded-3xl border border-white/[0.07] bg-[#0D0D0D] p-5">
+        <section className="rounded-[18px] border border-[#EAECF0] bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] [&>*]:min-w-0">
+            <section className="rounded-xl border border-[#E5E7EB] bg-white p-5">
               <div className="relative">
                 <textarea value={draft.content} onChange={e => setDraft(d => ({ ...d, content: e.target.value }))}
                   placeholder="마케팅 문구 작성..." rows={9}
-                  className="w-full bg-[#1A1A1A] border border-white/10 rounded-2xl px-5 py-4 text-base leading-relaxed text-white outline-none resize-none"
+                  className="w-full resize-none rounded-xl border border-[#D1D5DB] bg-white px-5 py-4 text-base leading-relaxed text-[#111827] outline-none transition-colors placeholder:text-[#9CA3AF] focus:border-[#F06B35]"
                   style={{ borderColor: charOver ? "#EF4444" : undefined }} />
-                <span className="absolute bottom-4 right-5 text-[11px]" style={{ color: charOver ? "#EF4444" : "#555" }}>
+                <span className="absolute bottom-4 right-5 text-[11px]" style={{ color: charOver ? "#EF4444" : "#9CA3AF" }}>
                   {draft.content.length}/500
                 </span>
               </div>
-              <div className="mt-4 grid grid-cols-[minmax(0,1fr)_340px] gap-4">
+              <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] [&>*]:min-w-0">
                 <div
                   onDragOver={(event) => { event.preventDefault(); setDraftDragActive(true); }}
                   onDragLeave={() => setDraftDragActive(false)}
@@ -589,23 +714,23 @@ export default function ThreadsAdminPage() {
                   }}
                   className="min-h-32 rounded-2xl border border-dashed px-5 py-5 transition-colors"
                   style={{
-                    borderColor: draftDragActive ? "#22C55E" : "rgba(255,255,255,0.16)",
-                    background: draftDragActive ? "rgba(34,197,94,0.08)" : "#1A1A1A",
+                    borderColor: draftDragActive ? "#F06B35" : "#D1D5DB",
+                    background: draftDragActive ? "#FFF7F2" : "#F9FAFB",
                   }}
                 >
                   {draft.image_url ? (
                     <div className="flex gap-4 items-center">
-                      <div className="h-24 w-24 overflow-hidden rounded-2xl bg-black/30 border border-white/10">
+                      <div className="h-24 w-24 overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F3F4F6]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={draft.image_url} alt="" className="h-full w-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white">이미지 첨부됨</p>
-                        <p className="text-[11px] text-white/35 truncate">{draft.image_url}</p>
+                        <p className="text-sm font-bold text-[#111827]">이미지 첨부됨</p>
+                        <p className="truncate text-[11px] text-[#9CA3AF]">{draft.image_url}</p>
                         <button
                           type="button"
                           onClick={() => setDraft((current) => ({ ...current, image_url: "" }))}
-                          className="mt-2 text-[12px] font-bold text-red-300"
+                          className="mt-2 text-[12px] font-bold text-red-500"
                         >
                           이미지 제거
                         </button>
@@ -613,8 +738,8 @@ export default function ThreadsAdminPage() {
                     </div>
                   ) : (
                     <label className="flex h-full min-h-24 cursor-pointer flex-col items-center justify-center gap-2 text-center">
-                      <span className="text-sm font-bold text-white">{draftUploading ? "업로드 중..." : "사진을 드래그하거나 클릭해서 업로드"}</span>
-                      <span className="text-[11px] text-white/35">JPG, PNG, WEBP · 8MB 이하</span>
+                      <span className="text-sm font-black text-[#111827]">{draftUploading ? "업로드 중..." : "사진을 드래그하거나 클릭해서 업로드"}</span>
+                      <span className="text-[11px] text-[#9CA3AF]">JPG, PNG, WEBP · 8MB 이하</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -627,17 +752,16 @@ export default function ThreadsAdminPage() {
                 </div>
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] text-white/40 font-bold uppercase tracking-wider">예약 시간</label>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">예약 시간</label>
                     <input type="datetime-local" value={draft.scheduled_at} min={minSchedule} onChange={e => setDraft(d => ({ ...d, scheduled_at: e.target.value }))}
-                      className="bg-[#1A1A1A] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none" />
+                      className="rounded-md border border-[#D1D5DB] bg-white px-4 py-3 text-sm text-[#111827] outline-none transition-colors focus:border-[#F06B35]" />
                   </div>
                   <button onClick={() => void create()} disabled={charOver || selectedScheduleIsPast}
-                    className="py-3 rounded-xl font-bold text-sm disabled:opacity-40"
-                    style={{ background: "#22C55E", color: "#000" }}>저장</button>
+                    className="rounded-md bg-[#273142] py-3 text-sm font-black text-white transition-colors hover:bg-[#1F2937] disabled:opacity-40">저장</button>
                 </div>
               </div>
               {selectedScheduleIsPast && (
-                <p className="mt-3 text-[12px] font-bold text-red-300">
+                <p className="mt-3 text-[12px] font-bold text-red-500">
                   이미 지난 예약 시간입니다. 미래 시간으로 다시 선택해주세요.
                 </p>
               )}
@@ -654,11 +778,11 @@ export default function ThreadsAdminPage() {
                           return;
                         }
                         setDraft(v => ({ ...v, scheduled_at: toDatetimeLocalValue(presetDate) }));
-                      }} className="text-[11px] px-3 py-1.5 rounded-lg border transition-colors"
+                      }} className="rounded-md border px-3 py-1.5 text-[11px] font-bold transition-colors"
                         style={{
-                          borderColor: presetIsPast ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.1)",
-                          color: presetIsPast ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.5)",
-                          background: presetIsPast ? "rgba(255,255,255,0.02)" : "transparent",
+                          borderColor: presetIsPast ? "#F3F4F6" : "#D1D5DB",
+                          color: presetIsPast ? "#D1D5DB" : "#4B5563",
+                          background: presetIsPast ? "#F9FAFB" : "#FFFFFF",
                         }}>
                         {label}{presetIsPast ? " · 지남" : ""}
                       </button>
@@ -666,74 +790,74 @@ export default function ThreadsAdminPage() {
                   })}
               </div>
               {draft.image_upload_recommended && (
-                <p className="mt-3 text-[12px] font-bold text-[#FDBA74]">
+                <p className="mt-3 text-[12px] font-bold text-[#F06B35]">
                   이 문구는 이미지 필요 글로 저장됩니다. 이미지 없으면 승인 단계에서 막혀요.
                 </p>
               )}
             </section>
-            <aside className="rounded-3xl border border-white/[0.07] bg-[#0D0D0D] p-5">
+            <aside className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[13px] font-black text-white/65">추천 문구</p>
-                  <p className="mt-1 text-[11px] text-white/25">CSV 글 기준 랜덤 복붙용</p>
+                  <p className="text-[13px] font-black text-[#111827]">추천 문구</p>
+                  <p className="mt-1 text-[11px] text-[#9CA3AF]">CSV 글 기준 랜덤 복붙용</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setTemplateSuggestions(buildTemplateSuggestions(posts))}
-                  className="rounded-lg border border-white/10 px-3 py-1.5 text-[11px] font-bold text-white/45 hover:text-white"
+                  className="rounded-md border border-[#D1D5DB] bg-white px-3 py-1.5 text-[11px] font-black text-[#4B5563] hover:text-[#111827]"
                 >
                   다른 문구
                 </button>
               </div>
-              <div className="mt-4 grid max-h-[560px] grid-cols-1 gap-2 overflow-y-auto pr-1">
+              <div className="mt-4 grid max-h-[560px] grid-cols-1 gap-2 overflow-y-auto pr-1 2xl:grid-cols-2">
                 {templateSuggestions.map((tpl) => (
                   <button key={tpl.id} type="button" onClick={() => applySuggestion(tpl)}
-                    className="text-left p-3 rounded-xl border border-white/10 hover:border-white/30">
+                    className="rounded-lg border border-[#E5E7EB] bg-white p-3 text-left transition-colors hover:border-[#F06B35]">
                     <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10px] font-black text-white/30 uppercase tracking-wider">{tpl.tag}</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-[#9CA3AF]">{tpl.tag}</span>
                       {tpl.imageRequired && (
-                        <span className="rounded-full bg-[#F97316]/15 px-2 py-0.5 text-[10px] font-black text-[#FDBA74]">이미지 필요</span>
+                        <span className="rounded-full bg-[#FFF1E8] px-2 py-0.5 text-[10px] font-black text-[#F06B35]">이미지 필요</span>
                       )}
                       {tpl.styles && tpl.styles.length > 0 && (
-                        <span className="rounded-full bg-[#38BDF8]/10 px-2 py-0.5 text-[10px] font-bold text-[#7DD3FC]">
+                        <span className="rounded-full bg-[#EAF6FF] px-2 py-0.5 text-[10px] font-bold text-[#0369A1]">
                           {tpl.styles.slice(0, 2).join(" · ")}
                         </span>
                       )}
                     </div>
-                    <p className="text-[12px] text-white/60 leading-relaxed whitespace-pre-wrap line-clamp-2">{tpl.content}</p>
+                    <p className="line-clamp-2 whitespace-pre-wrap text-[12px] leading-relaxed text-[#4B5563]">{tpl.content}</p>
                   </button>
                 ))}
               </div>
             </aside>
           </div>
-        </div>
+        </section>
       )}
-      <div className="sticky top-[89px] z-30 border-b border-white/10 bg-[#0A0A0A]/95 px-8 backdrop-blur">
-        <div className="mx-auto flex max-w-[1600px] items-center gap-5">
+      <section className="rounded-[18px] border border-[#EAECF0] bg-white p-2 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="flex flex-wrap items-center gap-2">
           {(["pending", "needsImage", "published", "failed"] as const).map(key => (
             <button key={key} onClick={() => setTab(key)}
-              className="py-4 text-sm font-bold border-b-2 transition-colors"
-              style={{ borderColor: tab === key ? "#22C55E" : "transparent", color: tab === key ? "#fff" : "#555" }}>
+              className={`rounded-md px-4 py-2.5 text-sm font-black transition-colors ${
+                tab === key ? "bg-[#273142] text-white" : "text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]"
+              }`}>
               {key === "pending" ? `대기(${pending.length})` : key === "needsImage" ? `이미지필요(${needsImage.length})` : key === "published" ? `발행(${published.length})` : `실패(${failed.length})`}
             </button>
           ))}
           <div className="ml-auto flex items-center gap-2">
             {tab === "pending" && approvableDrafts.length > 0 && (
               <button onClick={() => void approveAll()}
-                className="px-4 py-2 rounded-xl text-[12px] font-bold"
-                style={{ background: "#22C55E", color: "#000" }}>
-                전체승인({approvableDrafts.length})
+                className="rounded-md bg-[#6ED26A] px-4 py-2 text-[12px] font-black text-[#111827] transition-opacity hover:opacity-90">
+                전체 승인({approvableDrafts.length})
               </button>
             )}
-            <button onClick={() => void fetchPosts(pw)} className="py-3 text-[13px] text-white/30">
+            <button onClick={() => void fetchPosts(pw)} className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[12px] font-black text-[#4B5563] transition-colors hover:text-[#111827]">
               {loading ? "..." : "↻"}
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="mx-auto grid max-w-[1600px] grid-cols-2 gap-5 px-8 py-6">
-        {tabPosts.length === 0 && <div className="col-span-2 py-16 text-center text-white/30 text-sm">포스트 없음</div>}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[repeat(auto-fit,minmax(300px,1fr))] [&>*]:min-w-0">
+        {tabPosts.length === 0 && <div className="py-16 text-center text-sm font-bold text-[#9CA3AF] xl:col-span-2">포스트 없음</div>}
         {tabPosts.map(post => {
           const s = STATUS_STYLE[post.status];
           const busy = actionId === post.id;
@@ -743,25 +867,25 @@ export default function ThreadsAdminPage() {
           const editOver = editDraft.content.length > 500;
           const linkOn = hasStyledropLink(isEditing ? editDraft.content : post.content);
           return (
-            <div key={post.id} className="bg-[#111] border border-white/[0.07] rounded-3xl p-6 flex flex-col gap-4">
+            <div key={post.id} className="flex flex-col gap-3 rounded-xl border border-[#EAECF0] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-black rounded-full px-2.5 py-0.5" style={{ background: s.bg, color: s.color }}>{s.label}</span>
                 <div className="text-right">
-                  <p className="text-[11px] text-white/30">예약: {fmt(post.scheduled_at)}</p>
-                  {post.published_at && <p className="text-[11px] text-white/20">발행: {fmt(post.published_at)}</p>}
+                  <p className="text-[11px] text-[#6B7280]">예약: {fmt(post.scheduled_at)}</p>
+                  {post.published_at && <p className="text-[11px] text-[#9CA3AF]">발행: {fmt(post.published_at)}</p>}
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {post.category && <span className="rounded-full bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-white/45">{post.category}</span>}
-                {post.cta_type && <span className="rounded-full bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-white/45">CTA {post.cta_type}</span>}
-                {post.image_upload_recommended && <span className="rounded-full bg-[#F97316]/15 px-2 py-1 text-[10px] font-bold text-[#FDBA74]">이미지 권장</span>}
-                {post.status === "draft" && scheduledPassed && <span className="rounded-full bg-red-500/15 px-2 py-1 text-[10px] font-bold text-red-300">시간 지남</span>}
+                {post.category && <span className="rounded-full bg-[#F3F4F6] px-2 py-1 text-[10px] font-bold text-[#6B7280]">{post.category}</span>}
+                {post.cta_type && <span className="rounded-full bg-[#F3F4F6] px-2 py-1 text-[10px] font-bold text-[#6B7280]">CTA {post.cta_type}</span>}
+                {post.image_upload_recommended && <span className="rounded-full bg-[#FFF1E8] px-2 py-1 text-[10px] font-bold text-[#F06B35]">이미지 권장</span>}
+                {post.status === "draft" && scheduledPassed && <span className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-bold text-red-600">시간 지남</span>}
                 {post.recommended_styles?.map((style) => (
                   <button
                     key={style}
                     type="button"
                     onClick={() => void copyStylePrompt(style)}
-                    className="rounded-full bg-[#38BDF8]/10 px-2 py-1 text-left text-[10px] font-bold text-[#7DD3FC] transition-colors hover:bg-[#38BDF8]/20"
+                    className="rounded-full bg-[#EAF6FF] px-2 py-1 text-left text-[10px] font-bold text-[#0369A1] transition-colors hover:bg-[#DFF0FF]"
                     title={`${style} 프롬프트 복사`}
                   >
                     {style}
@@ -775,19 +899,19 @@ export default function ThreadsAdminPage() {
                       value={editDraft.content}
                       onChange={(event) => setEditDraft({ content: event.target.value })}
                       rows={6}
-                      className="w-full resize-none rounded-xl border border-white/10 bg-[#1A1A1A] px-4 py-3 text-sm leading-relaxed text-white outline-none"
+                      className="w-full resize-none rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-sm leading-relaxed text-[#111827] outline-none transition-colors focus:border-[#F06B35]"
                       style={{ borderColor: editOver ? "#EF4444" : undefined }}
                     />
-                    <span className="absolute bottom-3 right-4 text-[11px]" style={{ color: editOver ? "#EF4444" : "#555" }}>
+                    <span className="absolute bottom-3 right-4 text-[11px]" style={{ color: editOver ? "#EF4444" : "#9CA3AF" }}>
                       {editDraft.content.length}/500
                     </span>
                   </div>
-                  <p className="text-[11px] text-white/30">
+                  <p className="text-[11px] text-[#9CA3AF]">
                     스튜디오 링크: {linkOn ? "ON" : "OFF"}
                   </p>
                 </div>
               ) : (
-                <p className="text-[14px] text-white/80 leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-[#111827]">{post.content}</p>
               )}
               {post.status !== "published" && (
                 <div
@@ -800,28 +924,28 @@ export default function ThreadsAdminPage() {
                   }}
                   className="rounded-xl border border-dashed px-4 py-4 transition-colors"
                   style={{
-                    borderColor: draggingPostId === post.id ? "#22C55E" : "rgba(255,255,255,0.14)",
-                    background: draggingPostId === post.id ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.025)",
+                    borderColor: draggingPostId === post.id ? "#F06B35" : "#D1D5DB",
+                    background: draggingPostId === post.id ? "#FFF7F2" : "#F9FAFB",
                   }}
                 >
                   {post.image_url ? (
                     <div className="flex gap-3 items-center">
-                      <div className="h-24 w-24 overflow-hidden rounded-xl bg-black/30 border border-white/10">
+                      <div className="h-24 w-24 overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F3F4F6]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={post.image_url} alt="" className="h-full w-full object-cover" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-white">이미지 첨부됨</p>
-                        <p className="mt-1 truncate text-[11px] text-white/35">{post.image_url}</p>
-                        <p className="mt-2 text-[11px] text-white/25">교체하려면 새 이미지를 여기로 드래그하세요.</p>
+                        <p className="text-sm font-bold text-[#111827]">이미지 첨부됨</p>
+                        <p className="mt-1 truncate text-[11px] text-[#9CA3AF]">{post.image_url}</p>
+                        <p className="mt-2 text-[11px] text-[#9CA3AF]">교체하려면 새 이미지를 여기로 드래그하세요.</p>
                       </div>
                     </div>
                   ) : (
                     <label className="flex cursor-pointer flex-col items-center justify-center gap-2 py-2 text-center">
-                      <span className="text-sm font-bold text-white/70">
+                      <span className="text-sm font-black text-[#111827]">
                         {uploadingId === post.id ? "업로드 중..." : "이미지를 드래그하거나 클릭해서 업로드"}
                       </span>
-                      <span className="text-[11px] text-white/30">
+                      <span className="text-[11px] text-[#9CA3AF]">
                         {post.image_upload_recommended ? "이 글은 이미지가 있어야 승인됩니다." : "선택 사항 · JPG, PNG, WEBP"}
                       </span>
                       <input
@@ -836,51 +960,51 @@ export default function ThreadsAdminPage() {
                 </div>
               )}
               {post.status === "published" && post.image_url && (
-                <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-black/30">
+                <div className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F3F4F6]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={post.image_url} alt="" className="max-h-72 w-full object-cover" />
                 </div>
               )}
-              {post.quality_note && <p className="text-[12px] text-white/35 bg-white/[0.04] rounded-lg px-3 py-2">{post.quality_note}</p>}
-              {post.error_message && <p className="text-[12px] text-red-400 bg-red-400/10 rounded-lg px-3 py-2">{post.error_message}</p>}
+              {post.quality_note && <p className="rounded-lg bg-[#F9FAFB] px-3 py-2 text-[12px] text-[#6B7280]">{post.quality_note}</p>}
+              {post.error_message && <p className="rounded-lg bg-red-50 px-3 py-2 text-[12px] text-red-600">{post.error_message}</p>}
               {post.status === "published" && post.thread_id && (
-                <div className="border-t border-white/[0.06] pt-3">
+                <div className="border-t border-[#E5E7EB] pt-3">
                   <InsightsBadge postId={post.id} password={pw} />
                 </div>
               )}
               {post.status !== "published" && (
-                <div className="flex gap-2 pt-1 border-t border-white/[0.06]">
+                <div className="flex flex-wrap gap-2 border-t border-[#E5E7EB] pt-3">
                   {isEditing ? (
                     <>
                       <button onClick={() => void saveEdit(post)} disabled={busy || editOver}
-                        className="flex-1 rounded-xl bg-white px-3 py-2 text-[13px] font-bold text-black disabled:opacity-40">저장</button>
+                        className="flex-1 rounded-md bg-[#273142] px-3 py-2 text-[13px] font-black text-white disabled:opacity-40">저장</button>
                       <button onClick={() => { setEditingPostId(null); setEditDraft({ content: "" }); }} disabled={busy}
-                        className="rounded-xl border border-white/10 px-3 py-2 text-[13px] font-bold text-white/50 disabled:opacity-40">취소</button>
+                        className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[13px] font-black text-[#4B5563] disabled:opacity-40">취소</button>
                     </>
                   ) : (
                     <>
                       <button onClick={() => startEdit(post)} disabled={busy}
-                        className="px-3 py-2 rounded-xl text-[13px] font-bold text-white/50 border border-white/10 disabled:opacity-40">수정</button>
+                        className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[13px] font-black text-[#4B5563] disabled:opacity-40">수정</button>
                       <button onClick={() => void toggleStudioLink(post)} disabled={busy}
-                        className="px-3 py-2 rounded-xl text-[13px] font-bold border border-white/10 disabled:opacity-40"
-                        style={{ color: linkOn ? "#86EFAC" : "rgba(255,255,255,0.5)" }}>
+                        className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[13px] font-black disabled:opacity-40"
+                        style={{ color: linkOn ? "#15803D" : "#4B5563" }}>
                         링크 {linkOn ? "ON" : "OFF"}
                       </button>
                       {(post.status === "draft" || post.status === "approved") && (
                         <button onClick={() => void approve(post.id)} disabled={busy || (post.status === "draft" && (missingRequiredImage || scheduledPassed))}
-                          className="flex-1 py-2 rounded-xl text-[13px] font-bold disabled:opacity-40"
-                          style={{ background: post.status === "approved" ? "#1A1A1A" : "#22C55E", color: post.status === "approved" ? "#6B7280" : "#000", border: post.status === "approved" ? "1px solid #333" : "none" }}>
+                          className="flex-1 rounded-md py-2 text-[13px] font-black disabled:opacity-40"
+                          style={{ background: post.status === "approved" ? "#F3F4F6" : "#6ED26A", color: post.status === "approved" ? "#6B7280" : "#111827", border: post.status === "approved" ? "1px solid #D1D5DB" : "none" }}>
                           {post.status === "draft" && missingRequiredImage ? "이미지 필요" : post.status === "draft" && scheduledPassed ? "시간 지남" : post.status === "approved" ? "승인취소" : "✓ 승인"}
                         </button>
                       )}
                       {post.status === "approved" && (
                         <button onClick={() => void publish(post.id)} disabled={busy || missingRequiredImage}
-                          className="flex-1 py-2 rounded-xl text-[13px] font-bold bg-white text-black disabled:opacity-40">
+                          className="flex-1 rounded-md bg-[#273142] py-2 text-[13px] font-black text-white disabled:opacity-40">
                           {missingRequiredImage ? "이미지 필요" : busy ? "발행 중..." : "지금 발행 →"}
                         </button>
                       )}
                       <button onClick={() => void del(post.id)} disabled={busy}
-                        className="px-4 py-2 rounded-xl text-[13px] font-bold text-red-400 disabled:opacity-40">삭제</button>
+                        className="rounded-md px-4 py-2 text-[13px] font-black text-red-500 disabled:opacity-40">삭제</button>
                     </>
                   )}
                 </div>
@@ -889,6 +1013,9 @@ export default function ThreadsAdminPage() {
           );
         })}
       </div>
-    </div>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }

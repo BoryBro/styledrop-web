@@ -13,7 +13,7 @@ import { REFUND_UNIT_PRICE } from "@/lib/payment-policy";
 import { ALL_STYLES } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-const ADMIN_UI_VERSION = "v2.9.0-clean-admin";
+const ADMIN_UI_VERSION = "v2.11.0-console-admin";
 
 type AdminTab = "ops" | "metrics" | "revenue" | "users";
 
@@ -332,8 +332,8 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">비용 · 매출 · 남는 돈</p>
-      <div className="-mx-4 flex border-y border-[#E7E7E7] bg-white">
+      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">비용 · 매출 · 남는 돈</p>
+      <div className="flex overflow-hidden rounded-lg border border-[#E5E7EB] bg-white">
         {months.map(({ key, label, note }) => (
           <button
             key={key}
@@ -347,7 +347,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
         ))}
       </div>
       {m && (
-        <div className="-mx-4 flex flex-col gap-4 border-y border-[#E7E7E7] bg-white px-4 py-5">
+        <div className="flex flex-col gap-4 rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[15px] font-bold text-gray-900">
@@ -362,7 +362,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             <MiniCard label="들어온 돈" value={`₩${m.revenue.toLocaleString()}`} accent />
             <MiniCard label="AI 비용" value={`₩${m.apiCost.toLocaleString()}`} />
             <MiniCard label="남는 돈" value={`${profit >= 0 ? "+" : ""}₩${profit.toLocaleString()}`} accent={profit >= 0} />
@@ -450,8 +450,8 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">기능별 사용</p>
-      <div className="-mx-4 flex flex-col gap-4 border-y border-[#E7E7E7] bg-white px-4 py-5">
+      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">기능별 사용</p>
+      <div className="flex flex-col gap-4 rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
         <div className="grid grid-cols-3 gap-2">
           <MiniCard label="전체 가입" value={`${stats.totalUsers}명`} accent />
           <MiniCard label="총 사용" value={`${trackedTotal}회`} />
@@ -597,8 +597,8 @@ function ProfitCalculator() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">순이익 시뮬레이터</p>
-      <div className="-mx-4 flex flex-col gap-4 border-y border-[#E7E7E7] bg-white px-4 py-5">
+      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">순이익 시뮬레이터</p>
+      <div className="flex flex-col gap-4 rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
 
         {/* 패키지 선택 */}
         <div className="flex gap-2">
@@ -708,8 +708,8 @@ function Row({ label, value, note, highlight }: { label: string; value: string |
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3">
-      <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">{title}</p>
-      <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4">
+      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">{title}</p>
+      <div className="rounded-xl border border-[#E5E7EB] bg-white px-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
         {children}
       </div>
     </div>
@@ -778,23 +778,19 @@ function ShareRow({ icon, iconBg, label, count, ratio, highlight }: {
 
 function MiniCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
-    <div className="flex flex-col gap-1 border-t border-[#E7E7E7] bg-white px-1 py-3">
-      <span className="text-gray-500 text-[13px]">{label}</span>
-      <span className={`text-[20px] font-extrabold tabular-nums leading-tight ${accent ? "text-[#C9571A]" : "text-gray-900"}`}>{value}</span>
+    <div className="flex flex-col gap-0.5 border border-[#E5E7EB] bg-white px-3 py-3">
+      <span className="text-[11px] font-bold leading-snug text-[#6B7280]">{label}</span>
+      <span className={`text-[20px] font-black tabular-nums leading-tight ${accent ? "text-[#C9571A]" : "text-[#111827]"}`}>{value}</span>
     </div>
   );
 }
 
 function LabExperimentTabs({ items }: { items: LabExperimentStat[] }) {
   const [activeKey, setActiveKey] = useState(items[0]?.key ?? "");
-  const activeItem = items.find((item) => item.key === activeKey) ?? items[0];
-
-  useEffect(() => {
-    if (!items.length) return;
-    if (!items.some((item) => item.key === activeKey)) {
-      setActiveKey(items[0].key);
-    }
-  }, [activeKey, items]);
+  const normalizedActiveKey = items.some((item) => item.key === activeKey)
+    ? activeKey
+    : items[0]?.key ?? "";
+  const activeItem = items.find((item) => item.key === normalizedActiveKey) ?? items[0];
 
   if (!items.length || !activeItem) {
     return <p className="py-5 text-[13px] text-gray-500">실험실 지표 데이터가 아직 없어요.</p>;
@@ -802,9 +798,9 @@ function LabExperimentTabs({ items }: { items: LabExperimentStat[] }) {
 
   return (
     <div className="py-4">
-      <div className="-mx-4 flex gap-1 overflow-x-auto border-b border-[#E7E7E7] px-4 pb-3">
+      <div className="flex gap-1 overflow-x-auto border-b border-[#E7E7E7] pb-3">
         {items.map((item) => {
-          const isActive = item.key === activeItem.key;
+          const isActive = item.key === normalizedActiveKey;
           return (
             <button
               key={item.key}
@@ -874,14 +870,17 @@ function AdminTabButton({
   return (
     <button
       onClick={onClick}
-      className={`border-b px-1 py-3 text-left transition-colors ${
+      className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
         active
-          ? "border-[#C9571A] text-[#C9571A]"
-          : "border-[#E7E7E7] text-gray-600"
+          ? "bg-white text-[#111827] shadow-sm ring-1 ring-[#E5E7EB]"
+          : "text-[#4B5563] hover:bg-white/70 hover:text-[#111827]"
       }`}
     >
-      <p className="text-[14px] font-extrabold">{label}</p>
-      <p className={`mt-1 text-[11px] ${active ? "text-[#C9571A]/80" : "text-gray-400"}`}>{note}</p>
+      <span className={`h-2 w-2 rounded-full ${active ? "bg-[#F06B35]" : "bg-[#CBD5E1]"}`} />
+      <span className="min-w-0">
+        <span className="block text-[14px] font-extrabold tracking-[-0.02em]">{label}</span>
+        <span className={`mt-0.5 block text-[11px] ${active ? "text-[#6B7280]" : "text-[#9CA3AF]"}`}>{note}</span>
+      </span>
     </button>
   );
 }
@@ -892,9 +891,9 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
   const [tab, setTab] = useState<"style" | "audition" | "lab">("style");
   return (
     <div className="flex flex-col gap-3">
-      <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">공유 & 바이럴</p>
+      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">공유 & 바이럴</p>
       {/* 탭 버튼 */}
-      <div className="-mx-4 flex border-y border-[#E7E7E7] bg-white">
+      <div className="flex overflow-hidden rounded-lg border border-[#E5E7EB] bg-white">
         <button
           type="button"
           onClick={() => setTab("style")}
@@ -921,7 +920,7 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
       {/* 스타일 카드 탭 */}
       {tab === "style" && (
         <div className="flex flex-col gap-1">
-          <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4">
+          <div className="rounded-xl border border-[#E5E7EB] bg-white px-5">
             <ShareRow
               icon={<KakaoIcon size={15} />} iconBg="bg-[#FEE500]"
               label="카카오 공유" count={`${stats.shareKakao}회`}
@@ -949,7 +948,7 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
 
       {/* AI 오디션 탭 */}
       {tab === "audition" && (
-        <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4">
+        <div className="rounded-xl border border-[#E5E7EB] bg-white px-5">
           <ShareRow
             icon={<KakaoIcon />} iconBg="bg-[#FEE500]"
             label="카카오 공유" count={`${stats.auditionShareKakao}회`}
@@ -967,7 +966,7 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
       )}
 
       {tab === "lab" && (
-        <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4">
+        <div className="rounded-xl border border-[#E5E7EB] bg-white px-5">
           <ShareRow
             icon={<KakaoIcon />} iconBg="bg-[#FEE500]"
             label="내가 보는 너 초대 공유" count={`${stats.labNaboShareKakao}회`}
@@ -1025,8 +1024,10 @@ export default function AdminPage() {
       if (!res.ok) {
         setError(data.error || "오류가 발생했습니다.");
         localStorage.removeItem("sd_admin_pw");
+        localStorage.removeItem("threads_admin_pw");
       } else {
         localStorage.setItem("sd_admin_pw", pw);
+        localStorage.setItem("threads_admin_pw", pw);
         setStats(data);
         setStyleControls(data.styleControls ?? []);
         const now = new Date();
@@ -1043,9 +1044,9 @@ export default function AdminPage() {
     }
   };
 
-  // 마운트 시 저장된 비밀번호로 자동 로그인
+  // 마운트 시 저장된 비밀번호로 자동 로그인 (두 어드민 페이지 SSO)
   useEffect(() => {
-    const saved = localStorage.getItem("sd_admin_pw");
+    const saved = localStorage.getItem("sd_admin_pw") || localStorage.getItem("threads_admin_pw");
     if (saved) {
       setPassword(saved);
       doLogin(saved);
@@ -1291,63 +1292,160 @@ export default function AdminPage() {
         : activeTab === "revenue"
           ? "매출, 비용, 환불 같은 돈 흐름 확인"
           : "크레딧 조정 같은 유저 대응";
+  const pageTitle =
+    activeTab === "ops"
+      ? "운영 관리"
+      : activeTab === "metrics"
+        ? "데이터 분석"
+        : activeTab === "revenue"
+          ? "매출 관리"
+          : "유저 관리";
+  const todayLabel = new Date().toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  });
+  const activeSummaryCards =
+    activeTab === "users"
+      ? [
+          { label: "전체 가입 유저", value: `${stats.totalUsers}명`, accent: true },
+          { label: "오늘 가입", value: `${stats.todaySignupCount}명` },
+          { label: "변환한 유저", value: `${stats.uniqueLoggedInUsers}명` },
+          { label: "로그인 변환 비율", value: `${stats.userRatio}%` },
+        ]
+      : activeTab === "revenue"
+        ? [
+            { label: "누적 매출", value: `${stats.totalRevenue.toLocaleString()}원`, accent: true },
+            { label: "오늘 매출", value: `${stats.todayRevenue.toLocaleString()}원` },
+            { label: "결제 건수", value: `${stats.totalPaymentCount}건` },
+            { label: "자동 환불", value: `${stats.generationRefundTotal24h}건` },
+          ]
+        : activeTab === "metrics"
+          ? [
+              { label: "누적 변환", value: `${stats.total}회`, accent: true },
+              { label: "오늘 변환", value: `${stats.todayTotal}회` },
+              { label: "공유 합계", value: `${shareTotal}회` },
+              { label: "공유 전환율", value: `${shareRatio}%` },
+            ]
+          : [
+              { label: "24h 오류", value: `${stats.generationErrorTotal24h}건`, accent: stats.generationErrorTotal24h > 0 },
+              { label: "미해결 카드", value: `${unresolvedErrorStyles.length}개` },
+              { label: "10분 요청", value: `${stats.requestsLast10m}건` },
+              { label: "자동 환불", value: `${stats.generationRefundTotal24h}건` },
+            ];
 
   return (
-    <main className="flex min-h-screen w-full flex-col bg-[#F7F6F3]">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-7 px-4 py-6 pb-12">
+    <main className="min-h-screen overflow-x-hidden bg-[#F5F6F8] text-[#111827]">
+      <div className="min-h-screen overflow-x-hidden">
+        <aside className="hidden w-[220px] shrink-0 border-r border-[#E5E7EB] bg-[#F1F3F5] lg:fixed lg:inset-y-0 lg:flex lg:flex-col">
+          <div className="border-b border-[#E5E7EB] px-5 py-5">
+            <p className="text-[12px] font-bold text-[#6B7280]">StyleDrop</p>
+            <p className="mt-1 text-[15px] font-black tracking-[-0.03em] text-[#111827]">관리자 콘솔</p>
+            <p className="mt-1 text-[10px] font-bold text-[#9CA3AF]">{ADMIN_UI_VERSION}</p>
+          </div>
 
-      {/* 헤더 */}
-      <div className="-mx-4 flex items-center justify-between border-y border-[#E7E7E7] bg-white px-4 py-4">
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-black tracking-[-0.04em] text-[#111827]">Admin</h1>
-          <span className="text-[10px] font-bold text-[#C9571A]">
-            {ADMIN_UI_VERSION}
-          </span>
-        </div>
-        <div className="flex items-center gap-3 overflow-x-auto">
-          {liveClock && (
-            <span className="text-[12px] text-gray-400 font-mono tabular-nums">
-              {liveClock.toTimeString().slice(0, 8)}
-            </span>
-          )}
-          <a
-            href="/admin/threads"
-            className="whitespace-nowrap text-[13px] font-bold text-[#111827] transition-opacity hover:opacity-70"
-          >
-            Threads →
-          </a>
-          <button
-            onClick={() => doLogin(password)}
-            disabled={isLoading || !password}
-            className="text-[13px] text-[#C9571A] hover:text-[#B34A12] disabled:text-gray-300 transition-colors"
-          >
-            {isLoading ? "새로고침 중..." : "새로고침"}
-          </button>
-          <button
-            onClick={() => { setStats(null); setPassword(""); localStorage.removeItem("sd_admin_pw"); if (timerRef.current) clearInterval(timerRef.current); }}
-            className="text-[13px] text-gray-500 hover:text-gray-900 transition-colors"
-          >
-            로그아웃
-          </button>
-        </div>
-      </div>
+          <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
+            <AdminTabButton label="운영 관리" note="공지 · 오류 · 긴급 대응" active={activeTab === "ops"} onClick={() => setActiveTab("ops")} />
+            <AdminTabButton label="데이터 분석" note="사용량 · 저장 · 공유" active={activeTab === "metrics"} onClick={() => setActiveTab("metrics")} />
+            <AdminTabButton label="매출 관리" note="비용 · 결제 · 환불" active={activeTab === "revenue"} onClick={() => setActiveTab("revenue")} />
+            <AdminTabButton label="유저 관리" note="크레딧 대응" active={activeTab === "users"} onClick={() => setActiveTab("users")} />
+            <div className="my-3 h-px bg-[#E5E7EB]" />
+            <a
+              href="/admin/threads"
+              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[#4B5563] transition-colors hover:bg-white/70 hover:text-[#111827]"
+            >
+              <span className="h-2 w-2 rounded-full bg-[#CBD5E1]" />
+              <span>
+                <span className="block text-[14px] font-extrabold tracking-[-0.02em]">Threads 관리</span>
+                <span className="mt-0.5 block text-[11px] text-[#9CA3AF]">자동 발행 큐</span>
+              </span>
+            </a>
+          </nav>
 
-      <div className="flex flex-col gap-2">
-        <div className="-mx-4 grid grid-cols-4 border-y border-[#E7E7E7] bg-white px-4">
-          <AdminTabButton label="운영" note="공지 · 오류 · 긴급 대응" active={activeTab === "ops"} onClick={() => setActiveTab("ops")} />
-          <AdminTabButton label="지표" note="사용량 · 저장 · 공유" active={activeTab === "metrics"} onClick={() => setActiveTab("metrics")} />
-          <AdminTabButton label="매출" note="비용 · 결제 · 환불" active={activeTab === "revenue"} onClick={() => setActiveTab("revenue")} />
-          <AdminTabButton label="유저" note="크레딧 대응" active={activeTab === "users"} onClick={() => setActiveTab("users")} />
-        </div>
-        <p className="px-1 text-[12px] text-[#6B7280]">{tabSummary}</p>
-      </div>
+          <div className="border-t border-[#E5E7EB] p-3">
+            <button
+              onClick={() => doLogin(password)}
+              disabled={isLoading || !password}
+              className="mb-2 w-full rounded-md bg-[#273142] px-3 py-3 text-[13px] font-black text-white transition-colors hover:bg-[#1F2937] disabled:bg-gray-300"
+            >
+              {isLoading ? "새로고침 중..." : "전체 새로고침"}
+            </button>
+            <button
+              onClick={() => { setStats(null); setPassword(""); localStorage.removeItem("sd_admin_pw"); localStorage.removeItem("threads_admin_pw"); if (timerRef.current) clearInterval(timerRef.current); }}
+              className="w-full rounded-md border border-[#D1D5DB] bg-white px-3 py-2.5 text-[12px] font-bold text-[#4B5563] transition-colors hover:text-[#111827]"
+            >
+              로그아웃
+            </button>
+          </div>
+        </aside>
+
+        <div className="min-h-screen min-w-0 lg:ml-[220px]">
+          <header className="sticky top-0 z-30 border-b border-[#E5E7EB] bg-white">
+            <div className="flex min-h-[58px] flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+              <div className="flex min-w-0 items-center gap-4">
+                <span className="text-[13px] font-black text-[#111827]">홈</span>
+                <div className="h-4 w-px bg-[#E5E7EB]" />
+                <span className="truncate text-[13px] font-bold text-[#9CA3AF]">{todayLabel}</span>
+                {liveClock && (
+                  <span className="font-mono text-[12px] text-[#9CA3AF] tabular-nums">
+                    {liveClock.toTimeString().slice(0, 8)}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="/admin/threads"
+                  className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[12px] font-black text-[#111827] transition-colors hover:bg-[#F9FAFB]"
+                >
+                  Threads 관리 ↗
+                </a>
+                <button
+                  onClick={() => doLogin(password)}
+                  disabled={isLoading || !password}
+                  className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[12px] font-black text-[#111827] transition-colors hover:bg-[#F9FAFB] disabled:text-gray-300"
+                >
+                  {isLoading ? "새로고침 중..." : "새로고침"}
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div className="mx-auto flex w-full max-w-[1680px] min-w-0 flex-col gap-3 px-4 py-4 lg:px-6">
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#E5E7EB] bg-[#F1F3F5] p-2 lg:hidden">
+              <AdminTabButton label="운영" note="공지 · 오류" active={activeTab === "ops"} onClick={() => setActiveTab("ops")} />
+              <AdminTabButton label="지표" note="사용량 · 공유" active={activeTab === "metrics"} onClick={() => setActiveTab("metrics")} />
+              <AdminTabButton label="매출" note="비용 · 결제" active={activeTab === "revenue"} onClick={() => setActiveTab("revenue")} />
+              <AdminTabButton label="유저" note="크레딧 대응" active={activeTab === "users"} onClick={() => setActiveTab("users")} />
+            </div>
+
+            <section className="rounded-xl border border-[#EAECF0] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-[#EEF0F2]">
+                <div className="flex items-center gap-3">
+                  <p className="text-[11px] font-bold text-[#9CA3AF]">대시보드</p>
+                  <span className="h-3 w-px bg-[#E5E7EB]" />
+                  <h1 className="text-[15px] font-black tracking-[-0.03em] text-[#111827]">{pageTitle}</h1>
+                </div>
+                <p className="text-[12px] text-[#9CA3AF] hidden lg:block">{tabSummary}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-px overflow-hidden bg-[#EEF0F2] md:grid-cols-4">
+                {activeSummaryCards.map((card) => (
+                  <div key={card.label} className="bg-white px-4 py-3">
+                    <p className="text-[11px] font-bold text-[#6B7280]">{card.label}</p>
+                    <p className={`mt-1 text-[24px] font-black tracking-[-0.05em] tabular-nums ${card.accent ? "text-[#C9571A]" : "text-[#111827]"}`}>
+                      {card.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
 
       {activeTab === "ops" && (
-        <>
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 [&>*]:min-w-0">
           {/* 공지 관리 */}
           <div className="flex flex-col gap-1">
-            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">공지 관리</p>
-            <div className="-mx-4 flex flex-col gap-3 border-y border-[#E7E7E7] bg-white px-4 py-5">
+            <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">공지 관리</p>
+            <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
               {notices.map((n, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <button
@@ -1395,7 +1493,7 @@ export default function AdminPage() {
           {/* 오류 모니터링 */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between gap-3 px-1 mb-1">
-              <p className="text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">오류 모니터링</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">오류 모니터링</p>
               {unresolvedRecentGenerationErrors.length > 0 && (
                 <button
                   type="button"
@@ -1413,8 +1511,8 @@ export default function AdminPage() {
                 </button>
               )}
             </div>
-            <div className="-mx-4 flex flex-col gap-4 border-y border-[#E7E7E7] bg-white px-4 py-5">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="flex flex-col gap-4 rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                 <MiniCard label="최근 24시간 오류" value={`${stats.generationErrorTotal24h}건`} accent={stats.generationErrorTotal24h > 0} />
                 <MiniCard label="미해결 카드" value={`${unresolvedErrorStyles.length}개`} accent={unresolvedErrorStyles.length > 0} />
                 <MiniCard label="복구됨 카드" value={`${resolvedErrorStyles.length}개`} accent={resolvedErrorStyles.length > 0} />
@@ -1593,8 +1691,8 @@ export default function AdminPage() {
 
           {/* 긴급 대응 · 스타일 운영 */}
           <div id="style-ops" className="flex flex-col gap-1">
-            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">긴급 대응 · 스타일 운영</p>
-            <div className="-mx-4 flex flex-col gap-4 border-y border-[#E7E7E7] bg-white px-4 py-5">
+            <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">긴급 대응 · 스타일 운영</p>
+            <div className="flex flex-col gap-4 rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[15px] font-bold text-gray-900">카드별 즉시 숨김 / 생성 중지</p>
@@ -1615,7 +1713,7 @@ export default function AdminPage() {
                 </div>
               )}
 
-              <div className="-mx-4 grid grid-cols-2 border-y border-[#E7E7E7]">
+              <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => setStyleOpsView("cards")}
@@ -1733,9 +1831,9 @@ export default function AdminPage() {
 
           {/* 자동 하이라이트 */}
           <div className="flex flex-col gap-1">
-            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">자동 하이라이트 (24시간)</p>
-            <div className="grid grid-cols-1 gap-2">
-              <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4 py-4">
+            <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">자동 하이라이트 (24시간)</p>
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+              <div className="rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
                 <p className="text-[12px] font-bold text-red-500 mb-2">주의 필요</p>
                 {highlightedProblems.length > 0 ? (
                   <div className="flex flex-col gap-2">
@@ -1765,7 +1863,7 @@ export default function AdminPage() {
                 )}
               </div>
 
-              <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4 py-4">
+              <div className="rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
                 <p className="text-[12px] font-bold text-[#C9571A] mb-2">공유 강세</p>
                 {highlightedHighShare.length > 0 ? (
                   <div className="flex flex-col gap-2">
@@ -1781,7 +1879,7 @@ export default function AdminPage() {
                 )}
               </div>
 
-              <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4 py-4">
+              <div className="rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
                 <p className="text-[12px] font-bold text-gray-700 mb-2">저장 약세</p>
                 {highlightedLowSave.length > 0 ? (
                   <div className="flex flex-col gap-2">
@@ -1798,19 +1896,19 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {activeTab === "metrics" && (
-        <>
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 [&>*]:min-w-0">
           {/* 사용 현황 */}
           <div className="flex flex-col gap-1">
-            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">사용 현황</p>
-            <div className="grid grid-cols-2 gap-2">
+            <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">사용 현황</p>
+            <div className="grid grid-cols-2 gap-px overflow-hidden border border-[#E5E7EB] lg:grid-cols-4">
               <MiniCard label="누적 변환" value={`${stats.total}회`} accent />
               <MiniCard label="오늘 변환" value={`${stats.todayTotal}회`} />
-              <MiniCard label="가입 유저 (전체)" value={`${stats.totalUsers}명`} />
-              <MiniCard label="변환한 유저 (고유)" value={`${stats.uniqueLoggedInUsers}명`} />
+              <MiniCard label="가입 유저" value={`${stats.totalUsers}명`} />
+              <MiniCard label="변환 유저" value={`${stats.uniqueLoggedInUsers}명`} />
             </div>
           </div>
 
@@ -1820,7 +1918,7 @@ export default function AdminPage() {
 
           {/* 로그인 vs 게스트 */}
           <div className="flex flex-col gap-1">
-            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">로그인 vs 게스트</p>
+            <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">로그인 vs 게스트</p>
             <p className="text-[12px] text-gray-400 px-1 mb-1">변환 횟수 기준 — 1명이 여러 번 변환하면 중복 집계됨</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1 border-t border-[#E7E7E7] bg-white px-1 py-3">
@@ -1891,11 +1989,11 @@ export default function AdminPage() {
               })
             )}
           </Section>
-        </>
+        </div>
       )}
 
       {activeTab === "revenue" && (
-        <>
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 [&>*]:min-w-0">
           {/* API 비용 & 손익 */}
           <MonthlyCostSection monthlyCosts={stats.monthlyCosts ?? {}} />
 
@@ -1914,8 +2012,8 @@ export default function AdminPage() {
           {/* 결제 목록 & 원클릭 환불 */}
           {stats.paymentList.length > 0 && (
             <div className="flex flex-col gap-1">
-              <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">결제 목록 & 환불</p>
-              <div className="-mx-4 flex flex-col border-y border-[#E7E7E7] bg-white px-4">
+              <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">결제 목록 & 환불</p>
+              <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white px-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
                 {stats.paymentList.slice(0, 20).map((p) => {
                   const user = stats.userList.find(u => u.id === p.user_id);
                   const date = new Date(p.created_at).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -1990,20 +2088,15 @@ export default function AdminPage() {
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {activeTab === "users" && (
-        <>
-          <div className="grid grid-cols-2 gap-2">
-            <MiniCard label="전체 가입 유저" value={`${stats.totalUsers}명`} accent />
-            <MiniCard label="오늘 가입" value={`${stats.todaySignupCount}명`} />
-          </div>
-
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 [&>*]:min-w-0">
           {/* 크레딧 조정 */}
           <div className="flex flex-col gap-1">
-            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">크레딧 조정</p>
-            <div className="-mx-4 flex flex-col gap-3 border-y border-[#E7E7E7] bg-white px-4 py-5">
+            <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">크레딧 조정</p>
+            <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
               <div className="relative">
                 <input
                   type="text"
@@ -2015,10 +2108,10 @@ export default function AdminPage() {
                   }}
                   onFocus={() => setShowUserDropdown(true)}
                   placeholder="닉네임 또는 ID로 검색..."
-                  className="w-full border-y border-[#E7E7E7] bg-[#FAFAFA] px-3 py-2 text-[14px] text-gray-900 transition-colors focus:border-[#C9571A]/50 focus:outline-none"
+                  className="w-full rounded-md border border-[#D1D5DB] bg-white px-3 py-2.5 text-[14px] font-bold text-[#111827] transition-colors placeholder:text-[#9CA3AF] focus:border-[#F06B35] focus:outline-none"
                 />
                 {showUserDropdown && (
-                  <div className="absolute top-full left-0 right-0 z-10 mt-1 max-h-48 overflow-y-auto border-y border-gray-200 bg-white shadow-md">
+                  <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-md border border-[#E5E7EB] bg-white shadow-md">
                     {stats.userList
                       .filter(u => {
                         if (!creditSearch) return true;
@@ -2035,8 +2128,8 @@ export default function AdminPage() {
                             setCreditSearch(u.nickname ?? u.id.slice(0, 12));
                             setShowUserDropdown(false);
                           }}
-                          className={`w-full text-left px-3 py-2 text-[14px] hover:bg-gray-50 transition-colors ${
-                            creditUserId === u.id ? "text-[#C9571A]" : "text-gray-700"
+                          className={`w-full px-3 py-2 text-left text-[14px] font-bold transition-colors hover:bg-gray-50 ${
+                            creditUserId === u.id ? "text-[#C9571A]" : "text-[#374151]"
                           }`}
                         >
                           {u.nickname ?? u.id.slice(0, 8)} — {u.id.slice(0, 12)}...
@@ -2057,7 +2150,7 @@ export default function AdminPage() {
                   <button
                     key={n}
                     onClick={() => setCreditAmount(String(n))}
-                    className={`flex-1 border-y py-2 text-[13px] font-bold transition-colors ${creditAmount === String(n) ? "border-[#C9571A] text-[#C9571A]" : "border-[#E7E7E7] text-gray-500 hover:text-gray-900"}`}
+                    className={`flex-1 rounded-md border py-2 text-[13px] font-black transition-colors ${creditAmount === String(n) ? "border-[#F06B35] bg-[#FFF7F2] text-[#C9571A]" : "border-[#D1D5DB] bg-white text-[#4B5563] hover:text-[#111827]"}`}
                   >{n}</button>
                 ))}
               </div>
@@ -2074,7 +2167,7 @@ export default function AdminPage() {
                   setCreditMsg(data.ok ? `✓ ${stats.userList.find(u => u.id === creditUserId)?.nickname ?? creditUserId.slice(0, 8)} +${creditAmount}크레딧 추가됨` : `오류: ${data.error}`);
                   setTimeout(() => setCreditMsg(""), 3000);
                 }}
-                className="w-full bg-[#111827] py-3 text-[14px] font-bold text-white transition-colors"
+                className="w-full rounded-md bg-[#273142] py-3 text-[14px] font-black text-white transition-colors hover:bg-[#1F2937]"
               >
                 크레딧 추가
               </button>
@@ -2083,28 +2176,28 @@ export default function AdminPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">가입 유저 목록</p>
-            <div className="-mx-4 flex flex-col gap-3 border-y border-[#E7E7E7] bg-white px-4 py-5">
+            <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">가입 유저 목록</p>
+            <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
               <div className="flex items-center justify-between gap-3">
                 <input
                   type="text"
                   value={userListSearch}
                   onChange={(e) => setUserListSearch(e.target.value)}
                   placeholder="닉네임 또는 ID 검색..."
-                  className="flex-1 border-y border-[#E7E7E7] bg-[#FAFAFA] px-3 py-2 text-[14px] text-gray-900 transition-colors focus:border-[#C9571A]/50 focus:outline-none"
+                  className="flex-1 rounded-md border border-[#D1D5DB] bg-white px-3 py-2.5 text-[14px] font-bold text-[#111827] transition-colors placeholder:text-[#9CA3AF] focus:border-[#F06B35] focus:outline-none"
                 />
-                <span className="text-[11px] text-gray-400 whitespace-nowrap">최근 활동순</span>
+                <span className="whitespace-nowrap text-[11px] font-bold text-[#6B7280]">최근 활동순</span>
               </div>
 
-              <div className="overflow-hidden border-y border-[#E7E7E7]">
+              <div className="overflow-hidden rounded-md border border-[#E5E7EB]">
                 {filteredUsers.length === 0 ? (
                   <div className="px-3 py-4 text-[13px] text-gray-500">검색 결과 없음</div>
                 ) : (
                   filteredUsers.slice(0, 100).map((user) => (
-                    <div key={user.id} className="px-3 py-3 border-b border-gray-100 last:border-0 flex items-start justify-between gap-3">
+                    <div key={user.id} className="flex items-start justify-between gap-3 border-b border-gray-100 px-3 py-3 last:border-0">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 min-w-0">
-                          <p className="text-[14px] font-bold text-gray-900 truncate">{user.nickname ?? "닉네임 없음"}</p>
+                          <p className="truncate text-[14px] font-black text-[#111827]">{user.nickname ?? "닉네임 없음"}</p>
                           <button
                             type="button"
                             onClick={() => toggleUserIdVisibility(user.id)}
@@ -2131,8 +2224,8 @@ export default function AdminPage() {
                         )}
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-[11px] text-gray-500">가입 {formatDateTime(user.created_at)}</p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">
+                        <p className="text-[11px] font-bold text-[#6B7280]">가입 {formatDateTime(user.created_at)}</p>
+                        <p className="mt-0.5 text-[11px] font-bold text-[#9CA3AF]">
                           최근 활동 {user.last_activity_at ? relativeTime(user.last_activity_at) : "—"}
                         </p>
                       </div>
@@ -2147,8 +2240,10 @@ export default function AdminPage() {
             </div>
           </div>
 
-        </>
+        </div>
       )}
+      </div>
+      </div>
       </div>
     </main>
   );
