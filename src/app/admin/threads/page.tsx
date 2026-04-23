@@ -86,6 +86,17 @@ export default function ThreadsAdminPage() {
     showToast(res.ok ? `발행 완료! Thread ID: ${data.threadId}` : `실패: ${data.error}`);
   };
 
+  const handleApproveAll = async () => {
+    const drafts = posts.filter(p => p.status === "draft");
+    if (drafts.length === 0) { showToast("승인할 초안이 없어요"); return; }
+    if (!confirm(`초안 ${drafts.length}개를 전체 승인할까요?`)) return;
+    await Promise.all(drafts.map(p =>
+      fetch(`/api/threads/${p.id}/approve`, { method: "PATCH", headers: headers() })
+    ));
+    await loadPosts();
+    showToast(`${drafts.length}개 전체 승인 완료`);
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("삭제할까요?")) return;
     setActionId(id);
@@ -119,6 +130,28 @@ export default function ThreadsAdminPage() {
 
   const charCount = draft.content.length;
   const charOver = charCount > 500;
+
+  const InsightsBadge = ({ postId }: { postId: string }) => {
+    const [metrics, setMetrics] = useState<Record<string, number> | null>(null);
+    const [fetched, setFetched] = useState(false);
+    useEffect(() => {
+      if (fetched) return;
+      setFetched(true);
+      fetch(`/api/threads/${postId}/insights`, { headers: headers() })
+        .then(r => r.json())
+        .then(d => { if (d.metrics) setMetrics(d.metrics); })
+        .catch(() => {});
+    }, [postId, fetched]);
+    if (!metrics) return <span className="text-[11px] text-white/20">분석 로딩 중...</span>;
+    return (
+      <div className="flex gap-3 text-[12px]">
+        <span className="text-white/50">👁 {(metrics.views ?? 0).toLocaleString()}</span>
+        <span className="text-white/50">♥ {(metrics.likes ?? 0).toLocaleString()}</span>
+        <span className="text-white/50">💬 {(metrics.replies ?? 0).toLocaleString()}</span>
+        <span className="text-white/50">🔁 {(metrics.reposts ?? 0).toLocaleString()}</span>
+      </div>
+    );
+  };
 
   // 탭별 분류
   const pending   = posts.filter(p => p.status === "draft" || p.status === "approved");
@@ -298,8 +331,15 @@ export default function ThreadsAdminPage() {
             {label}
           </button>
         ))}
-        <button onClick={loadPosts} className="ml-auto py-3 text-[12px] text-white/30 hover:text-white transition-colors">
-          {loading ? "로딩 중..." : "새로고침 ↻"}
+        {tab === "pending" && pending.filter(p => p.status === "draft").length > 0 && (
+          <button onClick={handleApproveAll}
+            className="ml-auto my-2 px-4 py-1.5 rounded-xl text-[12px] font-bold transition-all"
+            style={{ background: "#22C55E", color: "#000" }}>
+            전체 승인 ({pending.filter(p => p.status === "draft").length})
+          </button>
+        )}
+        <button onClick={loadPosts} className={tab === "pending" && pending.filter(p => p.status === "draft").length > 0 ? "py-3 text-[12px] text-white/30 hover:text-white transition-colors" : "ml-auto py-3 text-[12px] text-white/30 hover:text-white transition-colors"}>
+          {loading ? "로딩 중..." : "↻"}
         </button>
       </div>
 
@@ -338,9 +378,11 @@ export default function ThreadsAdminPage() {
                 <p className="text-[12px] text-red-400 bg-red-400/10 rounded-lg px-3 py-2">{post.error_message}</p>
               )}
 
-              {/* Threads 링크 */}
-              {post.thread_id && (
-                <p className="text-[11px] text-blue-400">Thread ID: {post.thread_id}</p>
+              {/* 인사이트 (발행된 글만) */}
+              {post.status === "published" && post.thread_id && (
+                <div className="border-t border-white/[0.06] pt-3">
+                  <InsightsBadge postId={post.id} />
+                </div>
               )}
 
               {/* 액션 버튼 */}

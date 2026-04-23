@@ -359,6 +359,37 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const todayEventCounts: Record<string, number> = {};
+  for (const e of todayEvents) {
+    todayEventCounts[e.event_type] = (todayEventCounts[e.event_type] ?? 0) + 1;
+  }
+
+  const labExperiments = [
+    {
+      key: "nabo",
+      label: "내가 보는 너",
+      totalParticipants: eventCounts["lab_nabo_room_created"] ?? 0,
+      todayParticipants: todayEventCounts["lab_nabo_room_created"] ?? 0,
+      completedCount: eventCounts["lab_nabo_response_completed"] ?? 0,
+      todayCompletedCount: todayEventCounts["lab_nabo_response_completed"] ?? 0,
+      unlockCount: eventCounts["lab_nabo_unlock"] ?? 0,
+      todayUnlockCount: todayEventCounts["lab_nabo_unlock"] ?? 0,
+    },
+    {
+      key: "travel_together",
+      label: "여행을 같이 간다면",
+      totalParticipants: eventCounts["lab_travel_room_created"] ?? 0,
+      todayParticipants: todayEventCounts["lab_travel_room_created"] ?? 0,
+      completedCount: eventCounts["lab_travel_response_completed"] ?? 0,
+      todayCompletedCount: todayEventCounts["lab_travel_response_completed"] ?? 0,
+      unlockCount: eventCounts["lab_travel_unlock"] ?? 0,
+      todayUnlockCount: todayEventCounts["lab_travel_unlock"] ?? 0,
+      extraLabel: "상대 응답 완료",
+      extraCount: eventCounts["lab_travel_partner_ready"] ?? 0,
+      todayExtraCount: todayEventCounts["lab_travel_partner_ready"] ?? 0,
+    },
+  ];
+
   // 스타일 이름 붙여서 배열로 변환 (공유 많은 순)
   const shareByStyleList = Object.entries(styleEvents).map(([style_id, v]) => ({
     style_id,
@@ -675,6 +706,7 @@ export async function POST(request: NextRequest) {
     shareKakao: eventCounts["share_kakao"] ?? 0,
     shareLinkCopy: eventCounts["share_link_copy"] ?? 0,
     saveImage: eventCounts["save_image"] ?? 0,
+    labExperiments,
     shareByStyleList,
     stylePerformanceList,
     stylePerformance24hList,

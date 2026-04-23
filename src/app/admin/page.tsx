@@ -11,7 +11,7 @@ import { REFUND_UNIT_PRICE } from "@/lib/payment-policy";
 import { ALL_STYLES } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-const ADMIN_UI_VERSION = "v2.7.0-audition-ops";
+const ADMIN_UI_VERSION = "v2.8.0-lab-metrics";
 
 type AdminTab = "ops" | "metrics" | "revenue" | "users";
 
@@ -43,6 +43,19 @@ type ApiUsageBreakdownItem = {
   uniqueUsers: number;
   userRatio: number;
   usageRatio: number;
+};
+type LabExperimentStat = {
+  key: string;
+  label: string;
+  totalParticipants: number;
+  todayParticipants: number;
+  completedCount: number;
+  todayCompletedCount: number;
+  unlockCount: number;
+  todayUnlockCount: number;
+  extraLabel?: string;
+  extraCount?: number;
+  todayExtraCount?: number;
 };
 type GenerationErrorSummary = {
   style_id: string;
@@ -96,6 +109,7 @@ type Stats = {
   generationRefundUserCount24h: number;
   recentGenerationRefunds: RecentGenerationRefund[];
   apiUsageBreakdown: ApiUsageBreakdownItem[];
+  labExperiments: LabExperimentStat[];
   stylePerformanceList: {
     style_id: string;
     style_name: string;
@@ -1646,6 +1660,35 @@ export default function AdminPage() {
               <MiniCard label="변환한 유저 (고유)" value={`${stats.uniqueLoggedInUsers}명`} />
             </div>
           </div>
+
+          <Section title="실험실 신규 기능">
+            <div className="flex flex-col gap-3">
+              {stats.labExperiments.map((item) => (
+                <div key={item.key} className="rounded-2xl border border-gray-200 bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[16px] font-extrabold text-gray-900">{item.label}</p>
+                      <p className="text-[12px] text-gray-500">참여, 완료, 해금 흐름만 따로 집계합니다</p>
+                    </div>
+                    <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-semibold text-gray-500">
+                      {item.key}
+                    </span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <MiniCard label="누적 참여" value={`${item.totalParticipants}회`} accent />
+                    <MiniCard label="오늘 참여" value={`${item.todayParticipants}회`} />
+                  </div>
+                  <div className="mt-3 flex flex-col gap-2">
+                    <Row label="응답 완료" value={`${item.completedCount}회 · 오늘 ${item.todayCompletedCount}회`} />
+                    <Row label="상세 해금" value={`${item.unlockCount}회 · 오늘 ${item.todayUnlockCount}회`} />
+                    {item.extraLabel && (
+                      <Row label={item.extraLabel} value={`${item.extraCount ?? 0}회 · 오늘 ${item.todayExtraCount ?? 0}회`} />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
 
           {/* 로그인 vs 게스트 */}
           <div className="flex flex-col gap-1">
