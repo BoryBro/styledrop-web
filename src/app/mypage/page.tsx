@@ -162,6 +162,7 @@ export default function MyPage() {
   const [giftStatus, setGiftStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [giftMsg, setGiftMsg] = useState("");
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [historyTab, setHistoryTab] = useState<"cards" | "lab">("cards");
   const [activeIndex, setActiveIndex] = useState(0);
   const [historyView, setHistoryView] = useState<"before" | "after">("after");
   const [toast, setToast] = useState<string | null>(null);
@@ -704,169 +705,176 @@ export default function MyPage() {
               </div>
             </section>
 
-            {/* 스타일별 기록 */}
+            {/* 최근 변환 기록 (탭) */}
             <div>
-              <div className="flex items-baseline gap-2 mb-3 px-1">
+              <div className="flex items-center justify-between mb-3 px-1">
                 <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#111827]">최근 변환 기록</h2>
+                <div className="flex items-center gap-1 bg-[#EFEFEF] rounded-xl p-1">
+                  <button
+                    type="button"
+                    onClick={() => setHistoryTab("cards")}
+                    className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all ${historyTab === "cards" ? "bg-white text-[#111827] shadow-sm" : "text-[#6B7280]"}`}
+                  >
+                    일반카드
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHistoryTab("lab")}
+                    className={`px-3 py-1 rounded-lg text-[12px] font-bold transition-all ${historyTab === "lab" ? "bg-white text-[#111827] shadow-sm" : "text-[#6B7280]"}`}
+                  >
+                    실험실
+                  </button>
+                </div>
               </div>
 
-              {historyLoading ? (
-                <div className="flex justify-center py-10">
-                  <div className="w-6 h-6 rounded-full border-2 border-[#E8E8E8] border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {VISIBLE_STYLE_IDS.filter(styleId => (grouped[styleId] ?? []).length > 0).map((styleId) => {
-                    const items = grouped[styleId] ?? [];
-                    const latest = items[0];
-                    const expiry = categoryExpiry(items);
-                    return (
-                      <button
-                        key={styleId}
-                        onClick={() => setSelectedStyle(styleId)}
-                        className="flex flex-col gap-3 bg-white border border-[#E7E7E7] p-3 hover:border-[#D1D5DB] transition-colors text-left min-w-0"
-                      >
-                        <div className="relative w-full aspect-square rounded-[14px] overflow-hidden flex-shrink-0 bg-[#F0F0F0]">
-                          {latest ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={latest.result_image_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <span className="text-[#9A9A9A] text-2xl">+</span>
-                            </div>
-                          )}
+              {historyTab === "cards" && (
+                historyLoading ? (
+                  <div className="flex justify-center py-10">
+                    <div className="w-6 h-6 rounded-full border-2 border-[#E8E8E8] border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {VISIBLE_STYLE_IDS.filter(styleId => (grouped[styleId] ?? []).length > 0).map((styleId) => {
+                      const items = grouped[styleId] ?? [];
+                      const latest = items[0];
+                      const expiry = categoryExpiry(items);
+                      return (
+                        <button
+                          key={styleId}
+                          onClick={() => setSelectedStyle(styleId)}
+                          className="flex flex-col gap-3 bg-white border border-[#E7E7E7] p-3 hover:border-[#D1D5DB] transition-colors text-left min-w-0"
+                        >
+                          <div className="relative w-full aspect-square rounded-[14px] overflow-hidden flex-shrink-0 bg-[#F0F0F0]">
+                            {latest ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={latest.result_image_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <span className="text-[#9A9A9A] text-2xl">+</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[#111827] font-bold text-[14px] leading-snug break-keep">{STYLE_LABELS[styleId] ?? styleId}</p>
+                            <p className="text-[#6B7280] text-[12px] mt-1">
+                              {`${items.length}장`}{latest && ` · ${relativeTime(latest.created_at)}`}
+                            </p>
+                            {expiry && (
+                              <span className={`inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full border ${expiry.className}`}>
+                                {expiry.label}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                    {VISIBLE_STYLE_IDS.every(id => (grouped[id] ?? []).length === 0) && (
+                      <div className="col-span-2 flex flex-col items-center gap-3 py-12 text-center">
+                        <p className="text-[#0A0A0A]/40 text-[15px]">아직 변환 기록이 없어요.</p>
+                      </div>
+                    )}
+                  </div>
+                )
+              )}
+
+              {historyTab === "lab" && (
+                <div className="flex flex-col gap-5">
+                  {/* AI 오디션 기록 */}
+                  {showAuditionHistory && (
+                    <div>
+                      <p className="text-[13px] font-bold text-[#6B7280] mb-2 px-1">AI 오디션 · 24시간 보관</p>
+                      {historyLoading ? (
+                        <div className="flex justify-center py-6">
+                          <div className="w-5 h-5 rounded-full border-2 border-[#E8E8E8] border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-[#111827] font-bold text-[14px] leading-snug break-keep">{STYLE_LABELS[styleId] ?? styleId}</p>
-                          <p className="text-[#6B7280] text-[12px] mt-1">
-                            {`${items.length}장`}{latest && ` · ${relativeTime(latest.created_at)}`}
-                          </p>
-                          {expiry && (
-                            <span className={`inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full border ${expiry.className}`}>
-                              {expiry.label}
-                            </span>
-                          )}
+                      ) : auditionHistory.length === 0 ? (
+                        <div className="border border-[#E7E7E7] bg-white rounded-2xl px-4 py-5 text-center">
+                          <p className="text-[13px] text-[#0A0A0A]/40">아직 오디션 기록이 없어요.</p>
                         </div>
-                      </button>
-                    );
-                  })}
-                  {VISIBLE_STYLE_IDS.every(id => (grouped[id] ?? []).length === 0) && (
-                    <div className="col-span-2 flex flex-col items-center gap-3 py-12 text-center">
-                      <p className="text-[#0A0A0A]/40 text-[15px]">아직 변환 기록이 없어요.</p>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3">
+                          {auditionHistory.map(item => {
+                            const expiry = expiryBadge(item.created_at);
+                            const scoreColor = item.avg_score >= 70 ? "#4ade80" : item.avg_score >= 45 ? "#f97316" : "#ef4444";
+                            return (
+                              <Link
+                                key={item.id}
+                                href={`/audition/result?history_share=${item.share_id}`}
+                                className="flex flex-col gap-3 bg-white border border-[#E7E7E7] p-3 hover:border-[#D1D5DB] transition-colors min-w-0"
+                              >
+                                <div className="w-full aspect-square rounded-[14px] overflow-hidden flex-shrink-0 bg-[#F0F0F0]">
+                                  {item.still_image_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={item.still_image_url} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-[#333] text-[22px]">🎬</div>
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center justify-between gap-2 mb-1">
+                                    <span className="text-[10px] font-bold text-[#C9571A] uppercase tracking-widest">AI 오디션</span>
+                                    <span className="text-[14px] font-extrabold tabular-nums" style={{ color: scoreColor }}>{item.avg_score}점</span>
+                                  </div>
+                                  <p className="text-[#0A0A0A]/80 text-[13px] font-bold leading-snug break-keep">{item.assigned_role}</p>
+                                  <div className="flex flex-col items-start gap-1.5 mt-2">
+                                    <span className="text-[11px] text-[#6B7280]">{relativeTime(item.created_at)}</span>
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${expiry.className}`}>{expiry.label}</span>
+                                  </div>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
-            </div>
 
-            {/* AI 오디션 기록 */}
-            {showAuditionHistory && auditionHistory.length > 0 && (
-              <div>
-                <div className="flex items-baseline gap-2 mb-4 px-1">
-                  <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#111827]">AI 오디션 기록</h2>
-                  <span className="text-[12px] text-[#6B7280]">자동 저장 · 24시간 보관</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {auditionHistory.map(item => {
-                    const expiry = expiryBadge(item.created_at);
-                    const scoreColor = item.avg_score >= 70 ? "#4ade80" : item.avg_score >= 45 ? "#f97316" : "#ef4444";
-                    return (
-                      <Link
-                        key={item.id}
-                        href={`/audition/result?history_share=${item.share_id}`}
-                        className="flex flex-col gap-3 bg-white border border-[#E7E7E7] p-3 hover:border-[#D1D5DB] transition-colors min-w-0"
-                      >
-                        <div className="w-full aspect-square rounded-[14px] overflow-hidden flex-shrink-0 bg-[#F0F0F0]">
-                          {item.still_image_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={item.still_image_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[#333] text-[22px]">🎬</div>
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <span className="text-[10px] font-bold text-[#C9571A] uppercase tracking-widest">AI 오디션</span>
-                            <span className="text-[14px] font-extrabold tabular-nums" style={{ color: scoreColor }}>{item.avg_score}점</span>
-                          </div>
-                          <p className="text-[#0A0A0A]/80 text-[13px] font-bold leading-snug break-keep">
-                            {item.assigned_role}
-                          </p>
-                          <div className="flex flex-col items-start gap-1.5 mt-2">
-                            <span className="text-[11px] text-[#6B7280]">{relativeTime(item.created_at)}</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${expiry.className}`}>{expiry.label}</span>
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <div className="flex items-baseline gap-2 mb-4 px-1">
-                <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#111827]">여행 같이 간다면 기록</h2>
-                <span className="text-[12px] text-[#6B7280]">완료된 테스트만 보관</span>
-              </div>
-              {historyLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="w-6 h-6 rounded-full border-2 border-[#E8E8E8] border-t-[#60A5FA]" style={{ animation: "spin 1s linear infinite" }} />
-                </div>
-              ) : travelHistory.length === 0 ? (
-                <div className="border-y border-[#E7E7E7] bg-white px-4 py-5 text-center -mx-4">
-                  <p className="text-[14px] font-bold text-[#0A0A0A]/70">아직 완료된 여행 테스트가 없어요.</p>
-                  <p className="mt-1 text-[12px] text-[#6B7280]">두 사람이 모두 답변을 끝내면 여기에 결과가 저장됩니다.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {travelHistory.map((item) => (
-                    <Link
-                      key={item.roomId}
-                      href={`/travel-together?room=${encodeURIComponent(item.roomId)}&token=${encodeURIComponent(item.participantToken)}&view=result`}
-                      className="flex flex-col gap-3 border border-[#E7E7E7] bg-white p-3 transition-colors hover:border-[#D1D5DB] min-w-0"
-                    >
-                      <div className="flex aspect-square items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#DBEAFE,#BFDBFE_48%,#60A5FA)]">
-                        <div className="text-center text-[#1E3A8A]">
-                          <p className="text-[12px] font-black tracking-[0.22em] uppercase">Travel</p>
-                          <p className="mt-2 text-[24px]">✈️</p>
-                        </div>
+                  {/* 여행 같이 간다면 기록 */}
+                  <div>
+                    <p className="text-[13px] font-bold text-[#6B7280] mb-2 px-1">여행 같이 간다면 · 완료된 테스트만 보관</p>
+                    {historyLoading ? (
+                      <div className="flex justify-center py-6">
+                        <div className="w-5 h-5 rounded-full border-2 border-[#E8E8E8] border-t-[#60A5FA]" style={{ animation: "spin 1s linear infinite" }} />
                       </div>
-                      <div className="min-w-0">
-                        <div className="mb-1 flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-[#60A5FA]">
-                            여행 테스트
-                          </span>
-                          <span
-                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                              item.unlocked ? "bg-[#EFF6FF] text-[#2563EB]" : "bg-[#F4F4F4] text-[#777]"
-                            }`}
+                    ) : travelHistory.length === 0 ? (
+                      <div className="border border-[#E7E7E7] bg-white rounded-2xl px-4 py-5 text-center">
+                        <p className="text-[13px] text-[#0A0A0A]/40">아직 완료된 여행 테스트가 없어요.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        {travelHistory.map((item) => (
+                          <Link
+                            key={item.roomId}
+                            href={`/travel-together?room=${encodeURIComponent(item.roomId)}&token=${encodeURIComponent(item.participantToken)}&view=result`}
+                            className="flex flex-col gap-3 border border-[#E7E7E7] bg-white p-3 transition-colors hover:border-[#D1D5DB] min-w-0"
                           >
-                            {item.unlocked ? "상세 열림" : "기본 결과"}
-                          </span>
-                        </div>
-                        <p className="text-[14px] font-bold leading-snug text-[#111827] break-keep">
-                          {item.partnerName}와 여행 궁합
-                        </p>
-                        <p className="mt-1 text-[12px] text-[#777]">
-                          {TRAVEL_RELATION_LABELS[item.relation]}
-                        </p>
-                        <div className="mt-2 flex items-center justify-between gap-2">
-                          <span className="text-[11px] text-[#6B7280]">{relativeTime(item.completedAt)}</span>
-                          <span className="text-[11px] font-semibold text-[#0A0A0A]/60">결과 다시 보기</span>
-                        </div>
+                            <div className="flex aspect-square items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#DBEAFE,#BFDBFE_48%,#60A5FA)]">
+                              <div className="text-center text-[#1E3A8A]">
+                                <p className="text-[12px] font-black tracking-[0.22em] uppercase">Travel</p>
+                                <p className="mt-2 text-[24px]">✈️</p>
+                              </div>
+                            </div>
+                            <div className="min-w-0">
+                              <div className="mb-1 flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#60A5FA]">여행 테스트</span>
+                                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${item.unlocked ? "bg-[#EFF6FF] text-[#2563EB]" : "bg-[#F4F4F4] text-[#777]"}`}>
+                                  {item.unlocked ? "상세 열림" : "기본 결과"}
+                                </span>
+                              </div>
+                              <p className="text-[14px] font-bold leading-snug text-[#111827] break-keep">{item.partnerName}와 여행 궁합</p>
+                              <p className="mt-1 text-[12px] text-[#777]">{TRAVEL_RELATION_LABELS[item.relation]}</p>
+                              <div className="mt-2 flex items-center justify-between gap-2">
+                                <span className="text-[11px] text-[#6B7280]">{relativeTime(item.completedAt)}</span>
+                                <span className="text-[11px] font-semibold text-[#0A0A0A]/60">결과 다시 보기</span>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
-                    </Link>
-                  ))}
+                    )}
+                  </div>
                 </div>
               )}
-            </div>
-
-            {/* 회원 탈퇴 */}
-            <div className="mt-8 flex justify-center">
-              <button onClick={() => setShowDeleteModal(true)} className="text-[13px] text-[#6B7280] underline hover:text-[#111827] transition-colors">
-                회원 탈퇴
-              </button>
             </div>
           </>
         )}
@@ -1073,10 +1081,17 @@ export default function MyPage() {
       </main>
 
       {/* Footer */}
-      <footer className="py-6 text-center">
-        <p className="text-[11px] text-[#AAAAAA]">
-          © 2026 StyleDrop · <Link href="/terms" className="hover:text-[#0A0A0A]/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-[#0A0A0A]/30 transition-colors">개인정보처리방침</Link> · v0.3
-        </p>
+      <footer className="py-6 px-4">
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] text-[#AAAAAA]">
+            © 2026 StyleDrop · <Link href="/terms" className="hover:text-[#0A0A0A]/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-[#0A0A0A]/30 transition-colors">개인정보처리방침</Link> · v0.3
+          </p>
+          {user && (
+            <button onClick={() => setShowDeleteModal(true)} className="text-[11px] text-[#CCCCCC] hover:text-[#999] transition-colors">
+              회원 탈퇴
+            </button>
+          )}
+        </div>
       </footer>
 
       {/* 회원 탈퇴 모달 */}
