@@ -1147,15 +1147,18 @@ export default function NaboPage() {
                     {isProcessingPremiumAccess ? "처리 중..." : `${PREMIUM_ACCESS_CREDITS}크레딧으로 전체 결과 열기`}
                   </button>
                   <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>1회 결제로 모든 항목이 열려요</p>
-                  <button
-                    onClick={handleReset}
-                    className="text-[13px] font-semibold transition-colors"
-                    style={{ color: "rgba(255,255,255,0.35)" }}
-                  >
-                    새로 시작하기
-                  </button>
                 </div>
               </section>
+
+              <div className="mx-6 mb-8">
+                <button
+                  onClick={handleReset}
+                  className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97] text-white"
+                  style={{ background: "linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)" }}
+                >
+                  새로 시작하기
+                </button>
+              </div>
             </>
           )}
         </div>
