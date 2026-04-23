@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  attachTravelParticipantUserId,
   buildTravelRoomView,
   getTravelRole,
   getTravelRoom,
   submitTravelAnswers,
 } from "@/lib/travel-together-room.server";
+import { readSessionFromRequest } from "@/lib/auth-session";
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ roomId: string }> },
 ) {
   const { roomId } = await context.params;
+  const session = readSessionFromRequest(request);
 
   try {
     const body = await request.json();
@@ -31,7 +34,17 @@ export async function POST(
       return NextResponse.json({ error: "응답 권한이 없습니다." }, { status: 403 });
     }
 
-    const submitted = await submitTravelAnswers({ room, role, answers });
+    let currentRoom = room;
+
+    if (session?.id) {
+      const attached = await attachTravelParticipantUserId(currentRoom, role, session.id);
+      if (attached.error || !attached.room) {
+        return NextResponse.json({ error: attached.error ?? "참여자 확인에 실패했습니다." }, { status: 403 });
+      }
+      currentRoom = attached.room;
+    }
+
+    const submitted = await submitTravelAnswers({ room: currentRoom, role, answers });
     if (submitted.error || !submitted.room) {
       return NextResponse.json({ error: submitted.error ?? "응답 저장에 실패했습니다." }, { status: 500 });
     }

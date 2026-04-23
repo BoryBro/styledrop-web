@@ -4,9 +4,11 @@ import {
   buildTravelRoomView,
   createTravelRoom,
 } from "@/lib/travel-together-room.server";
+import { readSessionFromRequest } from "@/lib/auth-session";
 
 export async function POST(request: NextRequest) {
   try {
+    const session = readSessionFromRequest(request);
     const body = await request.json();
     const myName = String(body?.myName ?? "").trim();
     const partnerName = String(body?.partnerName ?? "").trim();
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest) {
       myName,
       partnerName,
       relation,
-    });
+    }, session?.id ?? null);
 
     if (error || !room) {
       return NextResponse.json({ error: error ?? "방을 만들지 못했습니다." }, { status: 500 });

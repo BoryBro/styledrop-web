@@ -10,6 +10,7 @@ export type TravelAnswerMap = Record<string, string | number>;
 export type TravelRoomParticipant = {
   name: string;
   token: string;
+  userId: string | null;
   submitted: boolean;
   joinedAt: string | null;
   submittedAt: string | null;
@@ -21,6 +22,9 @@ export type TravelRoomState = {
   relation: TravelRelation;
   host: TravelRoomParticipant;
   guest: TravelRoomParticipant;
+  unlockedAt: string | null;
+  unlockedByUserId: string | null;
+  unlockCreditsCost: number | null;
   createdAt: string;
   updatedAt: string;
   version: number;
@@ -37,6 +41,17 @@ export type TravelRoomView = {
   myAnswers: TravelAnswerMap | null;
   partnerAnswers: TravelAnswerMap | null;
   invitePath: string;
+  unlocked: boolean;
+};
+
+export type TravelHistoryItem = {
+  roomId: string;
+  relation: TravelRelation;
+  myName: string;
+  partnerName: string;
+  participantToken: string;
+  completedAt: string;
+  unlocked: boolean;
 };
 
 const ROOM_EVENT_TYPE = "lab_travel_room_state";
@@ -71,6 +86,7 @@ function mergeParticipantState(
   return {
     name: next.name || base.name,
     token: next.token || base.token,
+    userId: next.userId ?? base.userId ?? null,
     submitted: base.submitted || next.submitted,
     joinedAt:
       toTime(next.joinedAt) >= toTime(base.joinedAt)
@@ -94,6 +110,18 @@ function mergeTravelRoomSnapshots(snapshots: TravelRoomState[]) {
     createdAt: toTime(snapshot.createdAt) < toTime(merged.createdAt) ? snapshot.createdAt : merged.createdAt,
     updatedAt: toTime(snapshot.updatedAt) >= toTime(merged.updatedAt) ? snapshot.updatedAt : merged.updatedAt,
     version: Math.max(merged.version, snapshot.version),
+    unlockedAt:
+      toTime(snapshot.unlockedAt) >= toTime(merged.unlockedAt)
+        ? snapshot.unlockedAt ?? merged.unlockedAt
+        : merged.unlockedAt,
+    unlockedByUserId:
+      toTime(snapshot.unlockedAt) >= toTime(merged.unlockedAt)
+        ? snapshot.unlockedByUserId ?? merged.unlockedByUserId
+        : merged.unlockedByUserId,
+    unlockCreditsCost:
+      toTime(snapshot.unlockedAt) >= toTime(merged.unlockedAt)
+        ? snapshot.unlockCreditsCost ?? merged.unlockCreditsCost
+        : merged.unlockCreditsCost,
     host: mergeParticipantState(merged.host, snapshot.host),
     guest: mergeParticipantState(merged.guest, snapshot.guest),
   }), first);
@@ -125,7 +153,12 @@ export function buildTravelRoomView(room: TravelRoomState, role: TravelParticipa
     myAnswers: me.answers,
     partnerAnswers: canRevealPartnerAnswers ? partner.answers : null,
     invitePath: buildTravelInvitePath(room),
+    unlocked: Boolean(room.unlockedAt),
   };
+}
+
+export function isTravelRoomCompleted(room: TravelRoomState) {
+  return room.host.submitted && room.guest.submitted;
 }
 
 export async function getTravelRoom(roomId: string) {
@@ -153,10 +186,10 @@ export async function getTravelRoom(roomId: string) {
   return { room, error: null };
 }
 
-export async function saveTravelRoom(room: TravelRoomState) {
+export async function saveTravelRoom(room: TravelRoomState, actorUserId: string | null = null) {
   const supabase = getSupabase();
   const { error } = await supabase.from("user_events").insert({
-    user_id: null,
+    user_id: actorUserId,
     event_type: ROOM_EVENT_TYPE,
     metadata: room,
   });
@@ -168,7 +201,7 @@ export async function createTravelRoom(input: {
   myName: string;
   partnerName: string;
   relation: TravelRelation;
-}) {
+}, hostUserId: string | null = null) {
   const now = new Date().toISOString();
   const room: TravelRoomState = {
     roomId: randomId(4),
@@ -176,6 +209,7 @@ export async function createTravelRoom(input: {
     host: {
       name: input.myName,
       token: randomId(12),
+      userId: hostUserId,
       submitted: false,
       joinedAt: now,
       submittedAt: null,
@@ -184,17 +218,21 @@ export async function createTravelRoom(input: {
     guest: {
       name: input.partnerName,
       token: randomId(12),
+      userId: null,
       submitted: false,
       joinedAt: null,
       submittedAt: null,
       answers: null,
     },
+    unlockedAt: null,
+    unlockedByUserId: null,
+    unlockCreditsCost: null,
     createdAt: now,
     updatedAt: now,
     version: 1,
   };
 
-  const saved = await saveTravelRoom(room);
+  const saved = await saveTravelRoom(room, hostUserId);
   if (!saved.ok) {
     return { room: null, error: saved.error };
   }
@@ -216,9 +254,70 @@ export async function markTravelParticipantJoined(room: TravelRoomState, role: T
     },
   };
 
-  const saved = await saveTravelRoom(nextRoom);
+  const saved = await saveTravelRoom(nextRoom, current.userId);
   if (!saved.ok) {
     return { room, error: saved.error };
+  }
+
+  const refreshed = await getTravelRoom(nextRoom.roomId);
+  return { room: refreshed.room ?? nextRoom, error: refreshed.error };
+}
+
+export async function attachTravelParticipantUserId(
+  room: TravelRoomState,
+  role: TravelParticipantRole,
+  userId: string,
+) {
+  const current = role === "host" ? room.host : room.guest;
+  if (current.userId === userId) {
+    return { room, error: null };
+  }
+
+  if (current.userId && current.userId !== userId) {
+    return { room, error: "이 참여 링크는 다른 계정에 연결되어 있습니다." };
+  }
+
+  const nextRoom: TravelRoomState = {
+    ...room,
+    updatedAt: new Date().toISOString(),
+    version: room.version + 1,
+    [role]: {
+      ...current,
+      userId,
+    },
+  };
+
+  const saved = await saveTravelRoom(nextRoom, userId);
+  if (!saved.ok) {
+    return { room, error: saved.error };
+  }
+
+  const refreshed = await getTravelRoom(nextRoom.roomId);
+  return { room: refreshed.room ?? nextRoom, error: refreshed.error };
+}
+
+export async function unlockTravelRoom(
+  room: TravelRoomState,
+  actorUserId: string,
+  creditCost: number,
+) {
+  if (room.unlockedAt) {
+    return { room, error: null };
+  }
+
+  const now = new Date().toISOString();
+  const nextRoom: TravelRoomState = {
+    ...room,
+    unlockedAt: now,
+    unlockedByUserId: actorUserId,
+    unlockCreditsCost: creditCost,
+    updatedAt: now,
+    version: room.version + 1,
+  };
+
+  const saved = await saveTravelRoom(nextRoom, actorUserId);
+  if (!saved.ok) {
+    return { room: null, error: saved.error };
   }
 
   const refreshed = await getTravelRoom(nextRoom.roomId);
@@ -246,11 +345,59 @@ export async function submitTravelAnswers(input: {
     },
   };
 
-  const saved = await saveTravelRoom(nextRoom);
+  const saved = await saveTravelRoom(nextRoom, current.userId);
   if (!saved.ok) {
     return { room: null, error: saved.error };
   }
 
   const refreshed = await getTravelRoom(nextRoom.roomId);
   return { room: refreshed.room ?? nextRoom, error: refreshed.error };
+}
+
+export async function listCompletedTravelRoomsForUser(userId: string) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("user_events")
+    .select("metadata, created_at")
+    .eq("event_type", ROOM_EVENT_TYPE)
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (error) {
+    return { items: [] as TravelHistoryItem[], error: error.message };
+  }
+
+  const grouped = new Map<string, TravelRoomState[]>();
+  for (const entry of data ?? []) {
+    const snapshot = entry.metadata as TravelRoomState | null;
+    if (!snapshot?.roomId) continue;
+    grouped.set(snapshot.roomId, [...(grouped.get(snapshot.roomId) ?? []), snapshot]);
+  }
+
+  const items = [...grouped.values()]
+    .map((snapshots) => mergeTravelRoomSnapshots([...snapshots].reverse()))
+    .filter((room): room is TravelRoomState => Boolean(room))
+    .filter((room) => isTravelRoomCompleted(room))
+    .filter((room) => room.host.userId === userId || room.guest.userId === userId)
+    .sort((a, b) => toTime(b.updatedAt) - toTime(a.updatedAt))
+    .map((room) => {
+      const role: TravelParticipantRole = room.host.userId === userId ? "host" : "guest";
+      const me = role === "host" ? room.host : room.guest;
+      const partner = role === "host" ? room.guest : room.host;
+
+      return {
+        roomId: room.roomId,
+        relation: room.relation,
+        myName: me.name,
+        partnerName: partner.name,
+        participantToken: me.token,
+        completedAt:
+          toTime(room.host.submittedAt) >= toTime(room.guest.submittedAt)
+            ? room.host.submittedAt ?? room.updatedAt
+            : room.guest.submittedAt ?? room.updatedAt,
+        unlocked: Boolean(room.unlockedAt),
+      };
+    });
+
+  return { items, error: null };
 }

@@ -64,6 +64,7 @@ type TravelRoomView = {
   myAnswers: AnswerMap | null;
   partnerAnswers: AnswerMap | null;
   invitePath: string;
+  unlocked: boolean;
 };
 
 type KakaoShareSDK = {
@@ -81,7 +82,7 @@ type KakaoShareSDK = {
   };
 };
 
-const DETAIL_UNLOCK_CREDITS = 5;
+const DETAIL_UNLOCK_CREDITS = 2;
 const DEFAULT_SHARE_ORIGIN = "https://www.styledrop.cloud";
 
 const RELATION_OPTIONS: Array<{ id: Relation; label: string; desc: string }> = [
@@ -238,6 +239,18 @@ function getSliderScore(question: Extract<Question, { type: "slider" }>, myValue
 
 function getTier(score: number) {
   return TIER_RULES.find((rule) => score >= rule.min) ?? TIER_RULES[TIER_RULES.length - 1];
+}
+
+function buildDemoTravelAnswers(seed = 0): AnswerMap {
+  return Object.fromEntries(
+    QUESTIONS.map((question, index) => {
+      if (question.type === "slider") {
+        return [question.id, (index + seed) % question.scale.length];
+      }
+
+      return [question.id, question.options[(index + seed) % question.options.length]];
+    }),
+  );
 }
 
 function pickPreviewSpots(overall: number, photoScore: number, paceScore: number) {
@@ -594,6 +607,7 @@ function TravelTogetherPageContent() {
   const [shareStatus, setShareStatus] = useState<"idle" | "sent" | "copied">("idle");
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isSubmittingAnswers, setIsSubmittingAnswers] = useState(false);
+  const [isUnlockingDetails, setIsUnlockingDetails] = useState(false);
   const [roomError, setRoomError] = useState("");
   const [mySubmitted, setMySubmitted] = useState(false);
   const [partnerSubmitted, setPartnerSubmitted] = useState(false);
@@ -605,6 +619,9 @@ function TravelTogetherPageContent() {
   );
   const [myAnswers, setMyAnswers] = useState<AnswerMap>({});
   const [partnerAnswersState, setPartnerAnswersState] = useState<AnswerMap>({});
+  const resultOnlyView = searchParams.get("view") === "result";
+  const isLocalDebug =
+    shareOrigin.includes("localhost") || shareOrigin.includes("127.0.0.1");
 
   const applyRoomView = useCallback((view: TravelRoomView) => {
     setRoomId(view.roomId);
@@ -617,6 +634,7 @@ function TravelTogetherPageContent() {
     setMyAnswers(view.myAnswers ?? {});
     setPartnerAnswersState(view.partnerAnswers ?? {});
     setInvitePath(view.invitePath);
+    setUnlocked(Boolean(view.unlocked));
     setRoomError("");
   }, []);
 
@@ -688,10 +706,18 @@ function TravelTogetherPageContent() {
       try {
         const view = await fetchRoomView(nextRoomId, nextToken);
         if (cancelled) return;
-        setHistory(["intro", "waiting"]);
-        setStep("waiting");
         if (view.mySubmitted && view.partnerSubmitted) {
           setPartnerAnswersState(view.partnerAnswers ?? {});
+          if (resultOnlyView) {
+            setHistory(["intro", "results"]);
+            setStep("results");
+          } else {
+            setHistory(["intro", "waiting"]);
+            setStep("waiting");
+          }
+        } else {
+          setHistory(["intro", "waiting"]);
+          setStep("waiting");
         }
       } catch (error) {
         if (cancelled) return;
@@ -702,7 +728,7 @@ function TravelTogetherPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [fetchRoomView, searchParams]);
+  }, [fetchRoomView, resultOnlyView, searchParams]);
 
   useEffect(() => {
     if (!roomId || !participantToken) return;
@@ -927,9 +953,36 @@ function TravelTogetherPageContent() {
     }
   };
 
-  const handleUnlock = () => {
-    setUnlocked(true);
-    void trackClientEvent("lab_travel_unlock");
+  const handleUnlock = async () => {
+    if (!roomId || !participantToken || isUnlockingDetails) return;
+    setIsUnlockingDetails(true);
+    setRoomError("");
+    try {
+      const response = await fetch(
+        `/api/travel-together/room/${encodeURIComponent(roomId)}/unlock`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: participantToken }),
+        },
+      );
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.view) {
+        throw new Error(payload?.error ?? "상세 결과 결제에 실패했습니다.");
+      }
+
+      applyRoomView(payload.view as TravelRoomView);
+      void trackClientEvent("lab_travel_unlock", {
+        room_id: roomId,
+        charged_credits: payload.chargedCredits ?? 0,
+      });
+    } catch (error) {
+      setRoomError(
+        error instanceof Error ? error.message : "상세 결과 결제에 실패했습니다.",
+      );
+    } finally {
+      setIsUnlockingDetails(false);
+    }
   };
 
   const results = useMemo(() => {
@@ -990,6 +1043,27 @@ function TravelTogetherPageContent() {
     goTo("questions");
   };
 
+  const fillLocalPreviewResults = () => {
+    const demoMyName = myName.trim() || "지환";
+    const demoPartnerName = partnerName.trim() || "민지";
+    setMyName(demoMyName);
+    setPartnerName(demoPartnerName);
+    setRoomId("");
+    setParticipantToken("");
+    setParticipantRole(null);
+    setInvitePath("");
+    setMySubmitted(true);
+    setPartnerSubmitted(true);
+    setUnlocked(true);
+    setMyAnswers(buildDemoTravelAnswers(1));
+    setPartnerAnswersState(buildDemoTravelAnswers(3));
+    setQIdx(0);
+    setCurrentAnswer("");
+    setRoomError("");
+    setHistory(["intro", "results"]);
+    setStep("results");
+  };
+
   return (
     <main className="min-h-screen bg-white flex flex-col" style={{ fontFamily: '"Pretendard", "SUIT Variable", sans-serif' }}>
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-100 flex items-center justify-between px-5 h-14">
@@ -1047,7 +1121,7 @@ function TravelTogetherPageContent() {
               <span className="text-[14px]" style={{ color: T.text }}>궁합 티어와 최종 여행 결과를 보여줘요</span>
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
-              {["2인 여행 궁합", "20문항", "기본 결과 무료 공개", "상세 결과 5크레딧"].map((tag) => (
+              {["2인 여행 궁합", "20문항", "기본 결과 무료 공개", "상세 결과 2크레딧"].map((tag) => (
                 <span key={tag} className="text-[12px] font-bold rounded-full px-3 py-1" style={{ background: T.bg, color: T.deep, border: `1px solid ${T.border}` }}>
                   {tag}
                 </span>
@@ -1061,7 +1135,7 @@ function TravelTogetherPageContent() {
               { num: "01", en: "CREATE", ko: "룸을 만들어요", desc: "상대 이름과 관계를 정하고\n초대 링크를 생성해요." },
               { num: "02", en: "INVITE", ko: "상대를 초대해요", desc: "링크를 보내고 각자\n본인 여행 스타일을 답해요." },
               { num: "03", en: "COMPARE", ko: "궁합을 비교해요", desc: "준비·행동·페이스·갈등·여행 후\n5개 축으로 비교합니다." },
-              { num: "04", en: "DETAIL", ko: "상세 결과를 봐요", desc: "기본 결과 확인 후\n상세 결과를 5크레딧으로 봐요." },
+              { num: "04", en: "DETAIL", ko: "상세 결과를 봐요", desc: "기본 결과 확인 후\n상세 결과를 2크레딧으로 봐요." },
             ].map((item) => (
               <div key={item.num} className="flex gap-4 items-start">
                 <span className="text-[26px] font-black text-gray-200 leading-none flex-shrink-0 w-10 text-right tabular-nums">{item.num}</span>
@@ -1151,6 +1225,16 @@ function TravelTogetherPageContent() {
             >
               {isCreatingRoom ? "링크 만드는 중..." : "초대 링크 만들기"}
             </button>
+            {isLocalDebug && (
+              <button
+                type="button"
+                onClick={fillLocalPreviewResults}
+                className="mt-3 w-full py-4 rounded-2xl font-black text-[15px] transition-all active:scale-[0.97]"
+                style={{ background: T.bg, color: T.text, border: `1px solid ${T.border}` }}
+              >
+                로컬 테스트용 결과 바로 보기
+              </button>
+            )}
             {(!myName.trim() || !partnerName.trim()) && <p className="text-center text-[12px] text-gray-400 mt-2">이름 두 개를 모두 입력해주세요</p>}
           </div>
         </div>
@@ -1298,61 +1382,41 @@ function TravelTogetherPageContent() {
                     key={option}
                     type="button"
                     onClick={() => setCurrentAnswer(option)}
-                    className="w-full rounded-2xl border px-4 py-3.5 text-left font-semibold text-[15px] transition-all"
+                    className="w-full rounded-[24px] border px-6 py-5 text-left transition-all min-h-[78px]"
                     style={{
                       borderColor: currentAnswer === option ? T.mid : "#E5E7EB",
                       background: currentAnswer === option ? T.bg : "white",
-                      color: currentAnswer === option ? T.text : "#374151",
+                      color: currentAnswer === option ? T.text : "#1F2937",
+                      boxShadow: currentAnswer === option ? `0 0 0 3px ${T.bg}` : undefined,
                     }}
                   >
-                    {option}
+                    <span className="text-[18px] font-black tracking-[-0.01em]">{option}</span>
                   </button>
                 ))}
               </div>
             )}
 
             {question.type === "slider" && (
-              <div className="flex flex-col gap-5">
-                <style>{`.travel-sl::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:${T.mid};cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,0.38)}.travel-sl::-webkit-slider-runnable-track{height:7px;border-radius:4px;background:linear-gradient(to right,${T.mid} var(--v,50%),#E5E7EB var(--v,50%))}.travel-sl::-moz-range-thumb{width:26px;height:26px;border:none;border-radius:50%;background:${T.mid};cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,0.38)}.travel-sl::-moz-range-track{height:7px;border-radius:4px;background:#E5E7EB}.travel-sl{-webkit-appearance:none;appearance:none;outline:none;background:transparent}`}</style>
-                <input
-                  type="range"
-                  min={0}
-                  max={question.scale.length - 1}
-                  step={1}
-                  value={slider}
-                  onChange={(event) => setSlider(Number(event.target.value))}
-                  className="w-full travel-sl"
-                  style={{ "--v": `${getSliderPosition(question, slider)}%` } as React.CSSProperties}
-                />
-                <div className="flex items-center justify-center">
-                  <div className="px-8 py-3 rounded-2xl text-center" style={{ background: T.bg, border: `1px solid ${T.border}` }}>
-                    <span className="text-[28px] font-black leading-none" style={{ color: T.mid }}>{question.scale[slider]}</span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {question.scale.map((label, index) => {
-                    const active = slider === index;
-                    return (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() => setSlider(index)}
-                        className="rounded-xl px-3 py-2 text-[12px] font-bold transition-all"
-                        style={{
-                          border: `1px solid ${active ? T.mid : "#E5E7EB"}`,
-                          background: active ? T.bg : "white",
-                          color: active ? T.text : "#6B7280",
-                        }}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="flex justify-between text-[11px] font-bold text-gray-400">
-                  <span>{question.scale[0]}</span>
-                  <span>{question.scale[question.scale.length - 1]}</span>
-                </div>
+              <div className="flex flex-col gap-2">
+                {question.scale.map((label, index) => {
+                  const active = slider === index;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => setSlider(index)}
+                      className="w-full rounded-[24px] border px-6 py-5 text-left transition-all min-h-[78px]"
+                      style={{
+                        borderColor: active ? T.mid : "#E5E7EB",
+                        background: active ? T.bg : "white",
+                        color: active ? T.text : "#1F2937",
+                        boxShadow: active ? `0 0 0 3px ${T.bg}` : undefined,
+                      }}
+                    >
+                      <span className="text-[18px] font-black tracking-[-0.01em]">{label}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -1524,10 +1588,10 @@ function TravelTogetherPageContent() {
                       터지는 순간 TOP3 · 역할 분담 결과
                     </p>
                   </div>
-                  <button onClick={handleUnlock} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]" style={{ background: "#60A5FA", color: "white" }}>
-                    {DETAIL_UNLOCK_CREDITS}크레딧으로 보기
+                  <button onClick={handleUnlock} disabled={isUnlockingDetails} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97] disabled:opacity-70" style={{ background: "#60A5FA", color: "white" }}>
+                    {isUnlockingDetails ? "결제 중..." : `${DETAIL_UNLOCK_CREDITS}크레딧으로 보기`}
                   </button>
-                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>상세 여행 결과를 한 번에 보는 구조입니다</p>
+                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>한 명만 결제하면 두 사람 모두 같은 상세 결과를 볼 수 있어요</p>
                 </div>
               </section>
             </>

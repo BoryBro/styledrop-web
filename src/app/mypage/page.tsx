@@ -33,6 +33,16 @@ type AuditionHistoryItem = {
   created_at: string;
 };
 
+type TravelHistoryItem = {
+  roomId: string;
+  relation: "friend" | "lover" | "family" | "coworker";
+  myName: string;
+  partnerName: string;
+  participantToken: string;
+  completedAt: string;
+  unlocked: boolean;
+};
+
 type ShowcaseState = {
   imageUrl: string;
   styleId: string | null;
@@ -40,6 +50,12 @@ type ShowcaseState = {
 } | null;
 
 const MULTI_SOURCE_STYLE_ID_SET = new Set<string>(MULTI_SOURCE_STYLE_IDS);
+const TRAVEL_RELATION_LABELS: Record<TravelHistoryItem["relation"], string> = {
+  friend: "친한 친구",
+  lover: "연인",
+  family: "가족",
+  coworker: "직장 동료",
+};
 
 interface KakaoSDK {
   init: (key: string) => void;
@@ -136,6 +152,7 @@ export default function MyPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [guestHistory, setGuestHistory] = useState<GuestHistoryItem[]>([]);
   const [auditionHistory, setAuditionHistory] = useState<AuditionHistoryItem[]>([]);
+  const [travelHistory, setTravelHistory] = useState<TravelHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -169,11 +186,13 @@ export default function MyPage() {
     if (loading) return;
     if (!user) {
       setGuestHistory(getGuestHistory());
+      setTravelHistory([]);
       setHistoryLoading(false);
       return;
     }
     const requests: Promise<void>[] = [
       fetch("/api/history").then(r => r.json()).then(d => setHistory(d.history ?? [])).catch(() => {}),
+      fetch("/api/travel-together/history").then(r => r.json()).then(d => setTravelHistory(d.history ?? [])).catch(() => {}),
     ];
     if (showAuditionHistory) {
       requests.push(
@@ -783,6 +802,55 @@ export default function MyPage() {
                       </Link>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {travelHistory.length > 0 && (
+              <div>
+                <div className="flex items-baseline gap-2 mb-4 px-1">
+                  <h2 className="text-[16px] font-bold text-white">여행 같이 간다면 기록</h2>
+                  <span className="text-[12px] text-[#555]">완료된 테스트만 보관</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {travelHistory.map((item) => (
+                    <Link
+                      key={item.roomId}
+                      href={`/travel-together?room=${encodeURIComponent(item.roomId)}&token=${encodeURIComponent(item.participantToken)}&view=result`}
+                      className="flex flex-col gap-3 rounded-2xl border border-white/5 bg-[#111] p-3 transition-colors hover:border-white/15 min-w-0"
+                    >
+                      <div className="flex aspect-square items-center justify-center rounded-xl bg-[linear-gradient(135deg,#DBEAFE,#BFDBFE_48%,#60A5FA)]">
+                        <div className="text-center text-[#1E3A8A]">
+                          <p className="text-[12px] font-black tracking-[0.22em] uppercase">Travel</p>
+                          <p className="mt-2 text-[24px]">✈️</p>
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-[#60A5FA]">
+                            여행 테스트
+                          </span>
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                              item.unlocked ? "bg-[#60A5FA]/15 text-[#93C5FD]" : "bg-white/5 text-white/40"
+                            }`}
+                          >
+                            {item.unlocked ? "상세 열림" : "기본 결과"}
+                          </span>
+                        </div>
+                        <p className="text-[14px] font-bold leading-snug text-white break-keep">
+                          {item.partnerName}와 여행 궁합
+                        </p>
+                        <p className="mt-1 text-[12px] text-[#777]">
+                          {TRAVEL_RELATION_LABELS[item.relation]}
+                        </p>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-[#555]">{relativeTime(item.completedAt)}</span>
+                          <span className="text-[11px] font-semibold text-white/60">결과 다시 보기</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               </div>
             )}
