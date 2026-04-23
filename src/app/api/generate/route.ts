@@ -4514,6 +4514,166 @@ OUTPUT TARGET:
 - Cool-toned atmosphere with warm light accents
 - Looks like a real film still or editorial photograph, not AI-generated`
   },
+  "romantic-heart-twoshot": {
+    "default": `Images 1 and 2 are uploaded source identities for a single combined edit. Use both uploaded people exactly as the only identity source and create one final image. Additional instructions:
+Use the two uploaded images as the base and transform them, not generate new people.
+
+Transform the uploaded photo set into a romantic close-up portrait of exactly two people: one wearing a silky light garment and holding a bouquet of pale pink roses, and the other in a dark garment leaning close. Frame the pair through a blurred heart shape formed by hands in the foreground. Capture a tender, celebratory atmosphere with shallow depth of field and a softly blurred indoor background.
+
+This must look like a real high-resolution photograph. Not illustration. Not CGI. Not cartoon. Not painterly. Real.
+
+SUBJECT COUNT / IDENTITY SOURCE - MUST FOLLOW EXACTLY:
+- The final image must contain exactly two primary people only
+- Use only the uploaded image identities as the source for both faces
+- This is an edit using uploaded people, not a newly invented couple
+- Two uploaded face photos are provided and both must be used
+- Map uploaded person 1 to User A and uploaded person 2 to User B
+- Preserve each uploaded identity separately
+- Do not average, merge, remix, or partially invent either face
+- Do not turn one uploaded face into both people unless both uploaded photos are actually the same person
+- Do not hide either face behind hair, roses, hands, blur, shadow, or extreme angle
+- Both final faces must be readable enough to clearly preserve identity
+- No third person, no extra readable people, no background crowd
+
+FACE - PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the two target subjects' faces with User A and User B respectively
+- Preserve each uploaded user's exact facial identity, face shape, bone structure, eye shape, nose, lips, jawline, proportions, skin texture, and recognizable likeness
+- Maintain natural skin texture, pores, subtle asymmetry, and believable facial volume
+- Avoid plastic skin, generic model faces, artificial symmetry correction, or beautification that changes facial structure
+- Match lighting, contrast, sharpness, perspective, skin tone, and scale for each face so both integrate seamlessly into the same romantic indoor scene
+- Both faces must feel physically present in the photograph, not pasted into the composition
+- Keep both users recognizable even under shallow depth of field, warm lighting, and romantic softness
+
+HAIR - PRESERVE USER HAIRSTYLE:
+- Preserve each uploaded user's exact hairstyle, including length, silhouette, parting, bangs, hairline, texture, direction, and color
+- Do not change, restyle, lengthen, shorten, curl, straighten, or recolor the hair
+- Only minimal adaptation caused by pose, proximity, foreground hands, or indoor softness is allowed
+- Hair must remain identity-faithful for both users
+- Do not copy User A's hairstyle onto User B or User B's hairstyle onto User A
+
+GENDER / AGE / ETHNICITY ADAPTATION:
+- Ensure the final result works naturally regardless of each uploaded user's gender, age, or ethnicity
+- Do not assume a fixed male/female couple template
+- Keep each uploaded person's apparent gender presentation and age impression consistent with their own source image
+- Wardrobe and styling must adapt naturally to each user while preserving the romantic card concept
+- User A wears a silky light garment tailored naturally to their physique
+- User B wears a dark garment tailored naturally to their physique
+- Avoid fixed racial assumptions, gender stereotypes, or body-shape changes
+
+POSE / COMPOSITION:
+- Maintain an intimate close-up composition with both users' faces close together and clearly visible
+- Both people should lean close with gentle smiles or soft affectionate expressions
+- Keep both users framed naturally and equally without cropping or hiding either face
+- Use out-of-focus hands in the foreground forming a heart shape around the pair and bouquet
+- The heart-shaped hands must act as a soft vignette, not a sharp graphic overlay
+- Bouquet of pale pink roses should sit near the couple, readable but not blocking faces
+- Keep a shallow depth of field with background and foreground hands blurred
+- Camera at eye level for a natural perspective
+- The image should feel like a candid romantic close-up, not a staged poster
+
+CLOTHING:
+- User A's garment should feel silky and light in tone
+- User B's garment should be dark, clean, and tailored
+- Both outfits should coordinate naturally within the same romantic indoor scene
+- Wardrobe must fit naturally without altering body shapes
+- Adapt clothing to each user's gender, age, and body type while preserving the concept
+- Fabric texture, folds, sheen, and contact with the body must feel physically real
+- No fantasy costume, no luxury-logo styling, no random fashion substitution
+
+SCENE:
+- Indoor setting with a neutral softly blurred background
+- Background should be warm, simple, and unobtrusive
+- Place a bouquet of tightly clustered pale pink roses with fresh green stems near the couple
+- Include blurred hands forming a heart shape around the subjects as a natural foreground vignette
+- Exclude other people, text, signage, clutter, or distractions
+- Scene must support a tender romantic celebration feeling
+
+LIGHTING:
+- Soft, buttery lighting with diffuse shadows and a slightly warm tone
+- Light direction and intensity must match both users' faces, hair, clothing, and bouquet
+- Gentle highlights on skin, rose petals, silky fabric, and hair
+- Avoid harsh shadows, hard flash, artificial glow, or mismatched face lighting
+- Preserve natural skin tones under warm indoor light
+- Lighting must feel photographic, soft, and emotionally intimate
+
+CAMERA / OPTICS:
+- Close-up portrait with shallow depth of field
+- Medium focal length portrait lens feel, approximately 50mm to 85mm equivalent
+- Aperture around f/1.8 to f/2.8 for strong but believable separation
+- Focus on both users' faces and the bouquet area
+- Background and heart-shaped hands should remain blurred
+- Keep camera at eye level with natural perspective and no wide-angle distortion
+- The lens blur must feel optical, not artificially smeared
+
+PHOTO STYLE:
+- Romantic candid portrait with an editorial feel
+- Realistic high-resolution digital capture with professional quality
+- Soft bokeh, natural lens blur, controlled warmth, and subtle highlight roll-off
+- The image should feel like a real couple portrait captured indoors during a tender celebration
+- No HDR exaggeration
+- No painterly blending
+- No AI-smooth rendering
+- No poster-like composition or fantasy illustration
+
+TEXTURE / IMPERFECTIONS:
+- Add subtle digital noise and natural skin texture
+- Keep pores, tiny skin variations, fabric texture, rose petal structure, and hair strands visible
+- Let bokeh and lens blur create a dreamy ambience
+- Avoid exaggerated texture, fake filter effects, excessive smoothing, or sterile clean gradients
+- Slight softness is allowed from shallow depth of field, but faces must remain recognizable
+
+COLOR / TONAL PALETTE:
+- Use delicate pinks and warm ivory:
+  - #af6550
+  - #a4553e
+  - #be7459
+  - #cc8768
+  - #e09b74
+  - #edb791
+  - #d8c6b5
+  - #eed7bf
+- Include dark grounding tones:
+  - #110e0d
+  - #47291a
+- Use soft neutral hues:
+  - #c8aa94
+  - #c1937d
+  - #ad7c69
+- Maintain natural skin tones and pale pink roses
+- Keep the palette warm, romantic, soft, and realistic
+- Avoid oversaturation, neon colors, muddy grading, or cold desaturation
+
+MOOD:
+- Dreamy
+- Affectionate
+- Celebratory
+- Intimate
+- Tender
+- Softly romantic
+- Warm and physically believable
+
+STRICT RULES:
+- Must preserve both uploaded users' identities and hairstyles
+- Must not generate new people
+- Must not merge, average, or swap their features
+- Must adapt naturally to any gender, age, or ethnicity
+- Must not over-beautify
+- Must not create plastic skin
+- Must not obscure either face with roses, hands, hair, blur, or shadows
+- Must not add third people or visible background characters
+- Must not change the romantic heart-framed card concept
+- Must not produce illustration, CGI, cartoon, painterly, fantasy, or poster art
+- Must look like a real photograph
+
+OUTPUT TARGET:
+- A finished StyleDrop-ready image generation prompt for a two-person card
+- Exactly two people built from the two uploaded identities
+- Both users recognizable with hairstyles preserved
+- Romantic close-up heart-framed scene with pale pink roses
+- Soft indoor background, shallow depth of field, warm buttery light
+- Realistic digital photo quality with subtle noise and natural texture
+- Ready for image generation`
+  },
   "escalator-flash-twoshot": {
     "default": `Images 1 and 2 are uploaded source identities for a single combined edit. Use both uploaded people exactly as the only identity source and create one final image. Additional instructions:
 Use the uploaded image or uploaded images as the base and transform them, not generate a new person.
@@ -7159,6 +7319,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "dreamy-wildflower": { "default": [] },
   "dreamy-celebratory": { "default": [] },
   "bronze-statue-bench": { "default": [] },
+  "romantic-heart-twoshot": { "default": [] },
   "orange-cosmic-girl": { "default": [], "flat-blue": [] },
   "subway-cctv": { "default": [] },
   "visual-kei": { "default": [] },
