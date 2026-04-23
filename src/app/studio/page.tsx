@@ -187,7 +187,7 @@ export default function Studio() {
   const [notices, setNotices] = useState<{ id: number; text: string }[]>([]);
   const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
   const [activeSectionTab, setActiveSectionTab] = useState<StudioSectionTab>("cards");
-  const [activeStyleCategory, setActiveStyleCategory] = useState<StyleCategoryTab>("전체");
+  const [activeStyleCategory, setActiveStyleCategory] = useState<StyleCategoryTab>(STYLE_CATEGORY_TABS[0]);
   const generalCardsSectionRef = useRef<HTMLDivElement>(null);
   const labSectionRef = useRef<HTMLDivElement>(null);
   const appliedStyleQueryRef = useRef<string | null>(null);
