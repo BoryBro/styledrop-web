@@ -208,20 +208,6 @@ function ScoreRing({ score, size = 136, color = T.mid }: { score: number; size?:
   );
 }
 
-function BarRow({ label, score }: { label: string; score: number }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between text-[12px]">
-        <span className="font-semibold text-gray-700">{label}</span>
-        <span className="font-black" style={{ color: T.mid }}>{score}점</span>
-      </div>
-      <div className="h-2 rounded-full overflow-hidden bg-gray-100">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, background: T.mid }} />
-      </div>
-    </div>
-  );
-}
-
 function getChoiceScore(question: Extract<Question, { type: "choice" }>, myAnswer: string, partnerAnswer: string) {
   const myIndex = question.options.indexOf(myAnswer);
   const partnerIndex = question.options.indexOf(partnerAnswer);
@@ -356,19 +342,6 @@ function getBudgetPhrase(answers: AnswerMap) {
     return "예산선을 넘지 않는 게 중요하고, 쇼핑에도 오래 머물지 않는 편입니다.";
   }
   return "예산과 만족도 사이에서 균형을 보려는 편입니다.";
-}
-
-function getRecoveryPhrase(answers: AnswerMap) {
-  const response = String(answers.q13 ?? "빠르게 대안 찾기");
-  const solo = getQuestionValue("q17", answers);
-
-  if (solo >= 70) {
-    return `변수가 생기면 "${response}" 쪽으로 반응하지만, 중간에 혼자 정리할 시간이 꽤 필요한 편입니다.`;
-  }
-  if (solo <= 35) {
-    return `변수가 생기면 "${response}" 쪽으로 반응하고, 여행 중에도 계속 붙어 있는 편이 크게 부담되지 않습니다.`;
-  }
-  return `변수가 생기면 "${response}" 쪽으로 반응하고, 필요하면 잠깐 혼자 정리하는 시간도 갖고 싶어합니다.`;
 }
 
 function getTravelFinalContent(myAnswers: AnswerMap, partnerAnswers: AnswerMap, myName: string, partnerName: string) {
@@ -638,6 +611,31 @@ function TravelTogetherPageContent() {
     setRoomError("");
   }, []);
 
+  const resetRoomSession = useCallback((clearNames = false) => {
+    setRoomId("");
+    setParticipantToken("");
+    setParticipantRole(null);
+    setInvitePath("");
+    setCopied(false);
+    setShareStatus("idle");
+    setRoomError("");
+    setMySubmitted(false);
+    setPartnerSubmitted(false);
+    setUnlocked(false);
+    setMyAnswers({});
+    setPartnerAnswersState({});
+    setQIdx(0);
+    setCurrentAnswer("");
+    if (QUESTIONS[0].type === "slider") {
+      setSlider(getDefaultSliderValue(QUESTIONS[0]));
+    }
+    if (clearNames) {
+      setMyName("");
+      setPartnerName("");
+      setRelation("friend");
+    }
+  }, []);
+
   const fetchRoomView = useCallback(async (nextRoomId: string, token: string) => {
     const response = await fetch(`/api/travel-together/room/${encodeURIComponent(nextRoomId)}?token=${encodeURIComponent(token)}`, {
       cache: "no-store",
@@ -676,15 +674,18 @@ function TravelTogetherPageContent() {
       if (parsed.myName) setMyName(parsed.myName);
       if (parsed.partnerName) setPartnerName(parsed.partnerName);
       if (parsed.relation) setRelation(parsed.relation);
-      if (parsed.roomId) setRoomId(parsed.roomId);
-      if (parsed.participantToken) setParticipantToken(parsed.participantToken);
-      if (parsed.participantRole) setParticipantRole(parsed.participantRole);
-      if (parsed.invitePath) setInvitePath(parsed.invitePath);
-      if (parsed.mySubmitted) setMySubmitted(parsed.mySubmitted);
-      if (parsed.partnerSubmitted) setPartnerSubmitted(parsed.partnerSubmitted);
-      if (parsed.myAnswers) setMyAnswers(parsed.myAnswers);
-      if (parsed.partnerAnswersState) setPartnerAnswersState(parsed.partnerAnswersState);
-      if (parsed.unlocked) setUnlocked(parsed.unlocked);
+      const shouldRestoreRoom = parsed.step !== "intro" && parsed.step !== "setup";
+      if (shouldRestoreRoom) {
+        if (parsed.roomId) setRoomId(parsed.roomId);
+        if (parsed.participantToken) setParticipantToken(parsed.participantToken);
+        if (parsed.participantRole) setParticipantRole(parsed.participantRole);
+        if (parsed.invitePath) setInvitePath(parsed.invitePath);
+        if (parsed.mySubmitted) setMySubmitted(parsed.mySubmitted);
+        if (parsed.partnerSubmitted) setPartnerSubmitted(parsed.partnerSubmitted);
+        if (parsed.myAnswers) setMyAnswers(parsed.myAnswers);
+        if (parsed.partnerAnswersState) setPartnerAnswersState(parsed.partnerAnswersState);
+        if (parsed.unlocked) setUnlocked(parsed.unlocked);
+      }
     } catch {}
   }, []);
 
@@ -733,6 +734,7 @@ function TravelTogetherPageContent() {
   useEffect(() => {
     if (!roomId || !participantToken) return;
     if (searchParams.get("room") && searchParams.get("token")) return;
+    if (step === "intro" || step === "setup") return;
 
     let cancelled = false;
     (async () => {
@@ -747,11 +749,11 @@ function TravelTogetherPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [fetchRoomView, participantToken, roomId, searchParams]);
+  }, [fetchRoomView, participantToken, roomId, searchParams, step]);
 
   useEffect(() => {
     if (!roomId || !participantToken) return;
-    if (step === "questions") return;
+    if (step === "intro" || step === "setup" || step === "questions") return;
 
     const timer = window.setInterval(() => {
       fetchRoomView(roomId, participantToken).catch(() => undefined);
@@ -794,6 +796,11 @@ function TravelTogetherPageContent() {
     const prev = next[next.length - 1] ?? "intro";
     setHistory(next.length ? next : ["intro"]);
     setStep(prev);
+  };
+
+  const startSetup = () => {
+    resetRoomSession(true);
+    goTo("setup");
   };
 
   const inviteLink = useMemo(() => {
@@ -1032,7 +1039,7 @@ function TravelTogetherPageContent() {
       finalVerdict: getFinalVerdict(overall),
       finalContent,
     };
-  }, [myAnswers, partnerAnswersState, relation, partnerName]);
+  }, [myAnswers, partnerAnswersState, relation, myName, partnerName]);
 
   const startTest = () => {
     setCurrentAnswer("");
@@ -1156,7 +1163,7 @@ function TravelTogetherPageContent() {
               <p className="text-[13px] text-gray-600">실험실 기능과 결과 예시에 동의합니다</p>
             </label>
             <button
-              onClick={() => agreed && goTo("setup")}
+              onClick={() => agreed && startSetup()}
               className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]"
               style={{ background: agreed ? "#111" : "#F3F4F6", color: agreed ? "#fff" : "#9CA3AF" }}
             >
