@@ -192,19 +192,22 @@ export default function ThreadsAdminPage() {
   if (!authed) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-4">
-        <div className="bg-[#111] border border-white/10 rounded-2xl p-8 w-full max-w-sm flex flex-col gap-4">
+        <form
+          onSubmit={e => { e.preventDefault(); void handleLogin(); }}
+          className="bg-[#111] border border-white/10 rounded-2xl p-8 w-full max-w-sm flex flex-col gap-4"
+        >
           <p className="text-white font-bold text-lg">Threads 어드민</p>
           <input
             type="password" placeholder="Admin password" value={password}
             onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleLogin()}
+            autoComplete="current-password"
             className="bg-[#1A1A1A] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
           />
-          <button onClick={() => handleLogin()}
-            className="bg-white text-black font-bold py-3 rounded-xl text-sm hover:bg-white/90 transition-colors">
+          <button type="submit"
+            className="bg-white text-black font-bold py-3 rounded-xl text-sm active:bg-white/80 transition-colors">
             로그인
           </button>
-        </div>
+        </form>
       </div>
     );
   }
