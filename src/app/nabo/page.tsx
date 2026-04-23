@@ -629,16 +629,7 @@ export default function NaboPage() {
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: G.mid }} />
           <span className="text-[9px] font-black text-gray-400 tracking-[0.2em] uppercase">Beta</span>
         </div>
-        {(step === "waiting" || step === "results") ? (
-          <button
-            onClick={handleReset}
-            className="text-[12px] font-bold text-gray-400 hover:text-gray-700 transition-colors"
-          >
-            새로 시작
-          </button>
-        ) : (
-          <div className="w-[60px]" />
-        )}
+        <div className="w-[60px]" />
       </header>
 
       {/* ════════════════════ INTRO ════════════════════ */}
@@ -1156,6 +1147,13 @@ export default function NaboPage() {
                     {isProcessingPremiumAccess ? "처리 중..." : `${PREMIUM_ACCESS_CREDITS}크레딧으로 전체 결과 열기`}
                   </button>
                   <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>1회 결제로 모든 항목이 열려요</p>
+                  <button
+                    onClick={handleReset}
+                    className="text-[13px] font-semibold transition-colors"
+                    style={{ color: "rgba(255,255,255,0.35)" }}
+                  >
+                    새로 시작하기
+                  </button>
                 </div>
               </section>
             </>
