@@ -14,7 +14,6 @@ const PACKAGES = [
     credits: PAYMENT_PACKAGES.basic.credits,
     price: PAYMENT_PACKAGES.basic.amount,
     priceStr: "1,900",
-    per: "190원/회",
     label: null,
   },
   {
@@ -22,7 +21,6 @@ const PACKAGES = [
     credits: PAYMENT_PACKAGES.plus.credits,
     price: PAYMENT_PACKAGES.plus.amount,
     priceStr: "4,900",
-    per: "163원/회",
     label: "인기",
   },
   {
@@ -30,7 +28,6 @@ const PACKAGES = [
     credits: PAYMENT_PACKAGES.pro.credits,
     price: PAYMENT_PACKAGES.pro.amount,
     priceStr: "9,900",
-    per: "141원/회",
     label: "최고혜택",
   },
 ];
@@ -439,10 +436,7 @@ export default function ShopPage() {
           <div className="min-w-0">
             <p className="text-[12px] text-[#6B7280]">보유 크레딧</p>
             <p className="mt-1 text-[28px] font-bold tracking-[-0.03em] text-[#111827]">
-              {authLoading ? "..." : user ? credits ?? 0 : "-"}
-            </p>
-            <p className="mt-2 text-[12px] leading-relaxed text-[#6B7280]">
-              1크레딧 = 고화질 1회 · {CREDIT_VALIDITY_TEXT}
+              {authLoading ? "..." : user ? `${credits ?? 0}개` : "-"}
             </p>
           </div>
           <button
@@ -480,8 +474,7 @@ export default function ShopPage() {
                     )}
                   </div>
                   <div className="text-left">
-                    <p className="text-[#111827] font-bold text-[15px]">{p.credits}회</p>
-                    <p className="text-[#6B7280] text-[12px]">{p.per}</p>
+                    <p className="text-[#111827] font-bold text-[15px]">{p.credits}개</p>
                   </div>
                 </div>
                 <div className="text-right shrink-0">
@@ -533,8 +526,7 @@ export default function ShopPage() {
                     {selectedGift === p.id && <div className="w-2 h-2 rounded-full bg-white" />}
                   </div>
                   <div className="text-left">
-                    <p className="text-[#111827] font-bold text-[15px]">{p.credits}회 선물</p>
-                    <p className="text-[#6B7280] text-[12px]">{p.per}</p>
+                    <p className="text-[#111827] font-bold text-[15px]">{p.credits}개 선물</p>
                   </div>
                 </div>
                 <div className="text-right">

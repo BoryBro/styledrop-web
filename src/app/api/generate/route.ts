@@ -7362,8 +7362,7 @@ export async function POST(request: NextRequest) {
 
   // ── 회원: 크레딧 차감 (원자적) ──────────────────────────────────────
   if (session) {
-    const isMultiSource = (MULTI_SOURCE_STYLE_IDS as readonly string[]).includes(style);
-    const creditCost = isMultiSource ? 2 : 1;
+    const creditCost = 2;
     const { data: newCredits, error: deductError } = await supabase.rpc("deduct_credit", {
       p_user_id: session.id,
       p_amount: creditCost,
