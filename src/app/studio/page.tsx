@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import HowToFlow from "@/components/how-to/HowToFlow";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
+import { useRecentPhotos } from "@/hooks/useRecentPhotos";
 import {
   readHowToHiddenPreference,
   readHowToSeenPreference,
@@ -127,6 +128,7 @@ export default function Studio() {
   const router = useRouter();
   const { user, loading, login } = useAuth();
   const { isLoading: isAuditionLoading, isVisible: isAuditionVisible, isEnabled: isAuditionEnabled } = useAuditionAvailability();
+  const { recentPhotos, savePhoto } = useRecentPhotos();
   const [remaining, setRemaining] = useState<number | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -1031,7 +1033,9 @@ export default function Studio() {
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0);
     stopCamera();
-    openImageConfirm(canvas.toDataURL("image/jpeg", 0.85));
+    const captured = canvas.toDataURL("image/jpeg", 0.85);
+    savePhoto(captured);
+    openImageConfirm(captured);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1058,6 +1062,7 @@ export default function Studio() {
       if (!ctx) return;
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      savePhoto(dataUrl);
       openImageConfirm(dataUrl);
       URL.revokeObjectURL(url);
     };
@@ -2098,6 +2103,32 @@ export default function Studio() {
           >
             <div className="w-10 h-1 bg-white/15 rounded-full mx-auto mb-5" />
             <p className="text-[13px] font-semibold text-white/40 text-center mb-4">사진 선택</p>
+
+            {/* 최근 사용한 셀카 */}
+            {recentPhotos.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[11px] font-bold text-white/30 uppercase tracking-wider mb-2.5">최근 사용한 셀카</p>
+                <div className="flex gap-2.5">
+                  {recentPhotos.map((photo, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        uploadTargetRef.current = { mode: "single" };
+                        setShowPhotoSourceSheet(false);
+                        void processImageDataUrl(photo);
+                      }}
+                      className="relative flex-shrink-0 overflow-hidden rounded-2xl border-2 border-white/20 hover:border-[#C9571A] transition-colors"
+                      style={{ width: 76, height: 76 }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={photo} alt="" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 mb-1 border-t border-white/[0.07]" />
+              </div>
+            )}
+
             <div className="flex flex-col gap-2 mb-3">
               <button
                 onClick={() => {

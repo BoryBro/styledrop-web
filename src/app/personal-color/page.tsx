@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePersonalColorAvailability } from "@/hooks/usePersonalColorAvailability";
+import { useRecentPhotos } from "@/hooks/useRecentPhotos";
 import { trackClientEvent } from "@/lib/client-events";
 import { ALL_STYLES } from "@/lib/styles";
 import {
@@ -280,6 +281,7 @@ export default function PersonalColorPage() {
   const [showCameraCapture, setShowCameraCapture] = useState(false);
   const [activeResultTab, setActiveResultTab] = useState<ResultTab>("analysis");
   const [pendingStyleId, setPendingStyleId] = useState<string | null>(null);
+  const { recentPhotos, savePhoto } = useRecentPhotos();
 
   const recommendedStyles = useMemo(() => {
     if (!result || result.status !== "ok") return [];
@@ -290,6 +292,7 @@ export default function PersonalColorPage() {
 
   const analyzeResizedDataUrl = async (resized: string) => {
     setPreviewSrc(resized);
+    savePhoto(resized);
     const analysis = await analyzePersonalColor(resized);
     setResult(analysis);
     void trackClientEvent("lab_personal_color_completed");
@@ -565,6 +568,31 @@ export default function PersonalColorPage() {
                       {analysisState === "analyzing" ? "피부톤과 얼굴 포인트를 분석 중이에요" : "새 사진으로 다시 분석할 수 있어요"}
                     </p>
                   </div>
+                  {/* 최근 사용한 셀카 */}
+                  {recentPhotos.length > 0 && (
+                    <div className="mt-3">
+                      <p className="mb-1.5 text-[11px] font-bold tracking-wider text-[#8993A6] uppercase">최근 셀카</p>
+                      <div className="flex gap-2">
+                        {recentPhotos.map((photo, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              setAnalysisState("analyzing");
+                              setResult(null);
+                              setActiveResultTab("analysis");
+                              void analyzeResizedDataUrl(photo);
+                            }}
+                            className="relative flex-shrink-0 overflow-hidden rounded-xl border-2 border-[#D4DBE8] hover:border-[#315EFB] transition-colors"
+                            style={{ width: 56, height: 56 }}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={photo} alt="" className="h-full w-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                     <button
                       onClick={openGalleryPicker}
@@ -592,7 +620,33 @@ export default function PersonalColorPage() {
                 <p className="mt-3 max-w-sm text-[15px] leading-7 text-[#687286]">
                   얼굴이 프레임을 적당히 채우는 사진이면 좋습니다. 업로드 후 바로 웜/쿨, 밝기, 선명도 추정을 시작합니다.
                 </p>
-                <div className="mt-6 flex w-full max-w-sm flex-col gap-3 sm:flex-row">
+                {/* 최근 사용한 셀카 */}
+                {recentPhotos.length > 0 && (
+                  <div className="mt-5 w-full max-w-sm">
+                    <p className="mb-2 text-[11px] font-bold tracking-wider text-[#8993A6] uppercase">최근 사용한 셀카</p>
+                    <div className="flex gap-2.5 justify-center">
+                      {recentPhotos.map((photo, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setAnalysisState("analyzing");
+                            setResult(null);
+                            setActiveResultTab("analysis");
+                            void analyzeResizedDataUrl(photo);
+                          }}
+                          className="relative flex-shrink-0 overflow-hidden rounded-2xl border-2 border-[#D4DBE8] hover:border-[#315EFB] transition-colors"
+                          style={{ width: 76, height: 76 }}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={photo} alt="" className="h-full w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-4 border-t border-[#E9EDF5]" />
+                  </div>
+                )}
+
+                <div className="mt-5 flex w-full max-w-sm flex-col gap-3 sm:flex-row">
                   <button
                     onClick={openGalleryPicker}
                     className="flex-1 rounded-[20px] border border-[#D4DBE8] bg-white px-5 py-3 text-[15px] font-bold text-[#243047]"
