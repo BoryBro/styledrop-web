@@ -37,6 +37,7 @@ type Question =
       type: "slider";
       text: string;
       scale: string[];
+      descriptions?: string[];
     };
 
 type NarrativeBlock = {
@@ -100,10 +101,25 @@ const QUESTIONS: Question[] = [
   { id: "q5", emoji: "⏰", short: "기상", category: "행동 패턴", type: "choice", text: "아침 몇 시에 일어나?", options: ["6시 이전", "8시쯤", "10시 이후", "체크아웃 직전"] },
   { id: "q6", emoji: "🍜", short: "식사", category: "행동 패턴", type: "choice", text: "식사는 어떻게 해결해?", options: ["현지 맛집 필수", "편의점도 OK", "아무거나"] },
   { id: "q7", emoji: "🏝️", short: "코스", category: "행동 패턴", type: "slider", text: "관광지 vs 동네 골목, 어디 쪽이 더 좋아?", scale: ["관광지 위주", "관광지 조금 더", "반반", "골목 조금 더", "골목 위주"] },
-  { id: "q8", emoji: "📸", short: "사진", category: "행동 패턴", type: "slider", text: "사진 찍는 빈도는?", scale: ["거의 안 찍음", "몇 장만", "적당히", "자주 찍음", "매 순간 기록"] },
+  { id: "q8", emoji: "📸", short: "사진", category: "행동 패턴", type: "slider", text: "사진 찍는 빈도는?", scale: ["거의 안 찍음", "몇 장만", "적당히", "사람 따라 눈치 봐가면서", "자주 찍음", "매 순간 기록"] },
   { id: "q9", emoji: "🛍️", short: "쇼핑", category: "행동 패턴", type: "slider", text: "쇼핑에 쓰는 시간과 돈은?", scale: ["거의 없음", "잠깐만", "보이면 들어감", "꽤 큼", "여행의 메인"] },
   { id: "q10", emoji: "📱", short: "이동", category: "행동 패턴", type: "choice", text: "이동 중엔?", options: ["계속 대화", "반반", "각자 폰"] },
-  { id: "q11", emoji: "🚶", short: "밀도", category: "여행 페이스", type: "slider", text: "하루에 몇 곳 가는 게 적당해?", scale: ["1곳", "2곳", "3곳", "4~6곳", "7곳 이상"] },
+  {
+    id: "q11",
+    emoji: "🚶",
+    short: "밀도",
+    category: "여행 페이스",
+    type: "slider",
+    text: "하루에 몇 곳 가는 게 적당해?",
+    scale: ["1곳", "2곳", "3곳", "4~6곳", "7곳 이상"],
+    descriptions: [
+      "여행은 쉬는 거야.. 쉬어야 해..",
+      "한 군데만 더 보고, 나머지는 여유롭게.",
+      "적당히 보고 적당히 쉬는 게 제일 좋아.",
+      "온 김에 볼 건 봐야지. 대신 동선은 잘 짜야 해.",
+      "잠은 나중에 자고, 일단 다 찍고 와야 함.",
+    ],
+  },
   { id: "q12", emoji: "☕", short: "휴식", category: "여행 페이스", type: "slider", text: "카페에서 쉬는 시간은?", scale: ["안 감", "잠깐 1번", "카페 1번", "카페 2번", "3번 이상"] },
   { id: "q13", emoji: "🚧", short: "변수", category: "여행 페이스", type: "choice", text: "길 막힘, 웨이팅 같은 변수가 생기면?", options: ["빠르게 대안 찾기", "그냥 기다리기", "포기하고 접기"] },
   { id: "q14", emoji: "🛏️", short: "체크인", category: "여행 페이스", type: "choice", text: "숙소 체크인 후 다시 나가?", options: ["무조건 나감", "피곤하면 쉼", "안 나감"] },
@@ -1407,6 +1423,7 @@ function TravelTogetherPageContent() {
               <div className="flex flex-col gap-2">
                 {question.scale.map((label, index) => {
                   const active = slider === index;
+                  const description = question.descriptions?.[index];
                   return (
                     <button
                       key={label}
@@ -1420,7 +1437,12 @@ function TravelTogetherPageContent() {
                         boxShadow: active ? `0 0 0 3px ${T.bg}` : undefined,
                       }}
                     >
-                      <span className="text-[18px] font-black tracking-[-0.01em]">{label}</span>
+                      <span className="block text-[18px] font-black tracking-[-0.01em]">{label}</span>
+                      {description && (
+                        <span className="mt-1 block text-[13px] font-bold leading-snug opacity-60">
+                          {description}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
