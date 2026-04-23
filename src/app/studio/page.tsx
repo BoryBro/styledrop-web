@@ -1621,7 +1621,7 @@ export default function Studio() {
                           <span
                             className="text-[#22C55E] border border-[#22C55E]/40 rounded-full px-2.5 py-1 font-bold"
                             style={{ fontFamily: '"Unbounded", sans-serif', fontSize: 'clamp(9px, 2.2vw, 11px)' }}
-                          >5크레딧</span>
+                          >3크레딧</span>
                         </div>
 
                         <div className="w-9 h-9 rounded-full bg-[#22C55E] flex items-center justify-center flex-shrink-0">
