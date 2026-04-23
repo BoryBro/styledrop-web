@@ -41,6 +41,7 @@ import {
 } from "@/lib/style-controls";
 import {
   ALL_STYLES,
+  FREE_TRIAL_STYLE_IDS,
   MULTI_SOURCE_STYLE_IDS,
   MULTI_SOURCE_STYLE_TAB,
   STYLE_CATEGORY_BY_ID,
@@ -66,6 +67,7 @@ function formatStoryTime(value: string): string {
 const BASE_STYLE_CARDS = ALL_STYLES.map((s) => ({ ...s, bgImage: s.afterImg }));
 const STORY_DURATION_MS = 4500;
 const MULTI_SOURCE_STYLE_ID_SET = new Set<string>(MULTI_SOURCE_STYLE_IDS);
+const FREE_TRIAL_STYLE_ID_SET = new Set<string>(FREE_TRIAL_STYLE_IDS);
 type StyleCard = (typeof BASE_STYLE_CARDS)[number];
 type StudioSectionTab = "cards" | "lab";
 type StyleCategoryTab = (typeof STYLE_CATEGORY_TABS)[number];
@@ -1335,6 +1337,10 @@ export default function Studio() {
                           <div className="flex items-center gap-1 px-2.5 py-1 bg-[#C9571A] rounded-lg shadow-lg">
                             <span className="text-[11px] font-extrabold text-white whitespace-nowrap">✦✦ 2크레딧</span>
                           </div>
+                        ) : FREE_TRIAL_STYLE_ID_SET.has(style.id) ? (
+                          <div className="flex items-center gap-1 px-2 py-1 bg-white/15 border border-white/30 rounded-lg backdrop-blur-md">
+                            <span className="text-[11px] font-extrabold text-white whitespace-nowrap">✦ 1크레딧</span>
+                          </div>
                         ) : (
                           <div className="flex items-center px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg backdrop-blur-md">
                             <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">2크레딧</span>
@@ -1784,7 +1790,7 @@ export default function Studio() {
         {!loading && !user && (
           <div className="max-w-2xl mx-auto w-full px-4 pb-4">
             <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl px-5 py-4 flex flex-col gap-3">
-              <p className="text-white/80 text-[14px] font-medium">✦ 카카오 로그인하면 3크레딧 무료 지급!</p>
+              <p className="text-white/80 text-[14px] font-medium">✦ 카카오 로그인하면 1크레딧 무료 지급!</p>
               <p className="text-[12px] text-[#666]">1크레딧 = AI 변환 1회 · 워터마크 없이 고화질 저장</p>
               <button
                 onClick={() => { setLoginLoading(true); login(); }}
@@ -2295,7 +2301,7 @@ export default function Studio() {
           <div className="bg-[#1A1A1A] rounded-2xl p-6 max-w-sm mx-4 border border-[#333] text-center w-full" onClick={e => e.stopPropagation()}>
             <p className="text-[40px]">🎁</p>
             <p className="text-[18px] font-bold text-white mt-3">무료 체험이 끝났어요</p>
-            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">카카오 로그인하면<br/><span className="text-[#C9571A] font-bold">3크레딧을 무료로 받아요!</span><br/>1크레딧 = AI 변환 1회</p>
+            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">카카오 로그인하면<br/><span className="text-[#C9571A] font-bold">1크레딧을 무료로 받아요!</span><br/>지금 바로 체험해보세요</p>
             <button
               onClick={() => { window.location.href = "/api/auth/kakao"; }}
               className="bg-[#FEE500] text-[#3C1E1E] font-bold text-[15px] w-full py-4 rounded-xl mt-4 flex items-center justify-center gap-2"
@@ -2303,7 +2309,7 @@ export default function Studio() {
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
               </svg>
-              카카오로 로그인하고 3크레딧 받기
+              카카오로 로그인하고 1크레딧 받기
             </button>
             <button onClick={() => setShowLoginModal(false)} className="text-[13px] text-[#555] mt-3 hover:text-[#888] transition-colors">
               다음에 할게요

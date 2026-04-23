@@ -19,7 +19,7 @@ import {
   fingerprintBase64Image,
   hasActiveRequestEvent,
 } from "@/lib/request-lock.server";
-import { STYLE_LABELS, MULTI_SOURCE_STYLE_IDS } from "@/lib/styles";
+import { STYLE_LABELS, MULTI_SOURCE_STYLE_IDS, FREE_TRIAL_STYLE_IDS } from "@/lib/styles";
 import {
   GUEST_LIMIT, WINDOW_MS,
   GUEST_COOKIE,
@@ -7362,7 +7362,7 @@ export async function POST(request: NextRequest) {
 
   // ── 회원: 크레딧 차감 (원자적) ──────────────────────────────────────
   if (session) {
-    const creditCost = 2;
+    const creditCost = (FREE_TRIAL_STYLE_IDS as readonly string[]).includes(style) ? 1 : 2;
     const { data: newCredits, error: deductError } = await supabase.rpc("deduct_credit", {
       p_user_id: session.id,
       p_amount: creditCost,

@@ -17,6 +17,9 @@ export type StyleDef = {
 export type StyleCategory = "일상" | "자연" | "무드" | "컨셉" | "스포츠";
 export const MULTI_SOURCE_STYLE_TAB = "2인+" as const;
 
+// 1크레딧 무료체험 카드 (신규 가입 1크레딧으로 체험 가능)
+export const FREE_TRIAL_STYLE_IDS = ["dreamy-wildflower", "yakuza", "american-rugby-player"] as const;
+
 export const STYLE_CATEGORY_TABS = ["전체", "일상", "자연", "무드", "컨셉", "스포츠", MULTI_SOURCE_STYLE_TAB] as const;
 
 export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
@@ -77,6 +80,39 @@ export const STYLE_CATEGORY_BY_ID: Record<string, StyleCategory> = {
 };
 
 export const ALL_STYLES: StyleDef[] = [
+  {
+    id: "dreamy-wildflower",
+    name: "꽃밭 뒤돌아본 나",
+    desc: "들꽃 가득한 여름 꽃밭에서 뒤돌아본 로맨틱 아웃도어 에디토리얼 컷",
+    bgColor: "#acb6db",
+    tag: "1크레딧",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/Dreamy_wildflower-before.jpg?v=1",
+    afterImg: "/thumbnails/Dreamy_wildflower-after.jpg?v=1",
+  },
+  {
+    id: "yakuza",
+    name: "어둠의 큰형님",
+    desc: "야쿠자와 마피아 무드 중 하나를 골라 범죄 드라마 에디토리얼 포트레이트로 변환",
+    bgColor: "#221a28",
+    tag: "1크레딧",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/yakuza-before.jpg",
+    afterImg: "/thumbnails/yakuza-after.jpg",
+  },
+  {
+    id: "american-rugby-player",
+    name: "미국 럭비 선수",
+    desc: "강한 햇빛 아래 질주하는 럭비 선수의 스포츠 액션 포트레이트",
+    bgColor: "#14233a",
+    tag: "1크레딧",
+    active: true,
+    hidden: false,
+    beforeImg: "/thumbnails/rugby-before.jpg?v=1",
+    afterImg: "/thumbnails/rugby-after.jpg?v=1",
+  },
   {
     id: "gyaru",
     name: "나는 이제부터 갸루",
@@ -445,17 +481,6 @@ export const ALL_STYLES: StyleDef[] = [
     afterImg: "/thumbnails/Mongolian-after.jpg?v=1",
   },
   {
-    id: "american-rugby-player",
-    name: "미국 럭비 선수",
-    desc: "강한 햇빛 아래 질주하는 럭비 선수의 스포츠 액션 포트레이트",
-    bgColor: "#14233a",
-    tag: "HOT",
-    active: true,
-    hidden: false,
-    beforeImg: "/thumbnails/rugby-before.jpg?v=1",
-    afterImg: "/thumbnails/rugby-after.jpg?v=1",
-  },
-  {
     id: "american-cheerleader",
     name: "미쿡 치어리더 언니 💗",
     desc: "강한 조명 아래 체육관 코트에서 빛나는 치어리더 포트레이트",
@@ -533,17 +558,6 @@ export const ALL_STYLES: StyleDef[] = [
     afterImg: "/thumbnails/Cinematic_horseback-after.jpg?v=1",
   },
   {
-    id: "dreamy-wildflower",
-    name: "꽃밭 뒤돌아본 나",
-    desc: "들꽃 가득한 여름 꽃밭에서 뒤돌아본 로맨틱 아웃도어 에디토리얼 컷",
-    bgColor: "#acb6db",
-    tag: "HOT",
-    active: true,
-    hidden: false,
-    beforeImg: "/thumbnails/Dreamy_wildflower-before.jpg?v=1",
-    afterImg: "/thumbnails/Dreamy_wildflower-after.jpg?v=1",
-  },
-  {
     id: "dreamy-celebratory",
     name: "빛 쏟아진 순간",
     desc: "햇살과 컨페티가 번지는 코트야드에서 포착된 드리미 셀레브레이션 포트레이트",
@@ -564,17 +578,6 @@ export const ALL_STYLES: StyleDef[] = [
     hidden: false,
     beforeImg: "/thumbnails/Bronze-before.jpg?v=1",
     afterImg: "/thumbnails/Bronze-after.jpg?v=1",
-  },
-  {
-    id: "yakuza",
-    name: "어둠의 큰형님",
-    desc: "야쿠자와 마피아 무드 중 하나를 골라 범죄 드라마 에디토리얼 포트레이트로 변환",
-    bgColor: "#221a28",
-    tag: "NEW",
-    active: true,
-    hidden: false,
-    beforeImg: "/thumbnails/yakuza-before.jpg",
-    afterImg: "/thumbnails/yakuza-after.jpg",
   },
   {
     id: "rainy-crosswalk",

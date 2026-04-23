@@ -65,10 +65,10 @@ export async function GET(request: NextRequest) {
         userId = user.id;
         await supabase.from("user_events").insert({ user_id: user.id, event_type: "login" });
 
-        // 신규 가입 시 3크레딧 지급
+        // 신규 가입 시 1크레딧 지급 (무료체험 카드 1회 사용 가능)
         if (isNewUser) {
-          await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 3 });
-          await supabase.from("user_events").insert({ user_id: user.id, event_type: "signup_bonus", metadata: { credits: 3 } });
+          await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 1 });
+          await supabase.from("user_events").insert({ user_id: user.id, event_type: "signup_bonus", metadata: { credits: 1 } });
         }
       } else {
         console.error("[kakao callback] upsert error:", upsertError);
