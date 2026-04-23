@@ -61,21 +61,27 @@ export default function ThreadsAdminPage() {
 
   const handleLogin = async (pw?: string) => {
     const usePw = pw ?? password;
-    const res = await fetch("/api/threads/queue", {
-      headers: { "Content-Type": "application/json", "x-admin-password": usePw },
-    });
-    if (res.ok) {
-      localStorage.setItem("threads_admin_pw", usePw);
-      setPassword(usePw);
-      setAuthed(true);
-    } else {
-      localStorage.removeItem("threads_admin_pw");
-      if (!pw) showToast("비밀번호가 틀렸어요");
+    if (!usePw) { showToast("비밀번호를 입력해주세요"); return; }
+    try {
+      const res = await fetch("/api/threads/queue", {
+        headers: { "Content-Type": "application/json", "x-admin-password": usePw },
+      });
+      if (res.ok) {
+        try { localStorage.setItem("threads_admin_pw", usePw); } catch {}
+        setPassword(usePw);
+        setAuthed(true);
+      } else {
+        try { localStorage.removeItem("threads_admin_pw"); } catch {}
+        if (!pw) showToast("비밀번호가 틀렸어요");
+      }
+    } catch {
+      showToast("네트워크 오류. 다시 시도해주세요.");
     }
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem("threads_admin_pw");
+    let saved: string | null = null;
+    try { saved = localStorage.getItem("threads_admin_pw"); } catch {}
     if (saved) {
       setPassword(saved);
       handleLogin(saved).finally(() => setInitializing(false));
