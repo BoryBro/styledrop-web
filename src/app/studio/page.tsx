@@ -100,7 +100,7 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
         <div
           key={t.id}
           onClick={() => onDismiss(t.id)}
-          className="pointer-events-auto max-w-sm w-full bg-[#1A1A1A] border border-white/10 text-white text-sm font-medium px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 cursor-pointer"
+          className="pointer-events-auto max-w-sm w-full bg-white border border-black/10 text-[#0A0A0A] text-sm font-medium px-4 py-3 rounded-2xl shadow-lg flex items-center gap-3 cursor-pointer"
         >
           <span className="text-[#C9571A]">✦</span>
           <span>{t.message}</span>
@@ -1078,17 +1078,17 @@ export default function Studio() {
       <style>{`
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
       `}</style>
-      <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
+      <div className="min-h-screen bg-[#F5F5F5] flex flex-col">
 
         {/* Header */}
-        <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
+        <header className="h-[52px] bg-[#F5F5F5] border-b border-[#E0E0E0] flex items-center justify-between px-4 sticky top-0 z-40">
           <div className="flex items-center gap-2">
             <Link href="/" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
           </div>
           {!loading && (
             user ? (
               <div className="flex items-center gap-2">
-                <Link href="/shop" className="flex items-center gap-1.5 bg-[#1A1A1A] border border-white/8 px-3 py-1.5 rounded-full hover:border-[#C9571A]/40 transition-colors">
+                <Link href="/shop" className="flex items-center gap-1.5 bg-[#EBEBEB] border border-black/8 px-3 py-1.5 rounded-full hover:border-[#C9571A]/40 transition-colors">
                   <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                     <path d="M1 1h2l1.5 7h7l1-4.5H4" stroke="#C9571A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     <circle cx="6.5" cy="12" r="0.8" fill="#C9571A"/>
@@ -1101,7 +1101,7 @@ export default function Studio() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={user.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
                   )}
-                  <span className="text-[14px] font-medium text-white truncate max-w-[80px]">{user.nickname}</span>
+                  <span className="text-[14px] font-medium text-[#0A0A0A] truncate max-w-[80px]">{user.nickname}</span>
                 </button>
               </div>
             ) : (
@@ -1122,7 +1122,7 @@ export default function Studio() {
 
           {/* 터미널 공지 — 최상단 */}
           {notices.length > 0 && (
-            <div className="mb-5 bg-[#0D0D0D] border border-[#2a2a2a] rounded-xl px-4 py-3 font-mono overflow-hidden">
+            <div className="mb-5 bg-[#F2F2F2] border border-[#D5D5D5] rounded-xl px-4 py-3 font-mono overflow-hidden">
               <div className="flex items-center justify-between mb-2.5">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-[#ff5f57]" />
@@ -1146,7 +1146,7 @@ export default function Studio() {
               {notices.map((n, i) => (
                 <p key={n.id} className={`text-[12px] text-[#888] leading-relaxed ${i > 0 ? "mt-1" : ""}`}>
                   <span className="text-[#C9571A]">›</span>{" "}
-                  <span className="text-white/60">{n.text}</span>
+                  <span className="text-[#0A0A0A]/60">{n.text}</span>
                   {i === notices.length - 1 && (
                     <span className="inline-block w-1.5 h-3.5 bg-[#C9571A]/70 ml-1 align-middle" style={{ animation: "blink 1.2s step-end infinite" }} />
                   )}
@@ -1165,14 +1165,14 @@ export default function Studio() {
                     className="group flex w-[78px] shrink-0 flex-col items-center gap-2"
                   >
                     <div className="rounded-full bg-[linear-gradient(135deg,#C9571A,#F6B38C,#C9571A)] p-[2px] shadow-[0_10px_24px_rgba(201,87,26,0.16)]">
-                      <div className="flex h-[70px] w-[70px] items-center justify-center rounded-full bg-[#0A0A0A]">
-                        <div className="relative h-[22px] w-[22px] text-white/82">
+                      <div className="flex h-[70px] w-[70px] items-center justify-center rounded-full bg-[#F5F5F5]">
+                        <div className="relative h-[22px] w-[22px] text-[#0A0A0A]/82">
                           <span className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 rounded-full bg-current" />
                           <span className="absolute left-0 top-1/2 h-[2px] w-full -translate-y-1/2 rounded-full bg-current" />
                         </div>
                       </div>
                     </div>
-                    <span className="line-clamp-1 text-center text-[11px] font-medium text-white/72">
+                    <span className="line-clamp-1 text-center text-[11px] font-medium text-[#0A0A0A]/72">
                       나도 추가하기
                     </span>
                   </button>
@@ -1194,7 +1194,7 @@ export default function Studio() {
                           />
                         </div>
                       </div>
-                      <span className="line-clamp-1 text-center text-[11px] font-medium text-white/72">
+                      <span className="line-clamp-1 text-center text-[11px] font-medium text-[#0A0A0A]/72">
                         {showcaseDisplayName(item)}님
                       </span>
                     </button>
@@ -1206,7 +1206,7 @@ export default function Studio() {
 
           {showLabSection && (
             <div className="sticky top-[60px] z-30 mb-4">
-              <div className="rounded-2xl border border-white/8 bg-[#111]/95 backdrop-blur-xl shadow-[0_8px_24px_rgba(0,0,0,0.4)] px-2 pt-2 pb-1.5">
+              <div className="rounded-2xl border border-black/8 bg-white/95 backdrop-blur-xl shadow-[0_4px_16px_rgba(0,0,0,0.08)] px-2 pt-2 pb-1.5">
                 {/* 메인 탭 */}
                 <div className="grid grid-cols-2 gap-1 mb-1.5">
                   <button
@@ -1214,7 +1214,7 @@ export default function Studio() {
                     className={`rounded-xl py-2 text-[13px] font-bold transition-colors ${
                       activeSectionTab === "cards"
                         ? "bg-[#C9571A] text-white"
-                        : "text-white/40 hover:text-white/70"
+                        : "text-[#0A0A0A]/40 hover:text-[#0A0A0A]/70"
                     }`}
                   >
                     일반 카드
@@ -1224,7 +1224,7 @@ export default function Studio() {
                     className={`rounded-xl py-2 text-[13px] font-bold transition-colors ${
                       activeSectionTab === "lab"
                         ? "bg-[#C9571A] text-white"
-                        : "text-white/40 hover:text-white/70"
+                        : "text-[#0A0A0A]/40 hover:text-[#0A0A0A]/70"
                     }`}
                   >
                     실험실
@@ -1243,7 +1243,7 @@ export default function Studio() {
                           className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors whitespace-nowrap ${
                             isActive
                               ? "bg-[#C9571A]/20 text-[#F6B38C]"
-                              : "text-white/35 hover:text-white/60"
+                              : "text-[#0A0A0A]/35 hover:text-[#0A0A0A]/60"
                           }`}
                         >
                           {tab}
@@ -1261,7 +1261,7 @@ export default function Studio() {
             <div className="mb-4 flex items-end justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="text-[20px] font-bold text-[#C9571A]">스타일 선택</h2>
-                <p className="mt-1 text-[18px] font-bold text-white">원하는 스타일의 카드를 선택해봐요</p>
+                <p className="mt-1 text-[18px] font-bold text-[#0A0A0A]">원하는 스타일의 카드를 선택해봐요</p>
               </div>
               <button
                 type="button"
@@ -1459,7 +1459,7 @@ export default function Studio() {
                 {/* 실험실 섹션 헤더 */}
                 <div className="mt-8 mb-4">
                   <h2 className="text-[20px] font-bold text-[#C9571A]">실험실</h2>
-                  <p className="text-[18px] font-bold text-white mt-1">색다른 AI 기능을 체험해봐요</p>
+                  <p className="text-[18px] font-bold text-[#0A0A0A] mt-1">색다른 AI 기능을 체험해봐요</p>
                 </div>
 
                 {showNaboLab && (
@@ -1869,8 +1869,8 @@ export default function Studio() {
         {/* 비로그인 배너 */}
         {!loading && !user && (
           <div className="max-w-2xl mx-auto w-full px-4 pb-4">
-            <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl px-5 py-4 flex flex-col gap-3">
-              <p className="text-white/80 text-[14px] font-medium">✦ 카카오 로그인하면 1크레딧 무료 지급!</p>
+            <div className="bg-[#EBEBEB] border border-black/10 rounded-2xl px-5 py-4 flex flex-col gap-3">
+              <p className="text-[#0A0A0A]/80 text-[14px] font-medium">✦ 카카오 로그인하면 1크레딧 무료 지급!</p>
               <p className="text-[12px] text-[#666]">1크레딧 = AI 변환 1회 · 워터마크 없이 고화질 저장</p>
               <button
                 onClick={() => { setLoginLoading(true); login(); }}
@@ -1893,10 +1893,10 @@ export default function Studio() {
 
         {/* Footer */}
         <footer className="py-6 text-center px-4">
-          <p className="text-[11px] text-[#333]">
-            © 2026 StyleDrop v2.0 · <Link href="/terms" className="hover:text-white/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/30 transition-colors">개인정보처리방침</Link>
+          <p className="text-[11px] text-[#AAAAAA]">
+            © 2026 StyleDrop v2.0 · <Link href="/terms" className="hover:text-[#0A0A0A]/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-[#0A0A0A]/30 transition-colors">개인정보처리방침</Link>
           </p>
-          <p className="text-[10px] text-[#2a2a2a] mt-1 leading-relaxed">
+          <p className="text-[10px] text-[#CCCCCC] mt-1 leading-relaxed">
             상호: 핑거 · 대표자: 문지환 · 사업자등록번호: 707-79-00261<br/>
             주소: 서울특별시 송파구 오금로 551, 1동 2층 201호 257 · 연락처: 0505-007-3670
           </p>
@@ -1912,23 +1912,23 @@ export default function Studio() {
           }}
         >
           <div
-            className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-2xl rounded-t-[28px] border border-white/10 bg-[#111] px-5 pt-5 pb-8 shadow-2xl"
+            className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-2xl rounded-t-[28px] border border-black/10 bg-white px-5 pt-5 pb-8 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-white/10" />
-            <p className="text-[18px] font-black text-white">나도 추가하기</p>
-            <p className="mt-1 text-[13px] leading-6 text-white/45">
+            <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-black/10" />
+            <p className="text-[18px] font-black text-[#0A0A0A]">나도 추가하기</p>
+            <p className="mt-1 text-[13px] leading-6 text-[#0A0A0A]/45">
               최근 결과물 중 한 장을 고르고, 인스타 아이디를 남길 수 있어요.
             </p>
 
             <div className="mt-5">
-              <p className="mb-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white/38">Result Photo</p>
+              <p className="mb-3 text-[12px] font-bold uppercase tracking-[0.14em] text-[#0A0A0A]/38">Result Photo</p>
               {showcaseHistoryLoading ? (
                 <div className="flex justify-center py-10">
                   <div className="h-6 w-6 rounded-full border-2 border-white/10 border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
                 </div>
               ) : showcaseHistory.length === 0 ? (
-                <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-6 text-center text-[13px] leading-6 text-white/45">
+                <div className="rounded-2xl border border-black/8 bg-black/[0.03] px-4 py-6 text-center text-[13px] leading-6 text-[#0A0A0A]/45">
                   최근 24시간 내 결과물이 없어요.
                 </div>
               ) : (
@@ -1941,13 +1941,13 @@ export default function Studio() {
                         type="button"
                         onClick={() => setSelectedShowcaseHistoryId(item.id)}
                         className={`overflow-hidden rounded-[18px] border text-left transition-colors ${
-                          selected ? "border-[#C9571A] bg-[#C9571A]/8" : "border-white/8 bg-white/[0.03]"
+                          selected ? "border-[#C9571A] bg-[#C9571A]/8" : "border-black/8 bg-black/[0.03]"
                         }`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={item.result_image_url} alt={STYLE_LABELS[item.style_id] ?? item.style_id} className="aspect-square w-full object-cover" />
                         <div className="px-2.5 py-2.5">
-                          <p className="line-clamp-1 text-[11px] font-semibold text-white/80">
+                          <p className="line-clamp-1 text-[11px] font-semibold text-[#0A0A0A]/80">
                             {STYLE_LABELS[item.style_id] ?? item.style_id}
                           </p>
                         </div>
@@ -1960,7 +1960,7 @@ export default function Studio() {
 
             <div className="mt-5">
               <div className="mb-2 flex items-center justify-between">
-                <label htmlFor="showcase-instagram" className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/38">
+                <label htmlFor="showcase-instagram" className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#0A0A0A]/38">
                   Instagram ID
                 </label>
                 {showcaseInstagram && (
@@ -1968,14 +1968,14 @@ export default function Studio() {
                 )}
               </div>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] text-white/30 select-none">@</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[14px] text-[#0A0A0A]/30 select-none">@</span>
                 <input
                   id="showcase-instagram"
                   type="text"
                   value={showcaseInstagram.replace(/^@/, "")}
                   onChange={(event) => setShowcaseInstagram(event.target.value.replace(/^@+/, ""))}
                   placeholder="instagram_id"
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.03] pl-8 pr-4 py-3 text-[14px] text-white outline-none placeholder:text-white/22 focus:border-[#C9571A]/60"
+                  className="w-full rounded-2xl border border-black/10 bg-black/[0.03] pl-8 pr-4 py-3 text-[14px] text-[#0A0A0A] outline-none placeholder:text-[#0A0A0A]/22 focus:border-[#C9571A]/60"
                 />
               </div>
             </div>
@@ -1984,7 +1984,7 @@ export default function Studio() {
               <button
                 type="button"
                 onClick={() => setShowShowcaseJoinModal(false)}
-                className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[14px] font-bold text-white/60"
+                className="flex-1 rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-[14px] font-bold text-[#0A0A0A]/60"
               >
                 취소
               </button>
@@ -2010,12 +2010,12 @@ export default function Studio() {
             onClick={() => { setVariantSelectStyle(null); setSelectedStyle(null); }}
           >
             <div
-              className="bg-[#111] border border-white/10 rounded-t-3xl w-full max-w-2xl px-5 pt-5 pb-8 max-h-[85vh] overflow-y-auto"
+              className="bg-white border border-black/10 rounded-t-3xl w-full max-w-2xl px-5 pt-5 pb-8 max-h-[85vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}
             >
-              <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5" />
-              <p className="text-white font-bold text-[18px] mb-1">스타일 옵션 선택</p>
-              <p className="text-[#555] text-[13px] mb-5">{variantSelectStyle.name} — 원하는 분위기를 골라주세요</p>
+              <div className="w-10 h-1 bg-black/10 rounded-full mx-auto mb-5" />
+              <p className="text-[#0A0A0A] font-bold text-[18px] mb-1">스타일 옵션 선택</p>
+              <p className="text-[#888] text-[13px] mb-5">{variantSelectStyle.name} — 원하는 분위기를 골라주세요</p>
               <div className="grid grid-cols-2 gap-3 mb-5">
                 {variants.map((v) => (
                   <button
@@ -2026,7 +2026,7 @@ export default function Studio() {
                       uploadTargetRef.current = { mode: "single" };
                       setShowPhotoSourceSheet(true);
                     }}
-                    className="group bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-[#C9571A]/50 rounded-2xl overflow-hidden transition-all text-left flex flex-col"
+                    className="group bg-black/[0.03] hover:bg-black/[0.06] border border-black/10 hover:border-[#C9571A]/50 rounded-2xl overflow-hidden transition-all text-left flex flex-col"
                   >
                     {v.thumbnail ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -2036,20 +2036,20 @@ export default function Studio() {
                         className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="w-full aspect-square bg-white/5 flex items-center justify-center">
-                        <span className="text-white/10 text-4xl">✦</span>
+                      <div className="w-full aspect-square bg-black/5 flex items-center justify-center">
+                        <span className="text-[#0A0A0A]/10 text-4xl">✦</span>
                       </div>
                     )}
                     <div className="px-4 py-3">
-                      <p className="text-white font-bold text-[14px]">{v.label}</p>
-                      {v.desc && <p className="text-[#555] text-[11px] mt-0.5 break-keep">{v.desc}</p>}
+                      <p className="text-[#0A0A0A] font-bold text-[14px]">{v.label}</p>
+                      {v.desc && <p className="text-[#888] text-[11px] mt-0.5 break-keep">{v.desc}</p>}
                     </div>
                   </button>
                 ))}
               </div>
               <button
                 onClick={() => { setVariantSelectStyle(null); setSelectedStyle(null); }}
-                className="w-full py-2 text-[#444] hover:text-white text-[13px] transition-colors"
+                className="w-full py-2 text-[#888] hover:text-[#0A0A0A] text-[13px] transition-colors"
               >
                 취소
               </button>
@@ -2070,17 +2070,17 @@ export default function Studio() {
           }}
         >
           <div
-            className="w-full max-w-2xl bg-[#111214] rounded-t-3xl px-4 pt-2 pb-[max(env(safe-area-inset-bottom),20px)] shadow-2xl"
+            className="w-full max-w-2xl bg-white rounded-t-3xl px-4 pt-2 pb-[max(env(safe-area-inset-bottom),20px)] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 bg-white/15 rounded-full mx-auto mb-5" />
-            <p className="text-[13px] font-semibold text-white/40 text-center mb-1">2장 업로드 전용</p>
-            <p className="text-[22px] font-black tracking-[-0.04em] text-white text-center">{pairUploadStyle.name}</p>
+            <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mb-5" />
+            <p className="text-[13px] font-semibold text-[#0A0A0A]/40 text-center mb-1">2장 업로드 전용</p>
+            <p className="text-[22px] font-black tracking-[-0.04em] text-[#0A0A0A] text-center">{pairUploadStyle.name}</p>
             <div className="mt-3 text-center">
-              <p className="text-[16px] font-bold leading-6 tracking-[-0.02em] text-white">
+              <p className="text-[16px] font-bold leading-6 tracking-[-0.02em] text-[#0A0A0A]">
                 서로 다른 두 사람 사진을 각각 1장씩 올려주세요.
               </p>
-              <p className="mt-1 text-[14px] font-medium leading-6 text-white/72">
+              <p className="mt-1 text-[14px] font-medium leading-6 text-[#0A0A0A]/72">
                 얼굴이 정면에 가깝고 또렷하게 보일수록 정확도가 좋습니다.
               </p>
             </div>
@@ -2089,9 +2089,9 @@ export default function Studio() {
               {([0, 1] as const).map((slotIndex) => {
                 const image = pairUploadImages[slotIndex];
                 return (
-                  <div key={slotIndex} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-3">
+                  <div key={slotIndex} className="rounded-[24px] border border-black/10 bg-black/[0.03] p-3">
                     <div className="mb-3 flex items-center justify-between">
-                      <p className="text-[13px] font-bold text-white">인물 {slotIndex + 1}</p>
+                      <p className="text-[13px] font-bold text-[#0A0A0A]">인물 {slotIndex + 1}</p>
                       {image && (
                         <button
                           type="button"
@@ -2102,18 +2102,18 @@ export default function Studio() {
                               return next;
                             });
                           }}
-                          className="text-[12px] text-white/38"
+                          className="text-[12px] text-[#0A0A0A]/38"
                         >
                           삭제
                         </button>
                       )}
                     </div>
-                    <div className="aspect-[4/5] overflow-hidden rounded-[20px] bg-black/30">
+                    <div className="aspect-[4/5] overflow-hidden rounded-[20px] bg-black/8">
                       {image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={image} alt={`인물 ${slotIndex + 1}`} className="h-full w-full object-cover" />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center px-4 text-center text-[12px] leading-5 text-white/28">
+                        <div className="flex h-full w-full items-center justify-center px-4 text-center text-[12px] leading-5 text-[#0A0A0A]/28">
                           얼굴이 잘 보이는
                           <br />
                           사진을 올려주세요
@@ -2127,7 +2127,7 @@ export default function Studio() {
                           uploadTargetRef.current = { mode: "pair", slotIndex };
                           fileInputRef.current?.click();
                         }}
-                        className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-3 text-[13px] font-bold text-white"
+                        className="rounded-2xl border border-black/10 bg-black/[0.05] px-3 py-3 text-[13px] font-bold text-[#0A0A0A]"
                       >
                         앨범
                       </button>
@@ -2157,7 +2157,7 @@ export default function Studio() {
                   uploadTargetRef.current = null;
                   if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
-                className="flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-[14px] font-bold text-white/55"
+                className="flex-1 rounded-2xl border border-black/10 bg-black/[0.04] px-4 py-4 text-[14px] font-bold text-[#0A0A0A]/55"
               >
                 취소
               </button>
@@ -2185,22 +2185,22 @@ export default function Studio() {
           }}
         >
           <div
-            className="w-full max-w-2xl bg-[#1C1C1E] rounded-t-3xl px-4 pt-2 pb-[max(env(safe-area-inset-bottom),20px)] shadow-2xl"
+            className="w-full max-w-2xl bg-white rounded-t-3xl px-4 pt-2 pb-[max(env(safe-area-inset-bottom),20px)] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 bg-white/15 rounded-full mx-auto mb-5" />
-            <p className="text-[13px] font-semibold text-white/40 text-center mb-4">사진 선택</p>
+            <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mb-5" />
+            <p className="text-[13px] font-semibold text-[#0A0A0A]/40 text-center mb-4">사진 선택</p>
 
             {/* 최근 사용한 셀카 */}
             {recentPhotos.length > 0 && (
               <div className="mb-4">
-                <p className="text-[11px] font-bold text-white/30 uppercase tracking-wider mb-2.5">최근 사용한 셀카</p>
+                <p className="text-[11px] font-bold text-[#0A0A0A]/30 uppercase tracking-wider mb-2.5">최근 사용한 셀카</p>
                 <div className="flex gap-2.5">
                   {recentPhotos.map((photo, i) => (
                     <button
                       key={i}
                       onClick={() => setPendingRecentPhoto(photo)}
-                      className="relative flex-shrink-0 overflow-hidden rounded-2xl border-2 border-white/20 hover:border-[#C9571A] transition-colors"
+                      className="relative flex-shrink-0 overflow-hidden rounded-2xl border-2 border-black/15 hover:border-[#C9571A] transition-colors"
                       style={{ width: 76, height: 76 }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2208,7 +2208,7 @@ export default function Studio() {
                     </button>
                   ))}
                 </div>
-                <div className="mt-3 mb-1 border-t border-white/[0.07]" />
+                <div className="mt-3 mb-1 border-t border-black/[0.07]" />
               </div>
             )}
 
@@ -2219,7 +2219,7 @@ export default function Studio() {
                   setShowPhotoSourceSheet(false);
                   setShowCameraGuide(true);
                 }}
-                className="w-full flex items-center gap-4 bg-white/[0.06] hover:bg-white/10 rounded-2xl px-5 py-4 transition-colors text-left"
+                className="w-full flex items-center gap-4 bg-black/[0.06] hover:bg-black/10 rounded-2xl px-5 py-4 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-xl bg-[#C9571A]/20 flex items-center justify-center flex-shrink-0">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -2228,8 +2228,8 @@ export default function Studio() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-[15px] font-bold text-white">실시간 촬영</p>
-                  <p className="text-[12px] text-white/40 mt-0.5">카메라로 바로 찍기</p>
+                  <p className="text-[15px] font-bold text-[#0A0A0A]">실시간 촬영</p>
+                  <p className="text-[12px] text-[#0A0A0A]/40 mt-0.5">카메라로 바로 찍기</p>
                 </div>
               </button>
               <button
@@ -2238,19 +2238,19 @@ export default function Studio() {
                   setShowPhotoSourceSheet(false);
                   fileInputRef.current?.click();
                 }}
-                className="w-full flex items-center gap-4 bg-white/[0.06] hover:bg-white/10 rounded-2xl px-5 py-4 transition-colors text-left"
+                className="w-full flex items-center gap-4 bg-black/[0.06] hover:bg-black/10 rounded-2xl px-5 py-4 transition-colors text-left"
               >
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-black/10 flex items-center justify-center flex-shrink-0">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <rect x="3" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth="1.8"/>
-                    <rect x="14" y="3" width="7" height="7" rx="1" stroke="white" strokeWidth="1.8"/>
-                    <rect x="3" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth="1.8"/>
-                    <rect x="14" y="14" width="7" height="7" rx="1" stroke="white" strokeWidth="1.8"/>
+                    <rect x="3" y="3" width="7" height="7" rx="1" stroke="#0A0A0A" strokeWidth="1.8"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1" stroke="#0A0A0A" strokeWidth="1.8"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1" stroke="#0A0A0A" strokeWidth="1.8"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1" stroke="#0A0A0A" strokeWidth="1.8"/>
                   </svg>
                 </div>
                 <div>
-                  <p className="text-[15px] font-bold text-white">앨범에서 선택</p>
-                  <p className="text-[12px] text-white/40 mt-0.5">갤러리에서 사진 가져오기</p>
+                  <p className="text-[15px] font-bold text-[#0A0A0A]">앨범에서 선택</p>
+                  <p className="text-[12px] text-[#0A0A0A]/40 mt-0.5">갤러리에서 사진 가져오기</p>
                 </div>
               </button>
             </div>
@@ -2259,7 +2259,7 @@ export default function Studio() {
                 setShowPhotoSourceSheet(false);
                 uploadTargetRef.current = null;
               }}
-              className="w-full py-3.5 rounded-2xl bg-white/[0.04] text-[15px] font-semibold text-white/50"
+              className="w-full py-3.5 rounded-2xl bg-black/[0.04] text-[15px] font-semibold text-[#0A0A0A]/50"
             >
               취소
             </button>
@@ -2274,7 +2274,7 @@ export default function Studio() {
           onClick={() => setPendingRecentPhoto(null)}
         >
           <div
-            className="w-full max-w-xs rounded-[28px] bg-[#1C1C1E] p-5 flex flex-col gap-4 shadow-2xl"
+            className="w-full max-w-xs rounded-[28px] bg-white p-5 flex flex-col gap-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="overflow-hidden rounded-2xl" style={{ aspectRatio: "1/1" }}>
@@ -2282,13 +2282,13 @@ export default function Studio() {
               <img src={pendingRecentPhoto} alt="" className="h-full w-full object-cover" />
             </div>
             <div className="text-center">
-              <p className="text-white font-bold text-[17px]">이 사진으로 진행할까요?</p>
-              <p className="mt-1 text-white/40 text-[13px]">2크레딧이 사용됩니다</p>
+              <p className="text-[#0A0A0A] font-bold text-[17px]">이 사진으로 진행할까요?</p>
+              <p className="mt-1 text-[#0A0A0A]/40 text-[13px]">2크레딧이 사용됩니다</p>
             </div>
             <div className="flex gap-2.5">
               <button
                 onClick={() => setPendingRecentPhoto(null)}
-                className="flex-1 py-3.5 rounded-2xl bg-white/[0.08] text-white/60 font-bold text-[15px]"
+                className="flex-1 py-3.5 rounded-2xl bg-black/[0.08] text-[#0A0A0A]/60 font-bold text-[15px]"
               >
                 취소
               </button>
@@ -2378,9 +2378,9 @@ export default function Studio() {
       {/* 로그인 유도 모달 */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => setShowLoginModal(false)}>
-          <div className="bg-[#1A1A1A] rounded-2xl p-6 max-w-sm mx-4 border border-[#333] text-center w-full" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm mx-4 border border-[#E0E0E0] text-center w-full" onClick={e => e.stopPropagation()}>
             <p className="text-[40px]">🎁</p>
-            <p className="text-[18px] font-bold text-white mt-3">무료 체험이 끝났어요</p>
+            <p className="text-[18px] font-bold text-[#0A0A0A] mt-3">무료 체험이 끝났어요</p>
             <p className="text-[14px] text-[#999] mt-2 leading-relaxed">카카오 로그인하면<br/><span className="text-[#C9571A] font-bold">1크레딧을 무료로 받아요!</span><br/>지금 바로 체험해보세요</p>
             <button
               onClick={() => { window.location.href = "/api/auth/kakao"; }}
@@ -2400,9 +2400,9 @@ export default function Studio() {
 
       {showNoCreditModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => setShowNoCreditModal(false)}>
-          <div className="bg-[#1A1A1A] rounded-2xl p-6 max-w-sm mx-4 border border-[#333] text-center w-full" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm mx-4 border border-[#E0E0E0] text-center w-full" onClick={e => e.stopPropagation()}>
             <p className="text-[40px]">💳</p>
-            <p className="text-[18px] font-bold text-white mt-3">크레딧이 없어요</p>
+            <p className="text-[18px] font-bold text-[#0A0A0A] mt-3">크레딧이 없어요</p>
             <p className="text-[14px] text-[#999] mt-2 leading-relaxed">1회 변환에 2크레딧이 필요해요.<br/>크레딧을 충전하고 계속 이용해보세요.</p>
             <Link
               href="/shop"
@@ -2502,7 +2502,7 @@ export default function Studio() {
                   <p className="line-clamp-2 text-[24px] font-black tracking-[-0.04em] text-white drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
                     {showcaseDisplayName(activeShowcase)}님
                   </p>
-                  <p className="mt-1 text-[13px] text-white/72">
+                  <p className="mt-1 text-[13px] text-[#0A0A0A]/72">
                     공개 결과 스토리
                   </p>
                 </div>
@@ -2545,7 +2545,7 @@ export default function Studio() {
       {pendingImagePreview && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 px-4" onClick={closeImageConfirm}>
           <div
-            className="w-full max-w-sm rounded-[28px] border border-white/10 bg-[#111] p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-[28px] border border-white/10 bg-white p-5 shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <p className="font-unbounded text-[10px] tracking-[0.18em] text-[#C9571A] uppercase">Photo Check</p>
@@ -2556,8 +2556,8 @@ export default function Studio() {
 
             <div className="mt-5">
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-[12px] font-bold text-white/72">프레임 안에서 위치를 맞춰주세요</p>
-                <span className="text-[11px] text-white/38">확대 · 이동 가능</span>
+                <p className="text-[12px] font-bold text-[#0A0A0A]/72">프레임 안에서 위치를 맞춰주세요</p>
+                <span className="text-[11px] text-[#0A0A0A]/38">확대 · 이동 가능</span>
               </div>
               <div
                 ref={cropFrameRef}
@@ -2569,7 +2569,7 @@ export default function Studio() {
                 onTouchMove={handleCropTouchMove}
                 onTouchEnd={handleCropTouchEnd}
                 onTouchCancel={handleCropTouchEnd}
-                className="relative aspect-square w-full overflow-hidden rounded-[24px] border border-white/10 bg-[#1A1A1A] touch-none"
+                className="relative aspect-square w-full overflow-hidden rounded-[24px] border border-white/10 bg-[#EBEBEB] touch-none"
                 style={{ userSelect: "none" }}
               >
                 {pendingImagePreview && cropState && (
@@ -2627,7 +2627,7 @@ export default function Studio() {
                 <button
                   type="button"
                   onClick={resetCropState}
-                  className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] font-bold text-white/70 transition-colors hover:text-white"
+                  className="rounded-full border border-white/10 bg-black/[0.03] px-3 py-1.5 text-[11px] font-bold text-white/70 transition-colors hover:text-white"
                 >
                   초기화
                 </button>
@@ -2638,7 +2638,7 @@ export default function Studio() {
               <button
                 type="button"
                 onClick={closeImageConfirm}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[14px] font-bold text-white/70 transition-colors hover:text-white"
+                className="rounded-2xl border border-white/10 bg-black/[0.03] px-4 py-3 text-[14px] font-bold text-white/70 transition-colors hover:text-white"
               >
                 다시 고르기
               </button>
