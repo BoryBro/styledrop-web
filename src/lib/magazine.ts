@@ -6,34 +6,55 @@ export type MagazineFactCard = {
   body: string;
 };
 
-export type MagazineArticle = {
+type MagazineBaseArticle = {
   slug: string;
+  type: "card-linked" | "editorial";
   eyebrow: string;
   title: string;
+  heroTitleLines?: string[];
   summary: string;
-  communityLabel: string;
-  communityHeadline: string;
-  communityFact: string; // 재미있는 사실 한 줄
-  communityQuestion: string; // 참여 유도 질문 (AI 자동 생성)
-  primaryStyleId: string;
-  relatedStyleIds: string[];
-  ctaLabel: string;
   accent: string;
   panel: string;
   storyCards: MagazineFactCard[];
   quickFacts: string[];
 };
 
+export type CardLinkedMagazineArticle = MagazineBaseArticle & {
+  type: "card-linked";
+  primaryStyleId: string;
+  relatedStyleIds: string[];
+  ctaLabel: string;
+  communityLabel: string;
+  communityHeadline: string;
+  communityQuestion: string;
+  participationPlaceholder?: string;
+  instagramPrompt?: string;
+};
+
+export type EditorialMagazineArticle = MagazineBaseArticle & {
+  type: "editorial";
+  heroImage: string;
+  relatedStyleIds?: string[];
+};
+
+export type MagazineArticle = CardLinkedMagazineArticle | EditorialMagazineArticle;
+
 export const MAGAZINE_ARTICLES: MagazineArticle[] = [
   {
     slug: "mongol-steppe-warrior",
+    type: "card-linked",
     eyebrow: "MONGOL NOTE",
     title: "몽골 부족은 멈춘 적보다 움직이는 적일 때 더 강했습니다",
+    heroTitleLines: [
+      "몽골 부족은 멈춘 적보다",
+      "움직이는 적일 때 더 강했습니다",
+    ],
     summary: "넓은 초원에서는 오래 버티는 힘보다 빠르게 흩어지고 다시 모이는 움직임이 더 위협적이었습니다.",
-    communityLabel: "몽골 전사",
-    communityHeadline: "이번주 인기있는 몽골 부족",
-    communityFact: "몽골 부족은 말을 타면서도 활을 정확하게 쏠 수 있는 훈련을 받았습니다.",
+    communityLabel: "공개 쇼케이스",
+    communityHeadline: "인기 공개 멤버",
     communityQuestion: "당신은 몽골 부족에서 어떤 역할을 했을까요?",
+    participationPlaceholder: "나를 한 줄로 PR해보세요...",
+    instagramPrompt: "인스타 공개하고 나를 알리기",
     primaryStyleId: "mongolian-warrior",
     relatedStyleIds: ["mongolian-warrior"],
     ctaLabel: "몽골의 전사 카드 나도 만들어보기",
@@ -74,4 +95,9 @@ export function getMagazineArticle(slug: string) {
 
 export function getMagazineStyle(styleId: string) {
   return ALL_STYLES.find((style) => style.id === styleId) ?? null;
+}
+
+export function getMagazineHeroImage(article: MagazineArticle) {
+  if (article.type === "editorial") return article.heroImage;
+  return getMagazineStyle(article.primaryStyleId)?.afterImg ?? null;
 }

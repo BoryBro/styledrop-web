@@ -27,13 +27,14 @@ function getSupabase() {
 
 function normalizeInstagramHandle(value: unknown) {
   if (typeof value !== "string") return null;
-  const trimmed = value.trim().replace(/^@+/, "");
-  return trimmed || null;
+  const trimmed = value.trim().replace(/^@+/, "").replace(/\s+/g, "");
+  const handle = trimmed.replace(/[^A-Za-z0-9._]/g, "").slice(0, 30);
+  return handle || null;
 }
 
 function normalizeComment(value: unknown) {
   if (typeof value !== "string") return "";
-  return value.replace(/\s+/g, " ").trim().slice(0, 32);
+  return value.replace(/\s+/g, " ").trim().slice(0, 60);
 }
 
 async function getLatestShowcaseEvent(supabase: ReturnType<typeof getSupabase>, userId: string) {
@@ -224,7 +225,10 @@ export async function POST(request: NextRequest) {
     const showcaseImage = typeof showcaseEvent?.metadata?.image_url === "string" ? showcaseEvent.metadata.image_url : null;
 
     if (showcaseEvent?.event_type !== SHOWCASE_OPT_IN || showcaseStyleId !== styleId || !showcaseImage) {
-      return NextResponse.json({ error: "해당 카드를 공개한 사용자만 참여할 수 있어요." }, { status: 400 });
+      return NextResponse.json(
+        { error: "내 결과를 먼저 만들고 공개하면 쇼케이스에 올라갈 수 있어요." },
+        { status: 400 },
+      );
     }
 
     const { error } = await supabase.from("user_events").insert({

@@ -7,6 +7,7 @@ interface MagazineCardGridProps {
   primaryStyleId: string;
   ctaLabel: string;
   title?: string;
+  titleLines?: string[];
 }
 
 export function MagazineCardGrid({
@@ -15,6 +16,7 @@ export function MagazineCardGrid({
   primaryStyleId,
   ctaLabel,
   title,
+  titleLines,
 }: MagazineCardGridProps) {
   const styles = styleIds
     .map((id) => ALL_STYLES.find((s) => s.id === id))
@@ -40,14 +42,15 @@ export function MagazineCardGrid({
 
         {/* 카드뉴스형 하단 텍스트 */}
         <div className="absolute inset-x-0 bottom-0 p-5 text-left sm:p-7">
-          {title && (
+          {(titleLines?.length || title) && (
             <h1 className="max-w-[560px] text-[24px] font-extrabold leading-[1.16] tracking-[-0.045em] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.55)] sm:text-[34px]">
-              {title.includes("움직이는 적일 때") ? (
-                <>
-                  몽골 부족은 멈춘 적보다
-                  <br />
-                  움직이는 적일 때 더 강했습니다
-                </>
+              {titleLines?.length ? (
+                titleLines.map((line, index) => (
+                  <span key={`${line}-${index}`}>
+                    {index > 0 && <br />}
+                    {line}
+                  </span>
+                ))
               ) : (
                 title
               )}
@@ -57,7 +60,7 @@ export function MagazineCardGrid({
       </div>
 
       <Link
-        href={`/studio?style=${encodeURIComponent(primaryStyleId)}`}
+        href={`/studio?style=${encodeURIComponent(primaryStyleId)}#style-${encodeURIComponent(primaryStyleId)}`}
         className="mt-3 flex h-14 w-full items-center justify-center text-[15px] font-black text-black transition-opacity hover:opacity-90"
         style={{ backgroundColor: accent }}
         aria-label={ctaLabel}
