@@ -273,7 +273,7 @@ export default function Home() {
           <div className="grid w-full gap-5 text-left">
             <div>
               <p className="text-[18px] font-bold tracking-[-0.03em] text-white">StyleDrop</p>
-              <p className="mt-2 max-w-[320px] text-[11px] leading-5 text-white/72">
+              <p className="mt-2 max-w-none text-[11px] leading-5 text-white/72 sm:whitespace-nowrap">
                 사진 한 장으로 감성 카드, 프로필 컷, 퍼스널컬러, AI 오디션 결과까지 이어지는 AI 이미지 서비스.
               </p>
             </div>
