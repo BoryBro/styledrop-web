@@ -138,6 +138,7 @@ export default function Studio() {
   const [variantSelectStyle, setVariantSelectStyle] = useState<StyleCard | null>(null);
   const [showCameraGuide, setShowCameraGuide] = useState(false);
   const [showPhotoSourceSheet, setShowPhotoSourceSheet] = useState(false);
+  const [pendingRecentPhoto, setPendingRecentPhoto] = useState<string | null>(null);
   const [pairUploadStyle, setPairUploadStyle] = useState<StyleCard | null>(null);
   const [pairUploadImages, setPairUploadImages] = useState<[string | null, string | null]>([null, null]);
   const [pairSubmitting, setPairSubmitting] = useState(false);
@@ -2112,11 +2113,7 @@ export default function Studio() {
                   {recentPhotos.map((photo, i) => (
                     <button
                       key={i}
-                      onClick={() => {
-                        uploadTargetRef.current = { mode: "single" };
-                        setShowPhotoSourceSheet(false);
-                        void processImageDataUrl(photo);
-                      }}
+                      onClick={() => setPendingRecentPhoto(photo)}
                       className="relative flex-shrink-0 overflow-hidden rounded-2xl border-2 border-white/20 hover:border-[#C9571A] transition-colors"
                       style={{ width: 76, height: 76 }}
                     >
@@ -2180,6 +2177,48 @@ export default function Studio() {
             >
               취소
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 최근 셀카 확인 모달 */}
+      {pendingRecentPhoto && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 px-5"
+          onClick={() => setPendingRecentPhoto(null)}
+        >
+          <div
+            className="w-full max-w-xs rounded-[28px] bg-[#1C1C1E] p-5 flex flex-col gap-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="overflow-hidden rounded-2xl" style={{ aspectRatio: "1/1" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={pendingRecentPhoto} alt="" className="h-full w-full object-cover" />
+            </div>
+            <div className="text-center">
+              <p className="text-white font-bold text-[17px]">이 사진으로 진행할까요?</p>
+              <p className="mt-1 text-white/40 text-[13px]">1크레딧이 사용됩니다</p>
+            </div>
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => setPendingRecentPhoto(null)}
+                className="flex-1 py-3.5 rounded-2xl bg-white/[0.08] text-white/60 font-bold text-[15px]"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => {
+                  const photo = pendingRecentPhoto;
+                  setPendingRecentPhoto(null);
+                  setShowPhotoSourceSheet(false);
+                  uploadTargetRef.current = { mode: "single" };
+                  void processImageDataUrl(photo);
+                }}
+                className="flex-[1.4] py-3.5 rounded-2xl bg-[#C9571A] text-white font-bold text-[15px]"
+              >
+                확인
+              </button>
+            </div>
           </div>
         </div>
       )}

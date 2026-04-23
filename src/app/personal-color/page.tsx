@@ -282,6 +282,7 @@ export default function PersonalColorPage() {
   const [activeResultTab, setActiveResultTab] = useState<ResultTab>("analysis");
   const [pendingStyleId, setPendingStyleId] = useState<string | null>(null);
   const { recentPhotos, savePhoto } = useRecentPhotos();
+  const [pendingRecentPhoto, setPendingRecentPhoto] = useState<string | null>(null);
 
   const recommendedStyles = useMemo(() => {
     if (!result || result.status !== "ok") return [];
@@ -576,12 +577,7 @@ export default function PersonalColorPage() {
                         {recentPhotos.map((photo, i) => (
                           <button
                             key={i}
-                            onClick={() => {
-                              setAnalysisState("analyzing");
-                              setResult(null);
-                              setActiveResultTab("analysis");
-                              void analyzeResizedDataUrl(photo);
-                            }}
+                            onClick={() => setPendingRecentPhoto(photo)}
                             className="relative flex-shrink-0 overflow-hidden rounded-xl border-2 border-[#D4DBE8] hover:border-[#315EFB] transition-colors"
                             style={{ width: 56, height: 56 }}
                           >
@@ -628,12 +624,7 @@ export default function PersonalColorPage() {
                       {recentPhotos.map((photo, i) => (
                         <button
                           key={i}
-                          onClick={() => {
-                            setAnalysisState("analyzing");
-                            setResult(null);
-                            setActiveResultTab("analysis");
-                            void analyzeResizedDataUrl(photo);
-                          }}
+                          onClick={() => setPendingRecentPhoto(photo)}
                           className="relative flex-shrink-0 overflow-hidden rounded-2xl border-2 border-[#D4DBE8] hover:border-[#315EFB] transition-colors"
                           style={{ width: 76, height: 76 }}
                         >
@@ -886,6 +877,48 @@ export default function PersonalColorPage() {
             >
               앨범에서 선택
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 최근 셀카 확인 모달 */}
+      {pendingRecentPhoto && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 px-5"
+          onClick={() => setPendingRecentPhoto(null)}
+        >
+          <div
+            className="w-full max-w-xs rounded-[28px] bg-white p-5 flex flex-col gap-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="overflow-hidden rounded-2xl" style={{ aspectRatio: "1/1" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={pendingRecentPhoto} alt="" className="h-full w-full object-cover" />
+            </div>
+            <div className="text-center">
+              <p className="text-[#131A2A] font-bold text-[17px]">이 사진으로 분석할까요?</p>
+            </div>
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => setPendingRecentPhoto(null)}
+                className="flex-1 py-3.5 rounded-2xl bg-[#F3F4F6] text-[#6B7280] font-bold text-[15px]"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => {
+                  const photo = pendingRecentPhoto;
+                  setPendingRecentPhoto(null);
+                  setAnalysisState("analyzing");
+                  setResult(null);
+                  setActiveResultTab("analysis");
+                  void analyzeResizedDataUrl(photo);
+                }}
+                className="flex-[1.4] py-3.5 rounded-2xl bg-[#121A2A] text-white font-bold text-[15px]"
+              >
+                확인
+              </button>
+            </div>
           </div>
         </div>
       )}
