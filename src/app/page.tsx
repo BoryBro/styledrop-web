@@ -283,15 +283,19 @@ export default function Home() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/70">
                   Contact
                 </p>
-                <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] leading-4 text-white/72">
-                  <p className="font-medium">상호: 핑거</p>
-                  <p className="font-medium">대표자: 문지환</p>
-                  <p className="font-medium">사업자: 707-79-00261</p>
-                  <p className="font-semibold text-white/88">0505-007-3670</p>
-                  <p className="col-span-2 font-medium">서울특별시 송파구 오금로 551, 1동 2층 201호 257</p>
-                  <a href="mailto:support@styledrop.cloud" className="col-span-2 block font-semibold text-white/88 transition-colors hover:text-white">
-                    support@styledrop.cloud
-                  </a>
+                <div className="mt-2 flex flex-col gap-1 text-[10px] leading-4 text-white/72">
+                  <p className="flex flex-wrap gap-x-5 gap-y-1">
+                    <span className="font-medium">상호: 핑거</span>
+                    <span className="font-medium">대표자: 문지환</span>
+                    <span className="font-medium">사업자: 707-79-00261</span>
+                    <span className="font-semibold text-white/88">0505-007-3670</span>
+                  </p>
+                  <p className="flex flex-wrap gap-x-5 gap-y-1">
+                    <span className="font-medium">서울특별시 송파구 오금로 551, 1동 2층 201호 257</span>
+                    <a href="mailto:support@styledrop.cloud" className="font-semibold text-white/88 transition-colors hover:text-white">
+                      support@styledrop.cloud
+                    </a>
+                  </p>
                 </div>
               </div>
             </div>
