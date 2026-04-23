@@ -1195,6 +1195,12 @@ export default function AdminPage() {
               {liveClock.toTimeString().slice(0, 8)}
             </span>
           )}
+          <a
+            href="/admin/threads"
+            className="text-[13px] font-bold px-3 py-1.5 rounded-lg bg-[#22C55E] text-black hover:opacity-90 transition-opacity"
+          >
+            Threads →
+          </a>
           <button
             onClick={() => doLogin(password)}
             disabled={isLoading || !password}

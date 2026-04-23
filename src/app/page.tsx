@@ -30,7 +30,6 @@ export default function Home() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isContactOpen, setIsContactOpen] = useState(true);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
   const [showcaseItems, setShowcaseItems] = useState<ShowcaseItem[]>([]);
   const router = useRouter();
@@ -280,38 +279,20 @@ export default function Home() {
             </div>
 
             <div>
-              <button
-                type="button"
-                onClick={() => setIsContactOpen((prev) => !prev)}
-                className="flex w-full items-center justify-between rounded-2xl border border-white/12 bg-black/15 px-4 py-3 text-left backdrop-blur-sm"
-                aria-expanded={isContactOpen}
-                aria-controls="footer-contact-panel"
-              >
-                <span className="text-[12px] font-extrabold uppercase tracking-[0.24em] text-white">
+              <div className="text-left">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/70">
                   Contact
-                </span>
-                <span
-                  className={`text-[14px] font-bold text-white/80 transition-transform ${isContactOpen ? "rotate-180" : ""}`}
-                  aria-hidden="true"
-                >
-                  ▾
-                </span>
-              </button>
-
-              {isContactOpen && (
-                <div
-                  id="footer-contact-panel"
-                  className="mt-3 rounded-2xl border border-white/10 bg-black/10 px-4 py-4 text-[12px] leading-6 text-white/92 backdrop-blur-sm"
-                >
-                  <p className="font-semibold">상호: 핑거 · 대표자: 문지환</p>
-                  <p className="font-semibold">사업자등록번호: 707-79-00261</p>
-                  <p className="font-semibold">서울특별시 송파구 오금로 551, 1동 2층 201호 257</p>
-                  <p className="mt-1 text-[13px] font-extrabold text-white">0505-007-3670</p>
-                  <a href="mailto:support@styledrop.cloud" className="mt-1 block text-[13px] font-bold text-white transition-colors hover:text-white/80">
+                </p>
+                <div className="mt-2 grid grid-cols-1 gap-1 text-[10px] leading-5 text-white/72">
+                  <p className="font-medium">상호: 핑거 · 대표자: 문지환</p>
+                  <p className="font-medium">사업자등록번호: 707-79-00261</p>
+                  <p className="font-medium">서울특별시 송파구 오금로 551, 1동 2층 201호 257</p>
+                  <p className="font-semibold text-white/88">0505-007-3670</p>
+                  <a href="mailto:support@styledrop.cloud" className="block font-semibold text-white/88 transition-colors hover:text-white">
                     support@styledrop.cloud
                   </a>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 

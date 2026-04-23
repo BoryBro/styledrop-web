@@ -243,13 +243,21 @@ export default function ThreadsAdminPage() {
           <p className="text-[11px] font-bold text-white/40 uppercase tracking-widest mb-0.5">StyleDrop</p>
           <p className="font-black text-lg">Threads 발행 관리</p>
         </div>
-        <button
-          onClick={() => setShowForm(v => !v)}
-          className="px-4 py-2 rounded-xl font-bold text-sm"
-          style={{ background: showForm ? "#222" : "#22C55E", color: showForm ? "#fff" : "#000" }}
-        >
-          {showForm ? "취소" : "+ 새 포스트"}
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href="/admin"
+            className="px-3 py-2 rounded-xl text-sm font-bold text-white/50 border border-white/10 hover:text-white hover:border-white/30 transition-colors"
+          >
+            ← 어드민
+          </a>
+          <button
+            onClick={() => setShowForm(v => !v)}
+            className="px-4 py-2 rounded-xl font-bold text-sm"
+            style={{ background: showForm ? "#222" : "#22C55E", color: showForm ? "#fff" : "#000" }}
+          >
+            {showForm ? "취소" : "+ 새 포스트"}
+          </button>
+        </div>
       </header>
 
       {showForm && (
