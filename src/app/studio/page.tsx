@@ -86,6 +86,7 @@ type ShowcaseItem = {
   styleId: string | null;
   instagramHandle?: string | null;
   likeCount: number;
+  likedByMe: boolean;
   createdAt: string;
 };
 
@@ -129,10 +130,12 @@ export default function Studio() {
   const [showcaseInstagram, setShowcaseInstagram] = useState("");
   const [showcaseSubmitting, setShowcaseSubmitting] = useState(false);
   const [likedShowcaseUserIds, setLikedShowcaseUserIds] = useState<string[]>([]);
+  const [likingShowcaseUserIds, setLikingShowcaseUserIds] = useState<string[]>([]);
   const [styleControls, setStyleControls] = useState<Record<string, StyleControlState>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const selectedStyleRef = useRef<string | null>(null);
   const toastIdRef = useRef(0);
+  const likingShowcaseUserIdsRef = useRef<Set<string>>(new Set());
   const router = useRouter();
   const { user, loading, login } = useAuth();
   const { isLoading: isAuditionLoading, isVisible: isAuditionVisible, isEnabled: isAuditionEnabled } = useAuditionAvailability();
@@ -203,8 +206,15 @@ export default function Studio() {
   const loadShowcaseItems = useCallback(() => {
     fetch("/api/public-showcase", { cache: "no-store" })
       .then((r) => r.json())
-      .then((data) => setShowcaseItems(Array.isArray(data?.items) ? data.items : []))
-      .catch(() => setShowcaseItems([]));
+      .then((data) => {
+        const items = Array.isArray(data?.items) ? data.items as ShowcaseItem[] : [];
+        setShowcaseItems(items);
+        setLikedShowcaseUserIds(items.filter((item) => item.likedByMe).map((item) => item.userId));
+      })
+      .catch(() => {
+        setShowcaseItems([]);
+        setLikedShowcaseUserIds([]);
+      });
   }, []);
 
   useEffect(() => {
@@ -501,6 +511,7 @@ export default function Studio() {
 
   const activeShowcase = selectedShowcaseIndex !== null ? showcaseItems[selectedShowcaseIndex] ?? null : null;
   const activeShowcaseLiked = activeShowcase ? likedShowcaseUserIds.includes(activeShowcase.userId) : false;
+  const activeShowcaseLikePending = activeShowcase ? likingShowcaseUserIds.includes(activeShowcase.userId) : false;
 
   const closeStoryViewer = useCallback(() => {
     setSelectedShowcaseIndex(null);
@@ -534,29 +545,81 @@ export default function Studio() {
     }
   }, [user?.id, closeStoryViewer, showToast]);
 
-  const toggleStoryLike = useCallback(() => {
+  const toggleStoryLike = useCallback(async () => {
     if (!activeShowcase) return;
+    if (!user?.id) {
+      showToast("로그인 후 하트를 누를 수 있어요.");
+      setShowLoginModal(true);
+      return;
+    }
+
+    const targetUserId = activeShowcase.userId;
+    if (likingShowcaseUserIdsRef.current.has(targetUserId)) return;
+
+    likingShowcaseUserIdsRef.current.add(targetUserId);
+    setLikingShowcaseUserIds((current) => current.includes(targetUserId) ? current : [...current, targetUserId]);
+
     const wasLiked = likedShowcaseUserIds.includes(activeShowcase.userId);
     const liked = !wasLiked;
     setLikedShowcaseUserIds((current) =>
       wasLiked
-        ? current.filter((id) => id !== activeShowcase.userId)
-        : [...current, activeShowcase.userId]
+        ? current.filter((id) => id !== targetUserId)
+        : current.includes(targetUserId) ? current : [...current, targetUserId]
     );
-    // 낙관적 카운트 업데이트
     setShowcaseItems((current) =>
       current.map((item) =>
-        item.userId === activeShowcase.userId
-          ? { ...item, likeCount: Math.max(0, item.likeCount + (liked ? 1 : -1)) }
+        item.userId === targetUserId
+          ? { ...item, likedByMe: liked, likeCount: Math.max(0, item.likeCount + (liked ? 1 : -1)) }
           : item
       )
     );
-    fetch("/api/showcase-likes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ targetUserId: activeShowcase.userId, liked }),
-    }).catch(() => {});
-  }, [activeShowcase, likedShowcaseUserIds]);
+
+    try {
+      const response = await fetch("/api/showcase-likes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId, liked }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error || "like failed");
+
+      const confirmedLiked = typeof data?.liked === "boolean" ? data.liked : liked;
+      const confirmedLikeCount = typeof data?.likeCount === "number" ? data.likeCount : null;
+      setLikedShowcaseUserIds((current) =>
+        confirmedLiked
+          ? current.includes(targetUserId) ? current : [...current, targetUserId]
+          : current.filter((id) => id !== targetUserId)
+      );
+      setShowcaseItems((current) =>
+        current.map((item) =>
+          item.userId === targetUserId
+            ? {
+                ...item,
+                likedByMe: confirmedLiked,
+                likeCount: confirmedLikeCount ?? item.likeCount,
+              }
+            : item
+        )
+      );
+    } catch {
+      setLikedShowcaseUserIds((current) =>
+        wasLiked
+          ? current.includes(targetUserId) ? current : [...current, targetUserId]
+          : current.filter((id) => id !== targetUserId)
+      );
+      setShowcaseItems((current) =>
+        current.map((item) =>
+          item.userId === targetUserId
+            ? { ...item, likedByMe: wasLiked, likeCount: Math.max(0, item.likeCount + (liked ? -1 : 1)) }
+            : item
+        )
+      );
+      showToast("하트를 저장하지 못했어요.");
+    } finally {
+      likingShowcaseUserIdsRef.current.delete(targetUserId);
+      setLikingShowcaseUserIds((current) => current.filter((id) => id !== targetUserId));
+    }
+  }, [activeShowcase, likedShowcaseUserIds, showToast, user?.id]);
 
   useEffect(() => {
     if (selectedShowcaseIndex === null) return;
@@ -2596,7 +2659,8 @@ export default function Studio() {
                 <button
                   type="button"
                   onClick={toggleStoryLike}
-                  className={`relative z-20 flex shrink-0 flex-col items-center justify-center gap-0.5 h-14 w-12 rounded-2xl border backdrop-blur-sm transition-colors ${
+                  disabled={activeShowcaseLikePending}
+                  className={`relative z-20 flex shrink-0 flex-col items-center justify-center gap-0.5 h-14 w-12 rounded-2xl border backdrop-blur-sm transition-colors disabled:cursor-wait disabled:opacity-70 ${
                     activeShowcaseLiked
                       ? "border-[#C9571A]/60 bg-[#C9571A]/18 text-[#FF8B60]"
                       : "border-white/14 bg-black/28 text-white"

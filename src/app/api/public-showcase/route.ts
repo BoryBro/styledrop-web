@@ -4,6 +4,8 @@ import { readSessionFromRequest } from "@/lib/auth-session";
 
 const OPT_IN_EVENT = "home_showcase_opt_in";
 const OPT_OUT_EVENT = "home_showcase_opt_out";
+const STORY_LIKE = "story_like";
+const STORY_UNLIKE = "story_unlike";
 
 type Session = { id: string } | null;
 type ShowcaseEvent = {
@@ -16,6 +18,14 @@ type ShowcaseEvent = {
     style_id?: string | null;
     variant?: string | null;
     instagram_handle?: string | null;
+  } | null;
+  created_at: string;
+};
+type ReactionEvent = {
+  user_id: string | null;
+  event_type: string;
+  metadata: {
+    target_user_id?: string | null;
   } | null;
   created_at: string;
 };
@@ -44,6 +54,11 @@ async function getLatestShowcaseEvent(supabase: ReturnType<typeof getSupabase>, 
 
   if (error) throw error;
   return data;
+}
+
+function readReactionTargetUserId(metadata: ReactionEvent["metadata"]) {
+  const targetUserId = metadata?.target_user_id;
+  return typeof targetUserId === "string" && targetUserId.trim() ? targetUserId : null;
 }
 
 export async function GET(request: NextRequest) {
@@ -83,20 +98,39 @@ export async function GET(request: NextRequest) {
     const active = [...latestByUser.values()].filter((event) => event.event_type === OPT_IN_EVENT && event.metadata?.image_url);
     const userIds = active.map((event) => event.user_id).filter(Boolean);
 
-    const [{ data: users }, { data: likeEvents }] = await Promise.all([
+    const [{ data: users }, { data: reactionEvents }] = await Promise.all([
       userIds.length
         ? supabase.from("users").select("id, nickname, profile_image").in("id", userIds)
         : Promise.resolve({ data: [] as Array<{ id: string; nickname: string | null; profile_image: string | null }> }),
-      supabase.from("user_events").select("metadata").eq("event_type", "story_like"),
+      userIds.length
+        ? supabase
+            .from("user_events")
+            .select("user_id, event_type, metadata, created_at")
+            .in("event_type", [STORY_LIKE, STORY_UNLIKE])
+            .order("created_at", { ascending: false })
+            .limit(5000)
+        : Promise.resolve({ data: [] as ReactionEvent[] }),
     ]);
 
     const userMap = new Map((users ?? []).map((user) => [user.id, user]));
+    const activeUserIdSet = new Set(userIds);
+    const latestReactionByPair = new Map<string, boolean>();
 
-    // 타겟 userId별 하트 카운트 집계
-    const likeCounts: Record<string, number> = {};
-    for (const e of likeEvents ?? []) {
-      const tid = (e.metadata as Record<string, string> | null)?.target_user_id;
-      if (tid) likeCounts[tid] = (likeCounts[tid] ?? 0) + 1;
+    for (const event of (reactionEvents ?? []) as ReactionEvent[]) {
+      if (!event.user_id) continue;
+      const targetUserId = readReactionTargetUserId(event.metadata);
+      if (!targetUserId || !activeUserIdSet.has(targetUserId)) continue;
+
+      const pairKey = `${event.user_id}:${targetUserId}`;
+      if (latestReactionByPair.has(pairKey)) continue;
+      latestReactionByPair.set(pairKey, event.event_type === STORY_LIKE);
+    }
+
+    const likeCounts: Record<string, number> = Object.fromEntries(userIds.map((userId) => [userId, 0]));
+    for (const [pairKey, liked] of latestReactionByPair.entries()) {
+      if (!liked) continue;
+      const [, targetUserId] = pairKey.split(":");
+      likeCounts[targetUserId] = (likeCounts[targetUserId] ?? 0) + 1;
     }
 
     const items = active
@@ -110,6 +144,7 @@ export async function GET(request: NextRequest) {
           styleId: event.metadata?.style_id ?? null,
           instagramHandle: event.metadata?.instagram_handle ?? null,
           likeCount: likeCounts[event.user_id] ?? 0,
+          likedByMe: session ? latestReactionByPair.get(`${session.id}:${event.user_id}`) === true : false,
           createdAt: event.created_at,
         };
       })

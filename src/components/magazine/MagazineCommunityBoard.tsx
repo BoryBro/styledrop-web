@@ -58,6 +58,7 @@ export function MagazineCommunityBoard({
   const [shareInstagram, setShareInstagram] = useState(false);
   const [instagramHandle, setInstagramHandle] = useState("");
   const [visibleLimit, setVisibleLimit] = useState(initialShowcaseLimit);
+  const [likingUserIds, setLikingUserIds] = useState<string[]>([]);
 
   const encodedStyleId = useMemo(() => encodeURIComponent(styleId), [styleId]);
   const visibleItems = payload?.items.slice(0, visibleLimit) ?? [];
@@ -131,7 +132,10 @@ export function MagazineCommunityBoard({
 
   const toggleLike = async (item: BoardItem) => {
     if (!payload) return;
+    if (likingUserIds.includes(item.userId)) return;
+
     const nextLiked = !item.likedByMe;
+    setLikingUserIds((current) => current.includes(item.userId) ? current : [...current, item.userId]);
     setPayload({
       ...payload,
       items: payload.items
@@ -146,13 +150,37 @@ export function MagazineCommunityBoard({
         ),
     });
     try {
-      await fetch("/api/showcase-likes", {
+      const response = await fetch("/api/showcase-likes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetUserId: item.userId, liked: nextLiked }),
       });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error || "like failed");
+
+      if (typeof data?.likeCount === "number") {
+        setPayload((current) =>
+          current
+            ? {
+                ...current,
+                items: current.items
+                  .map((entry) =>
+                    entry.userId === item.userId
+                      ? { ...entry, likedByMe: nextLiked, likeCount: data.likeCount }
+                      : entry,
+                  )
+                  .sort((a, b) => b.likeCount !== a.likeCount
+                    ? b.likeCount - a.likeCount
+                    : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                  ),
+              }
+            : current
+        );
+      }
     } catch {
       await loadBoard();
+    } finally {
+      setLikingUserIds((current) => current.filter((userId) => userId !== item.userId));
     }
   };
 
@@ -280,7 +308,8 @@ export function MagazineCommunityBoard({
                   <button
                     type="button"
                     onClick={() => void toggleLike(item)}
-                    className="absolute bottom-2.5 right-2.5 flex min-w-12 items-center justify-center gap-1 rounded-full bg-black/60 px-2.5 py-1.5 backdrop-blur-sm transition-transform active:scale-95"
+                    disabled={likingUserIds.includes(item.userId)}
+                    className="absolute bottom-2.5 right-2.5 flex min-w-12 items-center justify-center gap-1 rounded-full bg-black/60 px-2.5 py-1.5 backdrop-blur-sm transition-transform active:scale-95 disabled:cursor-wait disabled:opacity-70"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24"
                       fill={item.likedByMe ? accent : "none"}
