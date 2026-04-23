@@ -1280,13 +1280,13 @@ export default function Studio() {
               const CreditBadge = ({ style }: { style: typeof filteredStyles[0] }) => {
                 if (FREE_TRIAL_STYLE_ID_SET.has(style.id)) {
                   return (
-                    <span className="px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-md text-[10px] font-extrabold text-white whitespace-nowrap">
+                    <span className="px-2.5 py-1 bg-[#7B6A52] rounded-lg text-[11px] font-extrabold text-white whitespace-nowrap shadow-lg">
                       1크레딧
                     </span>
                   );
                 }
                 return (
-                  <span className="px-2 py-0.5 bg-[#C9571A] rounded-md text-[10px] font-extrabold text-white whitespace-nowrap">
+                  <span className="px-2.5 py-1 bg-[#C9571A] rounded-lg text-[11px] font-extrabold text-white whitespace-nowrap shadow-lg">
                     2크레딧
                   </span>
                 );
@@ -1300,35 +1300,66 @@ export default function Studio() {
                         <span className="text-[11px] font-extrabold text-white/40 uppercase tracking-widest">맛보기</span>
                         <span className="text-[11px] font-bold text-white/30">· 1크레딧으로 체험해보세요</span>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="flex flex-col gap-3">
                         {trialStyles.map((style) => {
                           const hasOptions = (STYLE_VARIANTS[style.id]?.length ?? 0) > 1;
                           return (
                             <button
                               key={style.id}
                               onClick={() => handleCardClick(style)}
-                              className={`relative w-full rounded-xl overflow-hidden text-left transition-all duration-200 border-2 ${
+                              className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden text-left transition-all duration-300 border-2 ${
                                 selectedStyle === style.id
-                                  ? "border-[#C9571A] shadow-[0_4px_16px_rgb(201,87,26,0.3)]"
+                                  ? "border-[#C9571A] shadow-[0_4px_24px_rgb(201,87,26,0.3)]"
                                   : "border-transparent"
-                              }`}
-                              style={{ backgroundColor: style.bgColor, aspectRatio: "2/3" }}
+                              } cursor-pointer`}
+                              style={{ backgroundColor: style.bgColor }}
                             >
-                              {style.afterImg && (
+                              {style.beforeImg && style.afterImg ? (
+                                <>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={style.beforeImg} alt="before" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={style.afterImg} alt="after" className="absolute inset-0 w-full h-full object-cover" style={{ animation: "split-clip 4s ease-in-out infinite" }} draggable={false} />
+                                  <div className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_10px_rgba(255,255,255,0.6)]" style={{ animation: "split-line 4s ease-in-out infinite" }}>
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white shadow-lg flex items-center justify-center">
+                                      <svg width="14" height="10" viewBox="0 0 20 10" fill="none">
+                                        <path d="M1 5H19M1 5L5 2M1 5L5 8M19 5L15 2M19 5L15 8" stroke="#555" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </>
+                              ) : style.bgImage ? (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img src={style.afterImg} alt={style.name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
-                              )}
-                              <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-                              <div className="absolute bottom-0 left-0 p-2.5 flex flex-col gap-1">
-                                {hasOptions && (
-                                  <span className="inline-flex w-fit items-center rounded-md bg-white/14 px-1.5 py-0.5 text-[9px] font-extrabold text-white">옵션</span>
-                                )}
-                                <p className="text-[12px] font-bold text-white leading-tight line-clamp-2">{style.name}</p>
-                                <CreditBadge style={style} />
+                                <img src={style.bgImage} alt={style.name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+                              ) : null}
+
+                              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+
+                              <div className="absolute bottom-0 left-0 p-5">
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  {hasOptions && (
+                                    <span className="inline-flex items-center rounded-lg bg-white/14 px-2 py-1 text-[11px] font-extrabold text-white backdrop-blur-md ring-1 ring-white/15">
+                                      옵션
+                                    </span>
+                                  )}
+                                  <p className="text-[24px] font-bold text-white tracking-tight leading-tight">{style.name}</p>
+                                </div>
+                                <p className="text-[14px] text-[#ccc] mt-0.5 break-keep">{style.desc}</p>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <span className="flex items-center gap-1.5 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
+                                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                                      <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.85"/>
+                                      <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round"/>
+                                    </svg>
+                                    {usageCounts === null ? "..." : formatCount(usageCounts[style.id] ?? 0)}
+                                  </span>
+                                  <CreditBadge style={style} />
+                                </div>
                               </div>
+
                               {selectedStyle === style.id && (
-                                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#C9571A] flex items-center justify-center shadow-md">
-                                  <svg width="9" height="7" viewBox="0 0 14 10" fill="none">
+                                <div className="absolute top-4 right-4 w-7 h-7 rounded-full bg-[#C9571A] flex items-center justify-center shadow-md">
+                                  <svg width="13" height="10" viewBox="0 0 14 10" fill="none">
                                     <path d="M1 5L4.5 8.5L13 1" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                                   </svg>
                                 </div>
