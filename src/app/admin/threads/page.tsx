@@ -204,28 +204,32 @@ export default function ThreadsAdminPage() {
   }
 
   if (!authed) {
+    const doLogin = async () => {
+      const ok = await handleLogin(password);
+      if (!ok) showToast("비밀번호가 틀렸어요");
+    };
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-4">
-        <form
-          onSubmit={async e => { e.preventDefault(); const ok = await handleLogin(password); if (!ok) showToast("비밀번호가 틀렸어요"); }}
-          className="bg-[#111] border border-white/10 rounded-2xl p-8 w-full max-w-sm flex flex-col gap-4"
-        >
+        <div className="bg-[#111] border border-white/10 rounded-2xl p-8 w-full max-w-sm flex flex-col gap-4">
           <p className="text-white font-bold text-lg">Threads 어드민</p>
           <input
             type="password"
             placeholder="Admin password"
             value={password}
             onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") void doLogin(); }}
             autoComplete="current-password"
             className="bg-[#1A1A1A] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
           />
           <button
-            type="submit"
-            className="bg-white text-black font-bold py-3 rounded-xl text-sm active:bg-white/80"
+            onClick={() => void doLogin()}
+            onTouchEnd={e => { e.preventDefault(); void doLogin(); }}
+            className="bg-white text-black font-bold py-4 rounded-xl text-base cursor-pointer select-none"
+            style={{ WebkitTapHighlightColor: "transparent" }}
           >
             로그인
           </button>
-        </form>
+        </div>
       </div>
     );
   }
