@@ -1242,7 +1242,7 @@ export default function Studio() {
                           onClick={() => handleStyleCategorySelect(tab)}
                           className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors whitespace-nowrap ${
                             isActive
-                              ? "bg-[#C9571A]/20 text-[#F6B38C]"
+                              ? "bg-[#0A0A0A] text-white"
                               : "text-[#0A0A0A]/35 hover:text-[#0A0A0A]/60"
                           }`}
                         >
