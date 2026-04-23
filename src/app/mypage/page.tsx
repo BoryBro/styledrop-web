@@ -780,73 +780,97 @@ export default function MyPage() {
               {historyTab === "lab" && (
                 <div className="flex flex-col gap-5">
                   {/* AI 오디션 기록 */}
-                  {showAuditionHistory && (
-                    <div>
-                      <p className="text-[13px] font-bold text-[#6B7280] mb-2 px-1">AI 오디션 · 24시간 보관</p>
-                      {historyLoading ? (
-                        <div className="flex justify-center py-6">
-                          <div className="w-5 h-5 rounded-full border-2 border-[#E8E8E8] border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
+                  <div>
+                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">AI 오디션</p>
+                    {historyLoading ? (
+                      <div className="flex justify-center py-6">
+                        <div className="w-5 h-5 rounded-full border-2 border-[#E8E8E8] border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
+                      </div>
+                    ) : auditionHistory.length === 0 ? (
+                      <Link href="/audition/intro" className="flex items-center justify-between bg-white border border-[#E7E7E7] rounded-2xl px-4 py-4 hover:border-[#D1D5DB] transition-colors">
+                        <div>
+                          <p className="text-[14px] font-bold text-[#111827]">AI 오디션</p>
+                          <p className="text-[12px] text-[#9CA3AF] font-normal mt-0.5">아직 기록이 없어요 · 시작하기</p>
                         </div>
-                      ) : auditionHistory.length === 0 ? (
-                        <div className="border border-[#E7E7E7] bg-white rounded-2xl px-4 py-5 text-center">
-                          <p className="text-[13px] text-[#0A0A0A]/40">아직 오디션 기록이 없어요.</p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-3">
-                          {auditionHistory.map(item => {
-                            const expiry = expiryBadge(item.created_at);
-                            const scoreColor = item.avg_score >= 70 ? "#4ade80" : item.avg_score >= 45 ? "#f97316" : "#ef4444";
-                            return (
-                              <Link
-                                key={item.id}
-                                href={`/audition/result?history_share=${item.share_id}`}
-                                className="flex flex-col gap-3 bg-white border border-[#E7E7E7] p-3 hover:border-[#D1D5DB] transition-colors min-w-0"
-                              >
-                                <div className="w-full aspect-square rounded-[14px] overflow-hidden flex-shrink-0 bg-[#F0F0F0]">
-                                  {item.still_image_url ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={item.still_image_url} alt="" className="w-full h-full object-cover" />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-[#333] text-[22px]">🎬</div>
-                                  )}
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#D1D5DB] flex-shrink-0">
+                          <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </Link>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        {auditionHistory.map(item => {
+                          const expiry = expiryBadge(item.created_at);
+                          const scoreColor = item.avg_score >= 70 ? "#4ade80" : item.avg_score >= 45 ? "#f97316" : "#ef4444";
+                          return (
+                            <Link
+                              key={item.id}
+                              href={`/audition/result?history_share=${item.share_id}`}
+                              className="flex flex-col bg-white border border-[#E7E7E7] p-3 rounded-2xl hover:border-[#D1D5DB] transition-colors min-w-0"
+                            >
+                              <div className="w-full aspect-square rounded-[14px] overflow-hidden flex-shrink-0 bg-[#F0F0F0]">
+                                {item.still_image_url ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={item.still_image_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-[#333] text-[22px]">🎬</div>
+                                )}
+                              </div>
+                              <div className="min-w-0 mt-2.5">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <span className="text-[10px] font-bold text-[#C9571A] uppercase tracking-widest">AI 오디션</span>
+                                  <span className="text-[14px] font-extrabold tabular-nums" style={{ color: scoreColor }}>{item.avg_score}점</span>
                                 </div>
-                                <div className="min-w-0">
-                                  <div className="flex items-center justify-between gap-2 mb-1">
-                                    <span className="text-[10px] font-bold text-[#C9571A] uppercase tracking-widest">AI 오디션</span>
-                                    <span className="text-[14px] font-extrabold tabular-nums" style={{ color: scoreColor }}>{item.avg_score}점</span>
-                                  </div>
-                                  <p className="text-[#0A0A0A]/80 text-[13px] font-bold leading-snug break-keep">{item.assigned_role}</p>
-                                  <div className="flex flex-col items-start gap-1.5 mt-2">
-                                    <span className="text-[11px] text-[#6B7280]">{relativeTime(item.created_at)}</span>
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${expiry.className}`}>{expiry.label}</span>
-                                  </div>
+                                <p className="text-[#0A0A0A]/80 text-[13px] font-bold leading-snug break-keep">{item.assigned_role}</p>
+                                <div className="flex items-end justify-between gap-1 mt-2">
+                                  <span className="text-[11px] text-[#6B7280]">{relativeTime(item.created_at)}</span>
+                                  <span className={`text-[10px] font-normal px-1.5 py-0.5 rounded-full border ${expiry.className}`}>{expiry.label}</span>
                                 </div>
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 내가 보는 너 (나보) */}
+                  <div>
+                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">내가 보는 너</p>
+                    <Link href="/nabo" className="flex items-center justify-between bg-white border border-[#E7E7E7] rounded-2xl px-4 py-4 hover:border-[#D1D5DB] transition-colors">
+                      <div>
+                        <p className="text-[14px] font-bold text-[#111827]">내가 보는 너</p>
+                        <p className="text-[12px] text-[#9CA3AF] font-normal mt-0.5">익명 관계 분석 · 바로가기</p>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#D1D5DB] flex-shrink-0">
+                        <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </Link>
+                  </div>
 
                   {/* 여행 같이 간다면 기록 */}
                   <div>
-                    <p className="text-[13px] font-bold text-[#6B7280] mb-2 px-1">여행 같이 간다면 · 완료된 테스트만 보관</p>
+                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">여행 같이 간다면</p>
                     {historyLoading ? (
                       <div className="flex justify-center py-6">
                         <div className="w-5 h-5 rounded-full border-2 border-[#E8E8E8] border-t-[#60A5FA]" style={{ animation: "spin 1s linear infinite" }} />
                       </div>
                     ) : travelHistory.length === 0 ? (
-                      <div className="border border-[#E7E7E7] bg-white rounded-2xl px-4 py-5 text-center">
-                        <p className="text-[13px] text-[#0A0A0A]/40">아직 완료된 여행 테스트가 없어요.</p>
-                      </div>
+                      <Link href="/travel-together" className="flex items-center justify-between bg-white border border-[#E7E7E7] rounded-2xl px-4 py-4 hover:border-[#D1D5DB] transition-colors">
+                        <div>
+                          <p className="text-[14px] font-bold text-[#111827]">여행 같이 간다면</p>
+                          <p className="text-[12px] text-[#9CA3AF] font-normal mt-0.5">아직 기록이 없어요 · 시작하기</p>
+                        </div>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#D1D5DB] flex-shrink-0">
+                          <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </Link>
                     ) : (
                       <div className="grid grid-cols-2 gap-3">
                         {travelHistory.map((item) => (
                           <Link
                             key={item.roomId}
                             href={`/travel-together?room=${encodeURIComponent(item.roomId)}&token=${encodeURIComponent(item.participantToken)}&view=result`}
-                            className="flex flex-col gap-3 border border-[#E7E7E7] bg-white p-3 transition-colors hover:border-[#D1D5DB] min-w-0"
+                            className="flex flex-col border border-[#E7E7E7] bg-white p-3 rounded-2xl transition-colors hover:border-[#D1D5DB] min-w-0"
                           >
                             <div className="flex aspect-square items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#DBEAFE,#BFDBFE_48%,#60A5FA)]">
                               <div className="text-center text-[#1E3A8A]">
@@ -854,7 +878,7 @@ export default function MyPage() {
                                 <p className="mt-2 text-[24px]">✈️</p>
                               </div>
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 mt-2.5">
                               <div className="mb-1 flex items-center justify-between gap-2">
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#60A5FA]">여행 테스트</span>
                                 <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${item.unlocked ? "bg-[#EFF6FF] text-[#2563EB]" : "bg-[#F4F4F4] text-[#777]"}`}>
@@ -862,10 +886,10 @@ export default function MyPage() {
                                 </span>
                               </div>
                               <p className="text-[14px] font-bold leading-snug text-[#111827] break-keep">{item.partnerName}와 여행 궁합</p>
-                              <p className="mt-1 text-[12px] text-[#777]">{TRAVEL_RELATION_LABELS[item.relation]}</p>
-                              <div className="mt-2 flex items-center justify-between gap-2">
+                              <p className="mt-0.5 text-[12px] text-[#777]">{TRAVEL_RELATION_LABELS[item.relation]}</p>
+                              <div className="mt-2 flex items-end justify-between gap-2">
                                 <span className="text-[11px] text-[#6B7280]">{relativeTime(item.completedAt)}</span>
-                                <span className="text-[11px] font-semibold text-[#0A0A0A]/60">결과 다시 보기</span>
+                                <span className="text-[10px] font-normal text-[#9CA3AF]">완료된 테스트만 보관</span>
                               </div>
                             </div>
                           </Link>
