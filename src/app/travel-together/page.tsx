@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { trackClientEvent } from "@/lib/client-events";
@@ -18,6 +18,12 @@ const T = {
 type Step = "intro" | "setup" | "link" | "waiting" | "questions" | "results";
 type Relation = "friend" | "lover" | "family" | "coworker";
 type AnswerValue = string | number;
+type ResultAnalysisMode = "basic" | "detail";
+
+const RESULT_ANALYSIS_STEPS: Record<ResultAnalysisMode, string[]> = {
+  basic: ["응답 정렬 중", "여행 취향 비교 중", "궁합 포인트 추출 중", "결과 리포트 여는 중"],
+  detail: ["크레딧 확인 중", "답변 차이 분석 중", "충돌 포인트 정리 중", "상세 리포트 여는 중"],
+};
 type AnswerMap = Record<string, AnswerValue>;
 type Question =
   | {
@@ -50,6 +56,15 @@ type FlashpointBlock = {
   title: string;
   body: string;
   rule: string;
+};
+
+type AnswerEvidenceBlock = {
+  key: string;
+  title: string;
+  intro: string;
+  myLabel: string;
+  partnerLabel: string;
+  takeaway: string;
 };
 
 type TravelParticipantRole = "host" | "guest";
@@ -183,6 +198,21 @@ function getQuestionValue(questionId: string, answers: AnswerMap) {
   if (typeof value === "undefined") return 50;
   if (question.type === "slider") return getSliderPosition(question, value);
   return getChoicePosition(question, String(value));
+}
+
+function getAnswerLabel(questionId: string, answers: AnswerMap) {
+  const question = QUESTIONS.find((item) => item.id === questionId);
+  const value = answers[questionId];
+  if (!question || typeof value === "undefined") return "응답 없음";
+  if (question.type === "slider") {
+    const index = Math.min(Math.max(Math.round(Number(value)), 0), question.scale.length - 1);
+    return question.scale[index] ?? "응답 없음";
+  }
+  return String(value);
+}
+
+function getAnswerGap(questionId: string, myAnswers: AnswerMap, partnerAnswers: AnswerMap) {
+  return Math.abs(getQuestionValue(questionId, myAnswers) - getQuestionValue(questionId, partnerAnswers));
 }
 
 function ScoreRing({ score, size = 136, color = T.mid }: { score: number; size?: number; color?: string }) {
@@ -561,6 +591,89 @@ function getTravelFinalContent(myAnswers: AnswerMap, partnerAnswers: AnswerMap, 
     },
   ];
 
+  const answerEvidence = [
+    {
+      key: "pace-density",
+      score: getAnswerGap("q11", myAnswers, partnerAnswers),
+      title: "하루를 쓰는 밀도",
+      intro:
+        `${safeMyName}님은 하루 방문 수를 "${getAnswerLabel("q11", myAnswers)}"로 봤고, ` +
+        `${safePartnerName}님은 "${getAnswerLabel("q11", partnerAnswers)}" 쪽에 가까웠습니다.`,
+      myLabel: getAnswerLabel("q11", myAnswers),
+      partnerLabel: getAnswerLabel("q11", partnerAnswers),
+      takeaway:
+        Math.abs(paceMy - pacePartner) > 35
+          ? "여기서 한쪽은 더 보고 싶고, 다른 한쪽은 이미 충분하다고 느낄 수 있습니다."
+          : "방문 수 감각은 크게 멀지 않아서, 쉬는 타이밍만 맞추면 흐름이 부드럽습니다.",
+    },
+    {
+      key: "variable",
+      score: getAnswerGap("q13", myAnswers, partnerAnswers),
+      title: "변수가 생겼을 때의 반응",
+      intro:
+        `${safeMyName}님은 "${getAnswerLabel("q13", myAnswers)}", ` +
+        `${safePartnerName}님은 "${getAnswerLabel("q13", partnerAnswers)}"로 답했습니다.`,
+      myLabel: getAnswerLabel("q13", myAnswers),
+      partnerLabel: getAnswerLabel("q13", partnerAnswers),
+      takeaway:
+        getAnswerGap("q13", myAnswers, partnerAnswers) > 35
+          ? "돌발 상황에서 누가 결정을 멈추고, 누가 방향을 바꿀지 미리 정해야 합니다."
+          : "돌발 상황 처리 방식은 비슷해서 큰 충돌보다는 빠른 합의가 나올 가능성이 높습니다.",
+    },
+    {
+      key: "photo",
+      score: getAnswerGap("q8", myAnswers, partnerAnswers) + getAnswerGap("q19", myAnswers, partnerAnswers) / 2,
+      title: "기록을 남기는 온도",
+      intro:
+        `사진 빈도는 ${safeMyName}님이 "${getAnswerLabel("q8", myAnswers)}", ` +
+        `${safePartnerName}님이 "${getAnswerLabel("q8", partnerAnswers)}"로 갈렸습니다.`,
+      myLabel: getAnswerLabel("q8", myAnswers),
+      partnerLabel: getAnswerLabel("q8", partnerAnswers),
+      takeaway:
+        Math.abs(photoMy - photoPartner) > 35
+          ? "사진 시간이 길어지면 한쪽은 추억을 남긴다고 느끼고, 다른 한쪽은 여행이 멈춘다고 느낄 수 있습니다."
+          : "기록에 대한 온도는 크게 다르지 않아, 사진 때문에 흐름이 끊길 가능성은 낮습니다.",
+    },
+    {
+      key: "food",
+      score: getAnswerGap("q6", myAnswers, partnerAnswers) + getAnswerGap("q16", myAnswers, partnerAnswers),
+      title: "밥 앞에서 드러나는 결정 방식",
+      intro:
+        `${safeMyName}님은 "${getAnswerLabel("q6", myAnswers)}" / "${getAnswerLabel("q16", myAnswers)}", ` +
+        `${safePartnerName}님은 "${getAnswerLabel("q6", partnerAnswers)}" / "${getAnswerLabel("q16", partnerAnswers)}" 쪽입니다.`,
+      myLabel: `${getAnswerLabel("q6", myAnswers)} · ${getAnswerLabel("q16", myAnswers)}`,
+      partnerLabel: `${getAnswerLabel("q6", partnerAnswers)} · ${getAnswerLabel("q16", partnerAnswers)}`,
+      takeaway:
+        Math.abs(foodStrictMy - foodStrictPartner) > 35
+          ? "끼니마다 작은 의사결정이 쌓일 수 있어서, 한 끼씩 결정권을 나누는 편이 안전합니다."
+          : "식사 기준은 설명하면 통하는 범위라, 메뉴보다 결정 시간을 줄이는 게 더 중요합니다.",
+    },
+    {
+      key: "check-in",
+      score: getAnswerGap("q14", myAnswers, partnerAnswers),
+      title: "숙소에 들어간 뒤의 에너지",
+      intro:
+        `${safeMyName}님은 체크인 후 "${getAnswerLabel("q14", myAnswers)}", ` +
+        `${safePartnerName}님은 "${getAnswerLabel("q14", partnerAnswers)}"로 답했습니다.`,
+      myLabel: getAnswerLabel("q14", myAnswers),
+      partnerLabel: getAnswerLabel("q14", partnerAnswers),
+      takeaway:
+        getAnswerGap("q14", myAnswers, partnerAnswers) > 35
+          ? "숙소에 들어간 순간부터 에너지 차이가 선명해질 수 있습니다."
+          : "체크인 이후 움직임은 서로 맞출 여지가 있습니다.",
+    },
+  ]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((item) => ({
+      key: item.key,
+      title: item.title,
+      intro: item.intro,
+      myLabel: item.myLabel,
+      partnerLabel: item.partnerLabel,
+      takeaway: item.takeaway,
+    })) satisfies AnswerEvidenceBlock[];
+
   const topMismatch = mismatchCandidates[0];
   const bestMatch = matchCandidates[0];
 
@@ -578,6 +691,7 @@ function getTravelFinalContent(myAnswers: AnswerMap, partnerAnswers: AnswerMap, 
       body: myPressure.delta < 0 ? myPressure.myPressure : myPressure.partnerPressure,
     },
     flashpoints: mismatchCandidates.slice(0, 3),
+    answerEvidence,
     roleStories,
     rules: mismatchCandidates.slice(0, 3).map((item) => item.rule),
   };
@@ -607,6 +721,9 @@ function TravelTogetherPageContent() {
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isSubmittingAnswers, setIsSubmittingAnswers] = useState(false);
   const [isUnlockingDetails, setIsUnlockingDetails] = useState(false);
+  const [resultAnalysisMode, setResultAnalysisMode] = useState<ResultAnalysisMode | null>(null);
+  const [resultAnalysisProgress, setResultAnalysisProgress] = useState(0);
+  const [resultAnalysisStepIndex, setResultAnalysisStepIndex] = useState(0);
   const [roomError, setRoomError] = useState("");
   const [mySubmitted, setMySubmitted] = useState(false);
   const [partnerSubmitted, setPartnerSubmitted] = useState(false);
@@ -618,6 +735,7 @@ function TravelTogetherPageContent() {
   );
   const [myAnswers, setMyAnswers] = useState<AnswerMap>({});
   const [partnerAnswersState, setPartnerAnswersState] = useState<AnswerMap>({});
+  const resultAnalysisCompleteRef = useRef<(() => void) | null>(null);
   const resultOnlyView = searchParams.get("view") === "result";
   const isLocalDebug =
     shareOrigin.includes("localhost") || shareOrigin.includes("127.0.0.1");
@@ -816,9 +934,47 @@ function TravelTogetherPageContent() {
     } catch {}
   }, [step, myName, partnerName, relation, roomId, participantToken, participantRole, invitePath, partnerResultPath, mySubmitted, partnerSubmitted, myAnswers, partnerAnswersState, unlocked]);
 
+  useEffect(() => {
+    if (!resultAnalysisMode) return;
+
+    const steps = RESULT_ANALYSIS_STEPS[resultAnalysisMode];
+    let progress = 6;
+    setResultAnalysisProgress(progress);
+    setResultAnalysisStepIndex(0);
+
+    const progressTimer = window.setInterval(() => {
+      progress = Math.min(94, progress + 5 + Math.random() * 7);
+      setResultAnalysisProgress(Math.round(progress));
+      setResultAnalysisStepIndex(Math.min(steps.length - 1, Math.floor((progress / 100) * steps.length)));
+    }, 120);
+
+    const finishTimer = window.setTimeout(() => {
+      window.clearInterval(progressTimer);
+      setResultAnalysisProgress(100);
+      setResultAnalysisStepIndex(steps.length - 1);
+
+      window.setTimeout(() => {
+        const onComplete = resultAnalysisCompleteRef.current;
+        resultAnalysisCompleteRef.current = null;
+        setResultAnalysisMode(null);
+        onComplete?.();
+      }, 280);
+    }, 1650);
+
+    return () => {
+      window.clearInterval(progressTimer);
+      window.clearTimeout(finishTimer);
+    };
+  }, [resultAnalysisMode]);
+
   const goTo = useCallback((next: Step) => {
     setHistory((prev) => [...prev, next]);
     setStep(next);
+  }, []);
+
+  const startResultAnalysis = useCallback((mode: ResultAnalysisMode, onComplete?: () => void) => {
+    resultAnalysisCompleteRef.current = onComplete ?? null;
+    setResultAnalysisMode(mode);
   }, []);
 
   const goBack = () => {
@@ -833,6 +989,10 @@ function TravelTogetherPageContent() {
     resetRoomSession(true);
     goTo("setup");
   };
+
+  const handleViewResults = useCallback(() => {
+    startResultAnalysis("basic", () => goTo("results"));
+  }, [goTo, startResultAnalysis]);
 
   const inviteLink = useMemo(() => {
     if (invitePath) return `${shareOrigin}${invitePath}`;
@@ -1023,6 +1183,7 @@ function TravelTogetherPageContent() {
         room_id: roomId,
         charged_credits: payload.chargedCredits ?? 0,
       });
+      startResultAnalysis("detail");
     } catch (error) {
       setRoomError(
         error instanceof Error ? error.message : "상세 결과 결제에 실패했습니다.",
@@ -1111,8 +1272,84 @@ function TravelTogetherPageContent() {
     setStep("results");
   };
 
+  const resultAnalysisSteps = resultAnalysisMode ? RESULT_ANALYSIS_STEPS[resultAnalysisMode] : RESULT_ANALYSIS_STEPS.basic;
+  const resultAnalysisLabel = resultAnalysisSteps[resultAnalysisStepIndex] ?? resultAnalysisSteps[0];
+
   return (
     <main className="min-h-screen bg-white flex flex-col" style={{ fontFamily: '"Pretendard", "SUIT Variable", sans-serif' }}>
+      {resultAnalysisMode && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#080B13]/96 px-6 text-white">
+          <style>{`
+            @keyframes travel-analysis-spin {
+              to { transform: rotate(360deg); }
+            }
+            @keyframes travel-analysis-float {
+              0%, 100% { transform: translateY(0); opacity: 0.72; }
+              50% { transform: translateY(-7px); opacity: 1; }
+            }
+          `}</style>
+          <div className="w-full max-w-[390px]">
+            <div className="mb-6 flex items-center justify-center gap-2">
+              {["🧳", "📍", "☕", "✈️"].map((icon, index) => (
+                <span
+                  key={icon}
+                  className="text-[26px]"
+                  style={{ animation: `travel-analysis-float 1.6s ease-in-out ${index * 0.16}s infinite` }}
+                >
+                  {icon}
+                </span>
+              ))}
+            </div>
+
+            <div className="rounded-[30px] border border-white/10 bg-white/[0.06] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
+              <div className="flex items-center gap-4">
+                <div className="relative flex h-[74px] w-[74px] shrink-0 items-center justify-center rounded-3xl bg-white/[0.08]">
+                  <div
+                    className="absolute inset-0 rounded-3xl border border-[#60A5FA]/50"
+                    style={{ animation: "travel-analysis-spin 1.15s linear infinite" }}
+                  />
+                  <span className="text-[28px]">{resultAnalysisMode === "detail" ? "🔓" : "🔎"}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-white/35">
+                    {resultAnalysisMode === "detail" ? "Premium Report" : "Travel Analysis"}
+                  </p>
+                  <p className="mt-1 text-[20px] font-black tracking-[-0.04em] text-white">
+                    {resultAnalysisLabel}
+                  </p>
+                  <p className="mt-1 text-[12px] font-semibold leading-relaxed text-white/42">
+                    두 사람의 답변 차이를 정리하고 있어요. 잠시만 기다려주세요.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#60A5FA] to-[#93C5FD] transition-all duration-200"
+                    style={{ width: `${resultAnalysisProgress}%` }}
+                  />
+                </div>
+                <div className="mt-2 flex items-center justify-between text-[11px] font-bold text-white/35">
+                  <span>리포트 구성 중</span>
+                  <span className="tabular-nums text-[#93C5FD]">{resultAnalysisProgress}%</span>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-4 gap-1.5">
+                {resultAnalysisSteps.map((stepLabel, index) => (
+                  <div
+                    key={stepLabel}
+                    className="h-1.5 rounded-full transition-colors"
+                    style={{ background: index <= resultAnalysisStepIndex ? "#60A5FA" : "rgba(255,255,255,0.1)" }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-100 flex items-center justify-between px-5 h-14">
         {step === "intro" ? (
           <Link href="/studio" className="flex items-center gap-1.5 text-gray-400 hover:text-gray-900 transition-colors">
@@ -1393,7 +1630,7 @@ function TravelTogetherPageContent() {
 
           {mySubmitted && partnerSubmitted && (
             <div className="flex flex-col gap-3">
-              <button onClick={() => goTo("results")} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]" style={{ background: T.mid, color: "#fff" }}>
+              <button onClick={handleViewResults} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]" style={{ background: T.mid, color: "#fff" }}>
                 결과 확인하기
               </button>
               <button
@@ -1538,68 +1775,85 @@ function TravelTogetherPageContent() {
 
           {unlocked ? (
             <>
-              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">최종 여행 동행 판정</p>
-                <p className="text-[24px] font-black text-gray-900 leading-tight">{results.finalVerdict.title}</p>
-                <p className="text-[14px] text-gray-600 leading-relaxed mt-3">{results.finalContent.verdictStory}</p>
+              <section className="mx-6 border-t border-gray-200 pt-8 pb-7">
+                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-gray-400 mb-4">Paid Report</p>
+                <h3 className="text-[34px] font-black tracking-[-0.055em] leading-[1.05] text-gray-950">
+                  {results.finalVerdict.title}
+                </h3>
+                <p className="mt-5 text-[16px] font-bold leading-[1.75] text-gray-700">
+                  {results.finalContent.verdictStory}
+                </p>
               </section>
 
-              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">둘이 잘 맞는 장면</p>
-                <div className="flex flex-col gap-3">
-                  {results.finalContent.matchStories.map((item) => (
-                    <div key={item.title} className="rounded-xl px-4 py-4" style={{ background: "#F8FAFC" }}>
-                      <p className="text-[15px] font-black text-gray-900">{item.title}</p>
-                      <p className="text-[13px] text-gray-600 leading-relaxed mt-2">{item.body}</p>
-                    </div>
+              <section className="mx-6 border-t border-gray-200 py-7">
+                <div className="mb-6">
+                  <p className="text-[12px] font-black uppercase tracking-[0.24em] text-gray-400">Answer Gap</p>
+                  <h3 className="mt-2 text-[25px] font-black tracking-[-0.05em] leading-tight text-gray-950">
+                    실제 답변에서 갈린 지점
+                  </h3>
+                </div>
+                <div className="flex flex-col gap-5">
+                  {results.finalContent.answerEvidence.map((item, index) => (
+                    <article key={item.key} className="rounded-[24px] border border-gray-200 bg-white px-4 py-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+                      <div className="flex items-start gap-3">
+                        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-950 text-[12px] font-black text-white">
+                          {index + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <h4 className="text-[19px] font-black tracking-[-0.04em] leading-tight text-gray-950">{item.title}</h4>
+                          <p className="mt-2 text-[13px] font-semibold leading-[1.55] text-gray-500">{item.intro}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div className="rounded-2xl bg-gray-50 px-3 py-3">
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400">{myName || "나"}</p>
+                          <p className="mt-1 text-[14px] font-black leading-snug text-gray-950">{item.myLabel}</p>
+                        </div>
+                        <div className="rounded-2xl px-3 py-3" style={{ background: T.bg }}>
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: T.text }}>{partnerName || "상대"}</p>
+                          <p className="mt-1 text-[14px] font-black leading-snug text-gray-950">{item.partnerLabel}</p>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-[13px] font-black leading-relaxed" style={{ color: T.text }}>{item.takeaway}</p>
+                    </article>
                   ))}
                 </div>
               </section>
 
-              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">{results.finalContent.partnerPressure.title}</p>
-                <p className="text-[14px] text-gray-600 leading-relaxed">{results.finalContent.partnerPressure.body}</p>
-              </section>
-
-              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">{results.finalContent.myPressure.title}</p>
-                <p className="text-[14px] text-gray-600 leading-relaxed">{results.finalContent.myPressure.body}</p>
-              </section>
-
-              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">같이 가면 터지는 순간 TOP3</p>
-                <div className="flex flex-col gap-3">
+              <section className="mx-6 border-t border-gray-200 py-7">
+                <div className="mb-5">
+                  <p className="text-[12px] font-black uppercase tracking-[0.24em] text-gray-400">Flash Point</p>
+                  <h3 className="mt-2 text-[25px] font-black tracking-[-0.05em] leading-tight text-gray-950">
+                    같이 가면 터질 수 있는 순간
+                  </h3>
+                </div>
+                <div className="flex flex-col divide-y divide-gray-100">
                   {results.finalContent.flashpoints.map((item, index) => (
-                    <div key={item.key} className="rounded-xl px-4 py-4" style={{ background: T.bg }}>
-                      <p className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: T.text }}>Top {index + 1}</p>
-                      <p className="text-[16px] font-black text-gray-900 mt-2">{item.title}</p>
-                      <p className="text-[13px] text-gray-600 leading-relaxed mt-2">{item.body}</p>
-                      <p className="text-[12px] font-semibold mt-3" style={{ color: T.text }}>합의 포인트 · {item.rule}</p>
-                    </div>
+                    <article key={item.key} className="py-5 first:pt-0">
+                      <p className="text-[12px] font-black uppercase tracking-[0.2em]" style={{ color: T.text }}>Top {index + 1}</p>
+                      <h4 className="mt-2 text-[22px] font-black tracking-[-0.045em] leading-tight text-gray-950">{item.title}</h4>
+                      <p className="mt-3 text-[14px] font-semibold leading-[1.65] text-gray-600">{item.body}</p>
+                      <p className="mt-4 rounded-2xl px-4 py-3 text-[13px] font-black leading-relaxed" style={{ background: T.bg, color: T.text }}>
+                        합의 포인트 · {item.rule}
+                      </p>
+                    </article>
                   ))}
                 </div>
               </section>
 
-              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">여행 역할 분담 결과</p>
-                <div className="flex flex-col gap-3">
-                  {results.finalContent.roleStories.map((item) => (
-                    <div key={item.title} className="rounded-xl px-4 py-4" style={{ background: "#F8FAFC" }}>
-                      <p className="text-[15px] font-black text-gray-900">{item.title}</p>
-                      <p className="text-[13px] text-gray-600 leading-relaxed mt-2">{item.body}</p>
-                    </div>
-                  ))}
+              <section className="mx-6 border-t border-gray-200 py-7">
+                <div className="mb-5">
+                  <p className="text-[12px] font-black uppercase tracking-[0.24em] text-gray-400">Rules</p>
+                  <h3 className="mt-2 text-[25px] font-black tracking-[-0.05em] leading-tight text-gray-950">
+                    여행 전 이것만 정하기
+                  </h3>
                 </div>
-              </section>
-
-              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">여행 전 합의해야 할 규칙 3가지</p>
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4">
                   {results.finalContent.rules.map((rule, index) => (
-                    <div key={rule} className="rounded-xl border border-gray-100 px-4 py-4">
-                      <p className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: T.text }}>Rule {index + 1}</p>
-                      <p className="text-[14px] text-gray-700 leading-relaxed mt-2">{rule}</p>
-                    </div>
+                    <article key={rule} className="grid grid-cols-[44px_1fr] gap-3 border-t border-gray-100 pt-4 first:border-t-0 first:pt-0">
+                      <p className="text-[13px] font-black uppercase tracking-[0.12em]" style={{ color: T.text }}>R{index + 1}</p>
+                      <p className="text-[15px] font-black leading-relaxed text-gray-800">{rule}</p>
+                    </article>
                   ))}
                 </div>
               </section>

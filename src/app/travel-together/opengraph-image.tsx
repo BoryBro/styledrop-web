@@ -41,7 +41,6 @@ export default async function TravelTogetherOgImage() {
         <div
           style={{
             position: "relative",
-            zIndex: 1,
             display: "flex",
             width: "100%",
             height: "100%",
@@ -134,7 +133,6 @@ export default async function TravelTogetherOgImage() {
           <div
             style={{
               position: "relative",
-              zIndex: 1,
               display: "flex",
               flexDirection: "column",
               justifyContent: "flex-start",
@@ -185,6 +183,8 @@ export default async function TravelTogetherOgImage() {
               </div>
               <div
                 style={{
+                  display: "flex",
+                  flexDirection: "column",
                   marginTop: 56,
                   fontSize: 28,
                   lineHeight: 1.45,
