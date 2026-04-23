@@ -30,7 +30,8 @@ export default function Home() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(true);
+  const [isExploreOpen, setIsExploreOpen] = useState(false);
   const [showcaseItems, setShowcaseItems] = useState<ShowcaseItem[]>([]);
   const router = useRouter();
 
@@ -279,18 +280,38 @@ export default function Home() {
             </div>
 
             <div>
-              <p className="text-[11px] font-bold text-white">Explore</p>
-              <div className="mt-2 grid grid-cols-3 gap-x-4 gap-y-2">
-                {PUBLIC_GUIDES.map((guide) => (
-                  <Link
-                    key={guide.href}
-                    href={guide.href}
-                    className="text-[11px] leading-5 text-white/76 transition-colors hover:text-white"
-                  >
-                    {guide.label}
-                  </Link>
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsContactOpen((prev) => !prev)}
+                className="flex w-full items-center justify-between rounded-2xl border border-white/12 bg-black/15 px-4 py-3 text-left backdrop-blur-sm"
+                aria-expanded={isContactOpen}
+                aria-controls="footer-contact-panel"
+              >
+                <span className="text-[12px] font-extrabold uppercase tracking-[0.24em] text-white">
+                  Contact
+                </span>
+                <span
+                  className={`text-[14px] font-bold text-white/80 transition-transform ${isContactOpen ? "rotate-180" : ""}`}
+                  aria-hidden="true"
+                >
+                  ▾
+                </span>
+              </button>
+
+              {isContactOpen && (
+                <div
+                  id="footer-contact-panel"
+                  className="mt-3 rounded-2xl border border-white/10 bg-black/10 px-4 py-4 text-[12px] leading-6 text-white/92 backdrop-blur-sm"
+                >
+                  <p className="font-semibold">상호: 핑거 · 대표자: 문지환</p>
+                  <p className="font-semibold">사업자등록번호: 707-79-00261</p>
+                  <p className="font-semibold">서울특별시 송파구 오금로 551, 1동 2층 201호 257</p>
+                  <p className="mt-1 text-[13px] font-extrabold text-white">0505-007-3670</p>
+                  <a href="mailto:support@styledrop.cloud" className="mt-1 block text-[13px] font-bold text-white transition-colors hover:text-white/80">
+                    support@styledrop.cloud
+                  </a>
+                </div>
+              )}
             </div>
           </div>
 
@@ -306,34 +327,36 @@ export default function Home() {
         <div className="w-full border-t border-white/8 px-5 py-3">
           <button
             type="button"
-            onClick={() => setIsContactOpen((prev) => !prev)}
+            onClick={() => setIsExploreOpen((prev) => !prev)}
             className="flex w-full items-center justify-between text-left"
-            aria-expanded={isContactOpen}
-            aria-controls="footer-contact-panel"
+            aria-expanded={isExploreOpen}
+            aria-controls="footer-explore-panel"
           >
-            <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-white/62">
-              Contact
+            <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/72">
+              Explore
             </span>
             <span
-              className={`text-[12px] text-white/54 transition-transform ${isContactOpen ? "rotate-180" : ""}`}
+              className={`text-[12px] text-white/54 transition-transform ${isExploreOpen ? "rotate-180" : ""}`}
               aria-hidden="true"
             >
               ▾
             </span>
           </button>
 
-          {isContactOpen && (
+          {isExploreOpen && (
             <div
-              id="footer-contact-panel"
-              className="mt-2 grid grid-cols-1 gap-1 text-[10px] leading-5 text-white/50"
+              id="footer-explore-panel"
+              className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[11px] leading-5 text-white/76"
             >
-              <p>상호: 핑거 · 대표자: 문지환</p>
-              <p>사업자등록번호: 707-79-00261</p>
-              <p>서울특별시 송파구 오금로 551, 1동 2층 201호 257</p>
-              <p>0505-007-3670</p>
-              <a href="mailto:support@styledrop.cloud" className="block transition-colors hover:text-white">
-                support@styledrop.cloud
-              </a>
+              {PUBLIC_GUIDES.map((guide) => (
+                <Link
+                  key={guide.href}
+                  href={guide.href}
+                  className="transition-colors hover:text-white"
+                >
+                  {guide.label}
+                </Link>
+              ))}
             </div>
           )}
         </div>
