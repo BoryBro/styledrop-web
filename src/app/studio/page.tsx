@@ -1337,7 +1337,7 @@ export default function Studio() {
                           </div>
                         ) : (
                           <div className="flex items-center px-2 py-1 bg-[#C9571A]/20 border border-[#C9571A]/30 rounded-lg backdrop-blur-md">
-                            <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">1크레딧</span>
+                            <span className="text-[11px] font-extrabold text-[#C9571A] whitespace-nowrap">2크레딧</span>
                           </div>
                         )}
                       </div>
@@ -2197,7 +2197,7 @@ export default function Studio() {
             </div>
             <div className="text-center">
               <p className="text-white font-bold text-[17px]">이 사진으로 진행할까요?</p>
-              <p className="mt-1 text-white/40 text-[13px]">1크레딧이 사용됩니다</p>
+              <p className="mt-1 text-white/40 text-[13px]">2크레딧이 사용됩니다</p>
             </div>
             <div className="flex gap-2.5">
               <button
@@ -2317,7 +2317,7 @@ export default function Studio() {
           <div className="bg-[#1A1A1A] rounded-2xl p-6 max-w-sm mx-4 border border-[#333] text-center w-full" onClick={e => e.stopPropagation()}>
             <p className="text-[40px]">💳</p>
             <p className="text-[18px] font-bold text-white mt-3">크레딧이 없어요</p>
-            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">1회 변환에 1크레딧이 필요해요.<br/>크레딧을 충전하고 계속 이용해보세요.</p>
+            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">1회 변환에 2크레딧이 필요해요.<br/>크레딧을 충전하고 계속 이용해보세요.</p>
             <Link
               href="/shop"
               className="bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold text-[15px] w-full py-4 rounded-xl mt-4 flex items-center justify-center transition-colors"
