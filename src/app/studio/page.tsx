@@ -136,6 +136,7 @@ export default function Studio() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showNoCreditModal, setShowNoCreditModal] = useState(false);
   const [showHowToModal, setShowHowToModal] = useState(false);
+  const [showStudioMenu, setShowStudioMenu] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [variantSelectStyle, setVariantSelectStyle] = useState<StyleCard | null>(null);
   const [showCameraGuide, setShowCameraGuide] = useState(false);
@@ -1087,7 +1088,7 @@ export default function Studio() {
           </div>
           {!loading && (
             user ? (
-              <div className="flex items-center gap-2">
+              <div className="relative flex items-center gap-2">
                 <Link href="/shop" className="flex items-center gap-1.5 bg-[#EBEBEB] border border-black/8 px-3 py-1.5 rounded-full hover:border-[#C9571A]/40 transition-colors">
                   <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                     <path d="M1 1h2l1.5 7h7l1-4.5H4" stroke="#C9571A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1096,13 +1097,53 @@ export default function Studio() {
                   </svg>
                   <span className="text-[11px] text-[#C9571A] font-bold">{credits !== null ? `${credits}크레딧` : "충전"}</span>
                 </Link>
-                <button onClick={() => router.push("/mypage")} className="flex items-center gap-2">
-                  {user.profileImage && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
-                  )}
-                  <span className="text-[14px] font-medium text-[#0A0A0A] truncate max-w-[80px]">{user.nickname}</span>
+                <button
+                  type="button"
+                  aria-label="메뉴 열기"
+                  aria-expanded={showStudioMenu}
+                  onClick={() => setShowStudioMenu((current) => !current)}
+                  className="flex h-9 w-7 items-center justify-center text-[#C9571A] transition-opacity hover:opacity-75"
+                >
+                  <span className="flex flex-col gap-1">
+                    <span className="block h-[2px] w-5 rounded-full bg-current" />
+                    <span className="block h-[2px] w-5 rounded-full bg-current" />
+                    <span className="block h-[2px] w-5 rounded-full bg-current" />
+                  </span>
                 </button>
+                {showStudioMenu && (
+                  <div className="absolute right-0 top-[44px] z-50 w-[220px] overflow-hidden rounded-2xl border border-black/8 bg-white shadow-[0_14px_34px_rgba(0,0,0,0.16)]">
+                    <Link
+                      href="/mypage"
+                      onClick={() => setShowStudioMenu(false)}
+                      className="flex items-center gap-3 border-b border-[#F0F0F0] px-4 py-4 text-left transition-colors hover:bg-[#FAFAFA]"
+                    >
+                      {user.profileImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={user.profileImage} alt="" className="h-12 w-12 rounded-full object-cover" />
+                      ) : (
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F0F0F0] text-[17px] font-black text-[#C9571A]">
+                          {user.nickname.slice(0, 1)}
+                        </span>
+                      )}
+                      <span className="min-w-0">
+                        <span className="block truncate text-[17px] font-black tracking-[-0.03em] text-[#0A0A0A]">
+                          {user.nickname}
+                        </span>
+                        <span className="mt-0.5 block text-[12px] font-semibold text-[#777]">
+                          마이페이지
+                        </span>
+                      </span>
+                    </Link>
+                    <Link
+                      href="/magazine"
+                      onClick={() => setShowStudioMenu(false)}
+                      className="flex items-center justify-between px-4 py-3 text-[13px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#FFF4EE] hover:text-[#C9571A]"
+                    >
+                      <span>매거진</span>
+                      <span aria-hidden="true">›</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             ) : (
               <button
@@ -2638,7 +2679,7 @@ export default function Studio() {
               <button
                 type="button"
                 onClick={closeImageConfirm}
-                className="rounded-2xl border border-white/10 bg-black/[0.03] px-4 py-3 text-[14px] font-bold text-white/70 transition-colors hover:text-white"
+                className="rounded-2xl border border-white bg-white px-4 py-3 text-[14px] font-extrabold text-[#0A0A0A] shadow-[0_10px_24px_rgba(255,255,255,0.12)] transition-colors hover:bg-white/90"
               >
                 다시 고르기
               </button>

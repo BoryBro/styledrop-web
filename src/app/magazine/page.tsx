@@ -23,7 +23,7 @@ export default function MagazinePage() {
 
         {/* 뒤로 가기 */}
         <div className="pt-7 pb-6">
-          <Link href="/" className="text-[13px] text-gray-400 hover:text-gray-900 transition-colors">
+          <Link href="/studio" className="text-[13px] text-gray-400 hover:text-gray-900 transition-colors">
             ← StyleDrop
           </Link>
         </div>

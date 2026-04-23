@@ -80,7 +80,7 @@ function HistoryPreview({
   if (isSplitBefore && item.before_image_url) {
     return (
       <div
-        className={`relative w-full aspect-square rounded-2xl overflow-hidden bg-[#1A1A1A] transition-opacity duration-300 ${
+        className={`relative w-full aspect-square rounded-2xl overflow-hidden bg-[#F0F0F0] transition-opacity duration-300 ${
           isActive ? "opacity-100" : "opacity-50"
         }`}
       >
@@ -111,7 +111,7 @@ function HistoryPreview({
       <img
         src={historyView === "before" && item.before_image_url ? item.before_image_url : item.result_image_url}
         alt=""
-        className={`w-full aspect-square rounded-2xl object-cover bg-[#1A1A1A] transition-opacity duration-300 ${
+        className={`w-full aspect-square rounded-2xl object-cover bg-[#F0F0F0] transition-opacity duration-300 ${
           isActive ? "opacity-100" : "opacity-50"
         }`}
       />
@@ -135,9 +135,9 @@ function expiryBadge(iso: string): { label: string; className: string } {
   const hours = Math.floor(totalMins / 60);
   const mins = totalMins % 60;
   const label = hours > 0 ? `${hours}시간 ${mins}분 뒤 삭제` : `${mins}분 뒤 삭제`;
-  if (msLeft < 3 * 3600000) return { label, className: "bg-red-500/20 text-red-400" };
-  if (msLeft < 12 * 3600000) return { label, className: "bg-yellow-500/20 text-yellow-400" };
-  return { label, className: "bg-white/5 text-white/30" };
+  if (msLeft < 3 * 3600000) return { label, className: "bg-red-50 text-red-600 border-red-100" };
+  if (msLeft < 12 * 3600000) return { label, className: "bg-amber-50 text-amber-700 border-amber-100" };
+  return { label, className: "bg-[#F4F4F4] text-[#777] border-[#E7E7E7]" };
 }
 
 function categoryExpiry(items: { created_at: string }[]): { label: string; className: string } | null {
@@ -453,29 +453,29 @@ export default function MyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex flex-col">
+    <div className="min-h-screen bg-[#F7F6F3] flex flex-col">
       {toast && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-white/10 backdrop-blur-xl text-white text-sm px-6 py-3 rounded-2xl border border-white/10 shadow-2xl">
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#F0F0F0] backdrop-blur-xl text-[#0A0A0A] text-sm px-6 py-3 rounded-2xl border border-[#E8E8E8] shadow-2xl">
           {toast}
         </div>
       )}
 
       {/* Header */}
-      <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
+      <header className="h-[52px] bg-white border-b border-[#F0F0F0] flex items-center justify-between px-4 sticky top-0 z-40">
         {selectedStyle ? (
-          <button onClick={() => setSelectedStyle(null)} className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors">
+          <button onClick={() => setSelectedStyle(null)} className="flex items-center gap-1.5 text-[#0A0A0A]/50 hover:text-[#0A0A0A] transition-colors">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M12 4L6 10L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         ) : (
-          <button onClick={() => router.back()} className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors">
+          <button onClick={() => router.back()} className="flex items-center gap-1.5 text-[#0A0A0A]/50 hover:text-[#0A0A0A] transition-colors">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M12 4L6 10L12 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         )}
-        <Link href="/" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
+        <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
         <div className="w-8" />
       </header>
 
@@ -484,7 +484,7 @@ export default function MyPage() {
         {/* 비로그인 */}
         {!loading && !user && (
           <div className="flex flex-col gap-5">
-            <div className="bg-[#1A1010] border border-[#C9571A]/30 rounded-2xl px-4 py-3.5 flex flex-col gap-3">
+            <div className="bg-orange-50 border border-[#C9571A]/30 rounded-2xl px-4 py-3.5 flex flex-col gap-3">
               <p className="text-[13px] text-[#C9571A]/90 font-medium leading-relaxed">
                 현재 기록은 이 브라우저에만 임시 보관됩니다.<br />
                 영구 저장하려면 카카오 로그인을 해주세요!
@@ -501,11 +501,11 @@ export default function MyPage() {
             </div>
             {historyLoading ? (
               <div className="flex justify-center py-10">
-                <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
+                <div className="w-6 h-6 rounded-full border-2 border-[#E8E8E8] border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
               </div>
             ) : guestHistory.length === 0 ? (
               <div className="flex flex-col items-center gap-4 py-10 text-center">
-                <p className="text-white/40 text-[15px]">아직 변환 기록이 없어요.<br />스타일을 적용해보세요!</p>
+                <p className="text-[#0A0A0A]/40 text-[15px]">아직 변환 기록이 없어요.<br />스타일을 적용해보세요!</p>
                 <button onClick={() => router.push("/studio")} className="bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold px-6 py-3 rounded-xl transition-colors">
                   스타일 적용하러 가기
                 </button>
@@ -517,8 +517,8 @@ export default function MyPage() {
                   {guestHistory.map(item => (
                     <button key={item.id} onClick={() => window.open(item.result_image_url, "_blank")} className="flex flex-col gap-1">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={item.result_image_url} alt="" className="w-full aspect-square rounded-xl object-cover bg-white/5" />
-                      <span className="text-[10px] text-[#555] px-0.5">{relativeTime(item.created_at)}</span>
+                      <img src={item.result_image_url} alt="" className="w-full aspect-square rounded-xl object-cover bg-[#F0F0F0]" />
+                      <span className="text-[10px] text-[#6B7280] px-0.5">{relativeTime(item.created_at)}</span>
                     </button>
                   ))}
                 </div>
@@ -531,23 +531,24 @@ export default function MyPage() {
         {!loading && user && !selectedStyle && (
           <>
             {/* 프로필 */}
-            <div className="flex justify-between items-center px-1">
-              <div className="flex items-center gap-3">
+            <section className="-mx-4 border-y border-[#E7E7E7] bg-white px-4 py-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-3">
                 {user.profileImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={user.profileImage} alt="" className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-white/30 text-xl">?</span>
+                  <div className="w-14 h-14 rounded-full bg-[#F1F1F1] flex items-center justify-center flex-shrink-0">
+                    <span className="text-[#9A9A9A] text-xl">?</span>
                   </div>
                 )}
-                <div>
-                  <p className="text-[18px] font-bold text-white">{user.nickname}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-[22px] font-black tracking-[-0.04em] text-[#111827]">{user.nickname}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-[#555] text-[13px]">카카오 로그인</p>
+                    <p className="text-[#6B7280] text-[13px]">카카오 로그인</p>
                     {credits !== null && (
-                      <Link href="/shop" className="text-[12px] px-2 py-0.5 rounded-full bg-[#C9571A]/20 text-[#C9571A]">
-                        ✦ {credits}크레딧
+                      <Link href="/shop" className="text-[12px] px-2.5 py-1 rounded-full border border-[#E8D8CE] bg-[#FFF8F3] font-bold text-[#C9571A]">
+                        {credits}크레딧
                       </Link>
                     )}
                   </div>
@@ -555,20 +556,23 @@ export default function MyPage() {
               </div>
               <button
                 onClick={logout}
-                className="bg-[#2A2A2A] text-white text-[13px] font-medium px-4 py-2 rounded-xl border border-[#333] hover:bg-[#333] transition-colors flex-shrink-0"
+                className="flex-shrink-0 text-[13px] font-semibold text-[#8A8A8A] transition-colors hover:text-[#111827]"
               >
                 로그아웃
               </button>
-            </div>
+              </div>
+            </section>
 
-            {/* 선물 코드 입력 */}
-            <div className="rounded-2xl bg-[#1C1C1E] overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-3.5">
-                <div className="w-9 h-9 rounded-xl bg-[#C9571A]/15 flex items-center justify-center flex-shrink-0 text-lg">
-                  🎁
+            {/* 계정 설정 */}
+            <section className="-mx-4 border-y border-[#E7E7E7] bg-white divide-y divide-[#F0F0F0]">
+              <div className="flex items-center gap-3 px-4 py-4">
+                <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 text-[#C9571A]">
+                  <svg width="19" height="19" viewBox="0 0 20 20" fill="none">
+                    <path d="M3.5 8h13v8.5a1 1 0 01-1 1h-11a1 1 0 01-1-1V8zM2.5 5.5h15V8h-15V5.5zM10 5.5v12M7.4 2.5C9.2 2.5 10 5.5 10 5.5S6.6 5.6 6.1 4.2c-.3-.9.3-1.7 1.3-1.7zM12.6 2.5C10.8 2.5 10 5.5 10 5.5s3.4.1 3.9-1.3c.3-.9-.3-1.7-1.3-1.7z" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-semibold text-[#C9571A]/60 tracking-wide uppercase">선물 코드</p>
+                  <p className="text-[12px] font-bold text-[#6B7280]">선물 코드</p>
                   <div className="flex items-center gap-2 mt-1">
                     <input
                       value={giftInput}
@@ -576,29 +580,26 @@ export default function MyPage() {
                       onKeyDown={(e) => { if (e.key === "Enter") void handleRedeemGift(); }}
                       placeholder="GIFT-XXXXXX"
                       maxLength={11}
-                      className="flex-1 bg-transparent text-[14px] font-mono text-white placeholder-white/20 outline-none min-w-0 tracking-wider"
+                      className="flex-1 bg-transparent text-[14px] font-mono text-[#111827] placeholder-[#B8B8B8] outline-none min-w-0 tracking-wider"
                     />
                     <button
                       onClick={() => void handleRedeemGift()}
                       disabled={giftStatus === "loading" || !giftInput.trim()}
-                      className="bg-[#C9571A] text-white text-[12px] font-bold px-3 py-1.5 rounded-full flex-shrink-0 disabled:opacity-40 transition-opacity"
+                      className="bg-[#111827] text-white text-[12px] font-bold px-3 py-1.5 rounded-full flex-shrink-0 disabled:opacity-40 transition-opacity"
                     >
                       {giftStatus === "loading" ? "확인 중" : "사용"}
                     </button>
                   </div>
                   {giftStatus !== "idle" && (
-                    <p className={`text-[11px] mt-1.5 ${giftStatus === "success" ? "text-green-400" : "text-red-400"}`}>
+                    <p className={`text-[11px] mt-1.5 ${giftStatus === "success" ? "text-green-600" : "text-red-600"}`}>
                       {giftMsg}
                     </p>
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* 인스타그램 아이디 */}
-            <div className="rounded-2xl bg-[#1C1C1E] overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-3.5">
-                {/* 인스타 아이콘 */}
+              <div>
+                <div className="flex items-center gap-3 px-4 py-4">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#515BD4] flex items-center justify-center flex-shrink-0">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                     <rect x="2" y="2" width="20" height="20" rx="6" stroke="white" strokeWidth="1.8"/>
@@ -609,7 +610,7 @@ export default function MyPage() {
 
                 {instaEditing ? (
                   <div className="flex-1 flex items-center gap-2 min-w-0">
-                    <span className="text-[15px] text-white/30 flex-shrink-0">@</span>
+                    <span className="text-[15px] text-[#0A0A0A]/30 flex-shrink-0">@</span>
                     <input
                       autoFocus
                       value={instaInput}
@@ -617,11 +618,11 @@ export default function MyPage() {
                       onKeyDown={(e) => { if (e.key === "Enter") void handleSaveInsta(); if (e.key === "Escape") { setInstaInput(instaHandle); setInstaEditing(false); } }}
                       placeholder="instagram_id"
                       maxLength={30}
-                      className="flex-1 bg-transparent text-[15px] text-white placeholder-white/20 outline-none min-w-0"
+                      className="flex-1 bg-transparent text-[15px] text-[#111827] placeholder-[#B8B8B8] outline-none min-w-0"
                     />
                     <button
                       onClick={() => { setInstaInput(instaHandle); setInstaEditing(false); }}
-                      className="text-[13px] text-white/30 hover:text-white/60 flex-shrink-0 transition-colors"
+                      className="text-[13px] text-[#0A0A0A]/30 hover:text-[#0A0A0A]/60 flex-shrink-0 transition-colors"
                     >
                       취소
                     </button>
@@ -639,82 +640,79 @@ export default function MyPage() {
                     onClick={() => setInstaEditing(true)}
                   >
                     <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-white/40">Instagram</p>
+                      <p className="text-[13px] font-semibold text-[#0A0A0A]/40">Instagram</p>
                       {instaHandle ? (
-                        <p className="text-[15px] font-semibold text-white mt-0.5 truncate">@{instaHandle}</p>
+                        <p className="text-[15px] font-semibold text-[#111827] mt-0.5 truncate">@{instaHandle}</p>
                       ) : (
-                        <p className="text-[14px] text-white/25 mt-0.5">아이디를 입력해 주세요</p>
+                        <p className="text-[14px] text-[#0A0A0A]/25 mt-0.5">아이디를 입력해 주세요</p>
                       )}
                     </div>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-white/20 flex-shrink-0 ml-2">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#0A0A0A]/20 flex-shrink-0 ml-2">
                       <path d="M10.5 2.5L13.5 5.5L5.5 13.5H2.5V10.5L10.5 2.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
                 )}
+                </div>
+
+                {/* 연결된 경우 외부 링크 */}
+                {!instaEditing && instaHandle && (
+                  <a
+                    href={`https://instagram.com/${instaHandle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 border-t border-[#F5F5F5] bg-[#FAFAFA] px-4 py-2.5 text-[12px] font-semibold text-[#DD2A7B]/80 transition-colors hover:text-[#DD2A7B]"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                      <path d="M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V7M8 1h3m0 0v3M11 1L5.5 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    instagram.com/{instaHandle}
+                  </a>
+                )}
               </div>
 
-              {/* 연결된 경우 외부 링크 */}
-              {!instaEditing && instaHandle && (
-                <a
-                  href={`https://instagram.com/${instaHandle}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 py-2.5 border-t border-white/[0.06] text-[12px] font-semibold text-[#DD2A7B]/80 hover:text-[#DD2A7B] transition-colors"
-                >
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                    <path d="M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V7M8 1h3m0 0v3M11 1L5.5 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  instagram.com/{instaHandle}
-                </a>
-              )}
-            </div>
-
-            {/* 메인 스토리 현황 카드 */}
-            <div className="rounded-2xl bg-[#1C1C1E] overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-3.5">
-                {/* 방송 아이콘 */}
-                <div className="w-9 h-9 rounded-xl bg-[#6BE2C5]/12 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 px-4 py-4">
+                <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 text-[#18A98D]">
                   <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="3" fill="#6BE2C5"/>
-                    <path d="M5.5 5.5a6.5 6.5 0 009 9M5.5 14.5a6.5 6.5 0 010-9" stroke="#6BE2C5" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="10" cy="10" r="3" fill="currentColor"/>
+                    <path d="M5.5 5.5a6.5 6.5 0 009 9M5.5 14.5a6.5 6.5 0 010-9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-semibold text-[#6BE2C5]/60 tracking-wide uppercase">메인 스토리</p>
-                  <p className="text-[14px] font-semibold text-white mt-0.5">
+                  <p className="text-[12px] font-bold text-[#6B7280]">메인 스토리</p>
+                  <p className="text-[14px] font-semibold text-[#111827] mt-0.5">
                     {showcaseState ? "공개 중" : "미공개"}
                   </p>
                 </div>
                 {showcaseState ? (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={showcaseState.imageUrl} alt="" className="w-10 h-10 rounded-xl object-cover ring-1 ring-white/10" />
+                    <img src={showcaseState.imageUrl} alt="" className="w-10 h-10 rounded-xl object-cover ring-1 ring-[#E8E8E8]" />
                     <div className="flex flex-col items-end gap-1">
-                      <span className="text-[10px] text-white/30">{relativeTime(showcaseState.createdAt)}</span>
+                      <span className="text-[10px] text-[#0A0A0A]/30">{relativeTime(showcaseState.createdAt)}</span>
                       <button
                         type="button"
                         onClick={handleHideFromHome}
-                        className="text-[12px] font-semibold text-white/40 hover:text-white/70 transition-colors"
+                        className="text-[12px] font-semibold text-[#0A0A0A]/40 hover:text-[#0A0A0A]/70 transition-colors"
                       >
                         해제
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="w-2 h-2 rounded-full bg-white/15 flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-[#DDDDDD] flex-shrink-0" />
                 )}
               </div>
-            </div>
+            </section>
 
             {/* 스타일별 기록 */}
             <div>
-              <div className="flex items-baseline gap-2 mb-4 px-1">
-                <h2 className="text-[16px] font-bold text-white">최근 변환 기록</h2>
+              <div className="flex items-baseline gap-2 mb-3 px-1">
+                <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#111827]">최근 변환 기록</h2>
               </div>
 
               {historyLoading ? (
                 <div className="flex justify-center py-10">
-                  <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
+                  <div className="w-6 h-6 rounded-full border-2 border-[#E8E8E8] border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
@@ -726,25 +724,25 @@ export default function MyPage() {
                       <button
                         key={styleId}
                         onClick={() => setSelectedStyle(styleId)}
-                        className="flex flex-col gap-3 bg-[#111] border border-white/5 rounded-2xl p-3 hover:border-white/15 transition-colors text-left min-w-0"
+                        className="flex flex-col gap-3 bg-white border border-[#E7E7E7] p-3 hover:border-[#D1D5DB] transition-colors text-left min-w-0"
                       >
-                        <div className="relative w-full aspect-square rounded-xl overflow-hidden flex-shrink-0 bg-[#1A1A1A]">
+                        <div className="relative w-full aspect-square rounded-[14px] overflow-hidden flex-shrink-0 bg-[#F0F0F0]">
                           {latest ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={latest.result_image_url} alt="" className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <span className="text-[#333] text-2xl">✦</span>
+                              <span className="text-[#9A9A9A] text-2xl">+</span>
                             </div>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-white font-bold text-[14px] leading-snug break-keep">{STYLE_LABELS[styleId] ?? styleId}</p>
-                          <p className="text-[#555] text-[12px] mt-1">
+                          <p className="text-[#111827] font-bold text-[14px] leading-snug break-keep">{STYLE_LABELS[styleId] ?? styleId}</p>
+                          <p className="text-[#6B7280] text-[12px] mt-1">
                             {`${items.length}장`}{latest && ` · ${relativeTime(latest.created_at)}`}
                           </p>
                           {expiry && (
-                            <span className={`inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full ${expiry.className}`}>
+                            <span className={`inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full border ${expiry.className}`}>
                               {expiry.label}
                             </span>
                           )}
@@ -754,7 +752,7 @@ export default function MyPage() {
                   })}
                   {VISIBLE_STYLE_IDS.every(id => (grouped[id] ?? []).length === 0) && (
                     <div className="col-span-2 flex flex-col items-center gap-3 py-12 text-center">
-                      <p className="text-white/40 text-[15px]">아직 변환 기록이 없어요.</p>
+                      <p className="text-[#0A0A0A]/40 text-[15px]">아직 변환 기록이 없어요.</p>
                     </div>
                   )}
                 </div>
@@ -765,8 +763,8 @@ export default function MyPage() {
             {showAuditionHistory && auditionHistory.length > 0 && (
               <div>
                 <div className="flex items-baseline gap-2 mb-4 px-1">
-                  <h2 className="text-[16px] font-bold text-white">AI 오디션 기록</h2>
-                  <span className="text-[12px] text-[#555]">자동 저장 · 24시간 보관</span>
+                  <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#111827]">AI 오디션 기록</h2>
+                  <span className="text-[12px] text-[#6B7280]">자동 저장 · 24시간 보관</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {auditionHistory.map(item => {
@@ -776,9 +774,9 @@ export default function MyPage() {
                       <Link
                         key={item.id}
                         href={`/audition/result?history_share=${item.share_id}`}
-                        className="flex flex-col gap-3 bg-[#111] border border-white/5 rounded-2xl p-3 hover:border-white/15 transition-colors min-w-0"
+                        className="flex flex-col gap-3 bg-white border border-[#E7E7E7] p-3 hover:border-[#D1D5DB] transition-colors min-w-0"
                       >
-                        <div className="w-full aspect-square rounded-xl overflow-hidden flex-shrink-0 bg-[#1A1A1A]">
+                        <div className="w-full aspect-square rounded-[14px] overflow-hidden flex-shrink-0 bg-[#F0F0F0]">
                           {item.still_image_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={item.still_image_url} alt="" className="w-full h-full object-cover" />
@@ -791,12 +789,12 @@ export default function MyPage() {
                             <span className="text-[10px] font-bold text-[#C9571A] uppercase tracking-widest">AI 오디션</span>
                             <span className="text-[14px] font-extrabold tabular-nums" style={{ color: scoreColor }}>{item.avg_score}점</span>
                           </div>
-                          <p className="text-white/80 text-[13px] font-bold leading-snug break-keep">
+                          <p className="text-[#0A0A0A]/80 text-[13px] font-bold leading-snug break-keep">
                             {item.assigned_role}
                           </p>
                           <div className="flex flex-col items-start gap-1.5 mt-2">
-                            <span className="text-[11px] text-[#555]">{relativeTime(item.created_at)}</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${expiry.className}`}>{expiry.label}</span>
+                            <span className="text-[11px] text-[#6B7280]">{relativeTime(item.created_at)}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${expiry.className}`}>{expiry.label}</span>
                           </div>
                         </div>
                       </Link>
@@ -808,17 +806,17 @@ export default function MyPage() {
 
             <div>
               <div className="flex items-baseline gap-2 mb-4 px-1">
-                <h2 className="text-[16px] font-bold text-white">여행 같이 간다면 기록</h2>
-                <span className="text-[12px] text-[#555]">완료된 테스트만 보관</span>
+                <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#111827]">여행 같이 간다면 기록</h2>
+                <span className="text-[12px] text-[#6B7280]">완료된 테스트만 보관</span>
               </div>
               {historyLoading ? (
                 <div className="flex justify-center py-8">
-                  <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-[#60A5FA]" style={{ animation: "spin 1s linear infinite" }} />
+                  <div className="w-6 h-6 rounded-full border-2 border-[#E8E8E8] border-t-[#60A5FA]" style={{ animation: "spin 1s linear infinite" }} />
                 </div>
               ) : travelHistory.length === 0 ? (
-                <div className="rounded-2xl border border-white/5 bg-[#111] px-4 py-5 text-center">
-                  <p className="text-[14px] font-bold text-white/70">아직 완료된 여행 테스트가 없어요.</p>
-                  <p className="mt-1 text-[12px] text-[#555]">두 사람이 모두 답변을 끝내면 여기에 결과가 저장됩니다.</p>
+                <div className="border-y border-[#E7E7E7] bg-white px-4 py-5 text-center -mx-4">
+                  <p className="text-[14px] font-bold text-[#0A0A0A]/70">아직 완료된 여행 테스트가 없어요.</p>
+                  <p className="mt-1 text-[12px] text-[#6B7280]">두 사람이 모두 답변을 끝내면 여기에 결과가 저장됩니다.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
@@ -826,9 +824,9 @@ export default function MyPage() {
                     <Link
                       key={item.roomId}
                       href={`/travel-together?room=${encodeURIComponent(item.roomId)}&token=${encodeURIComponent(item.participantToken)}&view=result`}
-                      className="flex flex-col gap-3 rounded-2xl border border-white/5 bg-[#111] p-3 transition-colors hover:border-white/15 min-w-0"
+                      className="flex flex-col gap-3 border border-[#E7E7E7] bg-white p-3 transition-colors hover:border-[#D1D5DB] min-w-0"
                     >
-                      <div className="flex aspect-square items-center justify-center rounded-xl bg-[linear-gradient(135deg,#DBEAFE,#BFDBFE_48%,#60A5FA)]">
+                      <div className="flex aspect-square items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#DBEAFE,#BFDBFE_48%,#60A5FA)]">
                         <div className="text-center text-[#1E3A8A]">
                           <p className="text-[12px] font-black tracking-[0.22em] uppercase">Travel</p>
                           <p className="mt-2 text-[24px]">✈️</p>
@@ -841,21 +839,21 @@ export default function MyPage() {
                           </span>
                           <span
                             className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                              item.unlocked ? "bg-[#60A5FA]/15 text-[#93C5FD]" : "bg-white/5 text-white/40"
+                              item.unlocked ? "bg-[#EFF6FF] text-[#2563EB]" : "bg-[#F4F4F4] text-[#777]"
                             }`}
                           >
                             {item.unlocked ? "상세 열림" : "기본 결과"}
                           </span>
                         </div>
-                        <p className="text-[14px] font-bold leading-snug text-white break-keep">
+                        <p className="text-[14px] font-bold leading-snug text-[#111827] break-keep">
                           {item.partnerName}와 여행 궁합
                         </p>
                         <p className="mt-1 text-[12px] text-[#777]">
                           {TRAVEL_RELATION_LABELS[item.relation]}
                         </p>
                         <div className="mt-2 flex items-center justify-between gap-2">
-                          <span className="text-[11px] text-[#555]">{relativeTime(item.completedAt)}</span>
-                          <span className="text-[11px] font-semibold text-white/60">결과 다시 보기</span>
+                          <span className="text-[11px] text-[#6B7280]">{relativeTime(item.completedAt)}</span>
+                          <span className="text-[11px] font-semibold text-[#0A0A0A]/60">결과 다시 보기</span>
                         </div>
                       </div>
                     </Link>
@@ -866,7 +864,7 @@ export default function MyPage() {
 
             {/* 회원 탈퇴 */}
             <div className="mt-8 flex justify-center">
-              <button onClick={() => setShowDeleteModal(true)} className="text-[13px] text-[#555] underline hover:text-[#888] transition-colors">
+              <button onClick={() => setShowDeleteModal(true)} className="text-[13px] text-[#6B7280] underline hover:text-[#111827] transition-colors">
                 회원 탈퇴
               </button>
             </div>
@@ -877,13 +875,13 @@ export default function MyPage() {
         {!loading && user && selectedStyle && (
           <div className="flex flex-col gap-3">
             <div className="px-1">
-              <h2 className="text-[18px] font-bold text-white">{STYLE_LABELS[selectedStyle] ?? selectedStyle}</h2>
-              <p className="text-[13px] text-[#555] mt-0.5">{selectedItems.length}장의 변환 기록</p>
+              <h2 className="text-[20px] font-black tracking-[-0.03em] text-[#111827]">{STYLE_LABELS[selectedStyle] ?? selectedStyle}</h2>
+              <p className="text-[13px] text-[#6B7280] mt-0.5">{selectedItems.length}장의 변환 기록</p>
             </div>
 
             {selectedItems.length === 0 ? (
               <div className="flex flex-col items-center gap-4 py-16 text-center">
-                <p className="text-white/40 text-[15px]">아직 변환 기록이 없어요.</p>
+                <p className="text-[#0A0A0A]/40 text-[15px]">아직 변환 기록이 없어요.</p>
                 <button onClick={() => router.push("/studio")} className="bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold px-6 py-3 rounded-xl transition-colors">
                   스타일 적용하러 가기
                 </button>
@@ -909,7 +907,7 @@ export default function MyPage() {
                       >
                         <div className="relative">
                           {idx === activeIndex && (
-                            <div className="absolute top-4 left-4 z-10 flex items-center gap-1 rounded-full bg-black/60 p-1 backdrop-blur-md border border-white/10">
+                            <div className="absolute top-4 left-4 z-10 flex items-center gap-1 rounded-full bg-black/60 p-1 backdrop-blur-md border border-[#E8E8E8]">
                               <button
                                 type="button"
                                 onClick={() => setHistoryView("before")}
@@ -918,8 +916,8 @@ export default function MyPage() {
                                   historyView === "before"
                                     ? "bg-white text-black"
                                     : item.before_image_url
-                                      ? "text-white/70 hover:text-white"
-                                      : "text-white/20 cursor-not-allowed"
+                                      ? "text-[#0A0A0A]/70 hover:text-white"
+                                      : "text-[#0A0A0A]/20 cursor-not-allowed"
                                 }`}
                               >
                                 BEFORE
@@ -930,7 +928,7 @@ export default function MyPage() {
                                 className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors ${
                                   historyView === "after"
                                     ? "bg-[#C9571A] text-white"
-                                    : "text-white/70 hover:text-white"
+                                    : "text-[#0A0A0A]/70 hover:text-white"
                                 }`}
                               >
                                 AFTER
@@ -941,7 +939,7 @@ export default function MyPage() {
                             <button
                               type="button"
                               onClick={() => setHistoryDeleteTarget(item)}
-                              className="absolute bottom-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md border border-white/10 hover:bg-[#ff4444] transition-colors"
+                              className="absolute bottom-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md border border-[#E8E8E8] hover:bg-[#ff4444] transition-colors"
                               aria-label="변환 기록 삭제"
                             >
                               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -969,7 +967,7 @@ export default function MyPage() {
                     {selectedItems.map((_, idx) => (
                       <div
                         key={idx}
-                        className={`rounded-full transition-all duration-300 ${idx === activeIndex ? "w-4 h-1.5 bg-[#C9571A]" : "w-1.5 h-1.5 bg-white/20"}`}
+                        className={`rounded-full transition-all duration-300 ${idx === activeIndex ? "w-4 h-1.5 bg-[#C9571A]" : "w-1.5 h-1.5 bg-[#D6D6D6]"}`}
                       />
                     ))}
                   </div>
@@ -982,7 +980,7 @@ export default function MyPage() {
                   const badge = expiryBadge(item.created_at);
                   return (
                     <div className="flex items-center justify-between px-1">
-                      <span className="text-[12px] text-[#555]">{relativeTime(item.created_at)}</span>
+                      <span className="text-[12px] text-[#6B7280]">{relativeTime(item.created_at)}</span>
                       <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border ${badge.className}`}>{badge.label}</span>
                     </div>
                   );
@@ -1042,7 +1040,7 @@ export default function MyPage() {
               onClick={handleInstallApp}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#C9571A] px-4 py-3.5 text-[15px] font-bold text-white transition-colors hover:bg-[#B34A12]"
             >
-              <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-[9px] border border-white/20 bg-white/10 shadow-[0_6px_18px_rgba(0,0,0,0.18)]">
+              <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-[9px] border border-[#E0E0E0] bg-[#F0F0F0] shadow-[0_6px_18px_rgba(0,0,0,0.18)]">
                 <Image
                   src="/apple-icon"
                   alt=""
@@ -1059,19 +1057,19 @@ export default function MyPage() {
 
       {/* Footer */}
       <footer className="py-6 text-center">
-        <p className="text-[11px] text-[#333]">
-          © 2026 StyleDrop · <Link href="/terms" className="hover:text-white/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-white/30 transition-colors">개인정보처리방침</Link> · v0.3
+        <p className="text-[11px] text-[#AAAAAA]">
+          © 2026 StyleDrop · <Link href="/terms" className="hover:text-[#0A0A0A]/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-[#0A0A0A]/30 transition-colors">개인정보처리방침</Link> · v0.3
         </p>
       </footer>
 
       {/* 회원 탈퇴 모달 */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => setShowDeleteModal(false)}>
-          <div className="bg-[#1A1A1A] rounded-2xl p-6 max-w-sm mx-4 border border-[#333] w-full" onClick={e => e.stopPropagation()}>
-            <p className="text-[16px] font-bold text-white">정말 탈퇴하시겠습니까?</p>
+          <div className="bg-white rounded-2xl p-6 max-w-sm mx-4 border border-[#E5E7EB] w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <p className="text-[16px] font-bold text-[#111827]">정말 탈퇴하시겠습니까?</p>
             <p className="text-[14px] text-[#999] mt-2 leading-relaxed">탈퇴 즉시 모든 데이터(변환 기록, 프로필 정보)가 영구 삭제되며 복구할 수 없습니다.</p>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowDeleteModal(false)} className="bg-[#2A2A2A] text-white rounded-xl py-3 flex-1 font-medium">취소</button>
+              <button onClick={() => setShowDeleteModal(false)} className="border border-[#D1D5DB] bg-white text-[#111827] rounded-xl py-3 flex-1 font-medium">취소</button>
               <button onClick={handleDeleteAccount} disabled={deleting} className="bg-[#ff4444] text-white rounded-xl py-3 flex-1 font-bold disabled:opacity-50 transition-opacity">
                 {deleting ? "처리 중..." : "탈퇴하기"}
               </button>
@@ -1082,15 +1080,15 @@ export default function MyPage() {
 
       {historyDeleteTarget && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => !deleting && setHistoryDeleteTarget(null)}>
-          <div className="bg-[#1A1A1A] rounded-2xl p-6 max-w-sm mx-4 border border-[#333] w-full" onClick={e => e.stopPropagation()}>
-            <p className="text-[16px] font-bold text-white">삭제하시겠습니까?</p>
+          <div className="bg-white rounded-2xl p-6 max-w-sm mx-4 border border-[#E5E7EB] w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <p className="text-[16px] font-bold text-[#111827]">삭제하시겠습니까?</p>
             <p className="text-[14px] text-[#999] mt-2 leading-relaxed">다시 돌릴 수 없다. 확인을 누르면 즉시 삭제됩니다.</p>
             <div className="flex gap-3 mt-6">
               <button
                 type="button"
                 onClick={() => setHistoryDeleteTarget(null)}
                 disabled={deleting}
-                className="bg-[#2A2A2A] text-white rounded-xl py-3 flex-1 font-medium disabled:opacity-50"
+                className="border border-[#D1D5DB] bg-white text-[#111827] rounded-xl py-3 flex-1 font-medium disabled:opacity-50"
               >
                 취소
               </button>
