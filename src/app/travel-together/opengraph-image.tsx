@@ -1,11 +1,20 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
-export const runtime = "edge";
 export const alt = "여행을 같이 간다면 | StyleDrop";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default function TravelTogetherOgImage() {
+export default async function TravelTogetherOgImage() {
+  const [kkubulim, unboundedBold, unboundedBlack, pretendardSemiBold, pretendardBlack] = await Promise.all([
+    readFile(join(process.cwd(), "public/fonts/BMKkubulim.otf")),
+    readFile(join(process.cwd(), "public/fonts/Unbounded-Bold.ttf")),
+    readFile(join(process.cwd(), "public/fonts/Unbounded-Black.ttf")),
+    readFile(join(process.cwd(), "public/fonts/Pretendard-SemiBold.ttf")),
+    readFile(join(process.cwd(), "public/fonts/Pretendard-Black.ttf")),
+  ]);
+
   return new ImageResponse(
     (
       <div
@@ -16,7 +25,7 @@ export default function TravelTogetherOgImage() {
           position: "relative",
           overflow: "hidden",
           background: "#F8FAFC",
-          fontFamily: "sans-serif",
+          fontFamily: "Pretendard",
           padding: "44px",
         }}
       >
@@ -62,6 +71,7 @@ export default function TravelTogetherOgImage() {
               letterSpacing: "-0.06em",
               color: "rgba(255,255,255,0.03)",
               fontWeight: 900,
+              fontFamily: "Unbounded",
             }}
           >
             TRAVEL
@@ -88,6 +98,7 @@ export default function TravelTogetherOgImage() {
                 fontWeight: 700,
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
+                fontFamily: "Unbounded",
               }}
             >
               <div
@@ -113,6 +124,7 @@ export default function TravelTogetherOgImage() {
                 fontWeight: 800,
                 letterSpacing: "0.18em",
                 textTransform: "uppercase",
+                fontFamily: "Unbounded",
               }}
             >
               Beta
@@ -155,6 +167,7 @@ export default function TravelTogetherOgImage() {
                   letterSpacing: "0.06em",
                   textTransform: "uppercase",
                   marginBottom: 10,
+                  fontFamily: "Unbounded",
                 }}
               >
                 Trip chemistry
@@ -162,9 +175,10 @@ export default function TravelTogetherOgImage() {
               <div
                 style={{
                   fontSize: 88,
-                  fontWeight: 900,
+                  fontWeight: 400,
                   lineHeight: 0.94,
                   letterSpacing: "-0.05em",
+                  fontFamily: "BMKkubulim",
                 }}
               >
                 여행을 같이 간다면
@@ -209,6 +223,7 @@ export default function TravelTogetherOgImage() {
                       fontSize: 20,
                       background: "transparent",
                       fontWeight: 800,
+                      fontFamily: "Pretendard",
                     }}
                   >
                     {tag}
@@ -226,6 +241,7 @@ export default function TravelTogetherOgImage() {
                     fontSize: 20,
                     background: "transparent",
                     fontWeight: 800,
+                    fontFamily: "Unbounded",
                   }}
                 >
                   NEW
@@ -265,6 +281,40 @@ export default function TravelTogetherOgImage() {
         </div>
       </div>
     ),
-    size,
+    {
+      ...size,
+      fonts: [
+        {
+          name: "BMKkubulim",
+          data: kkubulim,
+          style: "normal",
+          weight: 400,
+        },
+        {
+          name: "Unbounded",
+          data: unboundedBold,
+          style: "normal",
+          weight: 700,
+        },
+        {
+          name: "Unbounded",
+          data: unboundedBlack,
+          style: "normal",
+          weight: 900,
+        },
+        {
+          name: "Pretendard",
+          data: pretendardSemiBold,
+          style: "normal",
+          weight: 600,
+        },
+        {
+          name: "Pretendard",
+          data: pretendardBlack,
+          style: "normal",
+          weight: 900,
+        },
+      ],
+    },
   );
 }
