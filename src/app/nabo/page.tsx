@@ -40,7 +40,7 @@ type KakaoShareSDK = {
 
 const EXTRA = "기타 (직접 입력) ✏️";
 const LOCK_MS = 24 * 60 * 60 * 1000;
-const PREMIUM_ACCESS_CREDITS = 5;
+const PREMIUM_ACCESS_CREDITS = 3;
 
 // ── 12문항 정의 ───────────────────────────────────────────────────
 const QS = [
@@ -395,6 +395,27 @@ export default function NaboPage() {
     setStep(prev);
   };
 
+  const handleReset = () => {
+    ["nabo_name","nabo_created_at","nabo_responses","nabo_step","nabo_room_code",
+     "nabo_owner_token","nabo_respondent_token","nabo_invite_path",
+     "nabo_result_available_after","nabo_premium_access"].forEach(k => {
+      try { localStorage.removeItem(k); } catch {}
+    });
+    setStep("intro");
+    setStepHistory(["intro"]);
+    setMyName("");
+    setAgreed(false);
+    setRoomCode("");
+    setOwnerToken("");
+    setRespondentToken("");
+    setInvitePath("");
+    setResultAvailableAfter("");
+    setResponses([]);
+    setPremiumAccess(false);
+    setServerResponseCount(0);
+    setCreatedAt(0);
+  };
+
   const createRoom = async () => {
     if (isCreatingRoom) return;
 
@@ -608,6 +629,16 @@ export default function NaboPage() {
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: G.mid }} />
           <span className="text-[9px] font-black text-gray-400 tracking-[0.2em] uppercase">Beta</span>
         </div>
+        {(step === "waiting" || step === "results") ? (
+          <button
+            onClick={handleReset}
+            className="text-[12px] font-bold text-gray-400 hover:text-gray-700 transition-colors"
+          >
+            새로 시작
+          </button>
+        ) : (
+          <div className="w-[60px]" />
+        )}
       </header>
 
       {/* ════════════════════ INTRO ════════════════════ */}
