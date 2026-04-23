@@ -19,16 +19,21 @@ type BoardPayload = {
   count: number;
   items: BoardItem[];
   meEligible: boolean;
-  meEntry: {
-    comment: string;
-    instagramHandle: string | null;
-  } | null;
+  meEntry: { comment: string; instagramHandle: string | null } | null;
   meInstagramHandle: string | null;
 };
 
 function formatHandle(handle: string | null) {
   if (!handle) return null;
   return `@${handle.replace(/^@+/, "")}`;
+}
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(diff / 3600000);
+  if (h < 1) return "방금";
+  if (h < 24) return `${h}시간 전`;
+  return `${Math.floor(h / 24)}일 전`;
 }
 
 export function MagazineCommunityBoard({
@@ -45,8 +50,8 @@ export function MagazineCommunityBoard({
   accent: string;
 }) {
   const [payload, setPayload] = useState<BoardPayload | null>(null);
-  const loading = false;
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [comment, setComment] = useState("");
   const [shareInstagram, setShareInstagram] = useState(false);
@@ -55,20 +60,14 @@ export function MagazineCommunityBoard({
   const encodedStyleId = useMemo(() => encodeURIComponent(styleId), [styleId]);
 
   const loadBoard = useCallback(async () => {
-    // 하드코딩: MOCK_BOARD_DATA 직접 사용 (디자인 UI 확인용)
     const mockItems = MOCK_BOARD_DATA[styleId as keyof typeof MOCK_BOARD_DATA] || [];
-    const payload: BoardPayload = {
+    setPayload({
       count: mockItems.length,
-      items: mockItems.map((item) => ({
-        ...item,
-        likedByMe: false,
-      })),
+      items: mockItems.map((item) => ({ ...item, likedByMe: false })),
       meEligible: false,
       meEntry: null,
       meInstagramHandle: null,
-    };
-
-    setPayload(payload);
+    });
     setMessage(null);
   }, [styleId]);
 
@@ -78,13 +77,11 @@ export function MagazineCommunityBoard({
 
   const handleSubmit = async () => {
     if (!comment.trim()) {
-      setMessage("짧은 한 줄 코멘트를 적어주세요.");
+      setMessage("한 줄 이야기를 남겨주세요.");
       return;
     }
-
     setSubmitting(true);
     setMessage(null);
-
     try {
       const response = await fetch("/api/magazine-board", {
         method: "POST",
@@ -96,13 +93,12 @@ export function MagazineCommunityBoard({
         }),
       });
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || "submit failed");
-      }
-
+      if (!response.ok) throw new Error(data?.error || "submit failed");
+      setSubmitted(true);
+      setComment("");
       await loadBoard();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "참여 저장에 실패했어요.");
+      setMessage(error instanceof Error ? error.message : "저장에 실패했어요.");
     } finally {
       setSubmitting(false);
     }
@@ -110,35 +106,25 @@ export function MagazineCommunityBoard({
 
   const toggleLike = async (item: BoardItem) => {
     if (!payload) return;
-
     const nextLiked = !item.likedByMe;
-
     setPayload({
       ...payload,
       items: payload.items
-        .map((entry) =>
-          entry.userId === item.userId
-            ? {
-                ...entry,
-                likedByMe: nextLiked,
-                likeCount: Math.max(0, entry.likeCount + (nextLiked ? 1 : -1)),
-              }
-            : entry,
+        .map((e) =>
+          e.userId === item.userId
+            ? { ...e, likedByMe: nextLiked, likeCount: Math.max(0, e.likeCount + (nextLiked ? 1 : -1)) }
+            : e,
         )
-        .sort((a, b) => {
-          if (b.likeCount !== a.likeCount) return b.likeCount - a.likeCount;
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        }),
+        .sort((a, b) => b.likeCount !== a.likeCount
+          ? b.likeCount - a.likeCount
+          : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        ),
     });
-
     try {
       await fetch("/api/showcase-likes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          targetUserId: item.userId,
-          liked: nextLiked,
-        }),
+        body: JSON.stringify({ targetUserId: item.userId, liked: nextLiked }),
       });
     } catch {
       await loadBoard();
@@ -146,143 +132,133 @@ export function MagazineCommunityBoard({
   };
 
   return (
-    <section className="mt-0 flex flex-col gap-2">
-      {/* 참여 주제 - 질문 */}
-      <div className="flex flex-col gap-2 pt-2 pb-1">
-        <p className="text-[11px] text-white/40 leading-relaxed">{fact}</p>
-        <p
-          className="text-[20px] sm:text-[22px] font-bold leading-[1.35] tracking-tight"
-          style={{ color: accent }}
-        >
+    <section className="flex flex-col gap-8">
+
+      {/* 참여 질문 */}
+      <div>
+        <p className="text-[12px] text-gray-600 leading-relaxed mb-4">{fact}</p>
+        <h2 className="text-[28px] sm:text-[36px] font-black leading-[1.15] tracking-[-0.03em] text-gray-950">
           {question}
-        </p>
+        </h2>
+        {payload && (
+          <p className="mt-3 text-[13px] text-gray-600">
+            {payload.count > 0 ? `${payload.count}명이 이야기를 남겼어요` : "첫 번째로 이야기를 남겨보세요"}
+          </p>
+        )}
       </div>
 
-      {/* 헤더 + 참여 수 */}
-      {!loading && payload?.items.length && (
-        <div className="flex items-center justify-between py-1.5">
-          <p className="text-[11px] text-white/30 uppercase font-normal">{label}</p>
-          <p className="text-[11px] text-white/30 font-normal">{payload.count}명 참여 중</p>
-        </div>
-      )}
-
       {/* 입력 영역 */}
-      {!loading && (
-        <div className="bg-white/[0.04] rounded-[12px] p-4 mb-2">
-          {/* 상단: 아바타 + textarea */}
-          <div className="flex items-start gap-3 mb-3">
-            <div className="h-8 w-8 rounded-full bg-white/[0.08] shrink-0" />
-            <textarea
-              value={comment}
-              onChange={(event) => setComment(event.target.value.slice(0, 100))}
-              placeholder="나의 역할을 남겨보세요..."
-              maxLength={100}
-              className="flex-1 min-h-[36px] resize-none bg-transparent border-none text-[13px] text-white placeholder:text-white/40 outline-none"
-            />
+      {!submitted ? (
+        <div className="border border-gray-300 rounded-xl p-4">
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value.slice(0, 100))}
+            placeholder="내 이야기를 남겨보세요..."
+            maxLength={100}
+            rows={3}
+            className="w-full resize-none text-[15px] text-gray-900 placeholder:text-gray-500 outline-none leading-[1.7] bg-transparent"
+          />
+          <div className="flex items-center justify-between pt-3 border-t border-gray-200 mt-2">
+            <div className="flex flex-col gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShareInstagram(!shareInstagram)}
+                className="flex items-center gap-2 text-[12px] text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <div
+                  className="w-7 h-4 rounded-full transition-colors flex-shrink-0"
+                  style={{ backgroundColor: shareInstagram ? accent : "#E5E7EB" }}
+                />
+                <span>인스타그램 아이디 함께 공개</span>
+              </button>
+              {shareInstagram && (
+                <input
+                  type="text"
+                  value={instagramHandle}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/^@+/, "").replace(/\s+/g, "");
+                    setInstagramHandle(raw ? `@${raw}` : "");
+                  }}
+                  placeholder="@username"
+                  className="text-[13px] text-gray-700 border-b border-gray-200 outline-none py-1 bg-transparent w-40"
+                />
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] text-gray-500">{comment.length}/100</span>
+              <button
+                type="button"
+                onClick={() => void handleSubmit()}
+                disabled={submitting || !comment.trim()}
+                className="h-9 px-4 rounded-lg text-[13px] font-bold text-white transition-all disabled:opacity-30"
+                style={{ backgroundColor: "#111" }}
+              >
+                {submitting ? "저장 중..." : "참여하기"}
+              </button>
+            </div>
           </div>
-
-          {/* 하단: 토글 + 버튼 */}
-          <div className="flex items-center justify-between">
-            {/* 인스타 토글 */}
-            <button
-              type="button"
-              onClick={() => setShareInstagram(!shareInstagram)}
-              className="flex items-center gap-2 text-[11px] text-white/30"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <rect x="2" y="2" width="20" height="20" rx="5"/>
-                <path d="M12 7v4M9 10h6"/>
-              </svg>
-              <span>인스타그램 공개</span>
-              <div
-                className="w-[28px] h-[16px] rounded-full ml-1 transition-colors"
-                style={{ backgroundColor: shareInstagram ? accent : "rgba(255,255,255,0.15)" }}
-              />
-            </button>
-
-            {/* 공유 버튼 */}
-            <button
-              type="button"
-              onClick={() => void handleSubmit()}
-              disabled={submitting || !comment.trim()}
-              className="px-4 h-8 rounded-full text-[12px] font-semibold text-black transition-all hover:opacity-90 disabled:opacity-40 shrink-0"
-              style={{ backgroundColor: accent }}
-            >
-              {submitting ? "저장중" : "공유"}
-            </button>
-          </div>
-
-          {/* 인스타 아이디 입력 - hidden */}
-          {shareInstagram && (
-            <input
-              type="hidden"
-              value={instagramHandle}
-              onChange={(event) => {
-                const raw = event.target.value;
-                const cleaned = raw.replace(/^@+/, "").replace(/\s+/g, "");
-                setInstagramHandle(cleaned ? `@${cleaned}` : "@");
-              }}
-            />
-          )}
-
-          {message && (
-            <p className="text-[12px] text-white/60 mt-2">{message}</p>
-          )}
+          {message && <p className="text-[12px] text-red-500 mt-2">{message}</p>}
+        </div>
+      ) : (
+        <div className="border border-gray-100 rounded-xl p-5 text-center bg-gray-50">
+          <p className="text-[15px] font-bold text-gray-900 mb-1">이야기가 남겨졌어요 🎉</p>
+          <p className="text-[13px] text-gray-500">다른 사람들의 이야기도 읽어보세요</p>
         </div>
       )}
 
-      {/* 참여자 코멘트 - 하트순 정렬 */}
-      {loading ? (
-        <p className="text-[12px] text-white/40">로드 중...</p>
-      ) : payload?.items.length ? (
-        <div className="flex flex-col gap-0">
-          {payload.items.slice(0, 4).map((item) => (
-            <div
-              key={`${item.userId}-${item.createdAt}`}
-              className="flex items-start gap-4 py-4 border-b border-white/[0.06] last:border-b-0"
-            >
-              {/* 아바타 */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.imageUrl}
-                alt={item.nickname}
-                className="h-9 w-9 shrink-0 rounded-full object-cover"
-              />
-
-              {/* 코멘트 + 하트 */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-[13px] font-semibold text-white">{item.nickname}</p>
-                      {item.instagramHandle && (
-                        <p className="text-[11px] text-white/25 font-medium">{formatHandle(item.instagramHandle)}</p>
-                      )}
-                    </div>
-                    <p className="text-[13px] text-white/60 mt-1.5 leading-[1.4]">{item.comment}</p>
-                  </div>
-
-                  {/* 하트 - SVG */}
+      {/* 참여자 갤러리 */}
+      {payload && payload.items.length > 0 && (
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500 mb-4">{label}</p>
+          <div className="grid grid-cols-2 gap-3">
+            {payload.items.slice(0, 6).map((item) => (
+              <div
+                key={`${item.userId}-${item.createdAt}`}
+                className="flex flex-col gap-2"
+              >
+                {/* 이미지 카드 */}
+                <div className="relative overflow-hidden rounded-xl" style={{ aspectRatio: "3/4" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.imageUrl}
+                    alt={item.nickname}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                  {/* 하단 그라디언트 + 좋아요 */}
+                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
                   <button
                     type="button"
                     onClick={() => void toggleLike(item)}
-                    className="flex flex-col items-center justify-center gap-1 shrink-0"
+                    className="absolute bottom-2.5 right-2.5 flex flex-col items-center gap-0.5"
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill={item.likedByMe ? accent : "none"} stroke={item.likedByMe ? accent : "rgba(255,255,255,0.25)"} strokeWidth="1.5">
+                    <svg width="16" height="16" viewBox="0 0 24 24"
+                      fill={item.likedByMe ? accent : "none"}
+                      stroke={item.likedByMe ? accent : "rgba(255,255,255,0.8)"}
+                      strokeWidth="1.8">
                       <path d="M12 21C12 21 3 14 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 12 5C12.09 3.81 13.76 3 15.5 3C18.58 3 21 5.42 21 8.5C21 14 12 21 12 21Z" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span className="text-[11px]" style={{ color: item.likedByMe ? accent : "rgba(255,255,255,0.25)" }}>
+                    <span className="text-[10px] font-semibold" style={{ color: item.likedByMe ? accent : "rgba(255,255,255,0.8)" }}>
                       {item.likeCount}
                     </span>
                   </button>
                 </div>
+
+                {/* 닉네임 + 코멘트 */}
+                <div className="px-0.5">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-[12px] font-semibold text-gray-900 truncate">{item.nickname}</span>
+                    {item.instagramHandle && (
+                      <span className="text-[10px] text-gray-500 truncate">{formatHandle(item.instagramHandle)}</span>
+                    )}
+                  </div>
+                  <p className="text-[12px] text-gray-600 leading-[1.5] line-clamp-2">{item.comment}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      ) : (
-        <p className="text-[12px] text-white/40">첫 참여자가 되어보세요.</p>
       )}
+
 
     </section>
   );

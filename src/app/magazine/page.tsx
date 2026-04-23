@@ -18,63 +18,76 @@ export default function MagazinePage() {
   );
 
   return (
-    <main className="min-h-screen bg-[#080808] text-white">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-3 py-6 sm:px-6 sm:py-8">
+    <main className="min-h-screen bg-white text-gray-900">
+      <div className="mx-auto w-full max-w-2xl px-5 sm:px-6">
+
         {/* 뒤로 가기 */}
-        <Link href="/" className="inline-flex w-fit items-center gap-2 text-[13px] font-semibold text-white/60 hover:text-white transition-colors">
-          ← 뒤로 가기
-        </Link>
+        <div className="pt-7 pb-6">
+          <Link href="/" className="text-[13px] text-gray-400 hover:text-gray-900 transition-colors">
+            ← StyleDrop
+          </Link>
+        </div>
 
-        <div className="grid gap-8">
-          {visibleArticles.map((article) => {
-            const style = getMagazineStyle(article.primaryStyleId);
-            if (!style) return null;
+        {visibleArticles.map((article) => {
+          const style = getMagazineStyle(article.primaryStyleId);
+          if (!style) return null;
 
-            return (
-              <section
-                key={article.slug}
-                id={article.slug}
-                className="flex flex-col gap-2"
-              >
-                {/* 카드 이미지 + CTA */}
+          return (
+            <article key={article.slug}>
+
+              {/* 아이브로 + 제목 */}
+              <header className="mb-6">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-gray-400 mb-3">
+                  {article.eyebrow}
+                </p>
+                <h1 className="text-[28px] sm:text-[34px] font-black leading-[1.15] tracking-[-0.03em] text-gray-950">
+                  {article.title}
+                </h1>
+                <p className="mt-4 text-[15px] leading-[1.8] text-gray-500">
+                  {article.summary}
+                </p>
+              </header>
+
+              {/* 히어로 이미지 */}
+              <div className="-mx-5 sm:-mx-6 mb-10">
                 <MagazineCardGrid
                   styleIds={article.relatedStyleIds}
                   accent={article.accent}
                   primaryStyleId={article.primaryStyleId}
                   ctaLabel={article.ctaLabel}
                 />
+              </div>
 
-                {/* 질문 + 댓글 */}
-                <div className="flex flex-col gap-1.5">
-                  <MagazineCommunityBoard
-                    styleId={article.primaryStyleId}
-                    label={article.communityLabel}
-                    fact={article.communityFact}
-                    question={article.communityQuestion}
-                    accent={article.accent}
-                  />
-                </div>
-              </section>
-            );
-          })}
+              {/* 커뮤니티 보드 — 핵심 인터랙션 */}
+              <MagazineCommunityBoard
+                styleId={article.primaryStyleId}
+                label={article.communityLabel}
+                fact={article.communityFact}
+                question={article.communityQuestion}
+                accent={article.accent}
+              />
+
+
+            </article>
+          );
+        })}
+
+        <div className="mt-10 mb-8">
+          <GoogleAd
+            slot={ADSENSE_PAGE_SLOTS.magazine}
+            className="w-full"
+          />
         </div>
 
-        <GoogleAd
-          slot={ADSENSE_PAGE_SLOTS.magazine}
-          className="mx-auto w-full max-w-3xl"
-        />
-
-        <footer className="border-t border-white/8 pt-6 text-center text-[12px] text-white/45">
-          <p>
-            <Link href="/faq" className="transition-colors hover:text-white">FAQ</Link>
-            {" · "}
-            <Link href="/terms" className="transition-colors hover:text-white">이용약관</Link>
-            {" · "}
-            <Link href="/privacy" className="transition-colors hover:text-white">개인정보처리방침</Link>
-            {" · "}
-            <a href="mailto:support@styledrop.cloud" className="transition-colors hover:text-white">문의</a>
+        <footer className="border-t border-gray-100 py-6 text-[12px] text-gray-400">
+          <p className="flex flex-wrap gap-3">
+            <Link href="/faq" className="hover:text-gray-900 transition-colors">FAQ</Link>
+            <Link href="/terms" className="hover:text-gray-900 transition-colors">이용약관</Link>
+            <Link href="/privacy" className="hover:text-gray-900 transition-colors">개인정보처리방침</Link>
+            <a href="mailto:support@styledrop.cloud" className="hover:text-gray-900 transition-colors">문의</a>
           </p>
         </footer>
+
       </div>
     </main>
   );

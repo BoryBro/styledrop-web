@@ -209,19 +209,74 @@ export default function ThreadsAdminPage() {
               </button>
             </div>
 
-            {/* 마케팅 카피 템플릿 */}
+            {/* 빠른 시간 예약 */}
             <div className="mt-2">
-              <p className="text-[11px] text-white/30 font-bold uppercase tracking-wider mb-2">빠른 템플릿</p>
+              <p className="text-[11px] text-white/30 font-bold uppercase tracking-wider mb-2">빠른 시간 선택 (KST)</p>
               <div className="flex flex-wrap gap-2">
                 {[
-                  "📸 사진 한 장으로 내 스타일 변신 완료\nStyleDrop AI가 감성 카드로 만들어드려요 ✨\n👉 styledrop.cloud",
-                  "🎭 내가 오디션을 본다면?\nAI 감독이 나를 심사하는 색다른 경험\n📲 StyleDrop에서 무료 체험 → styledrop.cloud",
-                  "🪞 친구 5명은 나를 어떻게 볼까?\n익명으로 솔직한 평가 받아보기\n내가 보는 너 → styledrop.cloud/nabo",
-                  "🌈 내 퍼스널컬러, AI가 찾아드려요\n사진 한 장으로 즉시 분석\n→ styledrop.cloud",
+                  { label: "오늘 12시", h: 12 },
+                  { label: "오늘 17시", h: 17 },
+                  { label: "오늘 21시", h: 21 },
+                  { label: "내일 12시", h: 12, tomorrow: true },
+                  { label: "내일 17시", h: 17, tomorrow: true },
+                  { label: "내일 21시", h: 21, tomorrow: true },
+                ].map(({ label, h, tomorrow }) => (
+                  <button key={label} onClick={() => {
+                    const d = new Date();
+                    if (tomorrow) d.setDate(d.getDate() + 1);
+                    d.setHours(h - 9, 0, 0, 0); // KST→UTC
+                    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+                    setDraft(v => ({ ...v, scheduled_at: local.toISOString().slice(0, 16) }));
+                  }}
+                    className="text-[11px] px-3 py-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors">
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 마케팅 카피 템플릿 */}
+            <div className="mt-3">
+              <p className="text-[11px] text-white/30 font-bold uppercase tracking-wider mb-2">콘텐츠 템플릿</p>
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  {
+                    tag: "12시 · 가벼운 훅",
+                    content: "AI한테 내 사진 맡겼더니\n몽골 초원을 달리는 전사가 됐어요\n\n근데 진짜 소름인 건,\n나랑 닮았다는 거 🐴\n\n→ styledrop.cloud",
+                  },
+                  {
+                    tag: "12시 · 질문 형식",
+                    content: "만약 전생이 있다면 나는 뭐였을까요?\n\nAI한테 물어봤는데\n사진 한 장 올렸더니 바로 답해줌 😂\n\n생각보다 진지해서 놀랐어요\n→ styledrop.cloud",
+                  },
+                  {
+                    tag: "17시 · 퇴근 감성",
+                    content: "오늘 퇴근하고 이거 해봤는데\n\n내 사진이 AI 손을 거치면\n이렇게 달라짐\n\n프사 바꾸고 싶어서 저장해뒀어요 📲\n→ styledrop.cloud",
+                  },
+                  {
+                    tag: "17시 · 친구 추천",
+                    content: "친구한테 보내주고 싶어서 올림\n\n사진 올리면 AI가\n감성 카드로 만들어주는 서비스인데\n결과물이 생각보다 훨씬 잘 나옴\n\n무료야 → styledrop.cloud",
+                  },
+                  {
+                    tag: "21시 · FOMO",
+                    content: "밤에 혼자 해봤는데\n\n내가 우주비행사였다면\n이런 모습이었을 것 같다는 결과 받음\n\n진짜 저장하고 싶었음\n→ styledrop.cloud",
+                  },
+                  {
+                    tag: "21시 · 감성",
+                    content: "AI가 내 사진으로 만들어준 카드\n\n벽에 걸고 싶을 정도로 잘 나왔음\n이게 무료라는 게 말이 돼?\n\n→ styledrop.cloud",
+                  },
+                  {
+                    tag: "관상/오디션",
+                    content: "AI 감독한테 오디션 봤음\n\n\"눈빛에 서사가 있다\"\n\"이 얼굴은 주연 감이다\"\n\n기분 좋아지는 평가 받고 싶으면\n→ styledrop.cloud/ai-audition",
+                  },
+                  {
+                    tag: "퍼스널컬러",
+                    content: "퍼스널컬러 검사 비용 아깝다면\n\nAI한테 물어봐요\n사진 한 장으로 즉시 분석\n\n봄웜 / 여름쿨 / 가을웜 / 겨울쿨\n→ styledrop.cloud/personal-color-test",
+                  },
                 ].map((tpl, i) => (
-                  <button key={i} onClick={() => setDraft(d => ({ ...d, content: tpl }))}
-                    className="text-[11px] px-3 py-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors text-left">
-                    템플릿 {i + 1}
+                  <button key={i} onClick={() => setDraft(d => ({ ...d, content: tpl.content }))}
+                    className="text-left p-3 rounded-xl border border-white/10 hover:border-white/30 transition-colors group">
+                    <p className="text-[10px] font-black text-white/30 group-hover:text-white/50 mb-1 uppercase tracking-wider">{tpl.tag}</p>
+                    <p className="text-[12px] text-white/60 group-hover:text-white/80 leading-relaxed whitespace-pre-wrap line-clamp-3">{tpl.content}</p>
                   </button>
                 ))}
               </div>
