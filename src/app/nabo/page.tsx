@@ -224,6 +224,8 @@ export default function NaboPage() {
   const [shareOrigin, setShareOrigin] = useState("https://www.styledrop.cloud");
   const [resultAvailableAfter, setResultAvailableAfter] = useState("");
   const [serverResponseCount, setServerResponseCount] = useState(0);
+  const [serverAnswers, setServerAnswers] = useState<AnsMap[]>([]);
+  const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
   const [isProcessingPremiumAccess, setIsProcessingPremiumAccess] = useState(false);
@@ -494,6 +496,28 @@ export default function NaboPage() {
     }
   };
 
+  const fetchServerAnswers = useCallback(async () => {
+    if (!roomCode || !ownerToken || isFetchingAnswers) return;
+
+    setIsFetchingAnswers(true);
+    setErrorMessage("");
+
+    try {
+      const response = await fetch(
+        `/api/nabo/room/${encodeURIComponent(roomCode)}/answers?owner=${encodeURIComponent(ownerToken)}`,
+      );
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) throw new Error(payload?.error ?? "응답 데이터를 불러오지 못했습니다.");
+
+      setServerAnswers((payload.answers as AnsMap[]) ?? []);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "응답 데이터를 불러오지 못했습니다.");
+    } finally {
+      setIsFetchingAnswers(false);
+    }
+  }, [roomCode, ownerToken, isFetchingAnswers]);
+
   const handleNativeShare = () => {
     if (navigator.share) {
       navigator.share({
@@ -529,6 +553,7 @@ export default function NaboPage() {
         invitePath: payload.view.invitePath,
       });
       void trackClientEvent("lab_nabo_premium_access");
+      void fetchServerAnswers();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "전체 결과 처리에 실패했습니다.");
     } finally {
@@ -609,8 +634,16 @@ export default function NaboPage() {
   const getPlaceholder = (q: typeof QS[0]) =>
     q.type === "text" ? ((q as { placeholder?: string }).placeholder ?? "") : "";
 
+  // ── 결과 진입 시 서버 answers 자동 fetch ──────────────────────
+  useEffect(() => {
+    if (step === "results" && premiumAccess && serverAnswers.length === 0 && !isFetchingAnswers) {
+      void fetchServerAnswers();
+    }
+  }, [step, premiumAccess, serverAnswers.length, isFetchingAnswers, fetchServerAnswers]);
+
   // ── Results data ──────────────────────────────────────────────
-  const R           = responses.length ? responses : MOCK;
+  // 우선순위: 서버 answers → 로컬 responses → MOCK(잠금 상태 미리보기용)
+  const R = serverAnswers.length > 0 ? serverAnswers : responses.length > 0 ? responses : MOCK;
   const chemAvg     = avg("q3", R);
   const funAvg      = avg("q7", R);
   const intimAvg    = avg("q11", R);
@@ -1027,7 +1060,13 @@ export default function NaboPage() {
           </section>
 
           {/* ── 상세 결과 공개 상태 ── */}
-          {premiumAccess ? (
+          {isFetchingAnswers && (
+            <div className="mx-6 mb-4 flex items-center justify-center gap-3 py-10">
+              <div className="w-6 h-6 rounded-full border-2 border-gray-200 border-t-green-500 animate-spin" />
+              <span className="text-[14px] text-gray-500 font-semibold">응답 데이터 불러오는 중...</span>
+            </div>
+          )}
+          {premiumAccess && !isFetchingAnswers ? (
             <>
               {/* 첫인상 전체 분포 */}
               <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
@@ -1109,7 +1148,7 @@ export default function NaboPage() {
                 </button>
               </div>
             </>
-          ) : (
+          ) : !premiumAccess ? (
             /* ── 잠금 상태 ── */
             <>
               {/* 흐릿한 미리보기 */}
@@ -1187,7 +1226,7 @@ export default function NaboPage() {
                 </button>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       )}
     </main>
