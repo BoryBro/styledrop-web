@@ -1296,10 +1296,6 @@ export default function Studio() {
                 <>
                   {trialStyles.length > 0 && (
                     <div className="mb-5">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-[11px] font-extrabold text-white/40 uppercase tracking-widest">맛보기</span>
-                        <span className="text-[11px] font-bold text-white/30">· 1크레딧으로 체험해보세요</span>
-                      </div>
                       <div className="flex flex-col gap-3">
                         {trialStyles.map((style) => {
                           const hasOptions = (STYLE_VARIANTS[style.id]?.length ?? 0) > 1;
