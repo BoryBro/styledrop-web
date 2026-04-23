@@ -197,6 +197,7 @@ export default function Studio() {
   const [activeStyleCategory, setActiveStyleCategory] = useState<StyleCategoryTab>(STYLE_CATEGORY_TABS[0]);
   const generalCardsSectionRef = useRef<HTMLDivElement>(null);
   const labSectionRef = useRef<HTMLDivElement>(null);
+  const styleCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const appliedStyleQueryRef = useRef<string | null>(null);
 
   const loadShowcaseItems = useCallback(() => {
@@ -337,6 +338,15 @@ export default function Studio() {
     scrollToSection("cards");
   }, [scrollToSection]);
 
+  const scrollToStyleCard = useCallback((styleId: string) => {
+    const target = styleCardRefs.current[styleId] ?? generalCardsSectionRef.current;
+    if (!target) return;
+
+    const top = target.getBoundingClientRect().top + window.scrollY - 112;
+    window.scrollTo({ top, behavior: "smooth" });
+    setActiveSectionTab("cards");
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -362,12 +372,11 @@ export default function Studio() {
     }
 
     requestAnimationFrame(() => {
-      const section = generalCardsSectionRef.current;
-      if (!section) return;
-      const top = section.getBoundingClientRect().top + window.scrollY - 112;
-      window.scrollTo({ top, behavior: "smooth" });
+      requestAnimationFrame(() => {
+        scrollToStyleCard(requestedStyleId);
+      });
     });
-  }, [allStyleCards]);
+  }, [allStyleCards, scrollToStyleCard]);
 
   const imageUrlToBase64 = useCallback(async (url: string) => {
     const response = await fetch(url);
@@ -512,6 +521,18 @@ export default function Studio() {
       return current - 1;
     });
   }, []);
+
+  const handleDeleteOwnStory = useCallback(async () => {
+    try {
+      const res = await fetch("/api/public-showcase", { method: "DELETE" });
+      if (!res.ok) throw new Error("delete failed");
+      setShowcaseItems((current) => current.filter((item) => item.userId !== user?.id));
+      closeStoryViewer();
+      showToast("내 스토리를 삭제했어요.");
+    } catch {
+      showToast("삭제에 실패했어요.");
+    }
+  }, [user?.id, closeStoryViewer, showToast]);
 
   const toggleStoryLike = useCallback(() => {
     if (!activeShowcase) return;
@@ -1358,6 +1379,10 @@ export default function Studio() {
                           return (
                             <button
                               key={style.id}
+                              id={`style-${style.id}`}
+                              ref={(node) => {
+                                styleCardRefs.current[style.id] = node;
+                              }}
                               onClick={() => handleCardClick(style)}
                               className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden text-left transition-all duration-300 border-2 ${
                                 selectedStyle === style.id
@@ -1430,6 +1455,10 @@ export default function Studio() {
                       return (
                         <button
                           key={style.id}
+                          id={`style-${style.id}`}
+                          ref={(node) => {
+                            styleCardRefs.current[style.id] = node;
+                          }}
                           onClick={() => handleCardClick(style)}
                           className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden text-left transition-all duration-300 border-2 ${
                             selectedStyle === style.id
@@ -2585,16 +2614,26 @@ export default function Studio() {
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  closeStoryViewer();
-                  router.push("/studio");
-                }}
-                className="relative z-20 w-full rounded-full bg-[#C9571A] px-4 py-4 text-[15px] font-bold text-white transition-colors hover:bg-[#B34A12]"
-              >
-                나도 결과 만들기
-              </button>
+              {user?.id === activeShowcase.userId ? (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); void handleDeleteOwnStory(); }}
+                  className="relative z-20 w-full rounded-full bg-white/12 border border-white/20 px-4 py-4 text-[15px] font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+                >
+                  삭제하기
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeStoryViewer();
+                    router.push("/studio");
+                  }}
+                  className="relative z-20 w-full rounded-full bg-[#C9571A] px-4 py-4 text-[15px] font-bold text-white transition-colors hover:bg-[#B34A12]"
+                >
+                  나도 결과 만들기
+                </button>
+              )}
             </div>
           </div>
         </div>

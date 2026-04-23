@@ -1004,29 +1004,46 @@ export default function MyPage() {
                   </button>
                 </div>
 
-                {/* 메인 스토리 올리기 */}
+                {/* 메인 스토리 ON/OFF */}
                 <button
-                  onClick={() => void handlePostToShowcase()}
+                  type="button"
+                  onClick={() => {
+                    if (showcaseUploading) return;
+                    if (showcaseState) {
+                      void handleHideFromHome();
+                    } else {
+                      void handlePostToShowcase();
+                    }
+                  }}
                   disabled={showcaseUploading}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-[#6BE2C5]/25 bg-[#6BE2C5]/8 text-[#6BE2C5] font-bold text-[14px] transition-opacity disabled:opacity-50 pb-2"
+                  className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border font-bold text-[15px] transition-all disabled:opacity-60 ${
+                    showcaseState
+                      ? "bg-[#C9571A] border-[#C9571A] text-white"
+                      : "bg-white border-[#D1D5DB] text-[#374151]"
+                  }`}
                 >
-                  {showcaseUploading ? (
-                    <>
-                      <div className="w-4 h-4 rounded-full border-2 border-[#6BE2C5]/30 border-t-[#6BE2C5] animate-spin" />
-                      올리는 중...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
-                        <circle cx="10" cy="10" r="3" fill="currentColor"/>
-                        <path d="M5.5 5.5a6.5 6.5 0 019 9M5.5 14.5a6.5 6.5 0 010-9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                      {showcaseState ? "메인 스토리 교체" : "메인 스토리에 올리기"}
-                      {instaHandle && (
-                        <span className="text-[11px] font-normal opacity-60">· @{instaHandle} 자동 포함</span>
-                      )}
-                    </>
-                  )}
+                  <div className="flex items-center gap-2.5">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                      <circle cx="10" cy="10" r="3" fill="currentColor"/>
+                      <path d="M5.5 5.5a6.5 6.5 0 019 9M5.5 14.5a6.5 6.5 0 010-9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    <span>메인 스토리</span>
+                    {showcaseState && instaHandle && (
+                      <span className="text-[12px] font-normal opacity-75">· @{instaHandle}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {showcaseUploading ? (
+                      <div className={`w-4 h-4 rounded-full border-2 animate-spin ${showcaseState ? "border-white/30 border-t-white" : "border-[#D1D5DB] border-t-[#C9571A]"}`} />
+                    ) : (
+                      <div className={`relative w-12 h-6 rounded-full transition-colors ${showcaseState ? "bg-white/25" : "bg-[#E5E7EB]"}`}>
+                        <div className={`absolute top-0.5 h-5 w-5 rounded-full shadow-sm transition-all duration-200 ${showcaseState ? "right-0.5 bg-white" : "left-0.5 bg-white"}`} />
+                      </div>
+                    )}
+                    <span className={`text-[13px] font-black w-7 text-right ${showcaseState ? "text-white" : "text-[#9CA3AF]"}`}>
+                      {showcaseState ? "ON" : "OFF"}
+                    </span>
+                  </div>
                 </button>
               </>
             )}
