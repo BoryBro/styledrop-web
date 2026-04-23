@@ -515,6 +515,9 @@ export async function POST(request: NextRequest) {
   const multiSourceRows = usage.filter((row) => multiSourceStyleIds.has(row.style_id));
   const auditionStillRows = usage.filter((row) => row.style_id === "audition");
   const auditionAnalyzeRows = events.filter((event) => event.event_type === "audition_request_succeeded");
+  const naboRoomRows = events.filter((event) => event.event_type === "lab_nabo_room_created");
+  const travelRoomRows = events.filter((event) => event.event_type === "lab_travel_room_created");
+  const personalColorRows = events.filter((event) => event.event_type === "lab_personal_color_completed");
 
   const collectUniqueUsers = (rows: Array<{ user_id: string | null }>) =>
     new Set(
@@ -547,6 +550,27 @@ export async function POST(request: NextRequest) {
         ...collectUniqueUsers(auditionAnalyzeRows),
         ...collectUniqueUsers(auditionStillRows),
       ]).size,
+    },
+    {
+      key: "nabo",
+      label: "내가 보는 너",
+      note: "실험실 관계 리포트",
+      count: naboRoomRows.length,
+      uniqueUsers: collectUniqueUsers(naboRoomRows).size,
+    },
+    {
+      key: "travel_together",
+      label: "여행",
+      note: "실험실 여행 궁합",
+      count: travelRoomRows.length,
+      uniqueUsers: collectUniqueUsers(travelRoomRows).size,
+    },
+    {
+      key: "personal_color",
+      label: "퍼스널 컬러",
+      note: "브라우저 분석 완료",
+      count: personalColorRows.length,
+      uniqueUsers: collectUniqueUsers(personalColorRows).size,
     },
   ] as const;
   const trackedApiUsageTotal = apiUsageBreakdownBase.reduce((sum, item) => sum + item.count, 0);
@@ -744,6 +768,7 @@ export async function POST(request: NextRequest) {
     transformEvents: eventCounts["transform"] ?? 0,
     auditionShareKakao: eventCounts["audition_share_kakao"] ?? 0,
     auditionShareLinkCopy: eventCounts["audition_share_link_copy"] ?? 0,
+    labNaboShareKakao: eventCounts["lab_nabo_share_kakao"] ?? 0,
     totalRevenue,
     totalPaymentCount,
     todayRevenue,

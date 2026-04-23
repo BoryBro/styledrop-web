@@ -151,6 +151,7 @@ type Stats = {
   transformEvents: number;
   auditionShareKakao: number;
   auditionShareLinkCopy: number;
+  labNaboShareKakao: number;
   shareByStyleList: { style_id: string; style_name: string; kakao: number; link: number; total: number }[];
   totalRevenue: number;
   totalPaymentCount: number;
@@ -440,6 +441,9 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
     "general-card": "#C9571A",
     "multi-card": "#7C5CFA",
     audition: "#111827",
+    nabo: "#22C55E",
+    travel_together: "#3B82F6",
+    personal_color: "#8DAEFF",
   };
   const trackedTotal = stats.apiUsageBreakdown.reduce((sum, item) => sum + item.count, 0);
   const activeUsers = Math.max(...stats.apiUsageBreakdown.map((item) => item.uniqueUsers), 0);
@@ -451,7 +455,7 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
         <div className="grid grid-cols-3 gap-2">
           <MiniCard label="전체 가입" value={`${stats.totalUsers}명`} accent />
           <MiniCard label="총 사용" value={`${trackedTotal}회`} />
-          <MiniCard label="가장 많이 쓴 사람" value={`${activeUsers}명`} />
+          <MiniCard label="최대 이용자" value={`${activeUsers}명`} />
         </div>
 
         <div className="overflow-hidden border-y border-[#E7E7E7]">
@@ -511,7 +515,7 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
         </div>
 
         <p className="text-[11px] leading-relaxed text-gray-400 px-1">
-          퍼스널 컬러는 브라우저 안에서 끝나는 분석이라 여기서 뺐습니다. 이 표는 실제 호출이 남는 기능만 보여줍니다.
+          일반/2인/오디션은 AI 호출 기준, 실험실은 참여 이벤트 기준입니다.
         </p>
       </div>
     </div>
@@ -524,7 +528,7 @@ const PROFIT_PACKAGES = [
   { id: "pro",   label: "Pro",   credits: 70, price: 9900, priceStr: "9,900" },
 ] as const;
 // 실측 기준 API 단가
-const API_UNIT_COST = 111.1;          // 일반 1크레딧 → 1 API call
+const API_UNIT_COST = 111.1;          // 일반 2크레딧 → 1 API call
 const API_COST_COUPLE = 111.1;        // 2인+ 2크레딧 → 1 API call (크레딧당 55.5원)
 const API_COST_AUDITION = 333.3;      // 오디션 5크레딧 → analyze(2)+still(1) = 3 weighted ops
 const KAKAO_FEE_RATE = 0.032;
@@ -548,7 +552,7 @@ function ProfitCalculator() {
   const auditionCredits = totalCredits * (pctAudition / 100);
 
   // API 호출 수 (크레딧 → 호출)
-  const normalCalls   = normalCredits * 1;          // 1크레딧 = 1호출
+  const normalCalls   = normalCredits / 2;          // 2크레딧 = 1호출
   const coupleCalls   = coupleCredits / 2;           // 2크레딧 = 1호출
   const auditionCalls = auditionCredits / 5;         // 5크레딧 = 1호출
 
@@ -586,7 +590,7 @@ function ProfitCalculator() {
   };
 
   const usageRows = [
-    { label: "일반 변환", note: "1cr → 1호출", pct: pctNormal, calls: Math.round(normalCalls), cost: Math.round(normalCalls * API_UNIT_COST), type: "normal" as const, color: "bg-blue-400" },
+    { label: "일반 변환", note: "2cr → 1호출", pct: pctNormal, calls: Math.round(normalCalls), cost: Math.round(normalCalls * API_UNIT_COST), type: "normal" as const, color: "bg-blue-400" },
     { label: "2인+ 변환", note: "2cr → 1호출", pct: pctCouple, calls: Math.round(coupleCalls), cost: Math.round(coupleCalls * API_COST_COUPLE), type: "couple" as const, color: "bg-purple-400" },
     { label: "AI 오디션", note: "5cr → 1호출", pct: pctAudition, calls: Math.round(auditionCalls), cost: Math.round(auditionCalls * API_COST_AUDITION), type: "audition" as const, color: "bg-[#C9571A]" },
   ];
@@ -885,23 +889,32 @@ function AdminTabButton({
 function ShareViralSection({ stats, shareTotal, shareRatio }: {
   stats: Stats; shareTotal: number; shareRatio: number;
 }) {
-  const [tab, setTab] = useState<"style" | "audition">("style");
+  const [tab, setTab] = useState<"style" | "audition" | "lab">("style");
   return (
     <div className="flex flex-col gap-3">
       <p className="px-1 text-[13px] font-bold tracking-[-0.02em] text-[#6B7280]">공유 & 바이럴</p>
       {/* 탭 버튼 */}
       <div className="-mx-4 flex border-y border-[#E7E7E7] bg-white">
         <button
+          type="button"
           onClick={() => setTab("style")}
           className={`flex-1 border-r border-[#F0F0F0] py-3 text-[13px] font-bold transition-colors ${tab === "style" ? "text-[#C9571A]" : "text-gray-500"}`}
         >
           스타일 카드
         </button>
         <button
+          type="button"
           onClick={() => setTab("audition")}
-          className={`flex-1 py-3 text-[13px] font-bold transition-colors ${tab === "audition" ? "text-[#C9571A]" : "text-gray-500"}`}
+          className={`flex-1 border-r border-[#F0F0F0] py-3 text-[13px] font-bold transition-colors ${tab === "audition" ? "text-[#C9571A]" : "text-gray-500"}`}
         >
           AI 오디션
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("lab")}
+          className={`flex-1 py-3 text-[13px] font-bold transition-colors ${tab === "lab" ? "text-[#C9571A]" : "text-gray-500"}`}
+        >
+          실험실
         </button>
       </div>
 
@@ -948,6 +961,20 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
           <ShareRow
             icon={<RatioIcon />} iconBg="bg-orange-50"
             label="합계" count={`${stats.auditionShareKakao + stats.auditionShareLinkCopy}회`}
+            highlight
+          />
+        </div>
+      )}
+
+      {tab === "lab" && (
+        <div className="-mx-4 border-y border-[#E7E7E7] bg-white px-4">
+          <ShareRow
+            icon={<KakaoIcon />} iconBg="bg-[#FEE500]"
+            label="내가 보는 너 초대 공유" count={`${stats.labNaboShareKakao}회`}
+          />
+          <ShareRow
+            icon={<RatioIcon />} iconBg="bg-orange-50"
+            label="실험실 공유 합계" count={`${stats.labNaboShareKakao}회`}
             highlight
           />
         </div>
@@ -1573,7 +1600,9 @@ export default function AdminPage() {
                   <p className="text-[15px] font-bold text-gray-900">카드별 즉시 숨김 / 생성 중지</p>
                   <p className="text-[12px] text-gray-500 mt-1">저장 즉시 반영</p>
                 </div>
-                <span className="text-[11px] text-gray-400 whitespace-nowrap">{cardStyleControls.length}개 카드</span>
+                <span className="text-[11px] text-gray-400 whitespace-nowrap">
+                  일반 {cardStyleControls.length} · 실험실 {specialFeatureControls.length}
+                </span>
               </div>
 
               {styleControlMsg && (
