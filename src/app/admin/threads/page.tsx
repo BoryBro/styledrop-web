@@ -29,6 +29,7 @@ const fmtDate = (iso: string) =>
 export default function ThreadsAdminPage() {
   const [password, setPassword]       = useState("");
   const [authed, setAuthed]           = useState(false);
+  const [initializing, setInitializing] = useState(true);
   const [posts, setPosts]             = useState<ThreadsPost[]>([]);
   const [loading, setLoading]         = useState(false);
   const [actionId, setActionId]       = useState<string | null>(null);
@@ -58,11 +59,31 @@ export default function ThreadsAdminPage() {
     }
   }, [headers]);
 
-  const handleLogin = async () => {
-    const res = await fetch("/api/threads/queue", { headers: headers() });
-    if (res.ok) { setAuthed(true); }
-    else showToast("비밀번호가 틀렸어요");
+  const handleLogin = async (pw?: string) => {
+    const usePw = pw ?? password;
+    const res = await fetch("/api/threads/queue", {
+      headers: { "Content-Type": "application/json", "x-admin-password": usePw },
+    });
+    if (res.ok) {
+      localStorage.setItem("threads_admin_pw", usePw);
+      setPassword(usePw);
+      setAuthed(true);
+    } else {
+      localStorage.removeItem("threads_admin_pw");
+      if (!pw) showToast("비밀번호가 틀렸어요");
+    }
   };
+
+  useEffect(() => {
+    const saved = localStorage.getItem("threads_admin_pw");
+    if (saved) {
+      setPassword(saved);
+      handleLogin(saved).finally(() => setInitializing(false));
+    } else {
+      setInitializing(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (authed) loadPosts();
@@ -160,6 +181,14 @@ export default function ThreadsAdminPage() {
   const [tab, setTab] = useState<"pending" | "published" | "failed">("pending");
   const tabPosts = tab === "pending" ? pending : tab === "published" ? published : failed;
 
+  if (initializing) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-white/10 border-t-white animate-spin" />
+      </div>
+    );
+  }
+
   if (!authed) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-4">
@@ -171,7 +200,7 @@ export default function ThreadsAdminPage() {
             onKeyDown={e => e.key === "Enter" && handleLogin()}
             className="bg-[#1A1A1A] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
           />
-          <button onClick={handleLogin}
+          <button onClick={() => handleLogin()}
             className="bg-white text-black font-bold py-3 rounded-xl text-sm hover:bg-white/90 transition-colors">
             로그인
           </button>
