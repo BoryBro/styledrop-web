@@ -121,7 +121,7 @@ const QUESTIONS: Question[] = [
     ],
   },
   { id: "q12", emoji: "☕", short: "휴식", category: "여행 페이스", type: "slider", text: "카페에서 쉬는 시간은?", scale: ["안 감", "잠깐 1번", "카페 1번", "카페 2번", "3번 이상"] },
-  { id: "q13", emoji: "🚧", short: "변수", category: "여행 페이스", type: "choice", text: "길 막힘, 웨이팅 같은 변수가 생기면?", options: ["빠르게 대안 찾기", "그냥 기다리기", "포기하고 접기"] },
+  { id: "q13", emoji: "🚧", short: "변수", category: "여행 페이스", type: "choice", text: "길 막힘, 웨이팅 같은 변수가 생기면?", options: ["바로 플랜 B 가동", "일단 기다리기", "다음 일정으로 넘기기"] },
   { id: "q14", emoji: "🛏️", short: "체크인", category: "여행 페이스", type: "choice", text: "숙소 체크인 후 다시 나가?", options: ["무조건 나감", "피곤하면 쉼", "안 나감"] },
   { id: "q15", emoji: "⚖️", short: "충돌", category: "갈등 & 결정", type: "choice", text: "가고 싶은 곳이 충돌하면?", options: ["상대 맞춤", "협상", "각자 가기", "내가 양보"] },
   { id: "q16", emoji: "🍽️", short: "식당 결정", category: "갈등 & 결정", type: "choice", text: "밥 먹을 곳을 못 정하면?", options: ["내가 정함", "상대 따름", "계속 탐색"] },
