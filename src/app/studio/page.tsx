@@ -1498,7 +1498,7 @@ export default function Studio() {
                           className="text-white/50 leading-snug"
                           style={{ fontFamily: '"Pretendard", sans-serif', fontSize: 'clamp(11px, 2.8vw, 13px)', fontWeight: 500 }}
                         >
-                          5명의 익명 평가 · 관계 분석 리포트<br />
+                          {usageCounts === null ? "..." : `${formatCount(usageCounts["nabo"] ?? 0)}명 참여`} · 관계 분석 리포트<br />
                           <span className="text-white/30">누가 뭐라 했는지는 절대 안 보여요</span>
                         </p>
                       </div>
@@ -1514,7 +1514,7 @@ export default function Studio() {
                               <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.8"/>
                               <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.6" strokeLinecap="round"/>
                             </svg>
-                            {usageCounts === null ? "..." : formatCount(usageCounts["nabo"] ?? 0)}
+                            {usageCounts === null ? "..." : `${formatCount(usageCounts["nabo"] ?? 0)}명 참여`}
                           </span>
                           <span
                             className="text-[#22C55E] border border-[#22C55E]/40 rounded-full px-2.5 py-1 font-bold"
@@ -1597,7 +1597,7 @@ export default function Studio() {
                         className="text-white/50 leading-snug"
                         style={{ fontFamily: '"Pretendard", sans-serif', fontSize: "clamp(11px, 2.8vw, 13px)", fontWeight: 500 }}
                       >
-                        2인 여행 궁합 · 티어 결과 · 여행지 추천
+                        {usageCounts === null ? "..." : `${formatCount(usageCounts["travel_together"] ?? 0)}명 참여`} · 티어 결과 · 여행지 추천
                         <br />
                         <span className="text-white/30">같이 가면 진짜 맞는지 먼저 봅니다</span>
                       </p>
@@ -1614,7 +1614,7 @@ export default function Studio() {
                             <circle cx="11" cy="5.5" r="2.6" fill="currentColor" fillOpacity="0.55" />
                             <path d="M1.2 14.8c0-3.2 2.7-5.8 5.9-5.8s5.8 2.6 5.8 5.8" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.4" strokeLinecap="round" />
                           </svg>
-                          {usageCounts === null ? "..." : formatCount(usageCounts["travel_together"] ?? 0)}
+                          {usageCounts === null ? "..." : `${formatCount(usageCounts["travel_together"] ?? 0)}명 참여`}
                         </span>
                         <span
                           className="text-[#60A5FA] border border-[#60A5FA]/40 rounded-full px-2.5 py-1 font-bold"
@@ -1688,7 +1688,7 @@ export default function Studio() {
                     className="text-white/50 leading-snug"
                     style={{ fontFamily: '"Pretendard", sans-serif', fontSize: 'clamp(11px, 2.8vw, 13px)', fontWeight: 500 }}
                   >
-                    장르 선택 · 성향 퀴즈 · 표정 연기<br />
+                    {usageCounts === null ? "..." : `${formatCount(usageCounts["audition"] ?? 0)}명 참여`} · 성향 퀴즈 · 표정 연기<br />
                     <span className="text-white/30">AI 감독이 당신을 심사합니다</span>
                   </p>
                 </div>
@@ -1704,7 +1704,7 @@ export default function Studio() {
                         <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.8"/>
                         <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.6" strokeLinecap="round"/>
                       </svg>
-                      {usageCounts === null ? "..." : formatCount(usageCounts["audition"] ?? 0)}
+                      {usageCounts === null ? "..." : `${formatCount(usageCounts["audition"] ?? 0)}명 참여`}
                     </span>
                     <span
                       className="text-[#C9571A] border border-[#C9571A]/40 rounded-full px-2.5 py-1 font-bold"
@@ -1811,7 +1811,7 @@ export default function Studio() {
                           className="rounded-full border border-white/10 px-2.5 py-1 text-white/45"
                           style={{ fontFamily: '"Pretendard", sans-serif', fontSize: "clamp(10px, 2.5vw, 12px)" }}
                         >
-                          셀카 1장
+                          {usageCounts === null ? "..." : `${formatCount(usageCounts["personal_color"] ?? 0)}명 참여`}
                         </span>
                         <span
                           className="rounded-full border border-[#8DAEFF]/40 px-2.5 py-1 font-bold text-[#8DAEFF]"

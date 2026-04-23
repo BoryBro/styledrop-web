@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePersonalColorAvailability } from "@/hooks/usePersonalColorAvailability";
+import { trackClientEvent } from "@/lib/client-events";
 import { ALL_STYLES } from "@/lib/styles";
 import {
   analyzePersonalColor,
@@ -291,6 +292,7 @@ export default function PersonalColorPage() {
     setPreviewSrc(resized);
     const analysis = await analyzePersonalColor(resized);
     setResult(analysis);
+    void trackClientEvent("lab_personal_color_completed");
     setAnalysisState("done");
   };
 
