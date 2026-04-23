@@ -122,8 +122,8 @@ const QUESTIONS: Question[] = [
   },
   { id: "q12", emoji: "☕", short: "휴식", category: "여행 페이스", type: "slider", text: "카페에서 쉬는 시간은?", scale: ["안 감", "잠깐 1번", "카페 1번", "카페 2번", "3번 이상"] },
   { id: "q13", emoji: "🚧", short: "변수", category: "여행 페이스", type: "choice", text: "길 막힘, 웨이팅 같은 변수가 생기면?", options: ["바로 플랜 B 가동", "일단 기다리기", "다음 일정으로 넘기기"] },
-  { id: "q14", emoji: "🛏️", short: "체크인", category: "여행 페이스", type: "choice", text: "숙소 체크인 후 다시 나가?", options: ["무조건 나감", "피곤하면 쉼", "안 나감"] },
-  { id: "q15", emoji: "⚖️", short: "충돌", category: "갈등 & 결정", type: "choice", text: "가고 싶은 곳이 충돌하면?", options: ["상대 맞춤", "협상", "각자 가기", "내가 양보"] },
+  { id: "q14", emoji: "🛏️", short: "체크인", category: "여행 페이스", type: "choice", text: "숙소 체크인 후 다시 나가?", options: ["무조건 나감", "피곤하면 쉼", "안 나감", "상대가 원하면 맞춰 나감"] },
+  { id: "q15", emoji: "⚖️", short: "충돌", category: "갈등 & 결정", type: "choice", text: "가고 싶은 곳이 충돌하면?", options: ["상대 의견 먼저 들음", "중간 지점 협상", "각자 가기", "이번엔 내가 양보"] },
   { id: "q16", emoji: "🍽️", short: "식당 결정", category: "갈등 & 결정", type: "choice", text: "밥 먹을 곳을 못 정하면?", options: ["내가 정함", "상대 따름", "계속 탐색"] },
   { id: "q17", emoji: "🫥", short: "혼자 시간", category: "갈등 & 결정", type: "slider", text: "여행 중 혼자만의 시간이 필요해?", scale: ["전혀 없음", "잠깐만", "1시간 정도", "반나절", "꽤 많이"] },
   { id: "q18", emoji: "🗂️", short: "정리", category: "여행 후", type: "choice", text: "여행 사진 정리는?", options: ["당일 앨범 정리", "나중에 몰아서", "안 함"] },
@@ -360,6 +360,14 @@ function getBudgetPhrase(answers: AnswerMap) {
   return "예산과 만족도 사이에서 균형을 보려는 편입니다.";
 }
 
+function getAfterCheckInPaceBonus(answer: AnswerValue | undefined) {
+  const value = String(answer ?? "피곤하면 쉼");
+  if (value === "무조건 나감") return 20;
+  if (value === "상대가 원하면 맞춰 나감") return 12;
+  if (value === "피곤하면 쉼") return 8;
+  return 0;
+}
+
 function getTravelFinalContent(myAnswers: AnswerMap, partnerAnswers: AnswerMap, myName: string, partnerName: string) {
   const safeMyName = myName || "A";
   const safePartnerName = partnerName || "B";
@@ -379,11 +387,11 @@ function getTravelFinalContent(myAnswers: AnswerMap, partnerAnswers: AnswerMap, 
   const paceMy =
     getQuestionValue("q11", myAnswers) +
     (100 - getQuestionValue("q12", myAnswers)) +
-    (String(myAnswers.q14) === "무조건 나감" ? 20 : String(myAnswers.q14) === "피곤하면 쉼" ? 8 : 0);
+    getAfterCheckInPaceBonus(myAnswers.q14);
   const pacePartner =
     getQuestionValue("q11", partnerAnswers) +
     (100 - getQuestionValue("q12", partnerAnswers)) +
-    (String(partnerAnswers.q14) === "무조건 나감" ? 20 : String(partnerAnswers.q14) === "피곤하면 쉼" ? 8 : 0);
+    getAfterCheckInPaceBonus(partnerAnswers.q14);
 
   const spontaneityMy = (100 - getQuestionValue("q1", myAnswers)) + (100 - getQuestionValue("q3", myAnswers));
   const spontaneityPartner = (100 - getQuestionValue("q1", partnerAnswers)) + (100 - getQuestionValue("q3", partnerAnswers));
