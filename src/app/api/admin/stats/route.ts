@@ -366,6 +366,21 @@ export async function POST(request: NextRequest) {
     todayEventCounts[e.event_type] = (todayEventCounts[e.event_type] ?? 0) + 1;
   }
 
+  // 유료 결제 유저 ID 세트
+  const paidUserIds = new Set(completedPayments.map((p) => p.user_id));
+
+  // 특정 이벤트 타입을 가진 유료 유저 수를 카운트하는 헬퍼
+  const countPaidUsersWithEvent = (eventTypes: string[]): number => {
+    const eventTypeSet = new Set(eventTypes);
+    const paidUsersWithEvent = new Set(
+      events
+        .filter((e) => eventTypeSet.has(e.event_type))
+        .map((e) => e.user_id)
+        .filter((userId): userId is string => typeof userId === "string" && paidUserIds.has(userId))
+    );
+    return paidUsersWithEvent.size;
+  };
+
   const labExperiments = [
     {
       key: "audition",
@@ -381,18 +396,7 @@ export async function POST(request: NextRequest) {
       extraLabel: "스틸컷 생성",
       extraCount: usage.filter((row) => row.style_id === "audition").length,
       todayExtraCount: todayUsageRows.filter((row) => row.style_id === "audition").length,
-    },
-    {
-      key: "personal_color",
-      label: "퍼스널 컬러",
-      totalParticipants: eventCounts["lab_personal_color_completed"] ?? 0,
-      todayParticipants: todayEventCounts["lab_personal_color_completed"] ?? 0,
-      completedCount: eventCounts["lab_personal_color_completed"] ?? 0,
-      todayCompletedCount: todayEventCounts["lab_personal_color_completed"] ?? 0,
-      unlockCount: 0,
-      todayUnlockCount: 0,
-      completedLabel: "완료",
-      unlockLabel: null,
+      paidParticipants: countPaidUsersWithEvent(["audition_request_started", "audition_request_succeeded"]),
     },
     {
       key: "nabo",
@@ -405,6 +409,7 @@ export async function POST(request: NextRequest) {
       todayUnlockCount: todayEventCounts["lab_nabo_premium_access"] ?? 0,
       completedLabel: "응답 완료",
       unlockLabel: "상세 공개",
+      paidParticipants: countPaidUsersWithEvent(["lab_nabo_room_created"]),
     },
     {
       key: "travel_together",
@@ -420,6 +425,7 @@ export async function POST(request: NextRequest) {
       extraLabel: "상대 응답 완료",
       extraCount: eventCounts["lab_travel_partner_ready"] ?? 0,
       todayExtraCount: todayEventCounts["lab_travel_partner_ready"] ?? 0,
+      paidParticipants: countPaidUsersWithEvent(["lab_travel_room_created"]),
     },
   ];
 
