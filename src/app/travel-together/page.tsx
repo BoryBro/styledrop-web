@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { trackClientEvent } from "@/lib/client-events";
 
 const T = {
@@ -702,6 +702,7 @@ function TravelTogetherFallback() {
 }
 
 function TravelTogetherPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("intro");
   const [history, setHistory] = useState<Step[]>(["intro"]);
@@ -737,6 +738,7 @@ function TravelTogetherPageContent() {
   const [partnerAnswersState, setPartnerAnswersState] = useState<AnswerMap>({});
   const resultAnalysisCompleteRef = useRef<(() => void) | null>(null);
   const resultOnlyView = searchParams.get("view") === "result";
+  const isDirectResultView = resultOnlyView && Boolean(searchParams.get("room")) && Boolean(searchParams.get("token"));
   const isLocalDebug =
     shareOrigin.includes("localhost") || shareOrigin.includes("127.0.0.1");
 
@@ -978,6 +980,10 @@ function TravelTogetherPageContent() {
   }, []);
 
   const goBack = () => {
+    if (step === "results" && isDirectResultView) {
+      router.back();
+      return;
+    }
     const next = [...history];
     next.pop();
     const prev = next[next.length - 1] ?? "intro";
