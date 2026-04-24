@@ -1978,89 +1978,98 @@ export default function AdminPage() {
 
       {activeTab === "metrics" && (
         <div className="flex flex-col gap-3">
-          {/* 상단 핵심 지표 & 유료 상품 */}
-          <div className="grid grid-cols-1 gap-2 lg:grid-cols-2 [&>*]:min-w-0">
-            <div className="flex flex-col gap-2">
-              <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">핵심 지표</p>
-              <div className="flex flex-col gap-2 border-t border-[#E7E7E7] pt-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 text-[13px]">누적 변환</span>
-                  <span className="text-gray-900 font-bold text-[16px]">{stats.total}회</span>
+          {/* 상단 3개 섹션 한 줄 */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3 [&>*]:min-w-0">
+            {/* 핵심 지표 + 로그인/게스트 통합 */}
+            <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">핵심 지표</p>
+              <div className="flex flex-col gap-0">
+                <div className="flex justify-between items-center py-2 border-b border-[#F3F4F6]">
+                  <span className="text-gray-500 text-[12px]">가입 유저</span>
+                  <span className="text-gray-900 font-bold text-[13px]">{stats.totalUsers}명</span>
                 </div>
-                <div className="flex justify-between items-center border-t border-[#E7E7E7] pt-3">
-                  <span className="text-gray-600 text-[13px]">가입 유저</span>
-                  <span className="text-gray-900 font-bold text-[16px]">{stats.totalUsers}명</span>
+                <div className="flex justify-between items-center py-2 border-b border-[#F3F4F6]">
+                  <span className="text-gray-500 text-[12px]">변환 유저</span>
+                  <span className="text-gray-900 font-bold text-[13px]">{stats.uniqueLoggedInUsers}명</span>
                 </div>
-                <div className="flex justify-between items-center border-t border-[#E7E7E7] pt-3">
-                  <span className="text-gray-600 text-[13px]">변환 유저</span>
-                  <span className="text-gray-900 font-bold text-[16px]">{stats.uniqueLoggedInUsers}명</span>
+                <div className="flex justify-between items-center py-2 border-b border-[#F3F4F6]">
+                  <span className="text-gray-500 text-[12px]">결제 유저</span>
+                  <span className="text-[#C9571A] font-bold text-[13px]">{stats.totalPaidUsers}명</span>
                 </div>
-                <div className="flex justify-between items-center border-t border-[#E7E7E7] pt-3">
-                  <span className="text-gray-600 text-[13px]">결제 유저</span>
-                  <span className="text-[#C9571A] font-bold text-[16px]">{stats.totalPaidUsers}명</span>
-                </div>
-              </div>
-            </div>
-
-            <Section title="유료 상품 현황">
-              <LabExperimentTabs items={stats.labExperiments} />
-            </Section>
-          </div>
-
-          {/* 로그인 vs 게스트 & 공유 & 바이럴 */}
-          <div className="grid grid-cols-1 gap-2 lg:grid-cols-2 [&>*]:min-w-0">
-            <div className="flex flex-col gap-1">
-              <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">로그인 vs 게스트</p>
-              <p className="text-[12px] text-gray-400 px-1 mb-0.5">변환 횟수 기준 — 1명이 여러 번 변환하면 중복 집계됨</p>
-              <div className="grid grid-cols-2 gap-2 pt-0.5">
-                <div className="flex flex-col gap-1 border-t border-[#E7E7E7] bg-white px-1 py-3">
-                  <span className="text-gray-500 text-[13px]">로그인 변환</span>
-                  <span className="text-gray-900 text-[20px] font-extrabold tabular-nums">{stats.userCount}회</span>
-                  <span className="text-[#C9571A] text-[14px] font-bold">{stats.userRatio}%</span>
-                  <Bar ratio={stats.userRatio} />
-                </div>
-                <div className="flex flex-col gap-1 border-t border-[#E7E7E7] bg-white px-1 py-3">
-                  <span className="text-gray-500 text-[13px]">게스트 변환</span>
-                  <span className="text-gray-900 text-[20px] font-extrabold tabular-nums">{stats.guestCount}회</span>
-                  <span className="text-gray-500 text-[14px] font-bold">{stats.guestRatio}%</span>
-                  <Bar ratio={stats.guestRatio} color="#9ca3af" />
+                <div className="flex flex-col gap-1.5 pt-3">
+                  <div className="flex justify-between text-[11px] text-gray-400">
+                    <span>로그인 {stats.userCount}회 · {stats.userRatio}%</span>
+                    <span>게스트 {stats.guestCount}회 · {stats.guestRatio}%</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-[#F3F4F6] overflow-hidden">
+                    <div className="h-full rounded-full bg-[#C9571A]" style={{ width: `${stats.userRatio}%` }} />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <ShareViralSection stats={stats} shareTotal={shareTotal} shareRatio={shareRatio} />
-          </div>
-
-          {/* 스타일별 성과 - 전체 너비 */}
-          <Section title="스타일별 성과">
-            {sortedStylePerformance.length === 0 ? (
-              <p className="text-gray-400 text-[15px] py-4">데이터 없음</p>
-            ) : (
-              sortedStylePerformance.map((s) => {
-                const variants = STYLE_VARIANTS[s.style_id];
-                const errorItem = stats.generationErrorSummary.find((item) => item.style_id === s.style_id);
-                const perf24h = perf24hMap.get(s.style_id);
-                const isProblem = issueIds.has(s.style_id);
-                const isHighShare = highShareSet.has(s.style_id);
-                const isLowSave = lowSaveSet.has(s.style_id);
-                return (
-                  <div key={s.style_id} className="py-3 border-b border-gray-100 last:border-0">
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-gray-800 text-[13px] font-bold truncate">{s.style_name}</span>
-                          {isProblem && <span className="border-b border-red-200 px-1 py-0.5 text-[10px] text-red-500">문제</span>}
-                          {isHighShare && <span className="border-b border-[#F3D2BF] px-1 py-0.5 text-[10px] text-[#C9571A]">공유강세</span>}
-                          {isLowSave && <span className="border-b border-gray-200 px-1 py-0.5 text-[10px] text-gray-600">저장약세</span>}
-                        </div>
-                      </div>
-                      <span className="text-gray-900 font-bold text-[13px] flex-shrink-0">{s.count}회</span>
+            {/* 유료 상품 현황 */}
+            <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">유료 상품</p>
+              <div className="flex flex-col gap-0 text-[12px]">
+                {stats.labExperiments.slice(0, 3).map((item) => (
+                  <div key={item.key} className="flex justify-between items-center py-2 border-b border-[#F3F4F6] last:border-0">
+                    <span className="text-gray-700 truncate flex-1">{item.label}</span>
+                    <div className="flex items-center gap-3 flex-shrink-0 ml-2">
+                      <span className="text-gray-400">참여 {item.totalParticipants}</span>
+                      <span className="text-[#C9571A] font-bold">결제 {item.paidParticipants}</span>
                     </div>
                   </div>
-                );
-              })
+                ))}
+              </div>
+            </div>
+
+            {/* 공유 & 바이럴 */}
+            <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">공유 & 바이럴</p>
+              <div className="flex flex-col gap-0 text-[12px]">
+                <div className="flex justify-between items-center py-2 border-b border-[#F3F4F6]">
+                  <span className="text-gray-500">카카오 공유</span>
+                  <span className="text-gray-900 font-bold">{stats.shareKakao}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-[#F3F4F6]">
+                  <span className="text-gray-500">링크 복사</span>
+                  <span className="text-gray-900 font-bold">{stats.shareLinkCopy}</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-500">공유율</span>
+                  <span className="text-[#C9571A] font-bold">{shareRatio}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 스타일별 성과 */}
+          <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">스타일별 성과</p>
+            {sortedStylePerformance.length === 0 ? (
+              <p className="text-gray-400 text-[13px]">데이터 없음</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                {sortedStylePerformance.map((s) => {
+                  const isProblem = issueIds.has(s.style_id);
+                  const isHighShare = highShareSet.has(s.style_id);
+                  const isLowSave = lowSaveSet.has(s.style_id);
+                  return (
+                    <div key={s.style_id} className="flex flex-col gap-1 p-2.5 rounded-lg border border-[#F3F4F6] bg-[#FAFAFA]">
+                      <span className="text-gray-900 text-[12px] font-bold truncate">{s.style_name}</span>
+                      <span className="text-gray-600 text-[13px] font-bold">{s.count}회</span>
+                      <div className="flex flex-wrap gap-0.5 mt-0.5">
+                        {isProblem && <span className="text-[9px] text-red-400">문제</span>}
+                        {isHighShare && <span className="text-[9px] text-[#C9571A]">공유강세</span>}
+                        {isLowSave && <span className="text-[9px] text-gray-400">저장약세</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
-          </Section>
+          </div>
         </div>
       )}
 
@@ -2316,7 +2325,7 @@ export default function AdminPage() {
       )}
 
       {activeTab === "analytics" && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {(() => {
             const styleStats: Record<string, number> = {};
             let successCount = 0;
@@ -2335,116 +2344,115 @@ export default function AdminPage() {
             const maxCount = sortedStyles.length > 0 ? sortedStyles[0][1] : 0;
 
             return (
-              <>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 [&>*]:min-w-0">
                 {/* 요약 통계 */}
-                <div className="flex gap-2 border-b border-[#E7E7E7] pb-3">
-                  <div className="flex-1 flex flex-col gap-1">
-                    <span className="text-[11px] text-[#6B7280]">총 생성</span>
-                    <span className="text-[18px] font-bold text-gray-900">{totalCount}</span>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <span className="text-[11px] text-[#6B7280]">성공</span>
-                    <span className="text-[18px] font-bold text-[#18794E]">{successCount} <span className="text-[13px] text-gray-500">({totalCount > 0 ? Math.round((successCount / totalCount) * 100) : 0}%)</span></span>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <span className="text-[11px] text-[#6B7280]">실패</span>
-                    <span className="text-[18px] font-bold text-red-600">{failCount} <span className="text-[13px] text-gray-500">({totalCount > 0 ? Math.round((failCount / totalCount) * 100) : 0}%)</span></span>
+                <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">7일 요약</p>
+                  <div className="flex gap-4">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] text-gray-400">총 생성</span>
+                      <span className="text-[20px] font-bold text-gray-900">{totalCount}</span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] text-gray-400">성공</span>
+                      <span className="text-[20px] font-bold text-[#18794E]">{successCount} <span className="text-[12px] text-gray-400 font-normal">{totalCount > 0 ? Math.round((successCount / totalCount) * 100) : 0}%</span></span>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] text-gray-400">실패</span>
+                      <span className="text-[20px] font-bold text-red-500">{failCount} <span className="text-[12px] text-gray-400 font-normal">{totalCount > 0 ? Math.round((failCount / totalCount) * 100) : 0}%</span></span>
+                    </div>
                   </div>
                 </div>
 
                 {/* 7일 카드 인기순위 */}
-                {sortedStyles.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">인기순위</p>
-                    <div className="space-y-2">
+                <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">인기순위</p>
+                  {sortedStyles.length > 0 ? (
+                    <div className="flex flex-col gap-2">
                       {sortedStyles.map(([name, count], idx) => (
-                        <div key={name} className="flex items-center gap-3">
-                          <span className="text-[12px] font-bold text-[#C9571A] w-5 text-center">{idx + 1}</span>
-                          <span className="text-[13px] text-gray-900 w-40 truncate">{name}</span>
-                          <div className="flex-1 bg-[#F3F4F6] h-6 rounded-sm overflow-hidden">
-                            <div
-                              className="h-full bg-[#C9571A] transition-all"
-                              style={{ width: `${(count / maxCount) * 100}%` }}
-                            />
+                        <div key={name} className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold text-[#C9571A] w-4 text-center">{idx + 1}</span>
+                          <span className="text-[12px] text-gray-700 w-32 truncate">{name}</span>
+                          <div className="flex-1 bg-[#F3F4F6] h-4 rounded-sm overflow-hidden">
+                            <div className="h-full bg-[#C9571A] transition-all" style={{ width: `${(count / maxCount) * 100}%` }} />
                           </div>
-                          <span className="text-[13px] font-bold text-gray-700 w-10 text-right">{count}</span>
+                          <span className="text-[12px] font-bold text-gray-700 w-6 text-right">{count}</span>
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-              </>
+                  ) : (
+                    <p className="text-[13px] text-gray-400">데이터 없음</p>
+                  )}
+                </div>
+              </div>
             );
           })()}
 
-          <div className="border-t border-[#E7E7E7] pt-4">
-            <div className="border-b border-[#E7E7E7]">
-              <div className="mb-4 space-y-3">
-                {deleteCountdown && (
-                  <div className="p-3 border-l-2 border-orange-400 bg-orange-50">
-                    <p className="text-[12px] font-bold text-orange-900">
-                      ⏰ 자동 삭제까지 <span className="font-mono text-orange-600">{deleteCountdown.days}일 {deleteCountdown.hours.toString().padStart(2, "0")}:{deleteCountdown.minutes.toString().padStart(2, "0")}:{deleteCountdown.seconds.toString().padStart(2, "0")}</span>
-                    </p>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="사용자명 검색..."
-                    value={analyticsSearchUser}
-                    onChange={(e) => handleAnalyticsSearch(e.target.value)}
-                    className="flex-1 border border-[#E7E7E7] bg-white px-3 py-2 text-[13px] focus:outline-none focus:border-[#C9571A]"
-                  />
-                  <button
-                    onClick={downloadAnalyticsCSV}
-                    disabled={analyticsLoading}
-                    className="border border-[#C9571A] text-[#C9571A] hover:bg-[#FFF5F0] disabled:border-gray-300 disabled:text-gray-300 px-3 py-2 text-[12px] font-bold transition-colors"
-                  >
-                    📥 CSV
-                  </button>
-                  {analyticsLoading && <span className="text-[12px] text-gray-500">로딩 중...</span>}
-                </div>
-              </div>
-
-              {analyticsData.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-[#E7E7E7] text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">
-                        <th className="text-left py-2 px-2">시간</th>
-                        <th className="text-left py-2 px-2">사용자</th>
-                        <th className="text-left py-2 px-2">카드</th>
-                        <th className="text-center py-2 px-2">결과</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {analyticsData.map((item) => (
-                        <tr key={item.id} className="border-b border-[#EEF0F2] hover:bg-[#FAFAFA]">
-                          <td className="py-2 px-2 text-[11px] text-gray-600">
-                            {new Date(item.created_at).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                          </td>
-                          <td className="py-2 px-2 text-[12px] text-gray-900 font-medium">{item.nickname || "Unknown"}</td>
-                          <td className="py-2 px-2 text-[12px] text-gray-700 max-w-[200px] truncate">{item.style_name}</td>
-                          <td className="py-2 px-2 text-center">
-                            {item.success ? (
-                              <span className="text-[#18794E] font-bold">✓</span>
-                            ) : (
-                              <span className="text-red-600 font-bold">✗</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="py-6 text-center text-[13px] text-gray-500">
-                  {analyticsLoading ? "데이터를 불러오는 중..." : "최근 7일 생성 기록이 없습니다."}
-                </div>
+          {/* 생성 기록 테이블 */}
+          <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">생성 기록</p>
+              {deleteCountdown && (
+                <span className="text-[11px] text-orange-500 font-mono">
+                  삭제까지 {deleteCountdown.days}일 {deleteCountdown.hours.toString().padStart(2, "0")}:{deleteCountdown.minutes.toString().padStart(2, "0")}:{deleteCountdown.seconds.toString().padStart(2, "0")}
+                </span>
               )}
-
-              <p className="mt-3 text-[11px] text-gray-400">최근 7일 · 최대 50개</p>
             </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="사용자명 검색..."
+                value={analyticsSearchUser}
+                onChange={(e) => handleAnalyticsSearch(e.target.value)}
+                className="flex-1 rounded-lg border border-[#E5E7EB] bg-[#FAFAFA] px-3 py-2 text-[13px] focus:outline-none focus:border-[#C9571A]"
+              />
+              <button
+                onClick={downloadAnalyticsCSV}
+                disabled={analyticsLoading}
+                className="rounded-lg border border-[#C9571A] text-[#C9571A] hover:bg-[#FFF5F0] disabled:border-gray-200 disabled:text-gray-300 px-3 py-2 text-[12px] font-bold transition-colors"
+              >
+                CSV
+              </button>
+              {analyticsLoading && <span className="text-[12px] text-gray-400">로딩 중...</span>}
+            </div>
+
+            {analyticsData.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[#F3F4F6] text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">
+                      <th className="text-left py-2 px-1">시간</th>
+                      <th className="text-left py-2 px-1">사용자</th>
+                      <th className="text-left py-2 px-1">카드</th>
+                      <th className="text-center py-2 px-1">결과</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analyticsData.map((item) => (
+                      <tr key={item.id} className="border-b border-[#F3F4F6] last:border-0 hover:bg-[#FAFAFA]">
+                        <td className="py-2 px-1 text-[11px] text-gray-400">
+                          {new Date(item.created_at).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                        </td>
+                        <td className="py-2 px-1 text-[12px] text-gray-900 font-medium">{item.nickname || "Unknown"}</td>
+                        <td className="py-2 px-1 text-[12px] text-gray-600 max-w-[180px] truncate">{item.style_name}</td>
+                        <td className="py-2 px-1 text-center">
+                          {item.success ? (
+                            <span className="text-[#18794E] font-bold text-[13px]">✓</span>
+                          ) : (
+                            <span className="text-red-500 font-bold text-[13px]">✗</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-[13px] text-gray-400">
+                {analyticsLoading ? "데이터를 불러오는 중..." : "최근 7일 생성 기록이 없습니다."}
+              </div>
+            )}
+            <p className="text-[11px] text-gray-300">최근 7일 · 최대 50개</p>
           </div>
         </div>
       )}

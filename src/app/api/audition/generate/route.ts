@@ -289,7 +289,7 @@ export async function POST(request: NextRequest) {
   }
   if (!session && guestCount >= GUEST_LIMIT) {
     return NextResponse.json(
-      { error: "무료 체험이 끝났어요. 카카오 로그인하면 5크레딧을 무료로 받을 수 있어요!" },
+      { error: "무료 체험이 끝났어요. 카카오 로그인하면 1크레딧을 무료로 받을 수 있어요!" },
       { status: 429 }
     );
   }
@@ -302,7 +302,7 @@ export async function POST(request: NextRequest) {
 
       if (!allowed) {
         return NextResponse.json(
-          { error: "무료 체험이 끝났어요. 카카오 로그인하면 5크레딧을 무료로 받을 수 있어요!" },
+          { error: "무료 체험이 끝났어요. 카카오 로그인하면 1크레딧을 무료로 받을 수 있어요!" },
           { status: 429 }
         );
       }

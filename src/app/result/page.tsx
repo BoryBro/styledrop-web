@@ -195,7 +195,10 @@ export default function Result() {
           setStatus("error");
         }
       })
-      .catch(() => setStatus("error"));
+      .catch((error) => {
+        setErrorMessage(error instanceof Error ? error.message : "변환에 실패했어요.");
+        setStatus("error");
+      });
   }, [router]);
 
   useEffect(() => {
