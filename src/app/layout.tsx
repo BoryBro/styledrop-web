@@ -4,6 +4,7 @@ import { Montserrat, Boldonse, Outfit, Unbounded } from "next/font/google";
 import "./globals.css";
 import { RevisitTracker } from "./_RevisitTracker";
 import { ADSENSE_CLIENT } from "@/lib/adsense";
+import { Analytics } from "@vercel/analytics/next";
 
 const montserrat = Montserrat({ subsets: ["latin"], weight: ["700", "900"], variable: "--font-montserrat" });
 const boldonse = Boldonse({ subsets: ["latin"], weight: "400", variable: "--font-boldonse" });
@@ -78,6 +79,7 @@ export default function RootLayout({
           />
         ) : null}
         <Script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" strategy="afterInteractive" />
+        <Analytics />
       </body>
     </html>
   );
