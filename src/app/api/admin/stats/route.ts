@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
 
   const [eventsRes, todayEventsRes, refundEventsRes, usersRes, todaySignupRes, todayUsageRes, todayUsageRowsRes, paymentsRes, todayPaymentsRes, userListRes,
     marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marAuditionStillRes, aprAuditionStillRes,
+    marDuoRes, aprDuoRes,
     aprRefUsageRes, aprRefAuditionRes, aprRefAuditionStillRes,
     marRevenueRes, aprRevenueRes,
     aprShareKakaoRes, aprShareLinkRes, aprSaveRes, aprAuditionShareKakaoRes, aprAuditionShareLinkRes,
@@ -134,6 +135,9 @@ export async function POST(request: NextRequest) {
     // 월별 오디션 스틸컷 — style_usage의 audition 행
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).eq("style_id", "audition").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).eq("style_id", "audition").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
+    // 월별 친구 배틀 평가 — Gemini 텍스트 평가 호출
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_duo_submission_succeeded").gte("created_at", "2026-03-01").lte("created_at", "2026-03-31T23:59:59"),
+    supabase.from("user_events").select("event_type", { count: "exact", head: true }).eq("event_type", "audition_duo_submission_succeeded").gte("created_at", currentMonthStartIso).lte("created_at", nowIso),
     // 4/1~4/7 실제 청구서 보정 기준
     supabase.from("style_usage").select("style_id", { count: "exact", head: true }).neq("style_id", "audition").gte("created_at", APR_REFERENCE_BILLING.from).lte("created_at", APR_REFERENCE_BILLING.to),
     supabase.from("audition_history").select("id", { count: "exact", head: true }).gte("created_at", APR_REFERENCE_BILLING.from).lte("created_at", APR_REFERENCE_BILLING.to),
@@ -594,6 +598,8 @@ export async function POST(request: NextRequest) {
   const aprAuditionCount = aprAuditionRes.count ?? 0;
   const marAuditionStillCount = marAuditionStillRes.count ?? 0;
   const aprAuditionStillCount = aprAuditionStillRes.count ?? 0;
+  const marDuoSubmissionCount = marDuoRes.count ?? 0;
+  const aprDuoSubmissionCount = aprDuoRes.count ?? 0;
 
   const aprReferenceStyleCount = aprRefUsageRes.count ?? 0;
   const aprReferenceAuditionCount = aprRefAuditionRes.count ?? 0;
@@ -786,6 +792,7 @@ export async function POST(request: NextRequest) {
         styleCount: marStyleCount,
         auditionCount: marAuditionCount,
         auditionStillCount: marAuditionStillCount,
+        duoSubmissionCount: marDuoSubmissionCount,
         apiCost: marResolvedApiCost,
         revenue: ((marRevenueRes.data ?? []) as PaymentRow[]).reduce((sum, payment) => sum + getNetRevenueAmount(payment), 0),
         costSource: marCostSource,
@@ -795,6 +802,7 @@ export async function POST(request: NextRequest) {
         styleCount: aprStyleCount,
         auditionCount: aprAuditionCount,
         auditionStillCount: aprAuditionStillCount,
+        duoSubmissionCount: aprDuoSubmissionCount,
         apiCost: aprResolvedApiCost,
         revenue: ((aprRevenueRes.data ?? []) as PaymentRow[]).reduce((sum, payment) => sum + getNetRevenueAmount(payment), 0),
         shareKakao: aprShareKakaoRes.count ?? 0,

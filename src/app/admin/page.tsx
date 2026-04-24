@@ -13,7 +13,7 @@ import { REFUND_UNIT_PRICE } from "@/lib/payment-policy";
 import { ALL_STYLES } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-const ADMIN_UI_VERSION = "v2.11.0-console-admin";
+const ADMIN_UI_VERSION = "v2.12.0-console-admin";
 
 type AdminTab = "dashboard" | "ops" | "metrics" | "revenue" | "users" | "analytics";
 
@@ -221,6 +221,9 @@ type MonthlyCost = {
   };
 };
 
+const ESTIMATED_KAKAOPAY_FEE_RATE = 0.032;
+const VAT_DIVISOR = 11;
+
 function relativeTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
@@ -332,15 +335,19 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
   ];
   const m = monthlyCosts?.[activeMonth];
   const duoSubmissionCount = m?.duoSubmissionCount ?? 0;
-  const profit = m ? m.revenue - m.apiCost : 0;
-  const costRatio = m && m.revenue > 0 ? Math.round((m.apiCost / m.revenue) * 100) : 0;
-  const profitRatio = m && m.revenue > 0 ? Math.round((profit / m.revenue) * 100) : 0;
+  const grossRevenue = m?.revenue ?? 0;
+  const vatAmount = Math.round(grossRevenue / VAT_DIVISOR);
+  const supplyRevenue = Math.max(0, grossRevenue - vatAmount);
+  const estimatedPgFee = Math.round(grossRevenue * ESTIMATED_KAKAOPAY_FEE_RATE);
+  const estimatedProfit = m ? supplyRevenue - estimatedPgFee - m.apiCost : 0;
+  const costRatio = grossRevenue > 0 ? Math.round((m!.apiCost / grossRevenue) * 100) : 0;
+  const profitRatio = grossRevenue > 0 ? Math.round((estimatedProfit / grossRevenue) * 100) : 0;
 
   const isActual = m?.costSource === "bigquery_actual" || m?.costSource === "manual_actual";
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">비용 · 매출 · 남는 돈</p>
+      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">추정 순이익 계산기</p>
       <div className="flex overflow-hidden rounded-lg border border-[#E5E7EB] bg-white">
         {months.map(({ key, label, note }) => (
           <button
@@ -359,10 +366,10 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[15px] font-bold text-gray-900">
-                {activeMonth === "2026-04" ? "이번 달 손익 요약" : "3월 참고 손익"}
+                {activeMonth === "2026-04" ? "이번 달 추정 순이익" : "3월 추정 순이익"}
               </p>
               <p className="text-[12px] text-gray-500 mt-1">
-                총 AI 비용은 청구 기준이고, 아래는 기능별 사용량입니다.
+                실결제액에서 VAT, 카카오 수수료, Gemini 비용을 차감해서 봅니다.
               </p>
             </div>
             <span className="text-[11px] text-gray-400 whitespace-nowrap">
@@ -370,14 +377,38 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-            <MiniCard label="들어온 돈" value={`₩${m.revenue.toLocaleString()}`} accent />
-            <MiniCard label="AI 비용" value={`₩${m.apiCost.toLocaleString()}`} />
-            <MiniCard label="남는 돈" value={`${profit >= 0 ? "+" : ""}₩${profit.toLocaleString()}`} accent={profit >= 0} />
-            <MiniCard label="AI 원가율" value={m.revenue > 0 ? `${costRatio}%` : "—"} />
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
+            <MiniCard label="실결제 매출" value={`₩${grossRevenue.toLocaleString()}`} accent />
+            <MiniCard label="VAT 제외 매출" value={`₩${supplyRevenue.toLocaleString()}`} />
+            <MiniCard label="카카오 수수료" value={`-₩${estimatedPgFee.toLocaleString()}`} />
+            <MiniCard label="Gemini 비용" value={`-₩${m.apiCost.toLocaleString()}`} />
+            <MiniCard label="추정 순이익" value={`${estimatedProfit >= 0 ? "+" : ""}₩${estimatedProfit.toLocaleString()}`} accent={estimatedProfit >= 0} />
+            <MiniCard label="추정 순이익률" value={grossRevenue > 0 ? `${profitRatio}%` : "—"} />
           </div>
 
           <div className="flex flex-col gap-2 border-y border-[#F0F0F0] py-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-gray-500">VAT 차감액</span>
+              <span className="text-[13px] font-bold text-gray-900 tabular-nums">
+                -₩{vatAmount.toLocaleString()}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-gray-500">AI 원가율</span>
+              <span className="text-[13px] font-bold text-gray-900 tabular-nums">
+                {grossRevenue > 0 ? `${costRatio}%` : "—"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-t border-[#F0F0F0] pt-2">
+              <span className="text-[13px] text-gray-500">호출 집계</span>
+              <span className="text-[13px] font-bold text-gray-900 tabular-nums">
+                {m.styleCount + m.auditionCount + (m.auditionStillCount ?? 0) + duoSubmissionCount}건
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 border-y border-[#F0F0F0] py-3">
+            <p className="text-[13px] font-bold text-gray-900">기능별 사용량</p>
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-gray-500">스타일 카드</span>
               <span className="text-[13px] font-bold text-gray-900 tabular-nums">
@@ -400,12 +431,6 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
               <span className="text-[13px] text-gray-500">친구 배틀 평가</span>
               <span className="text-[13px] font-bold text-gray-900 tabular-nums">
                 {duoSubmissionCount}건
-              </span>
-            </div>
-            <div className="flex items-center justify-between border-t border-[#F0F0F0] pt-2">
-              <span className="text-[13px] text-gray-500">남는 비율</span>
-              <span className={`text-[13px] font-bold tabular-nums ${profit >= 0 ? "text-green-600" : "text-red-500"}`}>
-                {m.revenue > 0 ? `${profitRatio}%` : "—"}
               </span>
             </div>
           </div>
@@ -449,13 +474,16 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
           </div>
 
           <div className="text-[11px] text-gray-400 px-1 leading-relaxed">
-            <p>매출 = 결제 완료 순매출 기준</p>
+            <p>매출은 payments 기준 실결제 순매출만 잡습니다.</p>
+            <p>무료크레딧, 가입 보너스, 수동 지급, 환불 지급분은 매출에 포함되지 않습니다.</p>
+            <p>VAT는 실결제액의 1/11로 계산합니다.</p>
+            <p>카카오 수수료는 현재 3.2% 가정으로 계산합니다.</p>
             <p>AI 비용 = {isActual ? "Google Billing export 실제값" : "실청구 보정 추정값"}</p>
             {isActual
               ? <p>{activeMonth} 비용은 실제 Gemini 청구 데이터 기준입니다.</p>
               : <p>4월은 4/1~4/7 실제 청구서 15,999원을 기준으로 보정한 추정치입니다.</p>}
             <p>기능별 정확한 KRW 원가 배분은 현재 토큰 로그가 없어 고정해서 적지 않습니다.</p>
-            <p>이 숫자는 PG 수수료, 광고비, 인건비 제외 기준입니다.</p>
+            <p>광고비, 인건비, 기타 운영비는 아직 제외하지 않았습니다.</p>
           </div>
         </div>
       )}
