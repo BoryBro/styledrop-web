@@ -32,6 +32,12 @@ function hashValue(value: string) {
   return createHmac("sha256", secret).update(value).digest("hex");
 }
 
+function getAnonymousThrottleKey(request: NextRequest, scope: string) {
+  const clientIp = getClientIp(request);
+  const userAgent = request.headers.get("user-agent")?.slice(0, 200) ?? "unknown";
+  return `anon:${scope}:${hashValue(`${clientIp}|${userAgent}`)}`;
+}
+
 function estimateBase64Bytes(value: string) {
   const normalized = value.replace(/^data:[^,]+,/, "").replace(/\s+/g, "");
   return Math.floor((normalized.length * 3) / 4);
@@ -49,6 +55,19 @@ async function checkAnonymousLimitWithRpc(throttleKey: string, limit: number) {
   }
 
   return rpcRes.data === true;
+}
+
+async function getAnonymousUsageCountWithRpc(throttleKey: string) {
+  const supabase = getSupabase();
+  const rpcRes = await supabase.rpc("get_daily_usage", {
+    p_user_id: throttleKey,
+  });
+
+  if (rpcRes.error) {
+    return null;
+  }
+
+  return typeof rpcRes.data === "number" ? rpcRes.data : 0;
 }
 
 async function checkAnonymousLimitWithEvents(throttleKey: string, scope: string, limit: number) {
@@ -87,6 +106,25 @@ async function checkAnonymousLimitWithEvents(throttleKey: string, scope: string,
   return true;
 }
 
+async function getAnonymousUsageCountWithEvents(throttleKey: string, scope: string) {
+  const supabase = getSupabase();
+  const since = new Date(Date.now() - DAY_MS).toISOString();
+
+  const countRes = await supabase
+    .from("user_events")
+    .select("id", { count: "exact", head: true })
+    .is("user_id", null)
+    .eq("event_type", "anonymous_api_throttle")
+    .gte("created_at", since)
+    .contains("metadata", { scope, throttle_key: throttleKey });
+
+  if (countRes.error) {
+    throw countRes.error;
+  }
+
+  return countRes.count ?? 0;
+}
+
 export async function enforceAnonymousDailyLimit(
   request: NextRequest,
   {
@@ -97,9 +135,7 @@ export async function enforceAnonymousDailyLimit(
     limit: number;
   },
 ) {
-  const clientIp = getClientIp(request);
-  const userAgent = request.headers.get("user-agent")?.slice(0, 200) ?? "unknown";
-  const throttleKey = `anon:${scope}:${hashValue(`${clientIp}|${userAgent}`)}`;
+  const throttleKey = getAnonymousThrottleKey(request, scope);
 
   const rpcAllowed = await checkAnonymousLimitWithRpc(throttleKey, limit);
   if (rpcAllowed !== null) {
@@ -107,6 +143,24 @@ export async function enforceAnonymousDailyLimit(
   }
 
   return checkAnonymousLimitWithEvents(throttleKey, scope, limit);
+}
+
+export async function getAnonymousDailyUsageCount(
+  request: NextRequest,
+  {
+    scope,
+  }: {
+    scope: string;
+  },
+) {
+  const throttleKey = getAnonymousThrottleKey(request, scope);
+
+  const rpcCount = await getAnonymousUsageCountWithRpc(throttleKey);
+  if (rpcCount !== null) {
+    return rpcCount;
+  }
+
+  return getAnonymousUsageCountWithEvents(throttleKey, scope);
 }
 
 export function assertRequestBodySize(request: NextRequest, maxBytes: number) {
