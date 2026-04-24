@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { serializeThreadsImageUrls } from "@/lib/threads-images";
 
 function getSupabase() {
   return createClient(
@@ -37,7 +38,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     patch.content = content;
   }
-  if (typeof body.image_url === "string") patch.image_url = body.image_url.trim() || null;
+  if (Array.isArray(body.image_urls)) patch.image_url = serializeThreadsImageUrls(body.image_urls);
+  if (typeof body.image_url === "string") patch.image_url = serializeThreadsImageUrls(body.image_url);
   if (typeof body.quality_note === "string") patch.quality_note = body.quality_note.trim() || null;
   if (typeof body.category === "string") patch.category = body.category.trim() || null;
   if (typeof body.cta_type === "string") patch.cta_type = body.cta_type.trim() || null;

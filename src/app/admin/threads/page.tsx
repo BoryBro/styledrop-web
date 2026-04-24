@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { MAX_THREADS_IMAGE_COUNT, parseThreadsImageUrls } from "@/lib/threads-images";
 
 type PostStatus = "draft" | "approved" | "published" | "failed";
 type ThreadsPost = {
@@ -14,7 +15,7 @@ type ThreadsPost = {
 
 type ThreadDraft = {
   content: string;
-  image_url: string;
+  image_urls: string[];
   scheduled_at: string;
   category: string;
   cta_type: "none" | "soft" | "direct";
@@ -62,7 +63,7 @@ function buildPresetDate(hour: number, tomorrow: boolean): Date {
 
 const EMPTY_DRAFT: ThreadDraft = {
   content: "",
-  image_url: "",
+  image_urls: [],
   scheduled_at: "",
   category: "",
   cta_type: "none",
@@ -204,6 +205,11 @@ function withoutStudioLink(content: string): string {
     .trim();
 }
 
+function toFileArray(files: FileList | File[] | null | undefined): File[] {
+  if (!files) return [];
+  return Array.from(files);
+}
+
 export default function ThreadsAdminPage() {
   const [pw, setPw]           = useState("");
   const [authed, setAuthed]   = useState(false);
@@ -227,6 +233,7 @@ export default function ThreadsAdminPage() {
   const toast$ = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
   const h = (p: string) => ({ "Content-Type": "application/json", "x-admin-password": p });
+  const getPostImageUrls = (post: ThreadsPost) => parseThreadsImageUrls(post.image_url);
 
   const fetchPosts = async (p: string) => {
     setLoading(true);
@@ -288,7 +295,7 @@ export default function ThreadsAdminPage() {
     const now = Date.now();
     const drafts = posts.filter(p =>
       p.status === "draft" &&
-      !(p.image_upload_recommended && !p.image_url) &&
+      !(p.image_upload_recommended && getPostImageUrls(p).length === 0) &&
       new Date(p.scheduled_at).getTime() > now
     );
     if (!drafts.length) { toast$("승인할 초안 없음"); return; }
@@ -323,12 +330,35 @@ export default function ThreadsAdminPage() {
     }
   };
 
-  const uploadImage = async (id: string, file: File | null) => {
-    if (!file) return;
+  const updatePostImages = async (id: string, imageUrls: string[]) => {
+    setActionId(id);
+    try {
+      const res = await fetch(`/api/threads/${id}`, {
+        method: "PATCH",
+        headers: h(pw),
+        body: JSON.stringify({ image_urls: imageUrls }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast$(`이미지 수정 실패: ${data.error}`);
+        return;
+      }
+      await fetchPosts(pw);
+      toast$("이미지 수정 완료");
+    } catch {
+      toast$("이미지 수정 실패");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const uploadImage = async (id: string, files: File[] | FileList | null) => {
+    const nextFiles = toFileArray(files);
+    if (!nextFiles.length) return;
     setUploadingId(id);
     try {
       const form = new FormData();
-      form.append("file", file);
+      nextFiles.forEach((file) => form.append("files", file));
       const res = await fetch(`/api/threads/${id}/image`, {
         method: "POST",
         headers: { "x-admin-password": pw },
@@ -340,7 +370,7 @@ export default function ThreadsAdminPage() {
         return;
       }
       await fetchPosts(pw);
-      toast$("이미지 업로드 완료");
+      toast$(`${data.imageUrls?.length ?? nextFiles.length}장 기준으로 이미지 반영 완료`);
     } catch {
       toast$("이미지 업로드 실패");
     } finally {
@@ -349,12 +379,14 @@ export default function ThreadsAdminPage() {
     }
   };
 
-  const uploadDraftImage = async (file: File | null) => {
-    if (!file) return;
+  const uploadDraftImage = async (files: File[] | FileList | null) => {
+    const nextFiles = toFileArray(files);
+    if (!nextFiles.length) return;
     setDraftUploading(true);
     try {
       const form = new FormData();
-      form.append("file", file);
+      nextFiles.forEach((file) => form.append("files", file));
+      form.append("existingUrls", JSON.stringify(draft.image_urls));
       const res = await fetch("/api/threads/image", {
         method: "POST",
         headers: { "x-admin-password": pw },
@@ -365,7 +397,7 @@ export default function ThreadsAdminPage() {
         toast$(`업로드 실패: ${data.error}`);
         return;
       }
-      setDraft((current) => ({ ...current, image_url: data.imageUrl }));
+      setDraft((current) => ({ ...current, image_urls: data.imageUrls ?? [] }));
       toast$("이미지 업로드 완료");
     } catch {
       toast$("이미지 업로드 실패");
@@ -474,7 +506,7 @@ export default function ThreadsAdminPage() {
       method: "POST", headers: h(pw),
       body: JSON.stringify({
         content: draft.content,
-        image_url: draft.image_url || null,
+        image_urls: draft.image_urls,
         scheduled_at: scheduledDate.toISOString(),
         category: draft.category || null,
         cta_type: draft.cta_type,
@@ -488,13 +520,13 @@ export default function ThreadsAdminPage() {
   };
 
   const pending   = posts.filter(p => p.status === "draft" || p.status === "approved");
-  const needsImage = pending.filter(p => p.image_upload_recommended && !p.image_url);
+  const needsImage = pending.filter((p) => p.image_upload_recommended && getPostImageUrls(p).length === 0);
   const published = posts.filter(p => p.status === "published");
   const failed    = posts.filter(p => p.status === "failed");
   const tabPosts  = tab === "pending" ? pending : tab === "needsImage" ? needsImage : tab === "published" ? published : failed;
   const approvableDrafts = pending.filter(p =>
     p.status === "draft" &&
-    !(p.image_upload_recommended && !p.image_url) &&
+    !(p.image_upload_recommended && getPostImageUrls(p).length === 0) &&
     new Date(p.scheduled_at).getTime() > Date.now()
   );
   const charOver  = draft.content.length > 500;
@@ -710,7 +742,7 @@ export default function ThreadsAdminPage() {
                   onDrop={(event) => {
                     event.preventDefault();
                     setDraftDragActive(false);
-                    void uploadDraftImage(event.dataTransfer.files?.[0] ?? null);
+                    void uploadDraftImage(event.dataTransfer.files);
                   }}
                   className="min-h-32 rounded-2xl border border-dashed px-5 py-5 transition-colors"
                   style={{
@@ -718,34 +750,64 @@ export default function ThreadsAdminPage() {
                     background: draftDragActive ? "#FFF7F2" : "#F9FAFB",
                   }}
                 >
-                  {draft.image_url ? (
-                    <div className="flex gap-4 items-center">
-                      <div className="h-24 w-24 overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F3F4F6]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={draft.image_url} alt="" className="h-full w-full object-cover" />
+                  {draft.image_urls.length > 0 ? (
+                    <div className="flex flex-col gap-4">
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        {draft.image_urls.map((imageUrl, index) => (
+                          <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F3F4F6]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={imageUrl} alt="" className="h-28 w-full object-cover" />
+                            <div className="flex items-center justify-between gap-2 border-t border-[#E5E7EB] bg-white px-3 py-2">
+                              <span className="truncate text-[11px] font-bold text-[#6B7280]">이미지 {index + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => setDraft((current) => ({
+                                  ...current,
+                                  image_urls: current.image_urls.filter((_, imageIndex) => imageIndex !== index),
+                                }))}
+                                className="text-[11px] font-black text-red-500"
+                              >
+                                제거
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[#111827]">이미지 첨부됨</p>
-                        <p className="truncate text-[11px] text-[#9CA3AF]">{draft.image_url}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="cursor-pointer rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[12px] font-black text-[#4B5563] transition-colors hover:text-[#111827]">
+                          {draftUploading ? "업로드 중..." : "사진 추가"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            disabled={draftUploading || draft.image_urls.length >= MAX_THREADS_IMAGE_COUNT}
+                            onChange={(event) => void uploadDraftImage(event.target.files)}
+                          />
+                        </label>
                         <button
                           type="button"
-                          onClick={() => setDraft((current) => ({ ...current, image_url: "" }))}
-                          className="mt-2 text-[12px] font-bold text-red-500"
+                          onClick={() => setDraft((current) => ({ ...current, image_urls: [] }))}
+                          className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[12px] font-black text-red-500"
                         >
-                          이미지 제거
+                          전체 제거
                         </button>
+                        <span className="text-[11px] font-bold text-[#9CA3AF]">
+                          {draft.image_urls.length}/{MAX_THREADS_IMAGE_COUNT}장
+                        </span>
                       </div>
                     </div>
                   ) : (
                     <label className="flex h-full min-h-24 cursor-pointer flex-col items-center justify-center gap-2 text-center">
                       <span className="text-sm font-black text-[#111827]">{draftUploading ? "업로드 중..." : "사진을 드래그하거나 클릭해서 업로드"}</span>
-                      <span className="text-[11px] text-[#9CA3AF]">JPG, PNG, WEBP · 8MB 이하</span>
+                      <span className="text-[11px] text-[#9CA3AF]">JPG, PNG, WEBP · 최대 20장 · 각 8MB 이하</span>
                       <input
                         type="file"
                         accept="image/*"
+                        multiple
                         className="hidden"
                         disabled={draftUploading}
-                        onChange={(event) => void uploadDraftImage(event.target.files?.[0] ?? null)}
+                        onChange={(event) => void uploadDraftImage(event.target.files)}
                       />
                     </label>
                   )}
@@ -861,7 +923,8 @@ export default function ThreadsAdminPage() {
         {tabPosts.map(post => {
           const s = STATUS_STYLE[post.status];
           const busy = actionId === post.id;
-          const missingRequiredImage = Boolean(post.image_upload_recommended && !post.image_url);
+          const postImageUrls = getPostImageUrls(post);
+          const missingRequiredImage = Boolean(post.image_upload_recommended && postImageUrls.length === 0);
           const scheduledPassed = new Date(post.scheduled_at).getTime() <= Date.now();
           const isEditing = editingPostId === post.id;
           const editOver = editDraft.content.length > 500;
@@ -920,7 +983,7 @@ export default function ThreadsAdminPage() {
                   onDrop={(event) => {
                     event.preventDefault();
                     setDraggingPostId(null);
-                    void uploadImage(post.id, event.dataTransfer.files?.[0] ?? null);
+                    void uploadImage(post.id, event.dataTransfer.files);
                   }}
                   className="rounded-xl border border-dashed px-4 py-4 transition-colors"
                   style={{
@@ -928,16 +991,42 @@ export default function ThreadsAdminPage() {
                     background: draggingPostId === post.id ? "#FFF7F2" : "#F9FAFB",
                   }}
                 >
-                  {post.image_url ? (
-                    <div className="flex gap-3 items-center">
-                      <div className="h-24 w-24 overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F3F4F6]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={post.image_url} alt="" className="h-full w-full object-cover" />
+                  {postImageUrls.length > 0 ? (
+                    <div className="flex flex-col gap-4">
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        {postImageUrls.map((imageUrl, index) => (
+                          <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F3F4F6]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={imageUrl} alt="" className="h-28 w-full object-cover" />
+                            <div className="flex items-center justify-between gap-2 border-t border-[#E5E7EB] bg-white px-3 py-2">
+                              <span className="truncate text-[11px] font-bold text-[#6B7280]">이미지 {index + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => void updatePostImages(post.id, postImageUrls.filter((_, imageIndex) => imageIndex !== index))}
+                                className="text-[11px] font-black text-red-500"
+                              >
+                                제거
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-[#111827]">이미지 첨부됨</p>
-                        <p className="mt-1 truncate text-[11px] text-[#9CA3AF]">{post.image_url}</p>
-                        <p className="mt-2 text-[11px] text-[#9CA3AF]">교체하려면 새 이미지를 여기로 드래그하세요.</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="cursor-pointer rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[12px] font-black text-[#4B5563] transition-colors hover:text-[#111827]">
+                          {uploadingId === post.id ? "업로드 중..." : "사진 추가"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            disabled={uploadingId === post.id || busy || postImageUrls.length >= MAX_THREADS_IMAGE_COUNT}
+                            onChange={(event) => void uploadImage(post.id, event.target.files)}
+                          />
+                        </label>
+                        <span className="text-[11px] font-bold text-[#9CA3AF]">
+                          {postImageUrls.length}/{MAX_THREADS_IMAGE_COUNT}장
+                        </span>
+                        <span className="text-[11px] text-[#9CA3AF]">추가 업로드 시 뒤에 이어 붙습니다.</span>
                       </div>
                     </div>
                   ) : (
@@ -946,23 +1035,26 @@ export default function ThreadsAdminPage() {
                         {uploadingId === post.id ? "업로드 중..." : "이미지를 드래그하거나 클릭해서 업로드"}
                       </span>
                       <span className="text-[11px] text-[#9CA3AF]">
-                        {post.image_upload_recommended ? "이 글은 이미지가 있어야 승인됩니다." : "선택 사항 · JPG, PNG, WEBP"}
+                        {post.image_upload_recommended ? "이 글은 이미지가 있어야 승인됩니다." : "선택 사항 · JPG, PNG, WEBP"} · 최대 20장
                       </span>
                       <input
                         type="file"
                         accept="image/*"
+                        multiple
                         className="hidden"
                         disabled={uploadingId === post.id || busy}
-                        onChange={(event) => void uploadImage(post.id, event.target.files?.[0] ?? null)}
+                        onChange={(event) => void uploadImage(post.id, event.target.files)}
                       />
                     </label>
                   )}
                 </div>
               )}
-              {post.status === "published" && post.image_url && (
-                <div className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F3F4F6]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={post.image_url} alt="" className="max-h-72 w-full object-cover" />
+              {post.status === "published" && postImageUrls.length > 0 && (
+                <div className="grid grid-cols-2 gap-3 overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-3 sm:grid-cols-3">
+                  {postImageUrls.map((imageUrl, index) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={`${imageUrl}-${index}`} src={imageUrl} alt="" className="h-40 w-full rounded-lg object-cover" />
+                  ))}
                 </div>
               )}
               {post.quality_note && <p className="rounded-lg bg-[#F9FAFB] px-3 py-2 text-[12px] text-[#6B7280]">{post.quality_note}</p>}

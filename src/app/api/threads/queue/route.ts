@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { serializeThreadsImageUrls } from "@/lib/threads-images";
 
 function getSupabase() {
   return createClient(
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
   const {
     content,
     image_url,
+    image_urls,
     scheduled_at,
     template_id,
     category,
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest) {
     .from("threads_posts")
     .insert({
       content,
-      image_url: image_url || null,
+      image_url: serializeThreadsImageUrls(image_urls ?? image_url),
       scheduled_at: scheduledAt,
       status: "draft",
       template_id: template_id || null,
