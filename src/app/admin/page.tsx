@@ -1021,6 +1021,7 @@ export default function AdminPage() {
   const [analyticsSearchUser, setAnalyticsSearchUser] = useState("");
   const [analyticsData, setAnalyticsData] = useState<GenerationHistoryItem[]>([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [deleteCountdown, setDeleteCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
   const liveClock = fetchedAt ? new Date(fetchedAt.getTime() + elapsed * 1000) : null;
 
   const doLogin = async (pw: string) => {
@@ -1158,11 +1159,67 @@ export default function AdminPage() {
     loadAnalyticsData(value);
   };
 
+  const downloadAnalyticsCSV = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch(`/api/admin/generation-history`, {
+        headers: { "x-admin-password": password },
+      });
+      const data = await res.json();
+      const items: GenerationHistoryItem[] = data.data || [];
+
+      const csv = [
+        ["생성 시간", "사용자", "카드명", "결과"].join(","),
+        ...items.map((item) =>
+          [
+            new Date(item.created_at).toLocaleString("ko-KR"),
+            item.nickname || "Unknown",
+            item.style_name,
+            item.success ? "성공" : "실패",
+          ]
+            .map((v) => `"${v}"`)
+            .join(",")
+        ),
+      ].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `styledrop-analytics-${new Date().toISOString().split("T")[0]}.csv`);
+      link.click();
+    } catch (error) {
+      console.error("CSV 다운로드 실패:", error);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "analytics" && stats && analyticsData.length === 0) {
       loadAnalyticsData("");
     }
   }, [activeTab, stats]);
+
+  useEffect(() => {
+    if (activeTab === "analytics") {
+      const interval = setInterval(() => {
+        const now = new Date();
+        const deleteTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const diff = deleteTime.getTime() - now.getTime();
+
+        if (diff > 0) {
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          setDeleteCountdown({ days, hours, minutes, seconds });
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
 
   if (!stats) {
     return (
@@ -2294,6 +2351,16 @@ export default function AdminPage() {
           <div className="flex flex-col gap-1">
             <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">카드 생성 기록</p>
             <div className="rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+              {deleteCountdown && (
+                <div className="mb-4 p-3 rounded-lg bg-orange-50 border border-orange-200">
+                  <p className="text-[12px] font-bold text-orange-900">
+                    ⏰ 데이터 자동 삭제까지
+                    <span className="font-mono ml-2 text-orange-600">
+                      {deleteCountdown.days}일 {deleteCountdown.hours.toString().padStart(2, "0")}:{deleteCountdown.minutes.toString().padStart(2, "0")}:{deleteCountdown.seconds.toString().padStart(2, "0")}
+                    </span>
+                  </p>
+                </div>
+              )}
               <div className="mb-4 flex items-center gap-2">
                 <input
                   type="text"
@@ -2302,6 +2369,13 @@ export default function AdminPage() {
                   onChange={(e) => handleAnalyticsSearch(e.target.value)}
                   className="flex-1 border border-[#E7E7E7] bg-white px-3 py-2 text-[14px] rounded-md focus:outline-none focus:border-[#C9571A]"
                 />
+                <button
+                  onClick={downloadAnalyticsCSV}
+                  disabled={analyticsLoading}
+                  className="bg-[#C9571A] hover:bg-[#B84610] disabled:bg-gray-300 text-white px-4 py-2 text-[12px] font-bold rounded-md transition-colors"
+                >
+                  📥 CSV 다운로드
+                </button>
                 {analyticsLoading && <span className="text-[12px] text-gray-500">로딩 중...</span>}
               </div>
 
