@@ -7509,6 +7509,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!session && !(FREE_TRIAL_STYLE_IDS as readonly string[]).includes(style)) {
+    return NextResponse.json(
+      { error: "비회원은 1크레딧 체험 카드만 가능해요. 카카오 로그인 후 이용해주세요." },
+      { status: 403 }
+    );
+  }
+
   requestKey = createRequestFingerprint("generate", [
     session?.id ?? "guest",
     style,

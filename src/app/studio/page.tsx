@@ -649,15 +649,22 @@ export default function Studio() {
   }, [showLabSection]);
 
   const handleCardClick = (style: StyleCard) => {
+    const isFreeTrialStyle = FREE_TRIAL_STYLE_ID_SET.has(style.id);
+    const requiredCredits = isFreeTrialStyle ? 1 : 2;
+
     if (!style.active) {
       showToast(styleControls[style.id]?.is_enabled === false ? "현재 점검 중입니다. 잠시 후 다시 확인해주세요." : "곧 출시됩니다 ✨");
+      return;
+    }
+    if (!user && !isFreeTrialStyle) {
+      setShowLoginModal(true);
       return;
     }
     if (!user && remaining === 0) {
       setShowLoginModal(true);
       return;
     }
-    if (user && credits === 0) {
+    if (user && credits !== null && credits < requiredCredits) {
       setShowNoCreditModal(true);
       return;
     }
