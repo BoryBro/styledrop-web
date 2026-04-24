@@ -1022,6 +1022,7 @@ export default function AdminPage() {
   const [analyticsData, setAnalyticsData] = useState<GenerationHistoryItem[]>([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [deleteCountdown, setDeleteCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+  const [analyticsMountTime] = useState(new Date());
   const liveClock = fetchedAt ? new Date(fetchedAt.getTime() + elapsed * 1000) : null;
 
   const doLogin = async (pw: string) => {
@@ -1182,11 +1183,16 @@ export default function AdminPage() {
         ),
       ].join("\n");
 
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const week = Math.ceil(now.getDate() / 7);
+      const fileName = `${month}월-${week}주차-카드생성기록.csv`;
+
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", `styledrop-analytics-${new Date().toISOString().split("T")[0]}.csv`);
+      link.setAttribute("download", fileName);
       link.click();
     } catch (error) {
       console.error("CSV 다운로드 실패:", error);
@@ -1203,9 +1209,10 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (activeTab === "analytics") {
-      const interval = setInterval(() => {
+      const deleteTime = new Date(analyticsMountTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      const updateCountdown = () => {
         const now = new Date();
-        const deleteTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
         const diff = deleteTime.getTime() - now.getTime();
 
         if (diff > 0) {
@@ -1214,12 +1221,17 @@ export default function AdminPage() {
           const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
           const seconds = Math.floor((diff % (1000 * 60)) / 1000);
           setDeleteCountdown({ days, hours, minutes, seconds });
+        } else {
+          setDeleteCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         }
-      }, 1000);
+      };
+
+      updateCountdown();
+      const interval = setInterval(updateCountdown, 1000);
 
       return () => clearInterval(interval);
     }
-  }, [activeTab]);
+  }, [activeTab, analyticsMountTime]);
 
   if (!stats) {
     return (
