@@ -15,7 +15,7 @@ import { STYLE_VARIANTS } from "@/lib/variants";
 
 const ADMIN_UI_VERSION = "v2.11.0-console-admin";
 
-type AdminTab = "ops" | "metrics" | "revenue" | "users";
+type AdminTab = "ops" | "metrics" | "revenue" | "users" | "analytics";
 
 type Notice = { id: number; text: string; active: boolean };
 type UserItem = {
@@ -94,6 +94,15 @@ type RecentGenerationRefund = {
   reason: string | null;
   message: string | null;
   created_at: string;
+};
+type GenerationHistoryItem = {
+  id: string;
+  user_id: string;
+  nickname: string | null;
+  style_id: string;
+  style_name: string;
+  created_at: string;
+  success: boolean;
 };
 type Stats = {
   styleControls: StyleControlState[];
@@ -1009,6 +1018,9 @@ export default function AdminPage() {
   const [styleControlMsg, setStyleControlMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [generationErrorDeleteLoading, setGenerationErrorDeleteLoading] = useState<string | null>(null);
   const [generationErrorDeleteMsg, setGenerationErrorDeleteMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [analyticsSearchUser, setAnalyticsSearchUser] = useState("");
+  const [analyticsData, setAnalyticsData] = useState<GenerationHistoryItem[]>([]);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const liveClock = fetchedAt ? new Date(fetchedAt.getTime() + elapsed * 1000) : null;
 
   const doLogin = async (pw: string) => {
@@ -1123,6 +1135,34 @@ export default function AdminPage() {
     );
     void persistStyleControls(nextControls, styleId);
   };
+
+  const loadAnalyticsData = async (searchUser: string) => {
+    setAnalyticsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (searchUser) params.set("searchUser", searchUser);
+      const res = await fetch(`/api/admin/generation-history?${params}`, {
+        headers: { "x-admin-password": password },
+      });
+      const data = await res.json();
+      setAnalyticsData(data.data || []);
+    } catch (error) {
+      console.error("분석 데이터 로드 실패:", error);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const handleAnalyticsSearch = (value: string) => {
+    setAnalyticsSearchUser(value);
+    loadAnalyticsData(value);
+  };
+
+  useEffect(() => {
+    if (activeTab === "analytics" && stats && analyticsData.length === 0) {
+      loadAnalyticsData("");
+    }
+  }, [activeTab, stats]);
 
   if (!stats) {
     return (
@@ -1291,7 +1331,9 @@ export default function AdminPage() {
         ? "사용량, 저장률, 공유율 같은 성과 확인"
         : activeTab === "revenue"
           ? "매출, 비용, 환불 같은 돈 흐름 확인"
-          : "크레딧 조정 같은 유저 대응";
+          : activeTab === "users"
+            ? "크레딧 조정 같은 유저 대응"
+            : "카드 생성 기록 조회";
   const pageTitle =
     activeTab === "ops"
       ? "운영 관리"
@@ -1299,7 +1341,9 @@ export default function AdminPage() {
         ? "데이터 분석"
         : activeTab === "revenue"
           ? "매출 관리"
-          : "유저 관리";
+          : activeTab === "users"
+            ? "유저 관리"
+            : "생성 기록";
   const todayLabel = new Date().toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "2-digit",
@@ -1350,6 +1394,7 @@ export default function AdminPage() {
             <AdminTabButton label="데이터 분석" note="사용량 · 저장 · 공유" active={activeTab === "metrics"} onClick={() => setActiveTab("metrics")} />
             <AdminTabButton label="매출 관리" note="비용 · 결제 · 환불" active={activeTab === "revenue"} onClick={() => setActiveTab("revenue")} />
             <AdminTabButton label="유저 관리" note="크레딧 대응" active={activeTab === "users"} onClick={() => setActiveTab("users")} />
+            <AdminTabButton label="생성 기록" note="카드 생성 히스토리" active={activeTab === "analytics"} onClick={() => { setActiveTab("analytics"); loadAnalyticsData(""); }} />
             <div className="my-3 h-px bg-[#E5E7EB]" />
             <a
               href="/admin/threads"
@@ -1417,6 +1462,7 @@ export default function AdminPage() {
               <AdminTabButton label="지표" note="사용량 · 공유" active={activeTab === "metrics"} onClick={() => setActiveTab("metrics")} />
               <AdminTabButton label="매출" note="비용 · 결제" active={activeTab === "revenue"} onClick={() => setActiveTab("revenue")} />
               <AdminTabButton label="유저" note="크레딧 대응" active={activeTab === "users"} onClick={() => setActiveTab("users")} />
+              <AdminTabButton label="분석" note="생성 기록" active={activeTab === "analytics"} onClick={() => { setActiveTab("analytics"); loadAnalyticsData(""); }} />
             </div>
 
             <section className="rounded-xl border border-[#EAECF0] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -2240,6 +2286,65 @@ export default function AdminPage() {
             </div>
           </div>
 
+        </div>
+      )}
+
+      {activeTab === "analytics" && (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">카드 생성 기록</p>
+            <div className="rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+              <div className="mb-4 flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="사용자명 검색..."
+                  value={analyticsSearchUser}
+                  onChange={(e) => handleAnalyticsSearch(e.target.value)}
+                  className="flex-1 border border-[#E7E7E7] bg-white px-3 py-2 text-[14px] rounded-md focus:outline-none focus:border-[#C9571A]"
+                />
+                {analyticsLoading && <span className="text-[12px] text-gray-500">로딩 중...</span>}
+              </div>
+
+              {analyticsData.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[#E7E7E7] text-[12px] font-bold text-[#6B7280]">
+                        <th className="text-left py-2 px-3">생성 시간</th>
+                        <th className="text-left py-2 px-3">사용자</th>
+                        <th className="text-left py-2 px-3">카드명</th>
+                        <th className="text-center py-2 px-3">결과</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analyticsData.map((item) => (
+                        <tr key={item.id} className="border-b border-[#EEF0F2] hover:bg-[#F9FAFB]">
+                          <td className="py-2 px-3 text-[12px] text-gray-700">
+                            {new Date(item.created_at).toLocaleString("ko-KR")}
+                          </td>
+                          <td className="py-2 px-3 text-[12px] text-gray-900 font-medium">{item.nickname || "Unknown"}</td>
+                          <td className="py-2 px-3 text-[12px] text-gray-700">{item.style_name}</td>
+                          <td className="py-2 px-3 text-center">
+                            {item.success ? (
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#B7E1C4] text-[#18794E] text-xs font-bold">✓</span>
+                            ) : (
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-200 text-red-600 text-xs font-bold">✗</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-[13px] text-gray-500">
+                  {analyticsLoading ? "데이터를 불러오는 중..." : "최근 7일 생성 기록이 없습니다."}
+                </div>
+              )}
+
+              <p className="mt-4 text-[11px] text-gray-400">최근 7일 데이터 · 최대 50개 표시</p>
+            </div>
+          </div>
         </div>
       )}
       </div>

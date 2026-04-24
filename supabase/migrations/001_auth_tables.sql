@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   last_login_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 변환 히스토리 (로그인 유저만, 3일 보관)
+-- 변환 히스토리 (로그인 유저만, 7일 보관)
 CREATE TABLE IF NOT EXISTS transform_history (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -57,5 +57,5 @@ CREATE POLICY "service_only_style_usage" ON style_usage
 -- style_usage에 user_id 추가 (nullable — 비로그인 호환)
 ALTER TABLE style_usage ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL;
 
--- 24시간 지난 히스토리 자동 삭제 (Supabase cron 또는 pg_cron 사용)
--- SELECT cron.schedule('cleanup-old-history', '0 4 * * *', $$DELETE FROM transform_history WHERE created_at < NOW() - INTERVAL '1 day'$$);
+-- 7일 지난 히스토리 자동 삭제 (Supabase cron 또는 pg_cron 사용)
+-- SELECT cron.schedule('cleanup-old-history', '0 4 * * *', $$DELETE FROM transform_history WHERE created_at < NOW() - INTERVAL '7 days'$$);

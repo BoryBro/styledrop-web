@@ -18,6 +18,14 @@ interface KakaoSDK {
 
 type Status = "loading" | "done" | "error";
 
+function safeSessionSetItem(key: string, value: string) {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch (error) {
+    console.warn(`[result] sessionStorage save skipped: ${key}`, error);
+  }
+}
+
 export default function Result() {
   const [status, setStatus] = useState<Status>("loading");
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
@@ -171,7 +179,7 @@ export default function Result() {
         if (data.image) {
           const dataUrl = `data:image/jpeg;base64,${data.image}`;
           setResultImage(dataUrl);
-          sessionStorage.setItem("sd_resultDataUrl", dataUrl);
+          safeSessionSetItem("sd_resultDataUrl", dataUrl);
           setStatus("done");
           fetchCredits();
 
@@ -275,8 +283,8 @@ export default function Result() {
         imgUrl = url;
         setShareUrl(imgUrl);
         setShareLink(link);
-        sessionStorage.setItem("sd_shareUrl", imgUrl!);
-        sessionStorage.setItem("sd_shareLink", link!);
+        safeSessionSetItem("sd_shareUrl", imgUrl!);
+        safeSessionSetItem("sd_shareLink", link!);
       }
 
       const kakao = (window as Window & { Kakao?: KakaoSDK }).Kakao;
@@ -329,8 +337,8 @@ export default function Result() {
         const link = `${window.location.origin}/share?id=${id}`;
         setShareUrl(url);
         setShareLink(link);
-        sessionStorage.setItem("sd_shareUrl", url);
-        sessionStorage.setItem("sd_shareLink", link);
+        safeSessionSetItem("sd_shareUrl", url);
+        safeSessionSetItem("sd_shareLink", link);
       })
       .catch(() => {});
   }, [status, resultImage, imageBase64, shareUrl]);

@@ -4,6 +4,10 @@
 export type Variant = { id: string; label: string; desc?: string; thumbnail?: string };
 
 export const STYLE_VARIANTS: Record<string, Variant[]> = {
+  "rainy-crosswalk": [
+    { id: "soft-dreamy", label: "몽글몽글", desc: "밀키하고 부드러운 필름 보정 톤" },
+    { id: "y2k-glossy", label: "Y2K 글로시", desc: "푸른 하늘감과 반짝이는 2000년대 글로시 톤" },
+  ],
   "angel": [
     { id: "dark", label: "타락천사",      desc: "다크하고 강렬한 타락천사",       thumbnail: "/thumbnails/angel-dark.jpg" },
     { id: "soft", label: "여리여리 천사", desc: "파스텔 톤의 부드러운 천사",      thumbnail: "/thumbnails/angel-soft.jpg" },

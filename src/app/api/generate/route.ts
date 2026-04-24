@@ -7283,6 +7283,62 @@ OUTPUT TARGET:
   },
 };
 
+function appendFilterTone(basePrompt: string, filterName: string, filterPrompt: string) {
+  return `${basePrompt}
+
+STYLE FILTER ADD-ON — ${filterName}:
+The following style filter must be applied as final photographic color grading, texture, and post-processing only.
+Do not change the core card concept, scene, pose, wardrobe rules, identity preservation rules, rainy crosswalk setting, or composition from the base prompt.
+This is not a second generation step. It is one combined image generation instruction.
+
+${filterPrompt}
+
+STYLE FILTER STRICT RULES:
+- Apply this only to color, contrast, grain, glow, haze, sharpness, and overall photographic finish
+- Preserve the rainy Korean crosswalk scene and all identity rules from the base card
+- Do not replace the environment with a different scene
+- Do not remove rain, wet pavement, zebra stripes, or city reflections
+- Do not create graphic borders, text, stickers, or film frames
+- The final output must still look like one real high-resolution photograph`;
+}
+
+STYLE_PROMPTS["rainy-crosswalk"]["soft-dreamy"] = appendFilterTone(
+  STYLE_PROMPTS["rainy-crosswalk"]["default"],
+  "Mongle Dreamy",
+  `Render with a dreamy soft film aesthetic.
+- Milky hazy glow across the whole frame
+- Pastel-washed colors
+- Heavy light diffusion
+- Blooming highlights
+- Airy soft fog over the rainy street lights
+- Gentle lifted shadows
+- Slightly faded and ethereal colors
+- No sharp edges
+- No HDR
+- No AI enhancement
+- No film border`
+);
+
+STYLE_PROMPTS["rainy-crosswalk"]["y2k-glossy"] = appendFilterTone(
+  STYLE_PROMPTS["rainy-crosswalk"]["default"],
+  "Y2K Glossy",
+  `Render with an early-2000s glossy photo aesthetic.
+- Over-saturated vivid colors
+- Bright glossy highlights
+- Crunchy contrast
+- Slightly magenta-shifted tones
+- Punchy blue and cyan reflections in the wet pavement
+- Shiny print-photo finish
+- Vivid color depth
+- No skin texture change
+- No smear
+- No moisture on skin beyond the rainy scene
+- No film grain
+- No HDR
+- No AI enhancement
+- No film border`
+);
+
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
 // - 빈 배열 [] → 멀티모달 스킵 (텍스트 프롬프트만 사용)
 // - 파일이 여러 개면 전부 Gemini에 전송 → 공통 스타일 추출
@@ -7326,7 +7382,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "escalator-flash-twoshot": { "default": [] },
   "boxing-counterpunch": { "default": [] },
   "yakuza": { "default": [], "mafia": [] },
-  "rainy-crosswalk": { "default": [] },
+  "rainy-crosswalk": { "default": [], "soft-dreamy": [], "y2k-glossy": [] },
   "winter-snow": { "default": [] },
   "y2k-object": { "white": [], "pastel": [] },
   "teddy-bear": { "default": [] },
