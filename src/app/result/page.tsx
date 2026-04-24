@@ -651,7 +651,7 @@ export default function Result() {
                   <span className="text-[40px]">🎁</span>
                   <p className="text-white font-bold text-[18px] mt-1">무료 체험이 끝났어요</p>
                   <p className="text-[#999] text-[14px] leading-relaxed">
-                    {errorMessage ?? "카카오 로그인하면 3크레딧을 무료로 받아요!"}
+                    {errorMessage ?? "카카오 로그인하면 1크레딧을 무료로 받아요!"}
                   </p>
                   <button
                     onClick={() => { window.location.href = "/api/auth/kakao"; }}
