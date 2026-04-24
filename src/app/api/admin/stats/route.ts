@@ -163,10 +163,12 @@ export async function POST(request: NextRequest) {
 
   // 결제 통계
   const payments = (paymentsRes.data ?? []) as PaymentRow[];
-  const totalRevenue = payments.reduce((sum, payment) => sum + getNetRevenueAmount(payment), 0);
-  const totalPaymentCount = payments.filter((payment) =>
+  const completedPayments = payments.filter((payment) =>
     payment.status === "paid" || payment.status === "refunded" || payment.status === "partially_refunded"
-  ).length;
+  );
+  const totalRevenue = completedPayments.reduce((sum, payment) => sum + getNetRevenueAmount(payment), 0);
+  const totalPaymentCount = completedPayments.length;
+  const totalPaidUsers = new Set(completedPayments.map((p) => p.user_id)).size;
   const todayRevenue = ((todayPaymentsRes.data ?? []) as PaymentRow[]).reduce(
     (sum, payment) => sum + getNetRevenueAmount(payment),
     0,
@@ -771,6 +773,7 @@ export async function POST(request: NextRequest) {
     labNaboShareKakao: eventCounts["lab_nabo_share_kakao"] ?? 0,
     totalRevenue,
     totalPaymentCount,
+    totalPaidUsers,
     todayRevenue,
     monthlyCosts: {
       "2026-03": {

@@ -164,6 +164,7 @@ type Stats = {
   shareByStyleList: { style_id: string; style_name: string; kakao: number; link: number; total: number }[];
   totalRevenue: number;
   totalPaymentCount: number;
+  totalPaidUsers: number;
   todayRevenue: number;
   monthlyCosts: Record<string, {
     styleCount: number;
@@ -794,73 +795,31 @@ function MiniCard({ label, value, accent }: { label: string; value: string | num
   );
 }
 
-function LabExperimentTabs({ items }: { items: LabExperimentStat[] }) {
-  const [activeKey, setActiveKey] = useState(items[0]?.key ?? "");
-  const normalizedActiveKey = items.some((item) => item.key === activeKey)
-    ? activeKey
-    : items[0]?.key ?? "";
-  const activeItem = items.find((item) => item.key === normalizedActiveKey) ?? items[0];
-
-  if (!items.length || !activeItem) {
+function LabExperimentTabs({ items, paidUsers }: { items: LabExperimentStat[]; paidUsers: number }) {
+  if (!items.length) {
     return <p className="py-5 text-[13px] text-gray-500">실험실 지표 데이터가 아직 없어요.</p>;
   }
 
   return (
-    <div className="py-4">
-      <div className="flex gap-1 overflow-x-auto border-b border-[#E7E7E7] pb-3">
-        {items.map((item) => {
-          const isActive = item.key === normalizedActiveKey;
-          return (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setActiveKey(item.key)}
-              className={`shrink-0 border-b px-3 py-2 text-left transition-colors ${
-                isActive
-                  ? "border-[#C9571A] text-[#C9571A]"
-                  : "border-transparent text-gray-500"
-              }`}
-            >
-              <span className="block text-[13px] font-bold">{item.label}</span>
-              <span className="block text-[11px] text-gray-400">참여 {item.totalParticipants}회</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="pt-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[16px] font-extrabold text-gray-900">{activeItem.label}</p>
-            <p className="mt-1 text-[12px] text-gray-500">참여, 완료, 유료 전환 흐름만 압축해서 봅니다.</p>
+    <div className="flex flex-col gap-3 border-t border-[#E7E7E7] pt-3">
+      {items.map((item) => {
+        const conversionRate = item.totalParticipants > 0 && paidUsers > 0
+          ? Math.round((paidUsers / item.totalParticipants) * 100)
+          : 0;
+        return (
+          <div key={item.key} className="flex items-center justify-between py-2 border-b border-[#EEF0F2] last:border-0">
+            <div className="min-w-0 flex-1">
+              <p className="text-gray-900 text-[13px] font-bold">{item.label}</p>
+            </div>
+            <div className="text-right text-[12px] text-gray-600 flex-shrink-0">
+              <span className="font-semibold">참여 {item.totalParticipants}</span>
+              <span className="text-gray-400 mx-1">→</span>
+              <span className="font-semibold">결제 {paidUsers}</span>
+              <span className="text-[#C9571A] font-bold ml-2">({conversionRate}%)</span>
+            </div>
           </div>
-          <span className="shrink-0 text-[11px] font-semibold text-gray-400">{activeItem.key}</span>
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <MiniCard label="누적 참여" value={`${activeItem.totalParticipants}회`} accent />
-          <MiniCard label="오늘 참여" value={`${activeItem.todayParticipants}회`} />
-        </div>
-
-        <div className="mt-3 flex flex-col">
-          <Row
-            label={activeItem.completedLabel ?? "응답 완료"}
-            value={`${activeItem.completedCount}회 · 오늘 ${activeItem.todayCompletedCount}회`}
-          />
-          {activeItem.unlockLabel !== null && (
-            <Row
-              label={activeItem.unlockLabel ?? "상세 공개"}
-              value={`${activeItem.unlockCount}회 · 오늘 ${activeItem.todayUnlockCount}회`}
-            />
-          )}
-          {activeItem.extraLabel && (
-            <Row
-              label={activeItem.extraLabel}
-              value={`${activeItem.extraCount ?? 0}회 · 오늘 ${activeItem.todayExtraCount ?? 0}회`}
-            />
-          )}
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }
@@ -2017,18 +1976,30 @@ export default function AdminPage() {
       {activeTab === "metrics" && (
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 [&>*]:min-w-0">
           {/* 사용 현황 */}
-          <div className="flex flex-col gap-1">
-            <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">사용 현황</p>
-            <div className="grid grid-cols-2 gap-px overflow-hidden border border-[#E5E7EB] lg:grid-cols-4">
-              <MiniCard label="누적 변환" value={`${stats.total}회`} accent />
-              <MiniCard label="오늘 변환" value={`${stats.todayTotal}회`} />
-              <MiniCard label="가입 유저" value={`${stats.totalUsers}명`} />
-              <MiniCard label="변환 유저" value={`${stats.uniqueLoggedInUsers}명`} />
+          <div className="flex flex-col gap-3">
+            <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">핵심 지표</p>
+            <div className="flex flex-col gap-3 border-t border-[#E7E7E7] pt-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 text-[13px]">누적 변환</span>
+                <span className="text-gray-900 font-bold text-[16px]">{stats.total}회</span>
+              </div>
+              <div className="flex justify-between items-center border-t border-[#E7E7E7] pt-3">
+                <span className="text-gray-600 text-[13px]">가입 유저</span>
+                <span className="text-gray-900 font-bold text-[16px]">{stats.totalUsers}명</span>
+              </div>
+              <div className="flex justify-between items-center border-t border-[#E7E7E7] pt-3">
+                <span className="text-gray-600 text-[13px]">변환 유저</span>
+                <span className="text-gray-900 font-bold text-[16px]">{stats.uniqueLoggedInUsers}명</span>
+              </div>
+              <div className="flex justify-between items-center border-t border-[#E7E7E7] pt-3">
+                <span className="text-gray-600 text-[13px]">결제 유저</span>
+                <span className="text-[#C9571A] font-bold text-[16px]">{stats.totalPaidUsers}명</span>
+              </div>
             </div>
           </div>
 
-          <Section title="실험실 신규 기능">
-            <LabExperimentTabs items={stats.labExperiments} />
+          <Section title="유료 상품 현황">
+            <LabExperimentTabs items={stats.labExperiments} paidUsers={stats.totalPaidUsers} />
           </Section>
 
           {/* 로그인 vs 게스트 */}
@@ -2069,36 +2040,16 @@ export default function AdminPage() {
                 return (
                   <div key={s.style_id} className="py-3 border-b border-gray-100 last:border-0">
                     <div className="flex items-center justify-between">
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-gray-800 text-[14px] font-bold truncate">{s.style_name}</span>
+                          <span className="text-gray-800 text-[13px] font-bold truncate">{s.style_name}</span>
                           {isProblem && <span className="border-b border-red-200 px-1 py-0.5 text-[10px] text-red-500">문제</span>}
                           {isHighShare && <span className="border-b border-[#F3D2BF] px-1 py-0.5 text-[10px] text-[#C9571A]">공유강세</span>}
                           {isLowSave && <span className="border-b border-gray-200 px-1 py-0.5 text-[10px] text-gray-600">저장약세</span>}
                         </div>
                       </div>
-                      <span className="text-gray-900 font-bold text-[14px]">{s.count}회</span>
+                      <span className="text-gray-900 font-bold text-[13px] flex-shrink-0">{s.count}회</span>
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-gray-500">
-                      <span>저장 {s.saveCount} · {s.saveRate}%</span>
-                      <span>공유 {s.shareCount} · {s.shareRate}%</span>
-                      {perf24h && <span>24h 저장 {perf24h.saveRate}% · 공유 {perf24h.shareRate}%</span>}
-                      {errorItem && (
-                        <span className="text-red-500 font-semibold">오류 {errorItem.errorCount} · {errorItem.errorRate}%</span>
-                      )}
-                    </div>
-                    {variants && variants.length > 1 && (
-                      <div className="flex gap-1 mt-2 flex-wrap">
-                        {variants.map(v => {
-                          const cnt = stats.byStyleVariants?.[s.style_id]?.[v.id] ?? 0;
-                          return (
-                            <span key={v.id} className="border-b border-gray-200 px-1 py-0.5 text-[12px] text-gray-500">
-                              {v.label}{cnt > 0 ? ` · ${cnt}회` : ""}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
                   </div>
                 );
               })
