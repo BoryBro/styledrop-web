@@ -657,7 +657,7 @@ export default function Result() {
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                       <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
                     </svg>
-                    카카오로 로그인하고 3크레딧 받기
+                    카카오로 로그인하고 1크레딧 받기
                   </button>
                   <p className="text-[12px] text-[#666]">1크레딧 = AI 변환 1회 · 워터마크 없음</p>
                 </>

@@ -144,6 +144,7 @@ export default function Studio() {
   const [credits, setCredits] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showNoCreditModal, setShowNoCreditModal] = useState(false);
+  const [requiredCreditsModal, setRequiredCreditsModal] = useState<1 | 2>(2);
   const [showHowToModal, setShowHowToModal] = useState(false);
   const [showStudioMenu, setShowStudioMenu] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
@@ -648,28 +649,54 @@ export default function Studio() {
     return () => window.removeEventListener("scroll", updateActiveSection);
   }, [showLabSection]);
 
-  const handleCardClick = (style: StyleCard) => {
-    const isFreeTrialStyle = FREE_TRIAL_STYLE_ID_SET.has(style.id);
-    const requiredCredits = isFreeTrialStyle ? 1 : 2;
+  const getRequiredCreditsForStyle = useCallback((styleId: string | null | undefined) => (
+    styleId && FREE_TRIAL_STYLE_ID_SET.has(styleId) ? 1 : 2
+  ), []);
 
+  const ensureStyleAccess = useCallback((styleId: string | null | undefined) => {
+    if (!styleId) return false;
+
+    const requiredCredits = getRequiredCreditsForStyle(styleId);
+    const isFreeTrialStyle = requiredCredits === 1;
+
+    if (!user) {
+      if (!isFreeTrialStyle) {
+        setShowLoginModal(true);
+        return false;
+      }
+      if (remaining === null) {
+        showToast("무료 체험 가능 여부를 확인하는 중이에요. 잠시만 기다려주세요.");
+        return false;
+      }
+      if (remaining <= 0) {
+        setShowLoginModal(true);
+        return false;
+      }
+      return true;
+    }
+
+    if (credits === null) {
+      showToast("보유 크레딧을 확인하는 중이에요. 잠시만 기다려주세요.");
+      return false;
+    }
+    if (credits < requiredCredits) {
+      setRequiredCreditsModal(requiredCredits);
+      setShowNoCreditModal(true);
+      return false;
+    }
+
+    return true;
+  }, [credits, getRequiredCreditsForStyle, remaining, showToast, user]);
+
+  const handleCardClick = (style: StyleCard) => {
     if (!style.active) {
       showToast(styleControls[style.id]?.is_enabled === false ? "현재 점검 중입니다. 잠시 후 다시 확인해주세요." : "곧 출시됩니다 ✨");
       return;
     }
-    if (!user && !isFreeTrialStyle) {
-      setShowLoginModal(true);
-      return;
-    }
-    if (!user && remaining === 0) {
-      setShowLoginModal(true);
-      return;
-    }
-    if (user && credits !== null && credits < requiredCredits) {
-      setShowNoCreditModal(true);
-      return;
-    }
-    setSelectedStyle(style.id);
     selectedStyleRef.current = style.id;
+    if (!ensureStyleAccess(style.id)) return;
+
+    setSelectedStyle(style.id);
 
     if (MULTI_SOURCE_STYLE_ID_SET.has(style.id)) {
       sessionStorage.setItem("sd_variant", "default");
@@ -822,6 +849,7 @@ export default function Studio() {
   const finalizeSingleUpload = useCallback(async (dataUrl: string) => {
     const styleId = selectedStyleRef.current;
     if (!styleId) return;
+    if (!ensureStyleAccess(styleId)) return;
     const resized = await resizeImageDataUrl(dataUrl);
     sessionStorage.setItem("sd_styleId", styleId);
     sessionStorage.setItem("sd_imageBase64", resized.split(",")[1]);
@@ -832,11 +860,12 @@ export default function Studio() {
     sessionStorage.removeItem("sd_shareLink");
     sessionStorage.setItem("sd_fromStudio", "1");
     router.push("/result");
-  }, [resizeImageDataUrl, router]);
+  }, [ensureStyleAccess, resizeImageDataUrl, router]);
 
   const handleGeneratePairUpload = useCallback(async () => {
     const styleId = selectedStyleRef.current;
     if (!styleId) return;
+    if (!ensureStyleAccess(styleId)) return;
     const [first, second] = pairUploadImages;
     if (!first || !second) {
       showToast("두 사람 사진을 모두 올려주세요.");
@@ -868,7 +897,7 @@ export default function Studio() {
     } finally {
       setPairSubmitting(false);
     }
-  }, [composePairPreviewDataUrl, pairUploadImages, resizeImageDataUrl, router, showToast]);
+  }, [composePairPreviewDataUrl, ensureStyleAccess, pairUploadImages, resizeImageDataUrl, router, showToast]);
 
   const processImageDataUrl = useCallback(async (dataUrl: string) => {
     const target = uploadTargetRef.current ?? { mode: "single" as const };
@@ -2356,7 +2385,14 @@ export default function Studio() {
                   {recentPhotos.map((photo, i) => (
                     <button
                       key={i}
-                      onClick={() => setPendingRecentPhoto(photo)}
+                      onClick={() => {
+                        const styleId = selectedStyleRef.current;
+                        if (!ensureStyleAccess(styleId)) {
+                          setShowPhotoSourceSheet(false);
+                          return;
+                        }
+                        setPendingRecentPhoto(photo);
+                      }}
                       className="relative flex-shrink-0 overflow-hidden rounded-2xl border-2 border-black/15 hover:border-[#C9571A] transition-colors"
                       style={{ width: 76, height: 76 }}
                     >
@@ -2372,6 +2408,11 @@ export default function Studio() {
             <div className="flex flex-col gap-2 mb-3">
               <button
                 onClick={() => {
+                  const styleId = selectedStyleRef.current;
+                  if (!ensureStyleAccess(styleId)) {
+                    setShowPhotoSourceSheet(false);
+                    return;
+                  }
                   uploadTargetRef.current = { mode: "single" };
                   setShowPhotoSourceSheet(false);
                   setShowCameraGuide(true);
@@ -2391,6 +2432,11 @@ export default function Studio() {
               </button>
               <button
                 onClick={() => {
+                  const styleId = selectedStyleRef.current;
+                  if (!ensureStyleAccess(styleId)) {
+                    setShowPhotoSourceSheet(false);
+                    return;
+                  }
                   uploadTargetRef.current = { mode: "single" };
                   setShowPhotoSourceSheet(false);
                   fileInputRef.current?.click();
@@ -2440,7 +2486,9 @@ export default function Studio() {
             </div>
             <div className="text-center">
               <p className="text-[#0A0A0A] font-bold text-[17px]">이 사진으로 진행할까요?</p>
-              <p className="mt-1 text-[#0A0A0A]/40 text-[13px]">2크레딧이 사용됩니다</p>
+              <p className="mt-1 text-[#0A0A0A]/40 text-[13px]">
+                {getRequiredCreditsForStyle(selectedStyle) === 1 ? "1크레딧이 사용됩니다" : "2크레딧이 사용됩니다"}
+              </p>
             </div>
             <div className="flex gap-2.5">
               <button
@@ -2451,6 +2499,12 @@ export default function Studio() {
               </button>
               <button
                 onClick={() => {
+                  const styleId = selectedStyleRef.current;
+                  if (!ensureStyleAccess(styleId)) {
+                    setPendingRecentPhoto(null);
+                    setShowPhotoSourceSheet(false);
+                    return;
+                  }
                   const photo = pendingRecentPhoto;
                   setPendingRecentPhoto(null);
                   setShowPhotoSourceSheet(false);
@@ -2560,7 +2614,9 @@ export default function Studio() {
           <div className="bg-white rounded-2xl p-6 max-w-sm mx-4 border border-[#E0E0E0] text-center w-full" onClick={e => e.stopPropagation()}>
             <p className="text-[40px]">💳</p>
             <p className="text-[18px] font-bold text-[#0A0A0A] mt-3">크레딧이 없어요</p>
-            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">1회 변환에 2크레딧이 필요해요.<br/>크레딧을 충전하고 계속 이용해보세요.</p>
+            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">
+              1회 변환에 {requiredCreditsModal}크레딧이 필요해요.<br/>크레딧을 충전하고 계속 이용해보세요.
+            </p>
             <Link
               href="/shop"
               className="bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold text-[15px] w-full py-4 rounded-xl mt-4 flex items-center justify-center transition-colors"
