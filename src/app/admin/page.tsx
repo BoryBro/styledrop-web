@@ -15,7 +15,7 @@ import { STYLE_VARIANTS } from "@/lib/variants";
 
 const ADMIN_UI_VERSION = "v2.11.0-console-admin";
 
-type AdminTab = "ops" | "metrics" | "revenue" | "users" | "analytics";
+type AdminTab = "dashboard" | "ops" | "metrics" | "revenue" | "users" | "analytics";
 
 type Notice = { id: number; text: string; active: boolean };
 type UserItem = {
@@ -171,6 +171,7 @@ type Stats = {
     styleCount: number;
     auditionCount: number;
     auditionStillCount?: number;
+    duoSubmissionCount?: number;
     apiCost: number;
     revenue: number;
     costSource?: string;
@@ -196,7 +197,7 @@ type Stats = {
 };
 
 type MonthlyCost = {
-  styleCount: number; auditionCount: number; auditionStillCount?: number; apiCost: number; revenue: number;
+  styleCount: number; auditionCount: number; auditionStillCount?: number; duoSubmissionCount?: number; apiCost: number; revenue: number;
   costSource?: string;
   currency?: string | null;
   shareKakao?: number; shareLink?: number; saveImage?: number;
@@ -330,11 +331,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
     { key: "2026-04", label: "4월", note: "현재" },
   ];
   const m = monthlyCosts?.[activeMonth];
-  const isMar = activeMonth === "2026-03";
-  const unitCost = m?.weightUnitCost ?? 0;
-  const styleCost = isMar ? null : m ? Math.round(m.styleCount * unitCost * (m.weights?.style ?? 1)) : 0;
-  const auditionCost = isMar ? null : m ? Math.round(m.auditionCount * unitCost * (m.weights?.auditionAnalyze ?? 2)) : 0;
-  const auditionStillCost = isMar ? null : m ? Math.round((m.auditionStillCount ?? 0) * unitCost * (m.weights?.auditionStill ?? 1)) : 0;
+  const duoSubmissionCount = m?.duoSubmissionCount ?? 0;
   const profit = m ? m.revenue - m.apiCost : 0;
   const costRatio = m && m.revenue > 0 ? Math.round((m.apiCost / m.revenue) * 100) : 0;
   const profitRatio = m && m.revenue > 0 ? Math.round((profit / m.revenue) * 100) : 0;
@@ -365,7 +362,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
                 {activeMonth === "2026-04" ? "이번 달 손익 요약" : "3월 참고 손익"}
               </p>
               <p className="text-[12px] text-gray-500 mt-1">
-                매출에서 AI 비용만 뺀 금액입니다.
+                총 AI 비용은 청구 기준이고, 아래는 기능별 사용량입니다.
               </p>
             </div>
             <span className="text-[11px] text-gray-400 whitespace-nowrap">
@@ -385,21 +382,24 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
               <span className="text-[13px] text-gray-500">스타일 카드</span>
               <span className="text-[13px] font-bold text-gray-900 tabular-nums">
                 {m.styleCount}건
-                {!isMar && <span className="text-gray-500 font-medium"> · ₩{(styleCost ?? 0).toLocaleString()}</span>}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-gray-500">AI 오디션</span>
+              <span className="text-[13px] text-gray-500">AI 오디션 분석</span>
               <span className="text-[13px] font-bold text-gray-900 tabular-nums">
                 {m.auditionCount}건
-                {!isMar && <span className="text-gray-500 font-medium"> · ₩{(auditionCost ?? 0).toLocaleString()}</span>}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-gray-500">오디션 스틸컷</span>
               <span className="text-[13px] font-bold text-gray-900 tabular-nums">
                 {m.auditionStillCount ?? 0}건
-                {!isMar && <span className="text-gray-500 font-medium"> · ₩{(auditionStillCost ?? 0).toLocaleString()}</span>}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-gray-500">친구 배틀 평가</span>
+              <span className="text-[13px] font-bold text-gray-900 tabular-nums">
+                {duoSubmissionCount}건
               </span>
             </div>
             <div className="flex items-center justify-between border-t border-[#F0F0F0] pt-2">
@@ -410,7 +410,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
             </div>
           </div>
 
-          {!isMar && !isActual && m.referenceWindow && (
+          {activeMonth === "2026-04" && !isActual && m.referenceWindow && (
             <div className="flex flex-col gap-2 border-y border-[#F0D5C6] bg-[#FFF9F5] py-3">
               <p className="text-[13px] font-bold text-gray-900">실측 보정 기준</p>
               <div className="flex items-center justify-between">
@@ -423,22 +423,38 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
                   스타일 {m.referenceWindow.styleCount} · 오디션 {m.referenceWindow.auditionCount} · 스틸컷 {m.referenceWindow.auditionStillCount}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] text-gray-500">보정 1유닛 단가</span>
-                <span className="text-[12px] font-medium text-gray-900">₩{(m.weightUnitCost ?? 0).toLocaleString("ko-KR", { maximumFractionDigits: 2 })}</span>
-              </div>
               <p className="text-[11px] text-gray-500 leading-relaxed">
-                스타일 1x, 오디션 분석 2x, 오디션 스틸컷 1x 가중치로 계산합니다.
+                이 보정은 총비용 추정용입니다. 기능별 개별 원가를 확정하는 숫자는 아닙니다.
               </p>
             </div>
           )}
 
+          <div className="flex flex-col gap-2 border-y border-[#E5E7EB] bg-[#FAFAFA] py-3">
+            <p className="text-[13px] font-bold text-gray-900">공식 가격표 기준</p>
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] text-gray-500">실사용 모델</span>
+              <span className="text-[12px] font-medium text-gray-900">gemini-3.1-flash-image-preview</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] text-gray-500">이미지 생성 1회</span>
+              <span className="text-[12px] font-medium text-gray-900">$0.045 ~ $0.151</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] text-gray-500">텍스트 평가 1회</span>
+              <span className="text-[12px] font-medium text-gray-900">토큰량 기준 · 이미지 생성보다 낮음</span>
+            </div>
+            <p className="text-[11px] text-gray-500 leading-relaxed">
+              일반/옵션/2인/스틸컷은 이미지 생성 계열, 오디션 분석/친구 배틀 평가는 텍스트 평가 계열입니다.
+            </p>
+          </div>
+
           <div className="text-[11px] text-gray-400 px-1 leading-relaxed">
-            <p>매출 = 결제 완료 금액 기준</p>
-            <p>AI 비용 = {isActual ? "Google Billing export 실제값" : "기능별 사용량 x 실측 청구서 보정 단가"}</p>
+            <p>매출 = 결제 완료 순매출 기준</p>
+            <p>AI 비용 = {isActual ? "Google Billing export 실제값" : "실청구 보정 추정값"}</p>
             {isActual
               ? <p>{activeMonth} 비용은 실제 Gemini 청구 데이터 기준입니다.</p>
               : <p>4월은 4/1~4/7 실제 청구서 15,999원을 기준으로 보정한 추정치입니다.</p>}
+            <p>기능별 정확한 KRW 원가 배분은 현재 토큰 로그가 없어 고정해서 적지 않습니다.</p>
             <p>이 숫자는 PG 수수료, 광고비, 인건비 제외 기준입니다.</p>
           </div>
         </div>
@@ -538,167 +554,73 @@ const PROFIT_PACKAGES = [
   { id: "plus",  label: "Plus",  credits: 30, price: 4900, priceStr: "4,900" },
   { id: "pro",   label: "Pro",   credits: 70, price: 9900, priceStr: "9,900" },
 ] as const;
-// 실측 기준 API 단가
-const API_UNIT_COST = 111.1;          // 일반 2크레딧 → 1 API call
-const API_COST_COUPLE = 111.1;        // 2인+ 2크레딧 → 1 API call (크레딧당 55.5원)
-const API_COST_AUDITION = 333.3;      // 오디션 5크레딧 → analyze(2)+still(1) = 3 weighted ops
-const KAKAO_FEE_RATE = 0.032;
-const VAT_RATE = 0.10;
 
-function ProfitCalculator() {
-  const [pkgId, setPkgId] = useState<"basic" | "plus" | "pro">("plus");
-  const [buyers, setBuyers] = useState(10);
-  // 사용 분포: 세 값의 합 = 100
-  const [pctNormal, setPctNormal] = useState(60);
-  const [pctCouple, setPctCouple] = useState(20);
-  const [pctAudition, setPctAudition] = useState(20);
-
-  const pkg = PROFIT_PACKAGES.find((p) => p.id === pkgId)!;
-  const netPerSale = (pkg.price / (1 + VAT_RATE)) - (pkg.price * KAKAO_FEE_RATE);
-  const totalCredits = buyers * pkg.credits;
-
-  // 크레딧 분배
-  const normalCredits   = totalCredits * (pctNormal / 100);
-  const coupleCredits   = totalCredits * (pctCouple / 100);
-  const auditionCredits = totalCredits * (pctAudition / 100);
-
-  // API 호출 수 (크레딧 → 호출)
-  const normalCalls   = normalCredits / 2;          // 2크레딧 = 1호출
-  const coupleCalls   = coupleCredits / 2;           // 2크레딧 = 1호출
-  const auditionCalls = auditionCredits / 5;         // 5크레딧 = 1호출
-
-  const totalApiCost = Math.round(
-    normalCalls * API_UNIT_COST +
-    coupleCalls * API_COST_COUPLE +
-    auditionCalls * API_COST_AUDITION
-  );
-  const totalRevenue = Math.round(netPerSale * buyers);
-  const totalProfit  = totalRevenue - totalApiCost;
-  const margin       = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0;
-
-  // 분포 슬라이더 핸들러 (합 100 유지)
-  const handlePctChange = (type: "normal" | "couple" | "audition", val: number) => {
-    const clamped = Math.min(100, Math.max(0, val));
-    if (type === "normal") {
-      const rest = 100 - clamped;
-      const ratio = (pctCouple + pctAudition) > 0 ? pctCouple / (pctCouple + pctAudition) : 0.5;
-      setPctNormal(clamped);
-      setPctCouple(Math.round(rest * ratio));
-      setPctAudition(100 - clamped - Math.round(rest * ratio));
-    } else if (type === "couple") {
-      const rest = 100 - clamped;
-      const ratio = (pctNormal + pctAudition) > 0 ? pctNormal / (pctNormal + pctAudition) : 0.5;
-      setPctCouple(clamped);
-      setPctNormal(Math.round(rest * ratio));
-      setPctAudition(100 - clamped - Math.round(rest * ratio));
-    } else {
-      const rest = 100 - clamped;
-      const ratio = (pctNormal + pctCouple) > 0 ? pctNormal / (pctNormal + pctCouple) : 0.5;
-      setPctAudition(clamped);
-      setPctNormal(Math.round(rest * ratio));
-      setPctCouple(100 - clamped - Math.round(rest * ratio));
-    }
-  };
-
-  const usageRows = [
-    { label: "일반 변환", note: "2cr → 1호출", pct: pctNormal, calls: Math.round(normalCalls), cost: Math.round(normalCalls * API_UNIT_COST), type: "normal" as const, color: "bg-blue-400" },
-    { label: "2인+ 변환", note: "2cr → 1호출", pct: pctCouple, calls: Math.round(coupleCalls), cost: Math.round(coupleCalls * API_COST_COUPLE), type: "couple" as const, color: "bg-purple-400" },
-    { label: "AI 오디션", note: "5cr → 1호출", pct: pctAudition, calls: Math.round(auditionCalls), cost: Math.round(auditionCalls * API_COST_AUDITION), type: "audition" as const, color: "bg-[#C9571A]" },
-  ];
+function CostFactSection() {
+  const packageRows = PROFIT_PACKAGES.map((pkg) => ({
+    ...pkg,
+    creditUnit: Math.round(pkg.price / pkg.credits),
+  }));
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">순이익 시뮬레이터</p>
+      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">원가 확인 메모</p>
       <div className="flex flex-col gap-4 rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-
-        {/* 패키지 선택 */}
-        <div className="flex gap-2">
-          {PROFIT_PACKAGES.map((p) => (
-            <button key={p.id} onClick={() => setPkgId(p.id)}
-              className={`flex-1 border-y py-3 text-[13px] font-bold transition-colors ${
-                pkgId === p.id ? "border-[#C9571A] text-[#C9571A]" : "border-[#E7E7E7] text-gray-500"
-              }`}
-            >
-              {p.label}<br />
-              <span className="text-[11px] font-normal opacity-70">{p.priceStr}원 · {p.credits}회</span>
-            </button>
-          ))}
+        <div className="flex flex-col gap-1">
+          <p className="text-[15px] font-bold text-gray-900">지금 운영 기준으로 맞는 사실만 정리</p>
+          <p className="text-[12px] leading-relaxed text-gray-500">
+            총 AI 비용은 실제 Gemini 청구 합계로 보고, 기능별 성격은 공식 가격표 기준으로 분리해서 봅니다.
+          </p>
         </div>
 
-        {/* 구매자 수 */}
-        <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <div className="border-y border-[#F0F0F0] py-3">
+            <p className="text-[13px] font-bold text-gray-900">이미지 생성 계열</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-gray-500">
+              일반 카드, 옵션 카드, 2인 카드, 오디션 스틸컷
+            </p>
+            <p className="mt-2 text-[12px] font-medium text-gray-900">$0.045 ~ $0.151 / 1회</p>
+          </div>
+          <div className="border-y border-[#F0F0F0] py-3">
+            <p className="text-[13px] font-bold text-gray-900">텍스트 평가 계열</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-gray-500">
+              AI 오디션 분석, 친구 배틀 평가
+            </p>
+            <p className="mt-2 text-[12px] font-medium text-gray-900">토큰량 기준 · 이미지 생성보다 낮음</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2 border-y border-[#F0F0F0] py-3">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] text-gray-500">구매자 수</span>
-            <span className="text-[17px] font-bold text-gray-900 tabular-nums">{buyers}명</span>
+            <span className="text-[12px] text-gray-500">실사용 모델</span>
+            <span className="text-[12px] font-medium text-gray-900">gemini-3.1-flash-image-preview</span>
           </div>
-          <input type="range" min={1} max={10000} value={buyers}
-            onChange={(e) => setBuyers(Number(e.target.value))}
-            className="w-full accent-[#C9571A]" />
-          <div className="flex justify-between text-[11px] text-gray-400">
-            <span>1명</span><span>2,500명</span><span>5,000명</span><span>1만명</span>
-          </div>
-        </div>
-
-        {/* 사용 분포 */}
-        <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] text-gray-500">사용 패턴 분포</span>
-            <span className="text-[11px] text-gray-400">합계 100%</span>
+            <span className="text-[12px] text-gray-500">AI 원가 직접 발생 기능</span>
+            <span className="text-[12px] font-medium text-gray-900">일반 · 2인 · 오디션 · 친구 배틀</span>
           </div>
-          {/* 분포 바 */}
-          <div className="flex h-1.5 overflow-hidden gap-px">
-            <div className="bg-blue-400 transition-all" style={{ width: `${pctNormal}%` }} />
-            <div className="bg-purple-400 transition-all" style={{ width: `${pctCouple}%` }} />
-            <div className="bg-[#C9571A] transition-all" style={{ width: `${pctAudition}%` }} />
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-gray-500">현재 직접 제외 기능</span>
+            <span className="text-[12px] font-medium text-gray-900">퍼스널 컬러 · 내가 보는 너 · 여행</span>
           </div>
-          {usageRows.map((row) => (
-            <div key={row.type} className="flex flex-col gap-1">
-              <div className="flex items-center justify-between text-[12px]">
-                <div className="flex items-center gap-1.5">
-                  <div className={`h-2 w-2 ${row.color}`} />
-                  <span className="font-semibold text-gray-700">{row.label}</span>
-                  <span className="text-gray-400">{row.note}</span>
-                </div>
-                <span className="font-bold text-gray-900 tabular-nums">{row.pct}%</span>
-              </div>
-              <input type="range" min={0} max={100} value={row.pct}
-                onChange={(e) => handlePctChange(row.type, Number(e.target.value))}
-                className="w-full accent-[#C9571A] h-1" />
+        </div>
+
+        <div className="flex flex-col gap-2 border-y border-[#F0F0F0] py-3">
+          <p className="text-[13px] font-bold text-gray-900">패키지 단가 메모</p>
+          {packageRows.map((pkg) => (
+            <div key={pkg.id} className="flex items-center justify-between">
+              <span className="text-[12px] text-gray-500">{pkg.label}</span>
+              <span className="text-[12px] font-medium text-gray-900">
+                {pkg.price.toLocaleString()}원 · {pkg.credits}크레딧 · 크레딧당 약 {pkg.creditUnit}원
+              </span>
             </div>
           ))}
         </div>
 
-        {/* 결과 */}
-        <div className="flex flex-col gap-2 border-y border-[#F0F0F0] bg-[#FAFAFA] px-1 py-3">
-          <div className="flex justify-between text-[13px]">
-            <span className="text-gray-500">순수취액 (VAT·수수료 제외)</span>
-            <span className="font-bold text-gray-700">+{totalRevenue.toLocaleString()}원</span>
-          </div>
-          <div className="h-px bg-gray-100" />
-          {usageRows.map((row) => (
-            <div key={row.type} className="flex justify-between text-[12px]">
-              <span className="text-gray-400 flex items-center gap-1">
-                <div className={`h-1.5 w-1.5 ${row.color}`} />
-                {row.label} {row.calls}호출
-              </span>
-              <span className="text-red-400">−{row.cost.toLocaleString()}원</span>
-            </div>
-          ))}
-          <div className="h-px bg-gray-200 mt-1" />
-          <div className="flex justify-between items-center">
-            <span className="text-[14px] font-bold text-gray-900">순이익</span>
-            <div className="text-right">
-              <span className={`text-[22px] font-extrabold tabular-nums ${totalProfit >= 0 ? "text-[#C9571A]" : "text-red-500"}`}>
-                {totalProfit >= 0 ? "+" : ""}{totalProfit.toLocaleString()}원
-              </span>
-              <span className="text-[12px] text-gray-400 ml-2">마진 {margin}%</span>
-            </div>
-          </div>
+        <div className="text-[11px] leading-relaxed text-gray-400">
+          <p>친구 배틀은 방 생성 때가 아니라 제출 성공 시 5크레딧이 차감됩니다.</p>
+          <p>오디션은 시작 5크레딧 패키지에 분석과 스틸컷 흐름이 같이 포함됩니다.</p>
+          <p>기능별 정확한 KRW 원가 배분은 현재 토큰 로그가 없어 고정 숫자로 적지 않습니다.</p>
         </div>
-
-        <p className="text-[11px] text-gray-400 leading-relaxed">
-          * API 단가 111원/회 실측 · 오디션=333원/회(분석+스틸) · 카카오페이 3.2% · 부가세 10%
-        </p>
       </div>
     </div>
   );
@@ -954,7 +876,7 @@ function ShareViralSection({ stats, shareTotal, shareRatio }: {
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
-  const [activeTab, setActiveTab] = useState<AdminTab>("ops");
+  const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [styleOpsView, setStyleOpsView] = useState<"cards" | "lab">("cards");
   const [styleControls, setStyleControls] = useState<StyleControlState[]>([]);
   const [error, setError] = useState("");
@@ -1356,25 +1278,29 @@ export default function AdminPage() {
     );
   };
   const tabSummary =
-    activeTab === "ops"
-      ? "공지, 오류, 카드 숨김 같은 운영 대응"
-      : activeTab === "metrics"
-        ? "사용량, 저장률, 공유율 같은 성과 확인"
-        : activeTab === "revenue"
-          ? "매출, 비용, 환불 같은 돈 흐름 확인"
-          : activeTab === "users"
-            ? "크레딧 조정 같은 유저 대응"
-            : "카드 생성 기록 조회";
+    activeTab === "dashboard"
+      ? "오늘 핵심 지표 한눈에 보기"
+      : activeTab === "ops"
+        ? "공지, 오류, 카드 숨김 같은 운영 대응"
+        : activeTab === "metrics"
+          ? "사용량, 저장률, 공유율 같은 성과 확인"
+          : activeTab === "revenue"
+            ? "매출, 비용, 환불 같은 돈 흐름 확인"
+            : activeTab === "users"
+              ? "크레딧 조정 같은 유저 대응"
+              : "카드 생성 기록 조회";
   const pageTitle =
-    activeTab === "ops"
-      ? "운영 관리"
-      : activeTab === "metrics"
-        ? "데이터 분석"
-        : activeTab === "revenue"
-          ? "매출 관리"
-          : activeTab === "users"
-            ? "유저 관리"
-            : "생성 기록";
+    activeTab === "dashboard"
+      ? "대시보드"
+      : activeTab === "ops"
+        ? "운영 관리"
+        : activeTab === "metrics"
+          ? "데이터 분석"
+          : activeTab === "revenue"
+            ? "매출 관리"
+            : activeTab === "users"
+              ? "유저 관리"
+              : "생성 기록";
   const todayLabel = new Date().toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "2-digit",
@@ -1382,7 +1308,9 @@ export default function AdminPage() {
     weekday: "short",
   });
   const activeSummaryCards =
-    activeTab === "users"
+    activeTab === "dashboard"
+      ? []
+      : activeTab === "users"
       ? [
           { label: "전체 가입 유저", value: `${stats.totalUsers}명`, accent: true },
           { label: "오늘 가입", value: `${stats.todaySignupCount}명` },
@@ -1421,6 +1349,8 @@ export default function AdminPage() {
           </div>
 
           <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
+            <AdminTabButton label="대시보드" note="오늘 핵심 요약" active={activeTab === "dashboard"} onClick={() => setActiveTab("dashboard")} />
+            <div className="my-2 h-px bg-[#E5E7EB]" />
             <AdminTabButton label="운영 관리" note="공지 · 오류 · 긴급 대응" active={activeTab === "ops"} onClick={() => setActiveTab("ops")} />
             <AdminTabButton label="데이터 분석" note="사용량 · 저장 · 공유" active={activeTab === "metrics"} onClick={() => setActiveTab("metrics")} />
             <AdminTabButton label="매출 관리" note="비용 · 결제 · 환불" active={activeTab === "revenue"} onClick={() => setActiveTab("revenue")} />
@@ -1516,6 +1446,92 @@ export default function AdminPage() {
                 ))}
               </div>
             </section>
+
+      {activeTab === "dashboard" && stats && (() => {
+        const todayRefundCount = stats.paymentList.filter(p =>
+          (p.status === "refunded" || p.status === "partially_refunded") &&
+          p.refunded_at && new Date(p.refunded_at).toDateString() === new Date().toDateString()
+        ).length;
+        const top24hCard = stats.stylePerformance24hList?.[0];
+        const today = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
+
+        return (
+          <div className="flex flex-col gap-3">
+            <p className="px-1 text-[12px] text-gray-400">{today}</p>
+
+            {/* 오늘 핵심 지표 */}
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 [&>*]:min-w-0">
+              <div className="flex flex-col gap-1 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">오늘 가입</span>
+                <span className="text-[28px] font-black text-gray-900">{stats.todaySignupCount}<span className="text-[14px] font-normal text-gray-400 ml-1">명</span></span>
+              </div>
+              <div className="flex flex-col gap-1 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">오늘 매출</span>
+                <span className="text-[28px] font-black text-[#C9571A]">{stats.todayRevenue.toLocaleString()}<span className="text-[14px] font-normal text-gray-400 ml-1">원</span></span>
+              </div>
+              <div className="flex flex-col gap-1 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">오늘 생성</span>
+                <span className="text-[28px] font-black text-gray-900">{stats.todayTotal}<span className="text-[14px] font-normal text-gray-400 ml-1">회</span></span>
+              </div>
+              <div className={`flex flex-col gap-1 rounded-xl border bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] ${stats.generationErrorTotal24h > 0 ? "border-red-200" : "border-[#E5E7EB]"}`}>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">24h 오류</span>
+                <span className={`text-[28px] font-black ${stats.generationErrorTotal24h > 0 ? "text-red-500" : "text-gray-900"}`}>{stats.generationErrorTotal24h}<span className="text-[14px] font-normal text-gray-400 ml-1">건</span></span>
+              </div>
+            </div>
+
+            {/* 2행 상세 지표 */}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3 [&>*]:min-w-0">
+              {/* 오늘 1위 카드 */}
+              <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">오늘 1위 카드</span>
+                {top24hCard ? (
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[16px] font-black text-gray-900 truncate">{top24hCard.style_name}</span>
+                    <span className="text-[13px] text-gray-400">{top24hCard.count}회 생성</span>
+                  </div>
+                ) : (
+                  <span className="text-[13px] text-gray-400">데이터 없음</span>
+                )}
+              </div>
+
+              {/* 환불 & 자동환불 */}
+              <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">환불</span>
+                <div className="flex flex-col gap-0">
+                  <div className="flex justify-between items-center py-1.5 border-b border-[#F3F4F6]">
+                    <span className="text-[12px] text-gray-500">오늘 환불 요청</span>
+                    <span className={`text-[13px] font-bold ${todayRefundCount > 0 ? "text-red-500" : "text-gray-900"}`}>{todayRefundCount}건</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="text-[12px] text-gray-500">24h 자동 환불</span>
+                    <span className="text-[13px] font-bold text-gray-900">{stats.generationRefundTotal24h}건</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 로그인 vs 게스트 */}
+              <div className="flex flex-col gap-3 rounded-xl border border-[#E5E7EB] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">로그인 vs 게스트</span>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between text-[12px]">
+                    <span className="text-gray-700 font-bold">로그인 생성 {stats.userCount}회</span>
+                    <span className="text-gray-400">게스트 생성 {stats.guestCount}회</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-[#F3F4F6] overflow-hidden">
+                    <div className="h-full rounded-full bg-[#C9571A]" style={{ width: `${stats.userRatio}%` }} />
+                  </div>
+                  <span className="text-[11px] text-gray-400">이미지 생성 기준 · 로그인 {stats.userRatio}%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 방문자 수 — Vercel Analytics 연동 후 추가 예정 */}
+            <div className="rounded-xl border border-dashed border-[#E5E7EB] px-5 py-4">
+              <p className="text-[12px] text-gray-400">방문자 수는 Vercel Analytics 데이터가 쌓이면 여기에 표시됩니다.</p>
+            </div>
+          </div>
+        );
+      })()}
 
       {activeTab === "ops" && (
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-2 [&>*]:min-w-0">
@@ -2087,8 +2103,8 @@ export default function AdminPage() {
             <Row label="결제 건수" value={`${stats.totalPaymentCount}건`} />
           </Section>
 
-          {/* 순이익 시뮬레이터 */}
-          <ProfitCalculator />
+          {/* 원가 기준 메모 */}
+          <CostFactSection />
 
           {/* 결제 목록 & 원클릭 환불 */}
           {stats.paymentList.length > 0 && (
