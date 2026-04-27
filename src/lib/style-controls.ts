@@ -1,6 +1,7 @@
 import {
   AUDITION_ENABLED,
   NABO_LAB_ENABLED,
+  NABO_PREDICT_LAB_ENABLED,
   PERSONAL_COLOR_LAB_ENABLED,
   TRAVEL_TOGETHER_LAB_ENABLED,
 } from "@/lib/feature-flags";
@@ -24,6 +25,8 @@ export const PERSONAL_COLOR_CONTROL_ID = "personal-color";
 export const PERSONAL_COLOR_CONTROL_NAME = "퍼스널 컬러";
 export const NABO_CONTROL_ID = "nabo";
 export const NABO_CONTROL_NAME = "내가 보는 너";
+export const NABO_PREDICT_CONTROL_ID = "nabo_predict";
+export const NABO_PREDICT_CONTROL_NAME = "너라면 그럴 줄 알았어";
 export const TRAVEL_TOGETHER_CONTROL_ID = "travel_together";
 export const TRAVEL_TOGETHER_CONTROL_NAME = "여행을 같이 간다면";
 
@@ -50,6 +53,14 @@ function buildFeatureControls(): StyleControlState[] {
       style_name: NABO_CONTROL_NAME,
       is_visible: NABO_LAB_ENABLED,
       is_enabled: NABO_LAB_ENABLED,
+      disabled_reason: null,
+      updated_at: null,
+    },
+    {
+      style_id: NABO_PREDICT_CONTROL_ID,
+      style_name: NABO_PREDICT_CONTROL_NAME,
+      is_visible: NABO_PREDICT_LAB_ENABLED,
+      is_enabled: NABO_PREDICT_LAB_ENABLED,
       disabled_reason: null,
       updated_at: null,
     },

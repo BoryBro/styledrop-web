@@ -34,11 +34,13 @@ import {
 } from "@/lib/how-to";
 import {
   NABO_LAB_ENABLED,
+  NABO_PREDICT_LAB_ENABLED,
   PERSONAL_COLOR_LAB_ENABLED,
   TRAVEL_TOGETHER_LAB_ENABLED,
 } from "@/lib/feature-flags";
 import {
   NABO_CONTROL_ID,
+  NABO_PREDICT_CONTROL_ID,
   PERSONAL_COLOR_CONTROL_ID,
   TRAVEL_TOGETHER_CONTROL_ID,
   applyStyleControl,
@@ -385,6 +387,10 @@ export default function Studio() {
     styleControls[NABO_CONTROL_ID],
     NABO_LAB_ENABLED
   );
+  const naboPredictControl = resolveFeatureControlState(
+    styleControls[NABO_PREDICT_CONTROL_ID],
+    NABO_PREDICT_LAB_ENABLED
+  );
   const travelTogetherControl = resolveFeatureControlState(
     styleControls[TRAVEL_TOGETHER_CONTROL_ID],
     TRAVEL_TOGETHER_LAB_ENABLED
@@ -392,8 +398,10 @@ export default function Studio() {
   const showPersonalColorLab = personalColorControl.is_visible;
   const isPersonalColorEnabled = personalColorControl.is_enabled;
   const showNaboLab = naboControl.is_visible;
+  const showNaboPredictLab = naboPredictControl.is_visible;
+  const isNaboPredictEnabled = naboPredictControl.is_enabled;
   const showTravelTogetherLab = travelTogetherControl.is_visible;
-  const showLabSection = showAuditionLab || showPersonalColorLab || showNaboLab || showTravelTogetherLab;
+  const showLabSection = showAuditionLab || showPersonalColorLab || showNaboLab || showNaboPredictLab || showTravelTogetherLab;
 
   const scrollToSection = useCallback((section: StudioSectionTab) => {
     const target = section === "cards" ? generalCardsSectionRef.current : labSectionRef.current;
@@ -1932,10 +1940,16 @@ export default function Studio() {
                   </button>
                 )}
 
-                {showNaboLab && (
+                {showNaboPredictLab && (
                   <button
                     type="button"
-                    onClick={() => handleLabCardClick("/nabo-predict")}
+                    onClick={() => {
+                      if (!isNaboPredictEnabled) {
+                        showToast("현재 점검 중입니다. 잠시 후 다시 확인해주세요.");
+                        return;
+                      }
+                      handleLabCardClick("/nabo-predict");
+                    }}
                     className="block w-full mb-4 text-left active:scale-[0.97] transition-transform"
                   >
                     <div className="relative rounded-2xl overflow-hidden bg-[#120B0A] border border-white/[0.07]" style={{ aspectRatio: '4/3' }}>

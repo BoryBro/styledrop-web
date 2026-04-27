@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   AUDITION_CONTROL_ID,
   NABO_CONTROL_ID,
+  NABO_PREDICT_CONTROL_ID,
   PERSONAL_COLOR_CONTROL_ID,
   TRAVEL_TOGETHER_CONTROL_ID,
   applyStyleControl,
@@ -1498,11 +1499,13 @@ export default function AdminPage() {
   const auditionControl = styleControls.find((row) => row.style_id === AUDITION_CONTROL_ID);
   const personalColorControl = styleControls.find((row) => row.style_id === PERSONAL_COLOR_CONTROL_ID);
   const naboControl = styleControls.find((row) => row.style_id === NABO_CONTROL_ID);
+  const naboPredictControl = styleControls.find((row) => row.style_id === NABO_PREDICT_CONTROL_ID);
   const travelTogetherControl = styleControls.find((row) => row.style_id === TRAVEL_TOGETHER_CONTROL_ID);
   const specialFeatureControls = [
     auditionControl ? { title: "AI 오디션", control: auditionControl } : null,
     personalColorControl ? { title: "퍼스널 컬러", control: personalColorControl } : null,
     naboControl ? { title: "내가 보는 너", control: naboControl } : null,
+    naboPredictControl ? { title: "너라면 그럴 줄 알았어", control: naboPredictControl } : null,
     travelTogetherControl ? { title: "여행을 같이 간다면", control: travelTogetherControl } : null,
   ].filter((item): item is { title: string; control: StyleControlState } => Boolean(item));
   const specialFeatureControlIds = new Set(specialFeatureControls.map((item) => item.control.style_id));

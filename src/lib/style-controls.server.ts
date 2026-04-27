@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   AUDITION_CONTROL_ID,
   NABO_CONTROL_ID,
+  NABO_PREDICT_CONTROL_ID,
   PERSONAL_COLOR_CONTROL_ID,
   TRAVEL_TOGETHER_CONTROL_ID,
   buildDefaultStyleControls,
@@ -16,6 +17,7 @@ import {
 import {
   AUDITION_ENABLED,
   NABO_LAB_ENABLED,
+  NABO_PREDICT_LAB_ENABLED,
   PERSONAL_COLOR_LAB_ENABLED,
   TRAVEL_TOGETHER_LAB_ENABLED,
 } from "@/lib/feature-flags";
@@ -70,6 +72,11 @@ export async function loadPersonalColorFeatureControl() {
 export async function loadNaboFeatureControl() {
   const controlMap = await loadStyleControlMap();
   return resolveFeatureControlState(controlMap[NABO_CONTROL_ID], NABO_LAB_ENABLED);
+}
+
+export async function loadNaboPredictFeatureControl() {
+  const controlMap = await loadStyleControlMap();
+  return resolveFeatureControlState(controlMap[NABO_PREDICT_CONTROL_ID], NABO_PREDICT_LAB_ENABLED);
 }
 
 export async function loadTravelTogetherFeatureControl() {
