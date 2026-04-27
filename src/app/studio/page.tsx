@@ -2322,13 +2322,13 @@ export default function Studio() {
             onClick={() => { setVariantSelectStyle(null); setSelectedStyle(null); }}
           >
             <div
-              className="bg-white border border-black/10 rounded-t-3xl w-full max-w-2xl px-5 pt-5 pb-8 max-h-[85vh] overflow-y-auto"
+              className="bg-white border border-black/10 rounded-t-3xl w-full max-w-2xl px-5 pt-5 pb-8 max-h-[85vh] overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
               <div className="w-10 h-1 bg-black/10 rounded-full mx-auto mb-5" />
               <p className="text-[#0A0A0A] font-bold text-[18px] mb-1">스타일 옵션 선택</p>
               <p className="text-[#888] text-[13px] mb-5">{variantSelectStyle.name} — 원하는 분위기를 골라주세요</p>
-              <div className="-mx-5 mb-5 flex gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 snap-x snap-mandatory">
+              <div className="-mx-5 mb-5 flex touch-pan-x snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3">
                 {variants.map((v) => (
                   <button
                     key={v.id}
