@@ -86,8 +86,13 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 function buildTemplateSuggestions(posts: ThreadsPost[]): TemplateSuggestion[] {
+  const now = Date.now();
   const csvSuggestions = posts
-    .filter((post) => post.status !== "published" && post.content.trim())
+    .filter((post) =>
+      post.status !== "published" &&
+      post.content.trim() &&
+      !(post.status === "draft" && new Date(post.scheduled_at).getTime() <= now)
+    )
     .map((post): TemplateSuggestion => {
       const ctaType: TemplateSuggestion["ctaType"] =
         post.cta_type === "soft" || post.cta_type === "direct" ? post.cta_type : "none";
@@ -229,6 +234,7 @@ export default function ThreadsAdminPage() {
   const [draftUploading, setDraftUploading] = useState(false);
   const [draftDragActive, setDraftDragActive] = useState(false);
   const [templateSuggestions, setTemplateSuggestions] = useState<TemplateSuggestion[]>(() => buildTemplateSuggestions([]));
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const toast$ = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
@@ -264,6 +270,11 @@ export default function ThreadsAdminPage() {
         }
       }).catch(() => {});
     } catch {}
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const login = async () => {
@@ -519,7 +530,9 @@ export default function ThreadsAdminPage() {
     else { const d = await res.json(); toast$(`오류: ${d.error}`); }
   };
 
-  const pending   = posts.filter(p => p.status === "draft" || p.status === "approved");
+  const isExpiredDraft = (post: ThreadsPost) =>
+    post.status === "draft" && new Date(post.scheduled_at).getTime() <= nowMs;
+  const pending   = posts.filter(p => (p.status === "draft" || p.status === "approved") && !isExpiredDraft(p));
   const needsImage = pending.filter((p) => p.image_upload_recommended && getPostImageUrls(p).length === 0);
   const published = posts.filter(p => p.status === "published");
   const failed    = posts.filter(p => p.status === "failed");
