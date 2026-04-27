@@ -480,7 +480,7 @@ export default function Result() {
         )}
       </header>
 
-      <main className="max-w-2xl mx-auto w-full px-4 py-4 flex flex-col" style={{ height: "calc(100vh - 52px)" }}>
+      <main className="max-w-2xl mx-auto w-full px-4 py-4 pb-10 flex flex-col overflow-y-auto" style={{ minHeight: "calc(100dvh - 52px)" }}>
 
         {status === "loading" && (() => {
           const q = quizList[quizIndex % quizList.length];
@@ -524,7 +524,7 @@ export default function Result() {
             `}</style>
 
             {/* ── 진행 카드 ── */}
-            <div className="rounded-3xl bg-[#1C1C1E] overflow-hidden">
+            <div className="rounded-3xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
               {/* 이미지 + 스피너 */}
               <div className="flex items-center gap-4 px-5 pt-5 pb-4">
                 <div className="relative shrink-0 w-[72px] h-[72px]">
@@ -535,7 +535,7 @@ export default function Result() {
                       className="w-full h-full rounded-2xl object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-2xl bg-white/8" />
+                    <div className="w-full h-full rounded-2xl bg-[#F3F4F6]" />
                   )}
                   {/* 펄스 링 */}
                   <div
@@ -543,9 +543,9 @@ export default function Result() {
                     style={{ animation: "ios-pulse-ring 1.8s ease-out infinite" }}
                   />
                   {/* 반투명 오버레이 + 스피너 */}
-                  <div className="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-2xl bg-white/45 flex items-center justify-center">
                     <div
-                      className="w-7 h-7 rounded-full border-[2.5px] border-white/20 border-t-white"
+                      className="w-7 h-7 rounded-full border-[2.5px] border-[#C9571A]/20 border-t-[#C9571A]"
                       style={{ animation: "ios-spin 0.85s linear infinite" }}
                     />
                   </div>
@@ -558,20 +558,20 @@ export default function Result() {
                     style={{ animation: "ios-fade-up 0.35s ease" }}
                   >
                     <span className="text-base leading-none">{stepIcons[stepIndex]}</span>
-                    <span className="text-[14px] font-semibold text-white tracking-tight">
+                    <span className="text-[14px] font-semibold text-[#111827] tracking-tight">
                       {stepLabels[stepIndex]}
                     </span>
                   </div>
 
                   {/* 진행바 */}
-                  <div className="relative h-[6px] w-full rounded-full bg-white/10 overflow-hidden">
+                  <div className="relative h-[6px] w-full rounded-full bg-[#E5E7EB] overflow-hidden">
                     <div
                       className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#C9571A] to-[#F07840] transition-all duration-300"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-[11px] text-white/30">완료 전 이 화면을 유지해 주세요</span>
+                    <span className="text-[11px] text-[#9CA3AF]">완료 전 이 화면을 유지해 주세요</span>
                     <span className="text-[12px] font-bold text-[#C9571A] tabular-nums">{progress}%</span>
                   </div>
                 </div>
@@ -586,7 +586,7 @@ export default function Result() {
                     style={{
                       width:  i === stepIndex ? 16 : 5,
                       height: 5,
-                      background: i <= stepIndex ? "#C9571A" : "rgba(255,255,255,0.15)",
+                      background: i <= stepIndex ? "#C9571A" : "#E5E7EB",
                     }}
                   />
                 ))}
@@ -595,24 +595,24 @@ export default function Result() {
 
             {/* ── O/X 퀴즈 카드 ── */}
             {q && (
-              <div className="rounded-3xl bg-[#1C1C1E] overflow-hidden">
+              <div className="rounded-3xl border border-[#E5E7EB] bg-white overflow-hidden shadow-sm">
 
                 {/* 헤더 */}
-                <div className="flex items-center justify-between px-4 pt-3 pb-2.5 border-b border-white/[0.06]">
+                <div className="flex items-center justify-between px-4 pt-3 pb-2.5 border-b border-[#E5E7EB]">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[12px] font-bold text-white">O / X 퀴즈</span>
+                    <span className="text-[12px] font-bold text-[#111827]">O / X 퀴즈</span>
                     {q.tag && (
-                      <span className="text-[10px] text-white/35 bg-white/8 px-1.5 py-0.5 rounded-full">
+                      <span className="text-[10px] text-[#6B7280] bg-[#F3F4F6] px-1.5 py-0.5 rounded-full">
                         {q.tag}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 bg-white/[0.07] px-2 py-0.5 rounded-full">
+                  <div className="flex items-center gap-1 bg-[#F3F4F6] px-2 py-0.5 rounded-full">
                     <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
                       <path d="M2 5.5l2 2 4-4" stroke="#30D158" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span className="text-[11px] font-bold text-white tabular-nums">{score.correct}</span>
-                    <span className="text-[10px] text-white/30">/{score.total}</span>
+                    <span className="text-[11px] font-bold text-[#111827] tabular-nums">{score.correct}</span>
+                    <span className="text-[10px] text-[#9CA3AF]">/{score.total}</span>
                   </div>
                 </div>
 
@@ -622,7 +622,7 @@ export default function Result() {
                   key={quizIndex}
                   style={{ animation: "ios-fade-up 0.28s ease" }}
                 >
-                  <p className="text-center text-[14px] font-semibold text-white leading-[1.6] break-keep">
+                  <p className="text-center text-[14px] font-semibold text-[#111827] leading-[1.6] break-keep">
                     {q.q}
                   </p>
 
@@ -630,13 +630,13 @@ export default function Result() {
                     <div className="flex gap-2.5">
                       <button
                         onClick={() => handleAnswer(true)}
-                        className="flex-1 py-2.5 rounded-xl bg-[#30D158]/15 border border-[#30D158]/25 text-[22px] font-black text-[#30D158] active:scale-95 transition-transform"
+                        className="flex-1 py-2.5 rounded-xl bg-[#EAFBEF] border border-[#BFEBCB] text-[22px] font-black text-[#18A94D] active:scale-95 transition-transform"
                       >
                         O
                       </button>
                       <button
                         onClick={() => handleAnswer(false)}
-                        className="flex-1 py-2.5 rounded-xl bg-[#FF453A]/15 border border-[#FF453A]/25 text-[22px] font-black text-[#FF453A] active:scale-95 transition-transform"
+                        className="flex-1 py-2.5 rounded-xl bg-[#FFF0EF] border border-[#FFC9C5] text-[22px] font-black text-[#FF453A] active:scale-95 transition-transform"
                       >
                         X
                       </button>
@@ -655,16 +655,16 @@ export default function Result() {
                             {quizResult === "correct" ? "정답!" : "오답"}
                           </p>
                           {quizResult === "wrong" && (
-                            <p className="text-[11px] text-white/35">
-                              정답은 <span className="font-bold text-white/55">{q.a ? "O" : "X"}</span>
+                            <p className="text-[11px] text-[#9CA3AF]">
+                              정답은 <span className="font-bold text-[#6B7280]">{q.a ? "O" : "X"}</span>
                             </p>
                           )}
                         </div>
                       </div>
                       {quizStat && quizStat.totalCount >= 2 && (
-                        <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/[0.06]" style={{ animation: "ios-fade-up 0.25s ease" }}>
-                          <span className="text-[11px] text-white/40">
-                            <span className="font-bold text-white/60">{quizStat.totalCount.toLocaleString()}명</span> 중{" "}
+                        <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-[#F3F4F6]" style={{ animation: "ios-fade-up 0.25s ease" }}>
+                          <span className="text-[11px] text-[#6B7280]">
+                            <span className="font-bold text-[#111827]">{quizStat.totalCount.toLocaleString()}명</span> 중{" "}
                             <span className={`font-bold ${quizResult === "correct" ? "text-[#30D158]" : "text-[#FF453A]"}`}>
                               {quizStat.correctCount.toLocaleString()}명
                             </span>{" "}
