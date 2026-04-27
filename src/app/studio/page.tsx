@@ -177,7 +177,14 @@ export default function Studio() {
   const router = useRouter();
   const { user, loading, login } = useAuth();
   const { isLoading: isAuditionLoading, isVisible: isAuditionVisible, isEnabled: isAuditionEnabled } = useAuditionAvailability();
-  const { recentPhotos, savePhoto } = useRecentPhotos();
+  const {
+    recentPhotos,
+    pinnedPhotos,
+    savePhoto,
+    removePhoto,
+    togglePinnedPhoto,
+    maxPinnedPhotos,
+  } = useRecentPhotos();
   const [remaining, setRemaining] = useState<number | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -740,6 +747,33 @@ export default function Studio() {
 
     return true;
   }, [credits, getRequiredCreditsForStyle, openLoginModal, remaining, showToast, user]);
+
+  const visibleRecentPhotos = recentPhotos.filter((photo) => !pinnedPhotos.includes(photo));
+
+  const handleSavedPhotoSelect = useCallback((photo: string) => {
+    const styleId = selectedStyleRef.current;
+    if (!ensureStyleAccess(styleId)) {
+      setShowPhotoSourceSheet(false);
+      return;
+    }
+    setPendingRecentPhoto(photo);
+  }, [ensureStyleAccess]);
+
+  const handleSavedPhotoDelete = useCallback((photo: string) => {
+    removePhoto(photo);
+    if (pendingRecentPhoto === photo) setPendingRecentPhoto(null);
+    showToast("저장된 사진을 삭제했어요.");
+  }, [pendingRecentPhoto, removePhoto, showToast]);
+
+  const handleSavedPhotoPinToggle = useCallback((photo: string) => {
+    const isPinned = pinnedPhotos.includes(photo);
+    if (!isPinned && pinnedPhotos.length >= maxPinnedPhotos) {
+      showToast(`고정 사진은 최대 ${maxPinnedPhotos}장까지 가능해요.`);
+      return;
+    }
+    togglePinnedPhoto(photo);
+    showToast(isPinned ? "고정을 해제했어요." : "고정 사진에 추가했어요.");
+  }, [maxPinnedPhotos, pinnedPhotos, showToast, togglePinnedPhoto]);
 
   const handleCardClick = (style: StyleCard) => {
     if (!style.active) {
@@ -2602,30 +2636,96 @@ export default function Studio() {
             <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mb-5" />
             <p className="text-[13px] font-semibold text-[#0A0A0A]/40 text-center mb-4">사진 선택</p>
 
-            {/* 최근 사용한 셀카 */}
-            {recentPhotos.length > 0 && (
+            {/* 고정 / 최근 사용한 셀카 */}
+            {(pinnedPhotos.length > 0 || visibleRecentPhotos.length > 0) && (
               <div className="mb-4">
-                <p className="text-[11px] font-bold text-[#0A0A0A]/30 uppercase tracking-wider mb-2.5">최근 사용한 셀카</p>
-                <div className="flex gap-2.5">
-                  {recentPhotos.map((photo, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        const styleId = selectedStyleRef.current;
-                        if (!ensureStyleAccess(styleId)) {
-                          setShowPhotoSourceSheet(false);
-                          return;
-                        }
-                        setPendingRecentPhoto(photo);
-                      }}
-                      className="relative flex-shrink-0 overflow-hidden rounded-2xl border-2 border-black/15 hover:border-[#C9571A] transition-colors"
-                      style={{ width: 76, height: 76 }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={photo} alt="" className="h-full w-full object-cover" />
-                    </button>
-                  ))}
-                </div>
+                {pinnedPhotos.length > 0 && (
+                  <div className="mb-3">
+                    <div className="mb-2.5 flex items-center justify-between">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#0A0A0A]/35">고정 사진</p>
+                      <p className="text-[11px] font-bold text-[#0A0A0A]/28">{pinnedPhotos.length}/{maxPinnedPhotos}</p>
+                    </div>
+                    <div className="flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      {pinnedPhotos.map((photo, i) => (
+                        <div key={`pinned-${i}`} className="relative h-[86px] w-[86px] flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleSavedPhotoSelect(photo)}
+                            className="h-full w-full overflow-hidden rounded-2xl border-2 border-[#C9571A] bg-black/5 transition-colors"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={photo} alt="고정 사진" className="h-full w-full object-cover" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="고정 해제"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleSavedPhotoPinToggle(photo);
+                            }}
+                            className="absolute bottom-1.5 left-1.5 rounded-full bg-[#C9571A] px-2 py-1 text-[10px] font-black text-white shadow-lg"
+                          >
+                            고정
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="사진 삭제"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleSavedPhotoDelete(photo);
+                            }}
+                            className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/65 text-[14px] font-black leading-none text-white shadow-lg"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {visibleRecentPhotos.length > 0 && (
+                  <div>
+                    <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-[#0A0A0A]/30">최근 사용한 셀카</p>
+                    <div className="flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      {visibleRecentPhotos.map((photo, i) => (
+                        <div key={`recent-${i}`} className="relative h-[86px] w-[86px] flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleSavedPhotoSelect(photo)}
+                            className="h-full w-full overflow-hidden rounded-2xl border-2 border-black/15 bg-black/5 transition-colors hover:border-[#C9571A]"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={photo} alt="최근 사용한 셀카" className="h-full w-full object-cover" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="사진 고정"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleSavedPhotoPinToggle(photo);
+                            }}
+                            className="absolute bottom-1.5 left-1.5 rounded-full bg-white/90 px-2 py-1 text-[10px] font-black text-[#C9571A] shadow-lg"
+                          >
+                            고정
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="사진 삭제"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleSavedPhotoDelete(photo);
+                            }}
+                            className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/65 text-[14px] font-black leading-none text-white shadow-lg"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-3 mb-1 border-t border-black/[0.07]" />
               </div>
             )}
