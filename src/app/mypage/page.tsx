@@ -1146,9 +1146,6 @@ export default function MyPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-[12px] font-bold text-[#6B7280]">친구 초대</p>
-                    <span className="flex-shrink-0 rounded-full border border-[#E8D8CE] bg-[#FFF8F3] px-2.5 py-1 text-[11px] font-bold text-[#C9571A]">
-                      30일 유효
-                    </span>
                   </div>
                   <p className="mt-0.5 text-[15px] font-bold text-[#111827]">보상 현황</p>
                   <p className="mt-1 text-[12px] leading-5 text-[#8A8A8A]">

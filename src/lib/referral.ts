@@ -1,3 +1,5 @@
+import { CREDIT_VALIDITY_DAYS, getCreditExpiryIso } from "@/lib/credits";
+
 export const REFERRAL_QUERY_PARAM = "ref";
 export const REFERRAL_STORAGE_KEY = "sd_referral_code";
 export const REFERRAL_GENERATION_THRESHOLD = 3;
@@ -5,7 +7,7 @@ export const REFERRAL_GENERATION_REWARD_CREDITS = 1;
 export const REFERRAL_PAYMENT_REWARD_CREDITS = 2;
 export const REFERRAL_REFERRED_PAYMENT_BONUS_CREDITS = 1;
 export const REFERRAL_MONTHLY_REWARD_CAP_CREDITS = 10;
-export const REFERRAL_REWARD_VALID_DAYS = 30;
+export const REFERRAL_REWARD_VALID_DAYS = CREDIT_VALIDITY_DAYS;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -67,7 +69,5 @@ export function buildReferralShareUrl(link: string, referrerCode: string | null 
 }
 
 export function getReferralRewardExpiryIso(base = new Date()) {
-  const expiresAt = new Date(base);
-  expiresAt.setDate(expiresAt.getDate() + REFERRAL_REWARD_VALID_DAYS);
-  return expiresAt.toISOString();
+  return getCreditExpiryIso(base);
 }
