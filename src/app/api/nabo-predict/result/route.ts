@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     ownerName: String(payload.ownerName ?? "").slice(0, 16),
     targetName: String(payload.targetName ?? "").slice(0, 16),
     relationshipType: String(payload.relationshipType ?? "friend"),
+    questionIds: Array.isArray(payload.questionIds) ? payload.questionIds.filter((item) => typeof item === "string") : [],
     predictions: isPlainRecord(payload.predictions) ? payload.predictions : {},
     actualAnswers,
     createdAt: Number(payload.createdAt ?? Date.now()),

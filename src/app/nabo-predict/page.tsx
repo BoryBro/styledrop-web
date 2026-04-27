@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { trackClientEvent } from "@/lib/client-events";
+import { NABO_PREDICT_EXTRA_QUESTION_SEEDS } from "@/lib/nabo-predict-extra-questions";
 
 const P = {
   bg: "#FFF7ED",
@@ -53,9 +54,17 @@ type InvitePayload = {
   ownerName: string;
   targetName: string;
   relationshipType?: RelationshipType;
+  questionIds?: string[];
   predictions: AnswerMap;
   createdAt: number;
   sessionId: string;
+};
+
+type PendingInvite = {
+  payload: InvitePayload;
+  encodedPayload: string;
+  status: "checking" | "waiting" | "completed";
+  resultPath?: string;
 };
 
 type Comparison = {
@@ -163,7 +172,7 @@ const RELATIONSHIPS: Record<RelationshipType, { label: string; targetLabel: stri
   },
 };
 
-const QUESTION_BANK: Record<RelationshipType, Question[]> = {
+const BASE_QUESTION_BANK: Record<RelationshipType, Question[]> = {
   friend: [
   {
     id: "q1",
@@ -568,8 +577,64 @@ const QUESTION_BANK: Record<RelationshipType, Question[]> = {
   ],
 };
 
-function getQuestions(relationshipType: RelationshipType = DEFAULT_RELATIONSHIP) {
+function buildExtraQuestions(prefix: RelationshipType, seeds: (typeof NABO_PREDICT_EXTRA_QUESTION_SEEDS)[RelationshipType]): Question[] {
+  return seeds.map((seed, index) => {
+    const questionNumber = index + 9;
+    const questionId = `x-${prefix}-${questionNumber}`;
+
+    return {
+      id: questionId,
+      mark: String(questionNumber).padStart(2, "0"),
+      short: seed.short,
+      category: seed.category,
+      text: (name) => seed.text.replaceAll("{name}", name),
+      options: seed.options.map(([label, trait, summary], optionIndex) => ({
+        id: `${questionId}-${optionIndex + 1}`,
+        label,
+        trait,
+        summary,
+      })),
+    };
+  });
+}
+
+const QUESTION_BANK: Record<RelationshipType, Question[]> = {
+  friend: [...BASE_QUESTION_BANK.friend, ...buildExtraQuestions("friend", NABO_PREDICT_EXTRA_QUESTION_SEEDS.friend)],
+  lover: [...BASE_QUESTION_BANK.lover, ...buildExtraQuestions("lover", NABO_PREDICT_EXTRA_QUESTION_SEEDS.lover)],
+  crush: [...BASE_QUESTION_BANK.crush, ...buildExtraQuestions("crush", NABO_PREDICT_EXTRA_QUESTION_SEEDS.crush)],
+  family: [...BASE_QUESTION_BANK.family, ...buildExtraQuestions("family", NABO_PREDICT_EXTRA_QUESTION_SEEDS.family)],
+  acquaintance: [...BASE_QUESTION_BANK.acquaintance, ...buildExtraQuestions("acquaintance", NABO_PREDICT_EXTRA_QUESTION_SEEDS.acquaintance)],
+};
+
+function getQuestionPool(relationshipType: RelationshipType = DEFAULT_RELATIONSHIP) {
   return QUESTION_BANK[relationshipType] ?? QUESTION_BANK[DEFAULT_RELATIONSHIP];
+}
+
+function renumberQuestions(questions: Question[]) {
+  return questions.map((question, index) => ({
+    ...question,
+    mark: String(index + 1).padStart(2, "0"),
+  }));
+}
+
+function getQuestions(relationshipType: RelationshipType = DEFAULT_RELATIONSHIP, questionIds?: string[]) {
+  const pool = getQuestionPool(relationshipType);
+  if (questionIds?.length) {
+    const byId = new Map(pool.map((question) => [question.id, question]));
+    const selected = questionIds.map((id) => byId.get(id)).filter(Boolean) as Question[];
+    if (selected.length > 0) return renumberQuestions(selected.slice(0, TOTAL_QUESTIONS));
+  }
+  return renumberQuestions(pool.slice(0, TOTAL_QUESTIONS));
+}
+
+function pickQuestionIds(relationshipType: RelationshipType) {
+  const pool = getQuestionPool(relationshipType);
+  const shuffled = [...pool];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled.slice(0, TOTAL_QUESTIONS).map((question) => question.id);
 }
 
 function resolveRelationship(value: unknown): RelationshipType {
@@ -739,7 +804,7 @@ function getTopTrait(choices: Choice[]) {
 }
 
 function buildComparisons(payload: InvitePayload, answers: AnswerMap): Comparison[] {
-  return getQuestions(payload.relationshipType).map((question) => {
+  return getQuestions(payload.relationshipType, payload.questionIds).map((question) => {
     const predicted = getChoice(question, payload.predictions[question.id]);
     const actual = getChoice(question, answers[question.id]);
     return {
@@ -855,7 +920,10 @@ function decodePayload(value: string): InvitePayload | null {
     if (typeof parsed.ownerName !== "string" || typeof parsed.targetName !== "string") return null;
     if (!parsed.predictions || typeof parsed.predictions !== "object") return null;
     const relationshipType = resolveRelationship(parsed.relationshipType);
-    const questions = getQuestions(relationshipType);
+    const questionIds = Array.isArray(parsed.questionIds)
+      ? parsed.questionIds.filter((item): item is string => typeof item === "string")
+      : undefined;
+    const questions = getQuestions(relationshipType, questionIds);
     const predictions: AnswerMap = {};
     for (const question of questions) {
       const answer = parsed.predictions[question.id];
@@ -867,6 +935,7 @@ function decodePayload(value: string): InvitePayload | null {
       ownerName: parsed.ownerName.trim().slice(0, 16) || "나",
       targetName: parsed.targetName.trim().slice(0, 16) || "친구",
       relationshipType,
+      questionIds: questions.map((question) => question.id),
       predictions,
       createdAt: typeof parsed.createdAt === "number" ? parsed.createdAt : Date.now(),
       sessionId: typeof parsed.sessionId === "string" ? parsed.sessionId : String(Date.now()),
@@ -881,6 +950,39 @@ function createSessionId() {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+const PENDING_INVITE_STORAGE_KEY = "styledrop:nabo-predict:pending-invite";
+
+function readPendingInvite(): PendingInvite | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(PENDING_INVITE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { payload?: InvitePayload; encodedPayload?: string; resultPath?: string; status?: PendingInvite["status"] };
+    if (!parsed.payload?.sessionId || !parsed.encodedPayload) return null;
+    return {
+      payload: {
+        ...parsed.payload,
+        relationshipType: resolveRelationship(parsed.payload.relationshipType),
+        questionIds: Array.isArray(parsed.payload.questionIds) ? parsed.payload.questionIds.filter((item): item is string => typeof item === "string") : undefined,
+      },
+      encodedPayload: parsed.encodedPayload,
+      resultPath: parsed.resultPath,
+      status: parsed.status === "completed" ? "completed" : "waiting",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writePendingInvite(invite: PendingInvite) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(PENDING_INVITE_STORAGE_KEY, JSON.stringify(invite));
+  } catch {
+    // 로컬 저장 실패는 핵심 흐름을 막지 않습니다.
+  }
 }
 
 function normalizeRelationshipType(value: unknown): RelationshipType {
@@ -1004,6 +1106,7 @@ export default function NaboPredictPage() {
   const [ownerName, setOwnerName] = useState("");
   const [targetName, setTargetName] = useState("");
   const [relationshipType, setRelationshipType] = useState<RelationshipType>(DEFAULT_RELATIONSHIP);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
   const [predictionAnswers, setPredictionAnswers] = useState<AnswerMap>({});
   const [actualAnswers, setActualAnswers] = useState<AnswerMap>({});
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -1015,11 +1118,13 @@ export default function NaboPredictPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [analysisIndex, setAnalysisIndex] = useState(0);
   const [isResultSaved, setIsResultSaved] = useState(false);
+  const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
   const savedResultSessionRef = useRef("");
   const senderName = ownerName.trim() || "나";
   const activeRelationship = sharePayload?.relationshipType ?? relationshipType;
+  const activeQuestionIds = sharePayload?.questionIds ?? selectedQuestionIds;
   const relationshipMeta = RELATIONSHIPS[activeRelationship];
-  const currentQuestions = useMemo(() => getQuestions(activeRelationship), [activeRelationship]);
+  const currentQuestions = useMemo(() => getQuestions(activeRelationship, activeQuestionIds), [activeRelationship, activeQuestionIds]);
   const friendName = targetName.trim() || relationshipMeta.label;
   const analysisSteps = useMemo(
     () => [
@@ -1054,6 +1159,7 @@ export default function NaboPredictPage() {
               ownerName: String(stored.ownerName ?? "나"),
               targetName: String(stored.targetName ?? "상대"),
               relationshipType: normalizeRelationshipType(stored.relationshipType),
+              questionIds: Array.isArray(stored.questionIds) ? stored.questionIds.filter((item): item is string => typeof item === "string") : undefined,
               predictions: toAnswerMap(stored.predictions),
               createdAt: Number(stored.createdAt ?? Date.now()),
               sessionId: String(stored.sessionId ?? resultSessionId),
@@ -1077,7 +1183,26 @@ export default function NaboPredictPage() {
       }
 
       const encoded = params.get("data");
-      if (!encoded) return;
+      if (!encoded) {
+        const storedInvite = readPendingInvite();
+        if (!storedInvite || cancelled) return;
+
+        setPendingInvite({ ...storedInvite, status: "checking" });
+        fetch(`/api/nabo-predict/result/${encodeURIComponent(storedInvite.payload.sessionId)}`, { cache: "no-store" })
+          .then((response) => response.json().then((payload) => ({ ok: response.ok, payload })))
+          .then(({ ok }) => {
+            if (cancelled) return;
+            const nextInvite: PendingInvite = ok
+              ? { ...storedInvite, status: "completed", resultPath: `/nabo-predict?result=${encodeURIComponent(storedInvite.payload.sessionId)}` }
+              : { ...storedInvite, status: "waiting" };
+            setPendingInvite(nextInvite);
+            writePendingInvite(nextInvite);
+          })
+          .catch(() => {
+            if (!cancelled) setPendingInvite({ ...storedInvite, status: "waiting" });
+          });
+        return;
+      }
 
       const decoded = decodePayload(encoded);
       if (!decoded) {
@@ -1089,6 +1214,7 @@ export default function NaboPredictPage() {
       setOwnerName(decoded.ownerName);
       setTargetName(decoded.targetName);
       setRelationshipType(decoded.relationshipType ?? DEFAULT_RELATIONSHIP);
+      setSelectedQuestionIds(decoded.questionIds ?? []);
       setPredictionAnswers(decoded.predictions);
       setActualAnswers({});
       setIsResultSaved(false);
@@ -1127,9 +1253,10 @@ export default function NaboPredictPage() {
   }, [shareOrigin, sharePayload]);
 
   const result = useMemo(() => {
-    if (!sharePayload || Object.keys(actualAnswers).length < getQuestions(sharePayload.relationshipType).length) return null;
+    if (!sharePayload || Object.keys(actualAnswers).length < getQuestions(sharePayload.relationshipType, sharePayload.questionIds).length) return null;
     return buildResult(sharePayload, actualAnswers);
   }, [actualAnswers, sharePayload]);
+  const currentInviteStatus = sharePayload && pendingInvite?.payload.sessionId === sharePayload.sessionId ? pendingInvite.status : null;
 
   useEffect(() => {
     if (step !== "result" || !sharePayload || !result) return;
@@ -1149,6 +1276,14 @@ export default function NaboPredictPage() {
       .then(({ ok, payload }) => {
         if (!ok || !payload?.resultPath || typeof window === "undefined") return;
         window.history.replaceState(null, "", String(payload.resultPath));
+        const completedInvite: PendingInvite = {
+          payload: sharePayload,
+          encodedPayload: encodePayload(sharePayload),
+          status: "completed",
+          resultPath: String(payload.resultPath),
+        };
+        setPendingInvite(completedInvite);
+        writePendingInvite(completedInvite);
         setIsResultSaved(true);
       })
       .catch(() => undefined);
@@ -1161,6 +1296,7 @@ export default function NaboPredictPage() {
   const canStart = ownerName.trim().length > 0 && targetName.trim().length > 0;
   const selectRelationship = (type: RelationshipType) => {
     setRelationshipType(type);
+    setSelectedQuestionIds([]);
     setPredictionAnswers({});
     setActualAnswers({});
     setQuestionIndex(0);
@@ -1173,6 +1309,7 @@ export default function NaboPredictPage() {
     setOwnerName("");
     setTargetName("");
     setRelationshipType(DEFAULT_RELATIONSHIP);
+    setSelectedQuestionIds([]);
     setPredictionAnswers({});
     setActualAnswers({});
     setQuestionIndex(0);
@@ -1187,8 +1324,39 @@ export default function NaboPredictPage() {
     }
   }, []);
 
+  const openPendingInvite = () => {
+    if (!pendingInvite) return;
+    if (pendingInvite.status === "completed") {
+      window.location.href = pendingInvite.resultPath ?? `/nabo-predict?result=${encodeURIComponent(pendingInvite.payload.sessionId)}`;
+      return;
+    }
+
+    setSharePayload(pendingInvite.payload);
+    setOwnerName(pendingInvite.payload.ownerName);
+    setTargetName(pendingInvite.payload.targetName);
+    setRelationshipType(pendingInvite.payload.relationshipType ?? DEFAULT_RELATIONSHIP);
+    setSelectedQuestionIds(pendingInvite.payload.questionIds ?? []);
+    setPredictionAnswers(pendingInvite.payload.predictions);
+    setActualAnswers({});
+    setQuestionIndex(0);
+    setStep("share");
+  };
+
+  const startAnotherInvite = () => {
+    setStep("setup");
+    setTargetName("");
+    setSelectedQuestionIds([]);
+    setPredictionAnswers({});
+    setActualAnswers({});
+    setQuestionIndex(0);
+    setSharePayload(null);
+    setShareNotice("");
+    setErrorMessage("");
+  };
+
   const startPrediction = () => {
     if (!canStart) return;
+    setSelectedQuestionIds(pickQuestionIds(relationshipType));
     setPredictionAnswers({});
     setQuestionIndex(0);
     setErrorMessage("");
@@ -1230,17 +1398,26 @@ export default function NaboPredictPage() {
       ownerName: ownerName.trim().slice(0, 16),
       targetName: targetName.trim().slice(0, 16),
       relationshipType,
+      questionIds: currentQuestions.map((question) => question.id),
       predictions: predictionAnswers,
       createdAt: Date.now(),
       sessionId: createSessionId(),
     };
     const encodedPayload = encodePayload(payload);
+    const nextPendingInvite: PendingInvite = {
+      payload,
+      encodedPayload,
+      status: "waiting",
+    };
     setSharePayload(payload);
+    setPendingInvite(nextPendingInvite);
+    writePendingInvite(nextPendingInvite);
     void trackClientEvent("lab_nabo_predict_link_created", {
       sessionId: payload.sessionId,
       ownerName: payload.ownerName,
       targetName: payload.targetName,
       relationshipType: payload.relationshipType,
+      questionIds: payload.questionIds,
       predictions: payload.predictions,
       createdAt: payload.createdAt,
       encodedPayload,
@@ -1376,6 +1553,52 @@ export default function NaboPredictPage() {
               ))}
             </div>
           </section>
+
+          {pendingInvite && (
+            <section className="px-6 pb-8">
+              <div className="rounded-[28px] border border-gray-100 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em]" style={{ color: P.mid }}>
+                      진행중
+                    </p>
+                    <h3 className="mt-2 text-[19px] font-black leading-tight text-gray-900">
+                      {pendingInvite.payload.targetName}님에게 보낸 예측
+                    </h3>
+                    <p className="mt-1 text-[13px] font-semibold text-gray-400">
+                      {pendingInvite.status === "completed" ? "상대가 답변을 완료했어요." : pendingInvite.status === "checking" ? "결과를 확인 중이에요." : "상대 답변을 기다리는 중이에요."}
+                    </p>
+                  </div>
+                  <span
+                    className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-black"
+                    style={{
+                      background: pendingInvite.status === "completed" ? "#DCFCE7" : P.bg,
+                      color: pendingInvite.status === "completed" ? "#15803D" : P.text,
+                    }}
+                  >
+                    {pendingInvite.status === "completed" ? "완료" : "대기"}
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={openPendingInvite}
+                    className="rounded-2xl px-4 py-3 text-[14px] font-black text-white transition-all active:scale-[0.98]"
+                    style={{ background: pendingInvite.status === "completed" ? P.teal : "#111827" }}
+                  >
+                    {pendingInvite.status === "completed" ? "결과 열어보기" : "대기중이에요"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={startAnotherInvite}
+                    className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-[14px] font-black text-gray-700 transition-all active:scale-[0.98]"
+                  >
+                    다른 사람에게도 보내기
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
 
           <section className="border-t border-gray-50 px-6 py-8">
             <p className="mb-6 text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">진행 방식</p>
@@ -1553,6 +1776,26 @@ export default function NaboPredictPage() {
             <p className="text-[14px] leading-relaxed text-gray-500">{friendName}님이 링크를 누르면 {senderName}님의 예측은 숨겨진 상태로 같은 질문에 답해요.</p>
           </section>
           <section className="grid min-w-0 gap-4 px-6">
+            {currentInviteStatus && (
+              <div className="rounded-2xl px-4 py-3" style={{ background: currentInviteStatus === "completed" ? "#ECFDF5" : P.bg, border: `1px solid ${currentInviteStatus === "completed" ? "#A7F3D0" : P.border}` }}>
+                <p className="text-[13px] font-black" style={{ color: currentInviteStatus === "completed" ? "#047857" : P.text }}>
+                  {currentInviteStatus === "completed" ? "상대 답변 완료" : "대기중이에요"}
+                </p>
+                <p className="mt-1 text-[12px] font-semibold text-gray-500">
+                  {currentInviteStatus === "completed" ? "결과 페이지에서 바로 비교할 수 있어요." : "상대가 8개 질문을 끝내면 결과 열어보기로 바뀝니다."}
+                </p>
+                {currentInviteStatus === "completed" && (
+                  <button
+                    type="button"
+                    onClick={openPendingInvite}
+                    className="mt-3 w-full rounded-xl px-4 py-3 text-[14px] font-black text-white transition-all active:scale-[0.98]"
+                    style={{ background: P.teal }}
+                  >
+                    결과 열어보기
+                  </button>
+                )}
+              </div>
+            )}
             <button
               type="button"
               onClick={() => void handleKakaoShare()}
