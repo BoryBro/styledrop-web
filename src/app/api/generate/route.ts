@@ -7393,6 +7393,124 @@ OUTPUT TARGET:
 
 STYLE_PROMPTS["white-feather-veil"]["default"] = WHITE_FEATHER_VEIL_COMPACT_PROMPT;
 
+const ORGANZA_HALO_COMPACT_PROMPT = `Transform the uploaded photo into a close frontal sacred editorial portrait of the same person wrapped in sculptural white organza, standing before a glowing chandelier, luminous clouds, and floating pearl-like highlights. Match the attached reference image's close crop, chandelier scale, cloud placement, halo behavior, warm cream-white glow, organza texture, soft lens flare, serene expression, and opulent surreal photographic finish.
+
+This must look like a real high-resolution editorial portrait photograph with an ethereal, sacred, opulent, surreal-but-photographic atmosphere. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+IDENTITY LOCK:
+- Preserve the exact same person: face shape, bone structure, eyes, nose, lips, jawline, proportions, skin tone family, and instantly recognizable likeness
+- Keep a serene, contemplative, calm expression
+- The face must feel naturally integrated into the chandelier-and-cloud environment with matching lighting direction, contrast, skin texture, halo interaction, lens flare contamination, and image sharpness
+- No pasted-face look
+- No over-cleaning
+- No plastic skin
+- No structural beautification
+- No symmetry correction
+- Keep real skin texture, subtle asymmetry, natural facial structure, and believable facial volume
+- The skin may look gently polished and luminous, but still real
+
+COMPOSITION:
+- Close upper-body portrait
+- Subject centered in the frame
+- Frontal composition with calm sacred stillness
+- Camera distance must remain intimate and close
+- Face and upper torso dominate the image
+- Dramatic organza folds fill the lower foreground
+- Chandelier must appear above and behind the subject
+- Large cloud masses must frame the sides and background
+- Do not widen the frame
+- Do not flatten into a simple studio portrait
+- Keep the image grand, luminous, immersive, and portrait-driven
+
+STYLING:
+- White sculptural organza garment with thick, opaque, layered folds
+- Adapt the styling naturally to the uploaded person's gender presentation while preserving the sacred white-organza ceremonial concept
+- For feminine-presenting subjects, a sculptural organza dress shape is allowed if it remains elegant, fully covering, and non-revealing
+- For masculine-presenting subjects, use a fully covering sculptural organza robe, ceremonial wrap, or architectural white top instead of a feminine dress shape
+- Fabric must feel airy yet substantial, with crisp translucent layering, luminous edges, soft internal volume, and real physical texture
+- Fully covering and physically believable
+- No transparent revealing treatment
+- No costume armor
+- No unrelated garment substitution
+- No exaggerated theatrical styling
+
+HAIR:
+- Preserve the uploaded person's hairstyle identity in a refined editorial way
+- Hair should remain controlled, elegant, and secondary to the face and organza
+- A few natural strands may remain visible near the temples or neck
+- Hair may catch subtle warm backlight
+- No unrelated hairstyle redesign
+- No excessive volume or fashion-hair exaggeration
+
+CHANDELIER / CLOUD SCENE:
+- Ornate chandelier suspended above and behind the subject
+- Multiple glowing chandelier bulbs creating star-like points of light
+- Bright halo effect around the head and upper silhouette
+- Large cloudlike forms surrounding the subject
+- Floating pearlescent particles and shard-like pearl highlights suspended through the air
+- Particles must vary naturally in size, brightness, and focus
+- Chandelier, clouds, and floating highlights must feel physically photographed in the same optical space
+- No visible room edges, text, logos, branding, or hard architecture beyond the chandelier
+- No extra props
+- No repeated copy-paste particle placement
+- The world must feel soft, sacred, celestial, opulent, and immersive
+
+LIGHTING AND COLOR:
+- Strong divine backlight from the chandelier behind the subject
+- Warm cream-white glow with luminous halo and soft flare
+- Soft diffuse frontal fill keeping the face readable
+- Light must catch the organza folds and reveal their layered volume
+- Skin must glow with a gentle warm sheen
+- Clouds and pearl-like particles must catch light softly and volumetrically
+- Palette: pure white, cream, soft pearl white, warm silver highlights, faint chandelier gold, natural skin tones
+- Highlights must roll off softly without harsh clipping
+- Shadows must stay delicate and open
+- No harsh cold lighting
+- No flat studio beauty lighting
+- No modern commercial lighting feel
+- No heavy saturation or muddy grading
+
+DEPTH AND PHOTO STYLE:
+- 85mm portrait lens feel
+- Shallow depth of field
+- Face and main organza folds remain sharp
+- Chandelier, clouds, and floating pearl-like particles soften progressively into luminous bokeh
+- Soft atmospheric bloom around bright highlights
+- Mild lens flare streaks and starburst behavior around chandelier bulbs
+- Clean high-resolution digital editorial photography
+- Crisp facial detail with real skin texture
+- Fine fabric detail in organza folds
+- Premium lens-based optical rendering
+- No wide-angle distortion
+- No HDR exaggeration
+- No film grain
+- No visible digital noise
+- No painterly softness
+- No AI-smooth rendering
+- No cut-out subject edges
+
+STRICT NEGATIVE RULES:
+- Do not change identity
+- Do not generate a new face
+- Do not force a feminine dress shape onto masculine-presenting subjects
+- Do not flatten the chandelier into generic background bokeh
+- Do not reduce clouds into simple mist
+- Do not add props, text, logos, decorative objects, or extra people
+- Do not harden contrast or remove the luminous haze
+- Do not stylize into fantasy art, illustration, painting, poster art, or sterile CGI
+
+OUTPUT TARGET:
+- Same recognizable person
+- Close centered upper-body sacred portrait
+- White sculptural organza ceremonial garment
+- Chandelier glow above and behind the head
+- Floating pearl-like highlights and surrounding cloud forms
+- Warm cream-white halo lighting with soft bokeh and lens flare
+- Ethereal, opulent, dreamy, refined, luminous editorial photograph
+- Real high-end surreal portrait, not AI-generated`;
+
+STYLE_PROMPTS["organza-halo"]["default"] = ORGANZA_HALO_COMPACT_PROMPT;
+
 const HOLOGRAPHIC_BUTTERFLY_COMPACT_PROMPT = `Transform the uploaded photo into a straight-on upper-body editorial portrait surrounded by very large holographic butterflies against a dense violet cloud backdrop. Match the attached reference image's scene, butterfly scale, color richness, shadow structure, lighting contrast, and mysterious polished editorial finish.
 
 This must look like a real high-resolution editorial portrait photograph with a surreal-but-photographic Y2K/Y3K atmosphere. Not fantasy art. Not stylized illustration. Not CGI. Real.
