@@ -44,6 +44,18 @@ type TravelHistoryItem = {
   unlocked: boolean;
 };
 
+type NaboPredictHistoryItem = {
+  sessionId: string;
+  ownerName: string;
+  targetName: string;
+  relationshipType: string;
+  createdAt: number;
+  completedAt: number | null;
+  status: "waiting" | "completed";
+  role: "owner" | "respondent";
+  href: string;
+};
+
 type ShowcaseState = {
   imageUrl: string;
   styleId: string | null;
@@ -165,6 +177,7 @@ export default function MyPage() {
   const [guestHistory, setGuestHistory] = useState<GuestHistoryItem[]>([]);
   const [auditionHistory, setAuditionHistory] = useState<AuditionHistoryItem[]>([]);
   const [travelHistory, setTravelHistory] = useState<TravelHistoryItem[]>([]);
+  const [naboPredictHistory, setNaboPredictHistory] = useState<NaboPredictHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -201,12 +214,14 @@ export default function MyPage() {
     if (!user) {
       setGuestHistory(getGuestHistory());
       setTravelHistory([]);
+      setNaboPredictHistory([]);
       setHistoryLoading(false);
       return;
     }
     const requests: Promise<void>[] = [
       fetch("/api/history").then(r => r.json()).then(d => setHistory(d.history ?? [])).catch(() => {}),
       fetch("/api/travel-together/history").then(r => r.json()).then(d => setTravelHistory(d.history ?? [])).catch(() => {}),
+      fetch("/api/nabo-predict/history").then(r => r.json()).then(d => setNaboPredictHistory(d.history ?? [])).catch(() => {}),
     ];
     if (showAuditionHistory) {
       requests.push(
@@ -860,6 +875,63 @@ export default function MyPage() {
                             </Link>
                           );
                         })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 너라면 그럴 줄 알았어 기록 */}
+                  <div>
+                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">너라면 그럴 줄 알았어</p>
+                    {historyLoading ? (
+                      <div className="flex justify-center py-6">
+                        <div className="w-5 h-5 rounded-full border-2 border-[#E8E8E8] border-t-[#F97316]" style={{ animation: "spin 1s linear infinite" }} />
+                      </div>
+                    ) : naboPredictHistory.length === 0 ? (
+                      <Link href="/nabo-predict" className="flex items-center justify-between bg-white border border-[#E7E7E7] rounded-2xl px-4 py-4 hover:border-[#D1D5DB] transition-colors">
+                        <div>
+                          <p className="text-[14px] font-bold text-[#111827]">너라면 그럴 줄 알았어</p>
+                          <p className="text-[12px] text-[#9CA3AF] font-normal mt-0.5">아직 기록이 없어요 · 시작하기</p>
+                        </div>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#D1D5DB] flex-shrink-0">
+                          <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </Link>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        {naboPredictHistory.map((item) => (
+                          <Link
+                            key={`${item.role}-${item.sessionId}`}
+                            href={item.href || "/nabo-predict"}
+                            className="flex flex-col border border-[#E7E7E7] bg-white p-3 rounded-2xl transition-colors hover:border-[#D1D5DB] min-w-0"
+                          >
+                            <div className="flex aspect-square items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#FFF7ED,#FED7AA_48%,#FB7185)]">
+                              <div className="text-center text-[#9A3412]">
+                                <p className="text-[11px] font-black tracking-[0.18em] uppercase">Predict</p>
+                                <p className="mt-2 text-[24px]">🎯</p>
+                              </div>
+                            </div>
+                            <div className="min-w-0 mt-2.5">
+                              <div className="mb-1 flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
+                                  {item.role === "owner" ? "내 예측" : "내 답변"}
+                                </span>
+                                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${item.status === "completed" ? "bg-[#FFF7ED] text-[#EA580C]" : "bg-[#F4F4F4] text-[#777]"}`}>
+                                  {item.status === "completed" ? "결과 열림" : "답변 대기"}
+                                </span>
+                              </div>
+                              <p className="text-[14px] font-bold leading-snug text-[#111827] break-keep">
+                                {item.ownerName}님이 본 {item.targetName}님
+                              </p>
+                              <p className="mt-0.5 text-[12px] text-[#777]">
+                                {item.status === "completed" ? "결과 다시 보기" : "공유 링크 다시 열기"}
+                              </p>
+                              <div className="mt-2 flex items-end justify-between gap-2">
+                                <span className="text-[11px] text-[#6B7280]">{relativeTime(new Date(item.completedAt ?? item.createdAt).toISOString())}</span>
+                                <span className="text-[10px] font-normal text-[#9CA3AF]">마이페이지 저장</span>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
                     )}
                   </div>

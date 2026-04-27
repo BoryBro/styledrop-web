@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { trackClientEvent } from "@/lib/client-events";
 
 const P = {
@@ -883,6 +883,19 @@ function createSessionId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function normalizeRelationshipType(value: unknown): RelationshipType {
+  return value === "friend" || value === "lover" || value === "crush" || value === "family" || value === "acquaintance"
+    ? value
+    : DEFAULT_RELATIONSHIP;
+}
+
+function toAnswerMap(value: unknown): AnswerMap {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, String(item)]),
+  );
+}
+
 function ProgressBar({ index, total = TOTAL_QUESTIONS }: { index: number; total?: number }) {
   const pct = ((index + 1) / total) * 100;
   return (
@@ -1001,6 +1014,7 @@ export default function NaboPredictPage() {
   const [shareNotice, setShareNotice] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [analysisIndex, setAnalysisIndex] = useState(0);
+  const savedResultSessionRef = useRef("");
   const senderName = ownerName.trim() || "나";
   const activeRelationship = sharePayload?.relationshipType ?? relationshipType;
   const relationshipMeta = RELATIONSHIPS[activeRelationship];
@@ -1023,6 +1037,43 @@ export default function NaboPredictPage() {
       if (cancelled) return;
       setShareOrigin(window.location.origin);
       const params = new URLSearchParams(window.location.search);
+      const resultSessionId = params.get("result");
+      if (resultSessionId) {
+        fetch(`/api/nabo-predict/result/${encodeURIComponent(resultSessionId)}`, { cache: "no-store" })
+          .then((response) => response.json().then((payload) => ({ ok: response.ok, payload })))
+          .then(({ ok, payload }) => {
+            if (!ok || !payload?.result || cancelled) {
+              setErrorMessage(payload?.error ?? "저장된 결과를 찾지 못했어요.");
+              return;
+            }
+
+            const stored = payload.result as Record<string, unknown>;
+            const restoredPayload: InvitePayload = {
+              version: 1,
+              ownerName: String(stored.ownerName ?? "나"),
+              targetName: String(stored.targetName ?? "상대"),
+              relationshipType: normalizeRelationshipType(stored.relationshipType),
+              predictions: toAnswerMap(stored.predictions),
+              createdAt: Number(stored.createdAt ?? Date.now()),
+              sessionId: String(stored.sessionId ?? resultSessionId),
+            };
+
+            setSharePayload(restoredPayload);
+            setOwnerName(restoredPayload.ownerName);
+            setTargetName(restoredPayload.targetName);
+            setRelationshipType(restoredPayload.relationshipType ?? DEFAULT_RELATIONSHIP);
+            setPredictionAnswers(restoredPayload.predictions);
+            setActualAnswers(toAnswerMap(stored.actualAnswers));
+            setQuestionIndex(0);
+            savedResultSessionRef.current = restoredPayload.sessionId;
+            setStep("result");
+          })
+          .catch(() => {
+            if (!cancelled) setErrorMessage("저장된 결과를 불러오지 못했어요.");
+          });
+        return;
+      }
+
       const encoded = params.get("data");
       if (!encoded) return;
 
@@ -1071,6 +1122,24 @@ export default function NaboPredictPage() {
     if (!sharePayload || Object.keys(actualAnswers).length < getQuestions(sharePayload.relationshipType).length) return null;
     return buildResult(sharePayload, actualAnswers);
   }, [actualAnswers, sharePayload]);
+
+  useEffect(() => {
+    if (step !== "result" || !sharePayload || !result) return;
+    if (savedResultSessionRef.current === sharePayload.sessionId) return;
+    savedResultSessionRef.current = sharePayload.sessionId;
+
+    fetch("/api/nabo-predict/result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payload: sharePayload, actualAnswers }),
+    })
+      .then((response) => response.json().then((payload) => ({ ok: response.ok, payload })))
+      .then(({ ok, payload }) => {
+        if (!ok || !payload?.resultPath || typeof window === "undefined") return;
+        window.history.replaceState(null, "", String(payload.resultPath));
+      })
+      .catch(() => undefined);
+  }, [actualAnswers, result, sharePayload, step]);
 
   const currentQuestion = currentQuestions[questionIndex];
   const activeAnswers = step === "answerQuestions" ? actualAnswers : predictionAnswers;
@@ -1151,8 +1220,18 @@ export default function NaboPredictPage() {
       createdAt: Date.now(),
       sessionId: createSessionId(),
     };
+    const encodedPayload = encodePayload(payload);
     setSharePayload(payload);
-    void trackClientEvent("lab_nabo_predict_link_created");
+    void trackClientEvent("lab_nabo_predict_link_created", {
+      sessionId: payload.sessionId,
+      ownerName: payload.ownerName,
+      targetName: payload.targetName,
+      relationshipType: payload.relationshipType,
+      predictions: payload.predictions,
+      createdAt: payload.createdAt,
+      encodedPayload,
+      invitePath: `/nabo-predict?data=${encodeURIComponent(encodedPayload)}`,
+    });
     setStep("share");
   };
 
