@@ -1,0 +1,236 @@
+Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into a medium-long straight-on portrait of a young Korean woman standing immersed in an endless feather landscape, matching the exact tone, mood, softness, lighting behavior, framing, pastel atmosphere, and photographic finish of the attached reference image.
+
+This must look like a real high-resolution editorial portrait photograph with a surreal-but-photographic sacred atmosphere - pristine, ethereal, hazy, spiritually luminous, softly diffused, pastel-washed, and physically believable within the image world. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+FACE - PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject's face with the uploaded user's face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain a calm, composed, sacred, inward-looking, slightly distant expression unless minimal adjustment is required
+- CRITICAL: The face must feel naturally integrated into the feather-desert environment - same lighting direction, same contrast, same skin texture, same haze interaction, same opalescent highlight behavior, same pastel wash, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted, over-cleaned, or artificially beautified
+- Match head position, neck, posture, skin tone, and perspective seamlessly into the standing pose
+- Preserve real skin texture, pores, subtle asymmetry, and natural facial structure
+- No structural beautification, no plastic skin, no artificial symmetry correction
+- The final result must adapt naturally regardless of gender while preserving the same recognizable identity and the intended sacred surreal portrait context
+- The face must remain softly readable, not hyper-contrasted or over-defined
+- Facial rendering must inherit the same creamy haze and pale luminous softness visible in the attached reference
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like a real photographed subject inside a surreal physical set, not a composited fantasy face
+- Capture using a professional full-frame digital camera system
+- Lens: 85mm portrait lens
+- Aperture: f/2-f/2.8 to create shallow depth of field and gentle compression
+- Shutter speed: approximately 1/250 to 1/500 sec to retain clarity in the subject while preserving some natural movement in airborne feathers
+- ISO: 100 to 400
+- White balance: soft warm-neutral daylight around 5000K to 5800K with pink atmospheric contamination
+- Dynamic range: preserve luminous veil whites, pearlescent highlights, and soft shadow detail without clipping
+- No digital over-sharpening; maintain natural lens softness, haze bloom, low micro-contrast, and gentle highlight roll-off
+- Optical rendering must match the attached reference: soft, expensive, diffused, bright-but-muted, and delicately veiled rather than clinically sharp
+
+HAIR:
+- Hair must remain mostly covered by the thick solid white veil
+- Any visible hairline detail must remain natural and minimal
+- Dark hair must read softly beneath the veil opening as in the reference
+- No unrelated hairstyle redesign
+- No exposed fashion-hair styling outside what the veil would realistically reveal
+- Hair visibility must remain secondary to the veil framing and facial presence
+
+CLOTHING:
+- Baroque intricately beaded pearl corset
+- Thick solid white veil framing the face and draping over the shoulders with full coverage
+- The corset must match the attached reference in feeling: pale pearl-white, highly beaded, fitted, luminous, ornate, and softly reflective rather than harshly shiny
+- The veil must appear thick, matte, sculptural, and softly heavy, with clean drape and full opaque coverage
+- Materials must feel physically real, weighty, and highly detailed
+- Beading must read as pearl-like, reflective, and finely constructed
+- Fabric must show natural folds, thickness, and layered drape
+- No transparent or revealing treatment
+- No costume-like fantasy armor rendering
+- Styling must remain elegant, sacred, and restrained, not theatrical or exaggerated beyond the reference
+
+POSE / COMPOSITION:
+- Medium-long straight-on shot
+- Subject standing upright and centered in the frame
+- Barefoot stance implied within the feather field
+- Calm, frontal posture with sacred stillness
+- Subject remains sharply readable against the softer feather landscape
+- Composition must feel iconic, symmetrical in presence, and portrait-driven without becoming rigidly artificial
+- The subject must remain the clear focal point amid the storm of feathers
+- Framing must match the attached reference closely:
+  - subject centered
+  - head and upper torso dominant in the composition
+  - feather field rising around the lower body
+  - horizon of feather landscape extending deep behind the subject
+- Do not widen the frame too much
+- Do not push the subject too far back
+- Maintain the intimate, centered, serene portrait scale visible in the reference
+
+PROP / ENVIRONMENTAL ELEMENTS:
+- Endless desert made of giant white swan feathers
+- Violent feather storms moving through foreground and background
+- Floating, swirling plumes at multiple distances from the camera
+- Feathers must vary in size, sharpness, and position naturally
+- The feather field must feel soft, pillowy, and vast
+- No decorative symmetry or repeated copy-paste feather placement
+- The feather density must match the attached reference:
+  - dense feather sea in foreground
+  - soft drifting feather atmosphere in distance
+  - many small airborne feather fragments in the upper field of view
+- Foreground feathers must feel soft, bright, layered, and almost cloudlike without turning into abstract fog
+- Background feathers must remain airy and softly dispersed
+
+SCENE:
+- Endless surreal desert composed entirely of giant white swan feathers
+- Foreground and background filled with drifting feather matter
+- No ordinary sand, rocks, or vegetation
+- Environment must feel otherworldly yet physically photographed
+- The scale of the feather landscape must feel immense, soft, and immersive
+- The world must remain minimal and sacred, with no extra objects or structures
+- The scene must closely follow the attached reference:
+  - no hard horizon line
+  - no dramatic sky detail
+  - no architectural elements
+  - no additional props
+  - only feather landscape, soft atmosphere, and the solitary figure
+- The environment must feel open, quiet, pale, and infinite
+
+LIGHTING:
+- Ethereal sunlight streaming from the upper left
+- Hazy spiritual glow reminiscent of classic religious paintings
+- Light must feel diffused, elevated, and slightly miraculous without becoming artificial
+- Soft opalescent highlights on veil, corset, skin, and feathers
+- Feather storm must catch the light unevenly and naturally
+- No hard studio spotlight
+- No synthetic fantasy glow
+- The light must remain luminous, directional, and painterly only through real photographic atmosphere
+- Lighting must match the attached reference exactly in feeling:
+  - warm pink-white glow entering from upper left
+  - a strong but diffused bloom in the top-left area
+  - soft haze washing over the whole frame
+  - low-contrast shadows
+  - a pale, holy, dreamlike luminosity
+- The subject's face must be softly lit, not dramatically modeled
+- The left side of the image may carry a stronger pink flare/haze contamination as in the reference
+- Highlights must feel blooming and airy, not metallic or crisp
+
+DEPTH & OPTICS:
+- 85mm lens compression
+- Shallow depth of field
+- Subject remains sharp
+- Feather sea behind and around the subject falls into pillowy soft defocus
+- Foreground feathers may partially blur or drift through the frame
+- No wide-angle distortion
+- Optical rendering must feel lens-based, atmospheric, and real
+- Depth behavior must match the attached reference:
+  - subject readable and gently crisp
+  - no hyper-separation cutout effect
+  - background feather field softly dissolved
+  - airborne feathers in the distance softened by haze
+- Keep micro-contrast subdued and expensive-looking
+
+PHOTO STYLE:
+- High-resolution digital portrait photography
+- Surrealist portraiture through real photographic execution
+- Misty atmospheric diffusion
+- Soft opalescent highlight behavior
+- Delicate haze bloom across bright regions
+- Low micro-contrast with creamy tonal transitions
+- Slight dreamy wash over the entire frame
+- No HDR exaggeration
+- No painterly brush texture
+- No AI-smooth rendering
+- Must feel like a real photographed sacred-surreal portrait, not a digitally painted fantasy scene
+- Must match the attached reference in finish:
+  - pale
+  - creamy
+  - diffused
+  - softly glowing
+  - luminous but restrained
+  - high-end editorial softness
+- The image must feel like a real soft-focus luxury fashion photograph, not a fantasy composite
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Slight atmospheric softness from haze and feather density
+- Gentle highlight bloom in the brightest veil and feather edges
+- Slight falloff in contrast through airborne feather layers
+- Mild depth separation inconsistencies from drifting feather movement
+- Slight lens flare or washed bloom from the upper-left light source
+- No perfectly sterile gradients
+- No unnaturally cut-out subject edges
+- No hyper-clean artificial separation from the environment
+- Maintain natural photographic softness and subtle optical haze matching the reference
+
+EXPOSURE & RESPONSE:
+- Exposure balanced for luminous whites, pearlescent beading, and skin readability
+- Highlights must roll off softly and spiritually, not harshly
+- Shadows must remain delicate and open, not crushed
+- Midtones must preserve corset detail, veil texture, and facial structure
+- Pink atmospheric wash must remain controlled and integrated into the light
+- No flat global exposure balance
+- Exposure must feel slightly lifted and airy overall, as in the reference
+- Whites must remain soft and luminous rather than stark
+- Contrast must stay gentle and refined
+
+ANTI-AI CONSTRAINT:
+- Do NOT turn the feather desert into fantasy CGI clouds or abstract white noise
+- Do NOT over-beautify the face
+- Do NOT clean the scene into a sterile studio set
+- Do NOT make the veil translucent, revealing, or fashion-glossy
+- Do NOT place feathers in evenly repeated decorative patterns
+- Do NOT stylize into illustration or painting
+- Do NOT make the subject overly sharp against the background
+- Do NOT introduce dramatic contrast, dark shadows, or hard detail separation
+- Maintain real photographic rendering with surreal subject matter only
+- Follow the attached reference's softness, pastel wash, and glowing haze exactly
+
+COLOR:
+- Dominant palette:
+  - misty pink
+  - soft cool white
+  - opalescent pearl highlights
+- Secondary tones:
+  - pale cream-white
+  - faint blush atmosphere
+  - soft neutral skin tone
+- The scene must remain gently saturated with luminous pink-white harmony
+- No harsh color separation
+- No artificial grading spikes
+- Color must match the attached reference closely:
+  - soft pink light contamination on the left side
+  - pale ivory whites
+  - slightly cool feather whites
+  - gentle blush skin tones
+  - opalescent highlights, never silver or blue-metallic
+
+MOOD:
+- Pristine
+- Otherworldly
+- Sacred
+- Ethereal
+- Serene
+- Spiritually luminous
+- Surreal yet calm
+- Quietly majestic
+- Softly holy and dreamlike
+- Must match the emotional stillness of the attached reference exactly
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Preserve the endless swan-feather desert, violent feather storm, baroque pearl corset, thick white veil, barefoot stance, upper-left ethereal sunlight, misty pink atmosphere, 85mm compression, and shallow depth of field
+- Clothing and styling must remain fully covering, non-revealing, and physically believable
+- The attached reference image's tone, mood, haze, softness, pastel wash, lighting direction, exposure behavior, framing intimacy, and editorial finish must be followed as closely as possible
+- Do not stylize into fantasy art or religious illustration
+- Keep all elements grounded in a real photographed image with surreal subject matter
+- The uploaded face identity must remain unchanged and clearly preserved
+
+OUTPUT TARGET:
+- Ultra-realistic sacred-surreal portrait
+- Same recognizable person standing in an endless desert of giant white swan feathers
+- Baroque pearl corset, thick white veil, violent feather storm, and luminous upper-left sunlight
+- Misty pink atmosphere with soft white and opalescent highlights
+- 85mm shallow-depth portrait rendering with pillowy feather defocus
+- Exact attached-reference feeling: pale, diffused, dreamy, softly glowing, serene, and luxurious
+- Looks like a real photographed surreal editorial image, not AI-generated

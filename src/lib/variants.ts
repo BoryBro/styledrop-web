@@ -5,7 +5,7 @@ export type Variant = { id: string; label: string; desc?: string; thumbnail?: st
 
 export const STYLE_VARIANTS: Record<string, Variant[]> = {
   "rainy-crosswalk": [
-    { id: "default", label: "기본", desc: "카드 기본 분위기 그대로" },
+    { id: "default", label: "기본", desc: "카드 기본 분위기 그대로", thumbnail: "/thumbnails/Rainy_crosswalk-after.jpg?v=1" },
     { id: "soft-dreamy", label: "몽글몽글", desc: "밀키하고 부드러운 필름 보정 톤", thumbnail: "/thumbnails/rainy-crosswalk-filter-soft-dreamy.jpeg?v=1" },
     { id: "y2k-glossy", label: "Y2K 글로시", desc: "푸른 하늘감과 반짝이는 2000년대 글로시 톤", thumbnail: "/thumbnails/rainy-crosswalk-filter-y2k-glossy.jpeg?v=1" },
     { id: "film-bokeh", label: "필름 보케", desc: "보케와 파스텔 안개가 도는 필름 톤", thumbnail: "/thumbnails/rainy-crosswalk-filter-film-bokeh.jpeg?v=1" },

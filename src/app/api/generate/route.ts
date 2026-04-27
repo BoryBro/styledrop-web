@@ -7289,6 +7289,110 @@ OUTPUT TARGET:
   },
 };
 
+const WHITE_FEATHER_VEIL_COMPACT_PROMPT = `Transform the uploaded photo into a medium-long straight-on sacred editorial portrait of the same person standing in an endless landscape made of giant white swan feathers. Match the attached reference image's feather desert, thick white veil, pearl-beaded ceremonial styling, pastel pink-white haze, upper-left ethereal sunlight, soft diffusion, framing intimacy, and luxury surreal photographic finish.
+
+This must look like a real high-resolution editorial portrait photograph with a sacred, ethereal, surreal-but-photographic atmosphere. Not fantasy art. Not religious illustration. Not CGI. Real.
+
+IDENTITY LOCK:
+- Preserve the exact same person: face shape, bone structure, eyes, nose, lips, jawline, proportions, skin tone family, and instantly recognizable likeness
+- Keep a calm, composed, inward-looking, slightly distant expression
+- The face must feel naturally integrated into the feather landscape with matching lighting direction, haze, skin texture, pastel wash, softness, and image sharpness
+- No pasted-face look
+- No over-cleaning
+- No plastic skin
+- No structural beautification
+- No symmetry correction
+- Keep real skin texture, subtle asymmetry, and natural facial structure
+- The face must remain softly readable, not hyper-contrasted or over-defined
+
+COMPOSITION:
+- Medium-long straight-on portrait
+- Subject standing upright and centered
+- Head and upper torso dominant, lower body surrounded by feather field
+- Barefoot stance implied within the feathers
+- Calm frontal posture with sacred stillness
+- Do not widen the frame too much
+- Do not push the subject too far back
+- Keep the image intimate, centered, serene, and portrait-driven
+
+STYLING:
+- Thick solid white veil framing the face and draping over the shoulders
+- Pearl-white beaded ceremonial garment with ornate baroque detail
+- Adapt the styling naturally to the uploaded person's gender presentation while preserving the sacred white-veil and pearl-beaded concept
+- For feminine-presenting subjects, a pearl-white beaded corset shape is allowed if it remains elegant, fully covering, and non-revealing
+- For masculine-presenting subjects, use a fully covering pearl-beaded structured vest, ceremonial top, or ornate chest piece instead of a feminine corset shape
+- Veil must look matte, sculptural, opaque, softly heavy, and physically real
+- Beading must look pearl-like, detailed, luminous, and ornate
+- Materials must feel physically real, weighty, and highly detailed
+- Fully covering and non-revealing
+- No transparent fabric
+- No revealing styling
+- No costume armor
+- No exaggerated theatrical styling
+
+FEATHER LANDSCAPE:
+- Endless surreal desert made entirely of giant white swan feathers
+- Dense feather sea in the foreground
+- Soft drifting feather atmosphere in the background
+- Violent feather storm moving through foreground and background
+- Floating feather fragments at multiple distances from camera
+- Feathers must vary naturally in size, position, softness, and focus
+- No ordinary sand, rocks, vegetation, architecture, props, or hard horizon
+- No repeated copy-paste feather pattern
+- Feather field must feel vast, pillowy, immersive, pale, and physically photographed
+
+LIGHTING AND COLOR:
+- Ethereal sunlight from the upper left
+- Strong but diffused pink-white bloom in the top-left area
+- Hazy spiritual glow, like real sunlight passing through feather mist
+- Soft opalescent highlights on veil, garment, skin, and feathers
+- Low-contrast open shadows
+- Pale ivory whites, misty pink atmosphere, faint blush tones, and pearlescent highlights
+- Whites must stay soft and luminous, not stark or clipped
+- No hard studio spotlight
+- No dark dramatic contrast
+- No synthetic fantasy glow
+- No harsh color separation
+
+DEPTH AND PHOTO STYLE:
+- 85mm portrait lens feel
+- Shallow depth of field
+- Subject gently crisp, feather landscape softly defocused
+- Foreground feathers may blur naturally near the lens
+- Soft-focus luxury fashion photography
+- Misty atmospheric diffusion
+- Creamy tonal transitions
+- Low micro-contrast
+- Delicate haze bloom across bright regions
+- Real photographed sacred-surreal editorial finish
+- No HDR exaggeration
+- No painterly brush texture
+- No AI-smooth rendering
+- No sterile studio cleanliness
+- No cut-out subject edges
+
+STRICT NEGATIVE RULES:
+- Do not change identity
+- Do not generate a new face
+- Do not force a feminine corset shape onto masculine-presenting subjects
+- Do not turn the feather desert into CGI clouds or abstract white noise
+- Do not make the veil translucent or revealing
+- Do not make the subject overly sharp against the background
+- Do not add objects, text, architecture, props, or extra people
+- Do not stylize into fantasy art, painting, religious illustration, or sterile CGI
+
+OUTPUT TARGET:
+- Same recognizable person
+- Centered medium-long sacred portrait
+- Thick white veil and ornate pearl-beaded ceremonial garment
+- Endless giant swan-feather desert
+- Violent feather storm with soft drifting plumes
+- Upper-left pink-white ethereal sunlight
+- Pale, creamy, diffused, luminous, serene luxury editorial photograph
+- Real high-end surreal portrait, not AI-generated`;
+
+STYLE_PROMPTS["white-feather-veil"]["default"] = WHITE_FEATHER_VEIL_COMPACT_PROMPT;
+
 const HOLOGRAPHIC_BUTTERFLY_COMPACT_PROMPT = `Transform the uploaded photo into a straight-on upper-body editorial portrait surrounded by very large holographic butterflies against a dense violet cloud backdrop. Match the attached reference image's scene, butterfly scale, color richness, shadow structure, lighting contrast, and mysterious polished editorial finish.
 
 This must look like a real high-resolution editorial portrait photograph with a surreal-but-photographic Y2K/Y3K atmosphere. Not fantasy art. Not stylized illustration. Not CGI. Real.
