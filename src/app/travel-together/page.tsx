@@ -22,7 +22,7 @@ type ResultAnalysisMode = "basic" | "detail";
 
 const RESULT_ANALYSIS_STEPS: Record<ResultAnalysisMode, string[]> = {
   basic: ["응답 정렬 중", "여행 취향 비교 중", "궁합 포인트 추출 중", "결과 리포트 여는 중"],
-  detail: ["크레딧 확인 중", "답변 차이 분석 중", "충돌 포인트 정리 중", "상세 리포트 여는 중"],
+  detail: ["1크레딧 확인 중", "답변 차이 분석 중", "충돌 포인트 정리 중", "상세 리포트 여는 중"],
 };
 type AnswerMap = Record<string, AnswerValue>;
 type Question =
@@ -99,7 +99,7 @@ type KakaoShareSDK = {
   };
 };
 
-const DETAIL_UNLOCK_CREDITS = 2;
+const DETAIL_UNLOCK_CREDITS = 1;
 const DEFAULT_SHARE_ORIGIN = "https://www.styledrop.cloud";
 
 const RELATION_OPTIONS: Array<{ id: Relation; label: string; desc: string }> = [
@@ -1411,7 +1411,7 @@ function TravelTogetherPageContent() {
               <span className="text-[14px]" style={{ color: T.text }}>궁합 티어와 최종 여행 결과를 보여줘요</span>
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
-              {["2인 여행 궁합", "20문항", "기본 결과 무료 공개", "상세 결과 2크레딧"].map((tag) => (
+              {["2인 여행 궁합", "20문항", "기본 결과 무료 공개", "상세 결과 1크레딧"].map((tag) => (
                 <span key={tag} className="text-[12px] font-bold rounded-full px-3 py-1" style={{ background: T.bg, color: T.deep, border: `1px solid ${T.border}` }}>
                   {tag}
                 </span>
@@ -1425,7 +1425,7 @@ function TravelTogetherPageContent() {
               { num: "01", en: "CREATE", ko: "룸을 만들어요", desc: "상대 이름과 관계를 정하고\n초대 링크를 생성해요." },
               { num: "02", en: "INVITE", ko: "상대를 초대해요", desc: "링크를 보내고 각자\n본인 여행 스타일을 답해요." },
               { num: "03", en: "COMPARE", ko: "궁합을 비교해요", desc: "준비·행동·페이스·갈등·여행 후\n5개 축으로 비교합니다." },
-              { num: "04", en: "DETAIL", ko: "상세 결과를 봐요", desc: "기본 결과 확인 후\n상세 결과를 2크레딧으로 봐요." },
+              { num: "04", en: "DETAIL", ko: "상세 결과를 봐요", desc: "기본 결과 확인 후\n상세 결과를 1크레딧으로 봐요." },
             ].map((item) => (
               <div key={item.num} className="flex gap-4 items-start">
                 <span className="text-[26px] font-black text-gray-200 leading-none flex-shrink-0 w-10 text-right tabular-nums">{item.num}</span>

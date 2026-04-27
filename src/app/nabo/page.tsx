@@ -40,7 +40,6 @@ type KakaoShareSDK = {
 
 const EXTRA = "기타 (직접 입력) ✏️";
 const LOCK_MS = 24 * 60 * 60 * 1000;
-const NABO_CREATE_CREDITS = 1;
 const BASIC_RESULT_COUNT = 3;
 const FULL_RESULT_COUNT = 5;
 
@@ -760,7 +759,7 @@ export default function NaboPage() {
             <button onClick={() => myName.trim() && void createRoom()}
               className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]"
               style={{ background: myName.trim() && !isCreatingRoom ? "#111" : "#F3F4F6", color: myName.trim() && !isCreatingRoom ? "#fff" : "#9CA3AF" }}>
-              {isCreatingRoom ? "링크 만드는 중..." : `${NABO_CREATE_CREDITS}크레딧으로 링크 생성 →`}
+              {isCreatingRoom ? "링크 만드는 중..." : "무료로 링크 생성 →"}
             </button>
             {!myName.trim() && <p className="text-center text-[12px] text-gray-400 mt-2">닉네임을 입력해주세요</p>}
           </div>

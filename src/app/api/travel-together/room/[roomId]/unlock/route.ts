@@ -10,7 +10,7 @@ import {
   unlockTravelRoom,
 } from "@/lib/travel-together-room.server";
 
-const DETAIL_UNLOCK_CREDITS = 2;
+const DETAIL_UNLOCK_CREDITS = 1;
 
 function getSupabase() {
   return createClient(
@@ -26,7 +26,7 @@ export async function POST(
   const session = readSessionFromRequest(request);
   if (!session) {
     return NextResponse.json(
-      { error: "상세 결과 결제는 로그인 회원만 가능합니다." },
+      { error: "상세 결과 결제는 카카오 로그인 후 가능합니다." },
       { status: 401 },
     );
   }
@@ -48,7 +48,7 @@ export async function POST(
 
     const role = getTravelRole(room, token);
     if (!role) {
-      return NextResponse.json({ error: "결제 권한이 없습니다." }, { status: 403 });
+      return NextResponse.json({ error: "상세 결과를 볼 권한이 없습니다." }, { status: 403 });
     }
 
     const attached = await attachTravelParticipantUserId(room, role, session.id);
@@ -78,7 +78,7 @@ export async function POST(
 
     if (deductError || remainingCredits === null || remainingCredits === undefined) {
       return NextResponse.json(
-        { error: "크레딧이 부족합니다. 2크레딧 충전 후 다시 시도해주세요." },
+        { error: "크레딧이 부족합니다. 1크레딧 충전 후 다시 시도해주세요." },
         { status: 429 },
       );
     }
@@ -98,7 +98,7 @@ export async function POST(
       }).catch(() => undefined);
 
       return NextResponse.json(
-        { error: unlocked.error ?? "상세 결과 결제 처리에 실패했습니다." },
+        { error: unlocked.error ?? "상세 결과를 열지 못했습니다." },
         { status: 500 },
       );
     }
@@ -107,10 +107,11 @@ export async function POST(
       ok: true,
       view: buildTravelRoomView(unlocked.room, role),
       chargedCredits: DETAIL_UNLOCK_CREDITS,
+      remainingCredits,
     });
   } catch {
     return NextResponse.json(
-      { error: "상세 결과 결제 처리에 실패했습니다." },
+      { error: "상세 결과를 열지 못했습니다." },
       { status: 500 },
     );
   }

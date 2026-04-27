@@ -1880,7 +1880,7 @@ export default function Studio() {
                       <div className="absolute z-20 flex items-center justify-between" style={{ bottom: '6%', left: '6%', right: '6%' }}>
                         <LabCardBadges
                           participants={usageCounts === null ? "..." : `${formatCount(usageCounts["nabo"] ?? 0)}명 참여`}
-                          creditLabel="1크레딧"
+                          creditLabel="무료"
                           accent="#22C55E"
                         />
 
@@ -1972,7 +1972,7 @@ export default function Studio() {
                       <div className="absolute z-20 flex items-center justify-between" style={{ bottom: "6%", left: "6%", right: "6%" }}>
                         <LabCardBadges
                           participants={usageCounts === null ? "..." : `${formatCount(usageCounts["nabo_predict"] ?? 0)}명 참여`}
-                          creditLabel="1크레딧"
+                          creditLabel="무료"
                           accent="#FB7185"
                         />
 
@@ -2063,7 +2063,7 @@ export default function Studio() {
                     <div className="absolute z-20 flex items-center justify-between" style={{ bottom: "6%", left: "6%", right: "6%" }}>
                       <LabCardBadges
                         participants={usageCounts === null ? "..." : `${formatCount(usageCounts["travel_together"] ?? 0)}명 참여`}
-                        creditLabel="1크레딧"
+                        creditLabel="무료"
                         accent="#60A5FA"
                       />
 
