@@ -4,6 +4,7 @@ import { readSessionFromRequest } from "@/lib/auth-session";
 import { addCreditsWithPolicy } from "@/lib/credits.server";
 import { getCreditExpiryIso } from "@/lib/credits";
 import { PAYMENT_PACKAGES, type PaymentPackageId } from "@/lib/payment-policy";
+import { rewardReferralForFirstPayment } from "@/lib/referrals.server";
 import nodemailer from "nodemailer";
 
 async function sendPaymentAlert(userName: string, amount: number, credits: number) {
@@ -180,7 +181,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: addRes.error?.message ?? "크레딧 적립 실패" }, { status: 500 });
   }
 
+  const referralReward = await rewardReferralForFirstPayment(supabase, {
+    referredUserId: session.id,
+    paymentId,
+  });
+
   sendPaymentAlert(session.nickname, pkg.amount, pkg.credits);
 
-  return NextResponse.json({ success: true, credits: pkg.credits });
+  return NextResponse.json({
+    success: true,
+    credits: pkg.credits + referralReward.referredBonusCredits,
+    referralReward,
+  });
 }

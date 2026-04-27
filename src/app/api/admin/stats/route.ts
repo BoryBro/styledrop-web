@@ -20,6 +20,13 @@ type PaymentRow = {
   refund_type?: string | null;
 };
 
+function getNetPaidCredits(payment: PaymentRow) {
+  const netRevenue = getNetRevenueAmount(payment);
+  if (netRevenue <= 0 || payment.amount <= 0) return 0;
+
+  return Math.round(payment.credits * (netRevenue / payment.amount));
+}
+
 type RefundEventRow = {
   id: string | number;
   user_id: string | null;
@@ -619,6 +626,12 @@ export async function POST(request: NextRequest) {
   const aprResolvedApiCost = aprBillingSnapshot?.amount ?? aprEstimatedApiCost;
   const marCostSource = marBillingSnapshot ? "bigquery_actual" : "manual_actual";
   const aprCostSource = aprBillingSnapshot ? "bigquery_actual" : "reference_weighted_estimate";
+  const marPayments = (marRevenueRes.data ?? []) as PaymentRow[];
+  const aprPayments = (aprRevenueRes.data ?? []) as PaymentRow[];
+  const marRevenue = marPayments.reduce((sum, payment) => sum + getNetRevenueAmount(payment), 0);
+  const aprRevenue = aprPayments.reduce((sum, payment) => sum + getNetRevenueAmount(payment), 0);
+  const marSoldCredits = marPayments.reduce((sum, payment) => sum + getNetPaidCredits(payment), 0);
+  const aprSoldCredits = aprPayments.reduce((sum, payment) => sum + getNetPaidCredits(payment), 0);
 
   const userList = [...(userListRes.data ?? [])];
 
@@ -794,7 +807,8 @@ export async function POST(request: NextRequest) {
         auditionStillCount: marAuditionStillCount,
         duoSubmissionCount: marDuoSubmissionCount,
         apiCost: marResolvedApiCost,
-        revenue: ((marRevenueRes.data ?? []) as PaymentRow[]).reduce((sum, payment) => sum + getNetRevenueAmount(payment), 0),
+        revenue: marRevenue,
+        soldCredits: marSoldCredits,
         costSource: marCostSource,
         currency: marBillingSnapshot?.currency ?? "KRW",
       },
@@ -804,7 +818,8 @@ export async function POST(request: NextRequest) {
         auditionStillCount: aprAuditionStillCount,
         duoSubmissionCount: aprDuoSubmissionCount,
         apiCost: aprResolvedApiCost,
-        revenue: ((aprRevenueRes.data ?? []) as PaymentRow[]).reduce((sum, payment) => sum + getNetRevenueAmount(payment), 0),
+        revenue: aprRevenue,
+        soldCredits: aprSoldCredits,
         shareKakao: aprShareKakaoRes.count ?? 0,
         shareLink: aprShareLinkRes.count ?? 0,
         saveImage: aprSaveRes.count ?? 0,

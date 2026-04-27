@@ -3,8 +3,8 @@ export const REFUND_WINDOW_DAYS = 7;
 
 export const PAYMENT_PACKAGES = {
   basic: { amount: 1900, credits: 10, name: "기본 크레딧 10회" },
-  plus: { amount: 4900, credits: 30, name: "플러스 크레딧 30회" },
-  pro: { amount: 9900, credits: 70, name: "프로 크레딧 70회" },
+  plus: { amount: 4900, credits: 28, name: "플러스 크레딧 28회" },
+  pro: { amount: 9900, credits: 60, name: "프로 크레딧 60회" },
 } as const;
 
 export type PaymentPackageId = keyof typeof PAYMENT_PACKAGES;

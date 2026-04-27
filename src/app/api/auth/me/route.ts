@@ -7,5 +7,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ loggedIn: false });
   }
 
-  return NextResponse.json({ loggedIn: true, user });
+  return NextResponse.json({
+    loggedIn: true,
+    user: {
+      ...user,
+      referralCode: user.id,
+    },
+  });
 }

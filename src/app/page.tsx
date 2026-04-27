@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GoogleAd } from "@/components/ads/GoogleAd";
 import { ADSENSE_PAGE_SLOTS } from "@/lib/adsense";
+import { buildKakaoLoginUrlWithReferral, storeReferralCodeFromCurrentUrl } from "@/lib/referral";
 
 type User = { id: string; nickname: string | null; profileImage: string | null };
 type ShowcaseItem = {
@@ -35,6 +36,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    storeReferralCodeFromCurrentUrl();
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((data) => setUser(data.loggedIn ? data.user : null))
@@ -66,7 +68,7 @@ export default function Home() {
       return;
     }
     setIsLoggingIn(true);
-    window.location.href = "/api/auth/kakao";
+    window.location.href = buildKakaoLoginUrlWithReferral();
   };
 
   const handleLogout = async () => {
@@ -139,9 +141,9 @@ export default function Home() {
                 <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
                   <div
                     className="flex gap-3 w-max px-4"
-                    style={{ animation: "showcase-marquee 22s linear infinite" }}
+                    style={{ animation: showcaseItems.length > 1 ? "showcase-marquee 22s linear infinite" : undefined }}
                   >
-                    {[...showcaseItems, ...showcaseItems].map((item, index) => (
+                    {(showcaseItems.length > 1 ? [...showcaseItems, ...showcaseItems] : showcaseItems).map((item, index) => (
                       <div
                         key={`${item.userId}-${index}`}
                         className="h-24 w-20 shrink-0 overflow-hidden rounded-[22px] border border-white/12 bg-black/20 shadow-[0_14px_28px_rgba(0,0,0,0.24)] backdrop-blur-sm"

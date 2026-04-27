@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { addGuestHistoryItem } from "@/lib/guest-history";
+import { buildKakaoLoginUrlWithReferral, buildReferralShareUrl } from "@/lib/referral";
 import { STYLE_VARIANTS } from "@/lib/variants";
 import { getShuffledQuiz, type OXQuestion } from "@/lib/ox-quiz";
 
@@ -17,6 +18,16 @@ interface KakaoSDK {
 }
 
 type Status = "loading" | "done" | "error";
+type ReferralSummary = {
+  qualifiedCount: number;
+  remainingForNextReward: number;
+  monthlyRewardCredits: number;
+  monthlyRewardCap: number;
+  generationThreshold: number;
+  generationRewardCredits: number;
+  paymentRewardCredits: number;
+  referredPaymentBonusCredits: number;
+};
 
 function safeSessionSetItem(key: string, value: string) {
   try {
@@ -48,6 +59,8 @@ export default function Result() {
   const [showcaseChecked, setShowcaseChecked] = useState(false);
   const [showcaseLoading, setShowcaseLoading] = useState(false);
   const [showcaseActive, setShowcaseActive] = useState(false);
+  const [referralSummary, setReferralSummary] = useState<ReferralSummary | null>(null);
+  const rewardCapToastShownRef = useRef(false);
 
   // 로딩 UX
   const [progress, setProgress] = useState(0);
@@ -58,6 +71,7 @@ export default function Result() {
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [quizStat, setQuizStat] = useState<{ correctCount: number; totalCount: number } | null>(null);
   const progressRef = useRef(0);
+  const generationRequestedRef = useRef(false);
 
   function qHash(q: string): string {
     let h = 0;
@@ -106,12 +120,30 @@ export default function Result() {
       .catch(() => {});
   }, [user, status]);
 
+  useEffect(() => {
+    if (!user || status !== "done") return;
+    fetch("/api/referrals/me", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => setReferralSummary(data.error ? null : data))
+      .catch(() => {});
+  }, [user, status]);
+
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
   }, []);
 
   useEffect(() => {
+    if (status !== "done" || !referralSummary || rewardCapToastShownRef.current) return;
+    if (referralSummary.monthlyRewardCredits >= referralSummary.monthlyRewardCap) {
+      rewardCapToastShownRef.current = true;
+      showToast("이번 달 초대 보상은 모두 받았어요. 다음 달에 다시 받을 수 있어요.");
+    }
+  }, [referralSummary, showToast, status]);
+
+  useEffect(() => {
+    if (generationRequestedRef.current) return;
+
     const fromStudio = sessionStorage.getItem("sd_fromStudio");
     if (!fromStudio) {
       router.replace("/studio");
@@ -162,6 +194,7 @@ export default function Result() {
     }
 
     const variant = sessionStorage.getItem("sd_variant") ?? "default";
+    generationRequestedRef.current = true;
 
     fetch("/api/generate", {
       method: "POST",
@@ -282,13 +315,15 @@ export default function Result() {
         });
         if (!response.ok) throw new Error("Upload failed");
         const { id, url } = await response.json();
-        link = `${window.location.origin}/share?id=${id}`;
+        link = buildReferralShareUrl(`${window.location.origin}/share?id=${id}`, user?.referralCode ?? user?.id);
         imgUrl = url;
         setShareUrl(imgUrl);
         setShareLink(link);
         safeSessionSetItem("sd_shareUrl", imgUrl!);
         safeSessionSetItem("sd_shareLink", link!);
       }
+      if (!imgUrl || !link) throw new Error("Share link unavailable");
+      link = buildReferralShareUrl(link, user?.referralCode ?? user?.id);
 
       const kakao = (window as Window & { Kakao?: KakaoSDK }).Kakao;
       if (!kakao) {
@@ -337,17 +372,20 @@ export default function Result() {
       .then((r) => r.json())
       .then(({ id, url }) => {
         if (!id || !url) return;
-        const link = `${window.location.origin}/share?id=${id}`;
+        const link = buildReferralShareUrl(`${window.location.origin}/share?id=${id}`, user?.referralCode ?? user?.id);
         setShareUrl(url);
         setShareLink(link);
         safeSessionSetItem("sd_shareUrl", url);
         safeSessionSetItem("sd_shareLink", link);
       })
       .catch(() => {});
-  }, [status, resultImage, imageBase64, shareUrl]);
+  }, [status, resultImage, imageBase64, shareUrl, user]);
 
   const handleCopyLink = async () => {
-    const link = shareLink || sessionStorage.getItem("sd_shareLink") || window.location.href;
+    const link = buildReferralShareUrl(
+      shareLink || sessionStorage.getItem("sd_shareLink") || window.location.href,
+      user?.referralCode ?? user?.id,
+    );
     try {
       await navigator.clipboard.writeText(link);
       showToast("링크가 복사됐어요!");
@@ -404,21 +442,21 @@ export default function Result() {
   };
 
   return (
-    <div className="min-h-dvh bg-[#0A0A0A] flex flex-col">
+    <div className="min-h-dvh bg-[#F7F5F2] text-[#111827] flex flex-col">
       {toast && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-white/10 backdrop-blur-xl text-white text-sm px-6 py-3 rounded-2xl border border-white/10 shadow-2xl">
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#111827] text-white text-sm px-6 py-3 rounded-2xl shadow-2xl">
           {toast}
         </div>
       )}
 
-      <header className="h-[52px] bg-[#0A0A0A] border-b border-[#1a1a1a] flex items-center justify-between px-4 sticky top-0 z-40">
+      <header className="h-[52px] bg-white border-b border-[#E7E7E7] flex items-center justify-between px-4 sticky top-0 z-40">
         <div className="flex items-center gap-2">
           <Link href="/" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
         </div>
         {!authLoading && (
           user ? (
             <div className="flex items-center gap-2">
-              <Link href="/shop" className="flex items-center gap-1.5 bg-[#1A1A1A] border border-white/8 px-3 py-1.5 rounded-full hover:border-[#C9571A]/40 transition-colors">
+              <Link href="/shop" className="flex items-center gap-1.5 bg-[#FFF8F3] border border-[#E8D8CE] px-3 py-1.5 rounded-full transition-colors hover:border-[#C9571A]/40">
                 <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                   <path d="M1 1h2l1.5 7h7l1-4.5H4" stroke="#C9571A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   <circle cx="6.5" cy="12" r="0.8" fill="#C9571A"/>
@@ -431,7 +469,7 @@ export default function Result() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={user.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
                 )}
-                <span className="text-[14px] font-medium text-white truncate max-w-[80px]">{user.nickname}</span>
+                <span className="text-[14px] font-medium text-[#111827] truncate max-w-[80px]">{user.nickname}</span>
               </Link>
             </div>
           ) : (
@@ -649,12 +687,12 @@ export default function Result() {
               {isRateLimited && !user ? (
                 <>
                   <span className="text-[40px]">🎁</span>
-                  <p className="text-white font-bold text-[18px] mt-1">무료 체험이 끝났어요</p>
-                  <p className="text-[#999] text-[14px] leading-relaxed">
+                  <p className="text-[#111827] font-bold text-[18px] mt-1">무료 체험이 끝났어요</p>
+                  <p className="text-[#6B7280] text-[14px] leading-relaxed">
                     {errorMessage ?? "카카오 로그인하면 1크레딧을 무료로 받아요!"}
                   </p>
                   <button
-                    onClick={() => { window.location.href = "/api/auth/kakao"; }}
+                    onClick={() => { window.location.href = buildKakaoLoginUrlWithReferral(); }}
                     className="bg-[#FEE500] text-[#3C1E1E] font-bold text-[15px] w-full py-4 rounded-xl flex items-center justify-center gap-2 mt-1"
                   >
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -662,13 +700,13 @@ export default function Result() {
                     </svg>
                     카카오로 로그인하고 1크레딧 받기
                   </button>
-                  <p className="text-[12px] text-[#666]">1크레딧 = AI 변환 1회 · 워터마크 없음</p>
+                  <p className="text-[12px] text-[#6B7280]">1크레딧 = AI 변환 1회 · 워터마크 없음</p>
                 </>
               ) : isRateLimited && user ? (
                 <>
                   <span className="text-[40px]">💳</span>
-                  <p className="text-white font-bold text-[18px] mt-1">크레딧이 없어요</p>
-                  <p className="text-[#999] text-[14px] leading-relaxed">
+                  <p className="text-[#111827] font-bold text-[18px] mt-1">크레딧이 없어요</p>
+                  <p className="text-[#6B7280] text-[14px] leading-relaxed">
                     {errorMessage ?? "크레딧을 충전하고 계속 이용해보세요."}
                   </p>
                   <Link
@@ -677,16 +715,16 @@ export default function Result() {
                   >
                     크레딧 충전하기
                   </Link>
-                  <button onClick={() => router.push("/studio")} className="text-[13px] text-[#555] mt-2 hover:text-white transition-colors">
+                  <button onClick={() => router.push("/studio")} className="text-[13px] text-[#6B7280] mt-2 hover:text-[#111827] transition-colors">
                     뒤로 가기
                   </button>
                 </>
               ) : (
                 <>
-                  <p className="text-white/70 text-base">
+                  <p className="text-[#374151] text-base">
                     변환에 실패했어요. 다시 시도해주세요.
                   </p>
-                  <button onClick={() => router.push("/studio")} className="text-[#666] text-sm hover:text-white transition-colors">
+                  <button onClick={() => router.push("/studio")} className="text-[#6B7280] text-sm hover:text-[#111827] transition-colors">
                     다시 하기
                   </button>
                 </>
@@ -697,16 +735,16 @@ export default function Result() {
 
         {status === "done" && resultImage && (
           <div className="flex flex-col gap-4 flex-1">
-            <div className="w-full bg-[#1A1A1A] p-1.5 rounded-full flex relative border border-white/10 shadow-lg">
+            <div className="w-full bg-white p-1.5 rounded-full flex relative border border-[#E5E7EB] shadow-sm">
               <div
-                className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-[#333] border border-white/10 rounded-full transition-all duration-300 ease-in-out ${
+                className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-[#111827] rounded-full transition-all duration-300 ease-in-out ${
                   view === "after" ? "left-[calc(50%+3px)]" : "left-[4px]"
                 }`}
               />
               <button
                 onClick={() => setView("before")}
                 className={`relative flex-1 py-2.5 text-sm font-bold z-10 transition-colors ${
-                  view === "before" ? "text-white" : "text-white/40"
+                  view === "before" ? "text-white" : "text-[#9CA3AF]"
                 }`}
               >
                 원본 사진 (BEFORE)
@@ -714,7 +752,7 @@ export default function Result() {
               <button
                 onClick={() => setView("after")}
                 className={`relative flex-1 py-2.5 text-sm font-bold z-10 transition-colors ${
-                  view === "after" ? "text-[#C9571A]" : "text-white/40"
+                  view === "after" ? "text-white" : "text-[#9CA3AF]"
                 }`}
               >
                 AI 변환 (AFTER)
@@ -729,7 +767,7 @@ export default function Result() {
               </div>
             )}
 
-            <div className="relative flex-1 rounded-2xl overflow-hidden bg-[#1A1A1A] border border-white/10 flex items-center justify-center min-h-0">
+            <div className="relative flex-1 rounded-2xl overflow-hidden bg-white border border-[#E5E7EB] flex items-center justify-center min-h-0 shadow-sm">
               {view === "before" ? (
                 previewDataUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -763,7 +801,7 @@ export default function Result() {
               </button>
               <button
                 onClick={() => router.push("/studio")}
-                className="flex-1 bg-[#2A2A2A] hover:bg-[#333] text-white py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+                className="flex-1 bg-[#111827] hover:bg-[#1F2937] text-white py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
               >
                 <span>🔄</span><span>다시 하기</span>
               </button>
@@ -771,7 +809,7 @@ export default function Result() {
 
             <button
               onClick={handleCopyLink}
-              className="w-full py-3 text-sm text-[#888] border border-white/10 rounded-xl hover:text-white hover:border-white/20 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 text-sm text-[#6B7280] border border-[#E5E7EB] bg-white rounded-xl hover:text-[#111827] hover:border-[#D1D5DB] transition-colors flex items-center justify-center gap-2"
             >
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
                 <path d="M6.5 3.5H3.5a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V9.5M9.5 1.5h5m0 0v5m0-5L7 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -779,7 +817,46 @@ export default function Result() {
               링크 복사
             </button>
 
-            <div className="rounded-2xl border border-white/10 bg-[#111315] px-4 py-4">
+            {user && (
+              <div className="rounded-2xl border border-[#E5E7EB] bg-white px-4 py-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[15px] font-bold text-[#111827]">친구 초대 보상</p>
+                    <p className="mt-1 text-[12px] leading-5 text-[#6B7280]">
+                      내 링크로 들어온 친구가 스타일드롭을 써보면 크레딧을 받을 수 있어요.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-[#F7F7F7] px-3 py-3">
+                    <p className="text-[11px] text-[#6B7280]">친구가 결과를 만들면</p>
+                    <p className="mt-1 text-[13px] font-bold text-[#111827]">
+                      {referralSummary?.generationThreshold ?? 3}명이 만들 때마다 {referralSummary?.generationRewardCredits ?? 1}크레딧
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-[#F7F7F7] px-3 py-3">
+                    <p className="text-[11px] text-[#6B7280]">친구가 첫 충전을 하면</p>
+                    <p className="mt-1 text-[13px] font-bold text-[#111827]">
+                      {referralSummary?.paymentRewardCredits ?? 2}크레딧 받기
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 rounded-xl border border-[#EFEFEF] px-3 py-3">
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="text-[#6B7280]">다음 보상까지</span>
+                    <span className="font-bold text-[#F07840]">
+                      {referralSummary
+                        ? referralSummary.remainingForNextReward <= 0
+                          ? "달성 완료"
+                          : `친구 ${referralSummary.remainingForNextReward}명 더`
+                        : "확인 중"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-2xl border border-[#E5E7EB] bg-white px-4 py-4 shadow-sm">
               <label className="flex items-start gap-3">
                 <input
                   type="checkbox"
@@ -790,11 +867,11 @@ export default function Result() {
                     setShowcaseChecked(checked);
                     void handleToggleShowcase(checked);
                   }}
-                  className="mt-1 h-4 w-4 rounded border border-white/20 bg-transparent accent-[#C9571A] disabled:opacity-40"
+                  className="mt-1 h-4 w-4 rounded border border-[#D1D5DB] bg-white accent-[#C9571A] disabled:opacity-40"
                 />
                 <div className="min-w-0">
-                  <p className="text-[14px] font-bold text-white">메인 공개 스토리에 내 결과 노출하기</p>
-                  <p className="mt-1 text-[12px] leading-6 text-white/46">
+                  <p className="text-[14px] font-bold text-[#111827]">메인 공개 스토리에 내 결과 노출하기</p>
+                  <p className="mt-1 text-[12px] leading-6 text-[#6B7280]">
                     동의한 이미지 1장만 스튜디오 상단 스토리에 노출되고, 마이페이지에서 언제든 해제할 수 있어요.
                   </p>
                   {!user && (
@@ -812,7 +889,7 @@ export default function Result() {
               <Link
                 href="/shop"
                 className="w-full py-3 text-sm text-center border rounded-xl transition-colors block"
-                style={{ color: credits === 0 ? "#C9571A" : "#888", borderColor: credits === 0 ? "rgba(201,87,26,0.3)" : "rgba(255,255,255,0.06)" }}
+                style={{ color: credits === 0 ? "#C9571A" : "#6B7280", borderColor: credits === 0 ? "rgba(201,87,26,0.3)" : "#E5E7EB", backgroundColor: "#FFFFFF" }}
               >
                 {credits === 0 ? "✦ 크레딧 소진 — 충전하기 →" : `✦ 크레딧 ${credits}개 남음 · 충전하기 →`}
               </Link>

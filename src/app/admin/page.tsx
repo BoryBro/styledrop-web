@@ -9,7 +9,14 @@ import {
   applyStyleControl,
   type StyleControlState,
 } from "@/lib/style-controls";
-import { REFUND_UNIT_PRICE } from "@/lib/payment-policy";
+import { PAYMENT_PACKAGES, REFUND_UNIT_PRICE } from "@/lib/payment-policy";
+import {
+  REFERRAL_GENERATION_REWARD_CREDITS,
+  REFERRAL_GENERATION_THRESHOLD,
+  REFERRAL_MONTHLY_REWARD_CAP_CREDITS,
+  REFERRAL_PAYMENT_REWARD_CREDITS,
+  REFERRAL_REFERRED_PAYMENT_BONUS_CREDITS,
+} from "@/lib/referral";
 import { ALL_STYLES } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
@@ -174,6 +181,7 @@ type Stats = {
     duoSubmissionCount?: number;
     apiCost: number;
     revenue: number;
+    soldCredits?: number;
     costSource?: string;
     currency?: string | null;
     estimateMode?: string;
@@ -197,7 +205,7 @@ type Stats = {
 };
 
 type MonthlyCost = {
-  styleCount: number; auditionCount: number; auditionStillCount?: number; duoSubmissionCount?: number; apiCost: number; revenue: number;
+  styleCount: number; auditionCount: number; auditionStillCount?: number; duoSubmissionCount?: number; apiCost: number; revenue: number; soldCredits?: number;
   costSource?: string;
   currency?: string | null;
   shareKakao?: number; shareLink?: number; saveImage?: number;
@@ -223,6 +231,20 @@ type MonthlyCost = {
 
 const ESTIMATED_KAKAOPAY_FEE_RATE = 0.032;
 const VAT_DIVISOR = 11;
+const CONSERVATIVE_CREDIT_COST_KRW = 130;
+const MEASURED_CREDIT_COST_RANGE_TEXT = "111~133원";
+
+function estimateVat(amount: number) {
+  return Math.round(amount / VAT_DIVISOR);
+}
+
+function estimateKakaoPayFee(amount: number) {
+  return Math.round(amount * ESTIMATED_KAKAOPAY_FEE_RATE);
+}
+
+function estimateNetPaymentRevenue(amount: number) {
+  return Math.max(0, amount - estimateVat(amount) - estimateKakaoPayFee(amount));
+}
 
 function relativeTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -336,12 +358,20 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
   const m = monthlyCosts?.[activeMonth];
   const duoSubmissionCount = m?.duoSubmissionCount ?? 0;
   const grossRevenue = m?.revenue ?? 0;
-  const vatAmount = Math.round(grossRevenue / VAT_DIVISOR);
+  const vatAmount = estimateVat(grossRevenue);
   const supplyRevenue = Math.max(0, grossRevenue - vatAmount);
-  const estimatedPgFee = Math.round(grossRevenue * ESTIMATED_KAKAOPAY_FEE_RATE);
+  const estimatedPgFee = estimateKakaoPayFee(grossRevenue);
   const estimatedProfit = m ? supplyRevenue - estimatedPgFee - m.apiCost : 0;
+  const soldCredits = m?.soldCredits ?? 0;
+  const fullCreditUseCost = soldCredits * CONSERVATIVE_CREDIT_COST_KRW;
+  const fullCreditUseProfit = m ? supplyRevenue - estimatedPgFee - fullCreditUseCost : 0;
   const costRatio = grossRevenue > 0 ? Math.round((m!.apiCost / grossRevenue) * 100) : 0;
   const profitRatio = grossRevenue > 0 ? Math.round((estimatedProfit / grossRevenue) * 100) : 0;
+  const fullCreditUseProfitRatio = grossRevenue > 0 ? Math.round((fullCreditUseProfit / grossRevenue) * 100) : 0;
+  const weightedCalls = m
+    ? m.styleCount + (m.auditionCount * 2) + (m.auditionStillCount ?? 0) + duoSubmissionCount
+    : 0;
+  const realizedCostPerCall = weightedCalls > 0 && m ? Math.round(m.apiCost / weightedCalls) : null;
 
   const isActual = m?.costSource === "bigquery_actual" || m?.costSource === "manual_actual";
 
@@ -369,7 +399,7 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
                 {activeMonth === "2026-04" ? "이번 달 추정 순이익" : "3월 추정 순이익"}
               </p>
               <p className="text-[12px] text-gray-500 mt-1">
-                실결제액에서 VAT, 카카오 수수료, Gemini 비용을 차감해서 봅니다.
+                실결제액에서 VAT, 카카오 수수료, Gemini 비용을 차감합니다.
               </p>
             </div>
             <span className="text-[11px] text-gray-400 whitespace-nowrap">
@@ -382,8 +412,14 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
             <MiniCard label="VAT 제외 매출" value={`₩${supplyRevenue.toLocaleString()}`} />
             <MiniCard label="카카오 수수료" value={`-₩${estimatedPgFee.toLocaleString()}`} />
             <MiniCard label="Gemini 비용" value={`-₩${m.apiCost.toLocaleString()}`} />
-            <MiniCard label="추정 순이익" value={`${estimatedProfit >= 0 ? "+" : ""}₩${estimatedProfit.toLocaleString()}`} accent={estimatedProfit >= 0} />
-            <MiniCard label="추정 순이익률" value={grossRevenue > 0 ? `${profitRatio}%` : "—"} />
+            <MiniCard label="실사용 기준 순이익" value={`${estimatedProfit >= 0 ? "+" : ""}₩${estimatedProfit.toLocaleString()}`} accent={estimatedProfit >= 0} />
+            <MiniCard label="실사용 기준 이익률" value={grossRevenue > 0 ? `${profitRatio}%` : "—"} />
+            <MiniCard label="보수 원가 기준" value={`₩${CONSERVATIVE_CREDIT_COST_KRW}/크레딧`} />
+            <MiniCard label="실측 원가 범위" value={MEASURED_CREDIT_COST_RANGE_TEXT} />
+            <MiniCard label="판매 크레딧" value={`${soldCredits.toLocaleString()}개`} />
+            <MiniCard label="전량 소진 비용" value={`-₩${fullCreditUseCost.toLocaleString()}`} />
+            <MiniCard label="전량 소진 순이익" value={`${fullCreditUseProfit >= 0 ? "+" : ""}₩${fullCreditUseProfit.toLocaleString()}`} accent={fullCreditUseProfit >= 0} />
+            <MiniCard label="전량 소진 이익률" value={grossRevenue > 0 ? `${fullCreditUseProfitRatio}%` : "—"} />
           </div>
 
           <div className="flex flex-col gap-2 border-y border-[#F0F0F0] py-3">
@@ -403,6 +439,18 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
               <span className="text-[13px] text-gray-500">호출 집계</span>
               <span className="text-[13px] font-bold text-gray-900 tabular-nums">
                 {m.styleCount + m.auditionCount + (m.auditionStillCount ?? 0) + duoSubmissionCount}건
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-gray-500">해당 월 판매 크레딧</span>
+              <span className="text-[13px] font-bold text-gray-900 tabular-nums">
+                {soldCredits.toLocaleString()}개
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-gray-500">보정 호출당 원가</span>
+              <span className="text-[13px] font-bold text-gray-900 tabular-nums">
+                {realizedCostPerCall ? `약 ${realizedCostPerCall.toLocaleString()}원` : "—"}
               </span>
             </div>
           </div>
@@ -461,28 +509,29 @@ function MonthlyCostSection({ monthlyCosts }: { monthlyCosts: Record<string, Mon
               <span className="text-[12px] font-medium text-gray-900">gemini-3.1-flash-image-preview</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[12px] text-gray-500">이미지 생성 1회</span>
-              <span className="text-[12px] font-medium text-gray-900">$0.045 ~ $0.151</span>
+              <span className="text-[12px] text-gray-500">이미지 생성 1회 공식 단가</span>
+              <span className="text-[12px] font-medium text-gray-900">$0.045~$0.151</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[12px] text-gray-500">텍스트 평가 1회</span>
-              <span className="text-[12px] font-medium text-gray-900">토큰량 기준 · 이미지 생성보다 낮음</span>
+              <span className="text-[12px] text-gray-500">운영 판단 원가</span>
+              <span className="text-[12px] font-medium text-gray-900">1크레딧 약 {CONSERVATIVE_CREDIT_COST_KRW}원</span>
             </div>
             <p className="text-[11px] text-gray-500 leading-relaxed">
-              일반/옵션/2인/스틸컷은 이미지 생성 계열, 오디션 분석/친구 배틀 평가는 텍스트 평가 계열입니다.
+              실제 청구 기준 3월 약 133원, 4월 보정 약 111원이라 보수적으로 130원으로 봅니다.
             </p>
           </div>
 
           <div className="text-[11px] text-gray-400 px-1 leading-relaxed">
             <p>매출은 payments 기준 실결제 순매출만 잡습니다.</p>
             <p>무료크레딧, 가입 보너스, 수동 지급, 환불 지급분은 매출에 포함되지 않습니다.</p>
+            <p>전량 소진 순이익은 해당 월에 판매된 크레딧이 모두 사용된다고 보고 130원씩 차감합니다.</p>
             <p>VAT는 실결제액의 1/11로 계산합니다.</p>
             <p>카카오 수수료는 현재 3.2% 가정으로 계산합니다.</p>
             <p>AI 비용 = {isActual ? "Google Billing export 실제값" : "실청구 보정 추정값"}</p>
             {isActual
               ? <p>{activeMonth} 비용은 실제 Gemini 청구 데이터 기준입니다.</p>
               : <p>4월은 4/1~4/7 실제 청구서 15,999원을 기준으로 보정한 추정치입니다.</p>}
-            <p>기능별 정확한 KRW 원가 배분은 현재 토큰 로그가 없어 고정해서 적지 않습니다.</p>
+            <p>기능별 정확한 KRW 원가 배분은 현재 토큰 로그가 없어, 판매 판단은 130원/크레딧 보수 기준으로 봅니다.</p>
             <p>광고비, 인건비, 기타 운영비는 아직 제외하지 않았습니다.</p>
           </div>
         </div>
@@ -578,25 +627,36 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
 }
 
 const PROFIT_PACKAGES = [
-  { id: "basic", label: "Basic", credits: 10, price: 1900, priceStr: "1,900" },
-  { id: "plus",  label: "Plus",  credits: 30, price: 4900, priceStr: "4,900" },
-  { id: "pro",   label: "Pro",   credits: 70, price: 9900, priceStr: "9,900" },
+  { id: "basic", label: "Basic", credits: PAYMENT_PACKAGES.basic.credits, price: PAYMENT_PACKAGES.basic.amount, priceStr: "1,900" },
+  { id: "plus",  label: "Plus",  credits: PAYMENT_PACKAGES.plus.credits, price: PAYMENT_PACKAGES.plus.amount, priceStr: "4,900" },
+  { id: "pro",   label: "Pro",   credits: PAYMENT_PACKAGES.pro.credits, price: PAYMENT_PACKAGES.pro.amount, priceStr: "9,900" },
 ] as const;
 
 function CostFactSection() {
   const packageRows = PROFIT_PACKAGES.map((pkg) => ({
     ...pkg,
-    creditUnit: Math.round(pkg.price / pkg.credits),
+    grossCreditUnit: Math.round(pkg.price / pkg.credits),
+    netRevenue: estimateNetPaymentRevenue(pkg.price),
+    netCreditUnit: Math.round(estimateNetPaymentRevenue(pkg.price) / pkg.credits),
+    conservativeAiCost: pkg.credits * CONSERVATIVE_CREDIT_COST_KRW,
+    estimatedPackageProfit: estimateNetPaymentRevenue(pkg.price) - (pkg.credits * CONSERVATIVE_CREDIT_COST_KRW),
+    unitMargin: Math.round(estimateNetPaymentRevenue(pkg.price) / pkg.credits) - CONSERVATIVE_CREDIT_COST_KRW,
   }));
+  const generationRewardCost =
+    (REFERRAL_GENERATION_THRESHOLD + REFERRAL_GENERATION_REWARD_CREDITS) * CONSERVATIVE_CREDIT_COST_KRW;
+  const generationRewardCostPerFriend = Math.round(generationRewardCost / REFERRAL_GENERATION_THRESHOLD);
+  const firstPaymentRewardCredits = REFERRAL_PAYMENT_REWARD_CREDITS + REFERRAL_REFERRED_PAYMENT_BONUS_CREDITS;
+  const firstPaymentRewardCost = firstPaymentRewardCredits * CONSERVATIVE_CREDIT_COST_KRW;
+  const monthlyCapCost = REFERRAL_MONTHLY_REWARD_CAP_CREDITS * CONSERVATIVE_CREDIT_COST_KRW;
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">원가 확인 메모</p>
+      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">패키지 · 추천 손익 기준</p>
       <div className="flex flex-col gap-4 rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
         <div className="flex flex-col gap-1">
-          <p className="text-[15px] font-bold text-gray-900">지금 운영 기준으로 맞는 사실만 정리</p>
+          <p className="text-[15px] font-bold text-gray-900">현재 판매/보상 기준</p>
           <p className="text-[12px] leading-relaxed text-gray-500">
-            총 AI 비용은 실제 Gemini 청구 합계로 보고, 기능별 성격은 공식 가격표 기준으로 분리해서 봅니다.
+            판매가는 유지하고 지급 크레딧은 10/28/60으로 계산합니다. 원가는 보수적으로 1크레딧 130원으로 봅니다.
           </p>
         </div>
 
@@ -606,7 +666,7 @@ function CostFactSection() {
             <p className="mt-1 text-[12px] leading-relaxed text-gray-500">
               일반 카드, 옵션 카드, 2인 카드, 오디션 스틸컷
             </p>
-            <p className="mt-2 text-[12px] font-medium text-gray-900">$0.045 ~ $0.151 / 1회</p>
+            <p className="mt-2 text-[12px] font-medium text-gray-900">실측 {MEASURED_CREDIT_COST_RANGE_TEXT} · 보수 {CONSERVATIVE_CREDIT_COST_KRW}원</p>
           </div>
           <div className="border-y border-[#F0F0F0] py-3">
             <p className="text-[13px] font-bold text-gray-900">텍스트 평가 계열</p>
@@ -635,20 +695,282 @@ function CostFactSection() {
         <div className="flex flex-col gap-2 border-y border-[#F0F0F0] py-3">
           <p className="text-[13px] font-bold text-gray-900">패키지 단가 메모</p>
           {packageRows.map((pkg) => (
-            <div key={pkg.id} className="flex items-center justify-between">
-              <span className="text-[12px] text-gray-500">{pkg.label}</span>
-              <span className="text-[12px] font-medium text-gray-900">
-                {pkg.price.toLocaleString()}원 · {pkg.credits}크레딧 · 크레딧당 약 {pkg.creditUnit}원
-              </span>
+            <div key={pkg.id} className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[12px] font-bold text-gray-900">{pkg.label}</p>
+                <p className="text-[11px] text-gray-400">
+                  {pkg.price.toLocaleString()}원 · {pkg.credits}크레딧 · 표시 단가 {pkg.grossCreditUnit}원
+                </p>
+              </div>
+              <div className="flex-shrink-0 text-right">
+                <p className={`text-[12px] font-bold ${pkg.estimatedPackageProfit >= 0 ? "text-[#18794E]" : "text-red-600"}`}>
+                  예상 {pkg.estimatedPackageProfit >= 0 ? "+" : ""}{pkg.estimatedPackageProfit.toLocaleString()}원
+                </p>
+                <p className="text-[11px] text-gray-400">
+                  수수료 후 {pkg.netCreditUnit}원/개 · 마진 {pkg.unitMargin}원/개
+                </p>
+              </div>
             </div>
           ))}
+        </div>
+
+        <div className="flex flex-col gap-2 border-y border-[#F0F0F0] py-3">
+          <p className="text-[13px] font-bold text-gray-900">추천 보상 원가</p>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[12px] text-gray-500">친구 3명 첫 결과 생성</span>
+            <span className="text-[12px] font-medium text-gray-900">
+              약 {generationRewardCost.toLocaleString()}원 · 1명당 {generationRewardCostPerFriend.toLocaleString()}원
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[12px] text-gray-500">친구 첫 결제 보상</span>
+            <span className="text-[12px] font-medium text-gray-900">
+              {firstPaymentRewardCredits}크레딧 · 약 {firstPaymentRewardCost.toLocaleString()}원
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[12px] text-gray-500">추천인 월 한도 비용</span>
+            <span className="text-[12px] font-medium text-gray-900">
+              {REFERRAL_MONTHLY_REWARD_CAP_CREDITS}크레딧 · 약 {monthlyCapCost.toLocaleString()}원
+            </span>
+          </div>
         </div>
 
         <div className="text-[11px] leading-relaxed text-gray-400">
           <p>친구 배틀은 방 생성 때가 아니라 제출 성공 시 5크레딧이 차감됩니다.</p>
           <p>오디션은 시작 5크레딧 패키지에 분석과 스틸컷 흐름이 같이 포함됩니다.</p>
-          <p>기능별 정확한 KRW 원가 배분은 현재 토큰 로그가 없어 고정 숫자로 적지 않습니다.</p>
+          <p>패키지 마진은 VAT와 카카오 수수료를 차감한 뒤, 모든 크레딧이 사용된다고 가정한 보수 계산입니다.</p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+type ProfitUsageKey = "general" | "lab2" | "lab5" | "audition";
+
+function ProfitCalculator() {
+  const [pkgId, setPkgId] = useState<"basic" | "plus" | "pro">("plus");
+  const [buyers, setBuyers] = useState(100);
+  const [usageMix, setUsageMix] = useState<Record<ProfitUsageKey, number>>({
+    general: 65,
+    lab2: 15,
+    lab5: 10,
+    audition: 10,
+  });
+
+  const pkg = PROFIT_PACKAGES.find((item) => item.id === pkgId)!;
+  const totalCredits = buyers * pkg.credits;
+  const totalGrossRevenue = buyers * pkg.price;
+  const totalNetRevenue = buyers * estimateNetPaymentRevenue(pkg.price);
+
+  const handleUsageChange = (key: ProfitUsageKey, value: number) => {
+    const nextValue = Math.min(100, Math.max(0, value));
+    const keys = Object.keys(usageMix) as ProfitUsageKey[];
+    const otherKeys = keys.filter((item) => item !== key);
+    const otherTotal = otherKeys.reduce((sum, item) => sum + usageMix[item], 0);
+    const rest = 100 - nextValue;
+    const next: Record<ProfitUsageKey, number> = { ...usageMix, [key]: nextValue };
+
+    if (otherTotal <= 0) {
+      const base = Math.floor(rest / otherKeys.length);
+      let used = 0;
+      otherKeys.forEach((item, index) => {
+        const amount = index === otherKeys.length - 1 ? rest - used : base;
+        next[item] = amount;
+        used += amount;
+      });
+    } else {
+      let used = 0;
+      otherKeys.forEach((item, index) => {
+        const amount = index === otherKeys.length - 1
+          ? rest - used
+          : Math.round(rest * (usageMix[item] / otherTotal));
+        next[item] = amount;
+        used += amount;
+      });
+    }
+
+    setUsageMix(next);
+  };
+
+  const usageRows = [
+    {
+      key: "general" as const,
+      label: "일반 카드",
+      note: "2cr -> 1 이미지 호출",
+      creditCost: 2,
+      apiCostPerUse: CONSERVATIVE_CREDIT_COST_KRW,
+      color: "bg-[#C9571A]",
+    },
+    {
+      key: "lab2" as const,
+      label: "실험실 2크레딧",
+      note: "2cr -> 직접 AI 원가 없음",
+      creditCost: 2,
+      apiCostPerUse: 0,
+      color: "bg-[#3B82F6]",
+    },
+    {
+      key: "lab5" as const,
+      label: "실험실 5크레딧",
+      note: "5cr -> 직접 AI 원가 없음",
+      creditCost: 5,
+      apiCostPerUse: 0,
+      color: "bg-[#22C55E]",
+    },
+    {
+      key: "audition" as const,
+      label: "AI 오디션",
+      note: "5cr -> 분석+스틸 원가",
+      creditCost: 5,
+      apiCostPerUse: CONSERVATIVE_CREDIT_COST_KRW * 3,
+      color: "bg-[#111827]",
+    },
+  ].map((row) => {
+    const allocatedCredits = totalCredits * (usageMix[row.key] / 100);
+    const uses = allocatedCredits / row.creditCost;
+    const apiCost = Math.round(uses * row.apiCostPerUse);
+    return {
+      ...row,
+      pct: usageMix[row.key],
+      allocatedCredits,
+      uses,
+      apiCost,
+    };
+  });
+
+  const totalApiCost = usageRows.reduce((sum, row) => sum + row.apiCost, 0);
+  const totalProfit = totalNetRevenue - totalApiCost;
+  const margin = totalNetRevenue > 0 ? Math.round((totalProfit / totalNetRevenue) * 100) : 0;
+  const quickBuyerOptions = [10, 100, 1000, 10000];
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">순수익 시뮬레이터</p>
+      <div className="flex flex-col gap-4 rounded-xl border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[15px] font-bold text-gray-900">구매자 수별 예상 순수익</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-gray-500">
+              구매자 수와 사용 패턴을 바꿔서 VAT, 카카오 수수료, 호출비용 차감 후 남는 돈을 봅니다.
+            </p>
+          </div>
+          <span className="flex-shrink-0 rounded-full bg-[#FFF8F3] px-2.5 py-1 text-[11px] font-bold text-[#C9571A]">
+            10/28/60 기준
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {PROFIT_PACKAGES.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setPkgId(item.id)}
+              className={`border px-3 py-3 text-left transition-colors ${
+                pkgId === item.id
+                  ? "border-[#C9571A] bg-[#FFF8F3] text-[#C9571A]"
+                  : "border-[#E5E7EB] bg-[#FAFAFA] text-gray-600 hover:border-[#D1D5DB]"
+              }`}
+            >
+              <p className="text-[13px] font-black">{item.label}</p>
+              <p className="mt-0.5 text-[11px] font-medium">
+                {item.priceStr}원 · {item.credits}cr
+              </p>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] font-bold text-gray-700">구매자 수</span>
+            <span className="text-[18px] font-black text-gray-900 tabular-nums">{buyers.toLocaleString()}명</span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={10000}
+            value={buyers}
+            onChange={(event) => setBuyers(Number(event.target.value))}
+            className="w-full accent-[#C9571A]"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {quickBuyerOptions.map((count) => (
+              <button
+                key={count}
+                type="button"
+                onClick={() => setBuyers(count)}
+                className="border border-[#E5E7EB] bg-[#FAFAFA] px-2.5 py-1 text-[11px] font-bold text-gray-500 transition-colors hover:border-[#C9571A]/40 hover:text-[#C9571A]"
+              >
+                {count.toLocaleString()}명
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] font-bold text-gray-700">사용 패턴</span>
+            <span className="text-[11px] text-gray-400">합계 100%</span>
+          </div>
+          <div className="flex h-2 overflow-hidden rounded-full bg-[#F3F4F6]">
+            {usageRows.map((row) => (
+              <div key={row.key} className={`${row.color} transition-all`} style={{ width: `${row.pct}%` }} />
+            ))}
+          </div>
+          {usageRows.map((row) => (
+            <div key={row.key} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-3 text-[12px]">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span className={`h-2 w-2 flex-shrink-0 rounded-full ${row.color}`} />
+                  <span className="font-bold text-gray-800">{row.label}</span>
+                  <span className="truncate text-gray-400">{row.note}</span>
+                </div>
+                <span className="flex-shrink-0 font-black text-gray-900 tabular-nums">{row.pct}%</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={row.pct}
+                onChange={(event) => handleUsageChange(row.key, Number(event.target.value))}
+                className="w-full accent-[#C9571A]"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-2 border-y border-[#F0F0F0] bg-[#FAFAFA] py-3">
+          <div className="flex items-center justify-between px-3 text-[13px]">
+            <span className="text-gray-500">총 결제액</span>
+            <span className="font-bold text-gray-900">+{totalGrossRevenue.toLocaleString()}원</span>
+          </div>
+          <div className="flex items-center justify-between px-3 text-[13px]">
+            <span className="text-gray-500">순수취액</span>
+            <span className="font-bold text-gray-900">+{totalNetRevenue.toLocaleString()}원</span>
+          </div>
+          {usageRows.map((row) => (
+            <div key={row.key} className="flex items-center justify-between gap-3 px-3 text-[12px]">
+              <span className="min-w-0 text-gray-400">
+                {row.label} 약 {Math.round(row.uses).toLocaleString()}회 · {Math.round(row.allocatedCredits).toLocaleString()}cr
+              </span>
+              <span className="flex-shrink-0 font-medium text-red-400">-{row.apiCost.toLocaleString()}원</span>
+            </div>
+          ))}
+          <div className="mx-3 h-px bg-[#E5E7EB]" />
+          <div className="flex items-center justify-between gap-3 px-3">
+            <span className="text-[14px] font-black text-gray-900">예상 순수익</span>
+            <div className="text-right">
+              <p className={`text-[23px] font-black tabular-nums ${totalProfit >= 0 ? "text-[#C9571A]" : "text-red-500"}`}>
+                {totalProfit >= 0 ? "+" : ""}{totalProfit.toLocaleString()}원
+              </p>
+              <p className="text-[12px] font-medium text-gray-400">마진 {margin}%</p>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-[11px] leading-relaxed text-gray-400">
+          일반 카드는 2크레딧당 이미지 호출 1회, AI 오디션은 5크레딧당 보정 호출 3회로 계산합니다. 실험실 2/5크레딧은 현재 직접 Gemini 호출비용 0원 기준입니다.
+        </p>
       </div>
     </div>
   );
@@ -2122,6 +2444,9 @@ export default function AdminPage() {
           {/* API 비용 & 손익 */}
           <MonthlyCostSection monthlyCosts={stats.monthlyCosts ?? {}} />
 
+          {/* 구매자 수 기반 시뮬레이터 */}
+          <ProfitCalculator />
+
           <ApiUsageBreakdownSection stats={stats} />
 
           {/* 결제 현황 */}
@@ -2129,6 +2454,8 @@ export default function AdminPage() {
             <Row label="누적 매출" value={`${stats.totalRevenue.toLocaleString()}원`} highlight />
             <Row label="오늘 매출" value={`${stats.todayRevenue.toLocaleString()}원`} />
             <Row label="결제 건수" value={`${stats.totalPaymentCount}건`} />
+            <Row label="현재 패키지" value={`${PAYMENT_PACKAGES.basic.credits}/${PAYMENT_PACKAGES.plus.credits}/${PAYMENT_PACKAGES.pro.credits} 크레딧`} />
+            <Row label="보수 원가" value={`${CONSERVATIVE_CREDIT_COST_KRW}원/크레딧`} />
           </Section>
 
           {/* 원가 기준 메모 */}

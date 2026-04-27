@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { normalizeReferralCode } from "@/lib/referral";
 import { ShareClient } from "./ShareClient";
 
 type SharePageProps = {
@@ -64,7 +65,9 @@ export async function generateMetadata({
 }
 
 export default async function SharePage({ searchParams }: SharePageProps) {
-  const id = normalizeShareId((await searchParams).id);
+  const params = await searchParams;
+  const id = normalizeShareId(params.id);
+  const ref = normalizeReferralCode(Array.isArray(params.ref) ? params.ref[0] : params.ref);
 
-  return <ShareClient id={id} />;
+  return <ShareClient id={id} refCode={ref} />;
 }

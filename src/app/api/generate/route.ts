@@ -13,6 +13,7 @@ import { addWatermark } from "@/lib/watermark";
 import { addCreditsWithPolicy } from "@/lib/credits.server";
 import { logGenerationError } from "@/lib/generation-errors.server";
 import { loadStyleControlMap } from "@/lib/style-controls.server";
+import { rewardReferralForFirstGeneration } from "@/lib/referrals.server";
 import {
   acquireEphemeralRequestLock,
   createRequestFingerprint,
@@ -7771,6 +7772,9 @@ export async function POST(request: NextRequest) {
         await logRequestEvent("generation_request_succeeded", {
           duration_ms: Date.now() - requestStartedAtMs,
         });
+        if (session) {
+          await rewardReferralForFirstGeneration(supabase, session.id);
+        }
         if (!session) res.cookies.set(GUEST_COOKIE, cookieValue, cookieOptions);
         return res;
       }

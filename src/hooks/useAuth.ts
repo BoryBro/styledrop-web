@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
+import { buildKakaoLoginUrlWithReferral } from "@/lib/referral";
 
-type User = { id: string; nickname: string; profileImage: string | null };
+type User = { id: string; nickname: string; profileImage: string | null; referralCode?: string };
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -15,7 +16,7 @@ export function useAuth() {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = () => { window.location.href = "/api/auth/kakao"; };
+  const login = () => { window.location.href = buildKakaoLoginUrlWithReferral(); };
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);

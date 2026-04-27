@@ -54,6 +54,7 @@ import {
   STYLE_CATEGORY_TABS,
   STYLE_LABELS,
 } from "@/lib/styles";
+import { buildKakaoLoginUrlWithReferral, storeReferralCodeFromCurrentUrl } from "@/lib/referral";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
 function formatCount(n: number): string {
@@ -219,6 +220,7 @@ export default function Studio() {
   }, []);
 
   useEffect(() => {
+    storeReferralCodeFromCurrentUrl();
     fetch("/api/remaining").then(r => r.json()).then(d => setRemaining(d.remaining)).catch(() => {});
     fetch("/api/credits").then(r => r.json()).then(d => setCredits(d.credits ?? 0)).catch(() => {});
     fetch("/api/notices").then(r => r.json()).then(d => setNotices(d.notices ?? [])).catch(() => {});
@@ -2594,7 +2596,7 @@ export default function Studio() {
             <p className="text-[18px] font-bold text-[#0A0A0A] mt-3">무료 체험이 끝났어요</p>
             <p className="text-[14px] text-[#999] mt-2 leading-relaxed">카카오 로그인하면<br/><span className="text-[#C9571A] font-bold">1크레딧을 무료로 받아요!</span><br/>지금 바로 체험해보세요</p>
             <button
-              onClick={() => { window.location.href = "/api/auth/kakao"; }}
+              onClick={() => { window.location.href = buildKakaoLoginUrlWithReferral(); }}
               className="bg-[#FEE500] text-[#3C1E1E] font-bold text-[15px] w-full py-4 rounded-xl mt-4 flex items-center justify-center gap-2"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">

@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { setSessionCookie } from "@/lib/auth-session";
+import { normalizeReferralCode } from "@/lib/referral";
+import { recordReferralAttribution } from "@/lib/referrals.server";
+import { decodeSignedState } from "@/lib/signed-state";
+
+type KakaoAuthState = {
+  ref?: string;
+};
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const error = searchParams.get("error");
+  const state = decodeSignedState<KakaoAuthState>(searchParams.get("state"));
+  const referralCode = normalizeReferralCode(state?.ref);
 
   if (error || !code) {
     return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=kakao_denied`);
@@ -69,6 +78,12 @@ export async function GET(request: NextRequest) {
         if (isNewUser) {
           await supabase.rpc("add_credits", { p_user_id: user.id, p_credits: 1 });
           await supabase.from("user_events").insert({ user_id: user.id, event_type: "signup_bonus", metadata: { credits: 1 } });
+          if (referralCode) {
+            await recordReferralAttribution(supabase, {
+              referrerCode: referralCode,
+              referredUserId: user.id,
+            });
+          }
         }
       } else {
         console.error("[kakao callback] upsert error:", upsertError);

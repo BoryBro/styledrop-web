@@ -1,14 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { storeReferralCode } from "@/lib/referral";
 
 type ShareClientProps = {
   id: string | null;
+  refCode: string | null;
 };
 
-export function ShareClient({ id }: ShareClientProps) {
+export function ShareClient({ id, refCode }: ShareClientProps) {
   const [view, setView] = useState<"before" | "after">("after");
+
+  useEffect(() => {
+    storeReferralCode(refCode);
+  }, [refCode]);
 
   if (!id) {
     return (
@@ -34,7 +40,7 @@ export function ShareClient({ id }: ShareClientProps) {
             </span>
           </Link>
           <Link
-            href="/"
+            href={refCode ? `/?ref=${encodeURIComponent(refCode)}` : "/"}
             className="text-xs bg-white/10 text-white px-3 py-1.5 rounded-full hover:bg-white/20 transition-colors"
           >
             시작하기
@@ -113,7 +119,7 @@ export function ShareClient({ id }: ShareClientProps) {
             마음에 드셨나요? 지금 바로 내 사진도 바꿔보세요.
           </p>
           <Link
-            href="/"
+            href={refCode ? `/?ref=${encodeURIComponent(refCode)}` : "/"}
             className="w-full bg-point hover:bg-[#B34A12] text-white py-4 rounded-2xl text-lg font-bold transition-all duration-300 shadow-lg shadow-point/30 flex items-center justify-center gap-2 hover:-translate-y-1 active:translate-y-0"
           >
             나도 AI로 사진 변환해보기

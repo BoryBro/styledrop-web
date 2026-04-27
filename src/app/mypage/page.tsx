@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
 import { getGuestHistory, type GuestHistoryItem } from "@/lib/guest-history";
+import { buildKakaoLoginUrlWithReferral, buildReferralShareUrl } from "@/lib/referral";
 import { MULTI_SOURCE_STYLE_IDS, STYLE_LABELS, VISIBLE_STYLE_IDS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
@@ -48,6 +49,17 @@ type ShowcaseState = {
   styleId: string | null;
   createdAt: string;
 } | null;
+
+type ReferralSummary = {
+  qualifiedCount: number;
+  remainingForNextReward: number;
+  monthlyRewardCredits: number;
+  monthlyRewardCap: number;
+  generationThreshold: number;
+  generationRewardCredits: number;
+  paymentRewardCredits: number;
+  referredPaymentBonusCredits: number;
+};
 
 const MULTI_SOURCE_STYLE_ID_SET = new Set<string>(MULTI_SOURCE_STYLE_IDS);
 const TRAVEL_RELATION_LABELS: Record<TravelHistoryItem["relation"], string> = {
@@ -174,6 +186,7 @@ export default function MyPage() {
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showcaseState, setShowcaseState] = useState<ShowcaseState>(null);
+  const [referralSummary, setReferralSummary] = useState<ReferralSummary | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const showAuditionHistory = isAuditionVisible && isAuditionEnabled;
@@ -216,6 +229,10 @@ export default function MyPage() {
         setInstaHandle(h);
         setInstaInput(h);
       })
+      .catch(() => {});
+    fetch("/api/referrals/me", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => setReferralSummary(data.error ? null : data))
       .catch(() => {});
   }, [user, loading, showAuditionHistory]);
 
@@ -275,6 +292,17 @@ export default function MyPage() {
     } catch {
       setGiftMsg("오류가 발생했어요.");
       setGiftStatus("error");
+    }
+  };
+
+  const handleCopyReferralLink = async () => {
+    if (!user) return;
+    const link = buildReferralShareUrl(`${window.location.origin}/`, user.referralCode ?? user.id);
+    try {
+      await navigator.clipboard.writeText(link);
+      showToast("초대 링크가 복사됐어요.");
+    } catch {
+      showToast("링크 복사에 실패했어요.");
     }
   };
 
@@ -491,7 +519,7 @@ export default function MyPage() {
                 영구 저장하려면 카카오 로그인을 해주세요!
               </p>
               <button
-                onClick={() => { window.location.href = "/api/auth/kakao"; }}
+                onClick={() => { window.location.href = buildKakaoLoginUrlWithReferral(); }}
                 className="bg-[#FEE500] text-[#3C1E1E] rounded-xl font-bold py-2.5 w-full text-[14px] flex items-center justify-center gap-2"
               >
                 <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
@@ -565,43 +593,42 @@ export default function MyPage() {
             </section>
 
             {/* 계정 설정 */}
-            <section className="-mx-4 border-y border-[#E7E7E7] bg-white divide-y divide-[#F0F0F0]">
-              <div className="flex items-center gap-3 px-4 py-4">
-                <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 text-[#C9571A]">
+            <section className="-mx-4 grid grid-cols-3 items-stretch border-y border-[#E7E7E7] bg-white divide-x divide-[#F0F0F0]">
+              <div className="min-w-0 px-3 py-3">
+                <div className="mb-2 flex h-7 w-7 items-center justify-center text-[#C9571A]">
                   <svg width="19" height="19" viewBox="0 0 20 20" fill="none">
                     <path d="M3.5 8h13v8.5a1 1 0 01-1 1h-11a1 1 0 01-1-1V8zM2.5 5.5h15V8h-15V5.5zM10 5.5v12M7.4 2.5C9.2 2.5 10 5.5 10 5.5S6.6 5.6 6.1 4.2c-.3-.9.3-1.7 1.3-1.7zM12.6 2.5C10.8 2.5 10 5.5 10 5.5s3.4.1 3.9-1.3c.3-.9-.3-1.7-1.3-1.7z" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-bold text-[#6B7280]">선물 코드</p>
-                  <div className="flex items-center gap-2 mt-1">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold text-[#6B7280]">선물 코드</p>
+                  <div className="mt-1 flex min-w-0 items-center gap-1.5 rounded-full bg-[#F7F7F7] px-2 py-1.5">
                     <input
                       value={giftInput}
                       onChange={(e) => { setGiftInput(e.target.value.toUpperCase()); setGiftStatus("idle"); }}
                       onKeyDown={(e) => { if (e.key === "Enter") void handleRedeemGift(); }}
                       placeholder="GIFT-XXXXXX"
                       maxLength={11}
-                      className="flex-1 bg-transparent text-[14px] font-mono text-[#111827] placeholder-[#B8B8B8] outline-none min-w-0 tracking-wider"
+                      className="min-w-0 flex-1 bg-transparent font-mono text-[11px] tracking-[0.08em] text-[#111827] placeholder-[#B8B8B8] outline-none"
                     />
                     <button
                       onClick={() => void handleRedeemGift()}
                       disabled={giftStatus === "loading" || !giftInput.trim()}
-                      className="bg-[#111827] text-white text-[12px] font-bold px-3 py-1.5 rounded-full flex-shrink-0 disabled:opacity-40 transition-opacity"
+                      className="flex-shrink-0 rounded-full bg-[#111827] px-2 py-1 text-[10px] font-bold text-white transition-opacity disabled:opacity-40"
                     >
-                      {giftStatus === "loading" ? "확인 중" : "사용"}
+                      {giftStatus === "loading" ? "확인" : "사용"}
                     </button>
                   </div>
                   {giftStatus !== "idle" && (
-                    <p className={`text-[11px] mt-1.5 ${giftStatus === "success" ? "text-green-600" : "text-red-600"}`}>
+                    <p className={`mt-1.5 line-clamp-2 text-[10px] ${giftStatus === "success" ? "text-green-600" : "text-red-600"}`}>
                       {giftMsg}
                     </p>
                   )}
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center gap-3 px-4 py-4">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#515BD4] flex items-center justify-center flex-shrink-0">
+              <div className="min-w-0 px-3 py-3">
+                <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#515BD4]">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                     <rect x="2" y="2" width="20" height="20" rx="6" stroke="white" strokeWidth="1.8"/>
                     <circle cx="12" cy="12" r="4" stroke="white" strokeWidth="1.8"/>
@@ -610,50 +637,54 @@ export default function MyPage() {
                 </div>
 
                 {instaEditing ? (
-                  <div className="flex-1 flex items-center gap-2 min-w-0">
-                    <span className="text-[15px] text-[#0A0A0A]/30 flex-shrink-0">@</span>
-                    <input
-                      autoFocus
-                      value={instaInput}
-                      onChange={(e) => setInstaInput(e.target.value.replace(/^@+/, ""))}
-                      onKeyDown={(e) => { if (e.key === "Enter") void handleSaveInsta(); if (e.key === "Escape") { setInstaInput(instaHandle); setInstaEditing(false); } }}
-                      placeholder="instagram_id"
-                      maxLength={30}
-                      className="flex-1 bg-transparent text-[15px] text-[#111827] placeholder-[#B8B8B8] outline-none min-w-0"
-                    />
-                    <button
-                      onClick={() => { setInstaInput(instaHandle); setInstaEditing(false); }}
-                      className="text-[13px] text-[#0A0A0A]/30 hover:text-[#0A0A0A]/60 flex-shrink-0 transition-colors"
-                    >
-                      취소
-                    </button>
-                    <button
-                      onClick={() => void handleSaveInsta()}
-                      disabled={instaSaving}
-                      className="bg-[#C9571A] text-white text-[13px] font-bold px-3 py-1.5 rounded-full flex-shrink-0 disabled:opacity-50 transition-opacity"
-                    >
-                      {instaSaving ? "저장 중" : "저장"}
-                    </button>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold text-[#6B7280]">Instagram</p>
+                    <div className="mt-1 flex min-w-0 items-center rounded-full bg-[#F7F7F7] px-2 py-1.5">
+                      <span className="flex-shrink-0 text-[12px] text-[#0A0A0A]/30">@</span>
+                      <input
+                        autoFocus
+                        value={instaInput}
+                        onChange={(e) => setInstaInput(e.target.value.replace(/^@+/, ""))}
+                        onKeyDown={(e) => { if (e.key === "Enter") void handleSaveInsta(); if (e.key === "Escape") { setInstaInput(instaHandle); setInstaEditing(false); } }}
+                        placeholder="instagram_id"
+                        maxLength={30}
+                        className="min-w-0 flex-1 bg-transparent text-[11px] text-[#111827] placeholder-[#B8B8B8] outline-none"
+                      />
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <button
+                        onClick={() => { setInstaInput(instaHandle); setInstaEditing(false); }}
+                        className="text-[10px] font-semibold text-[#0A0A0A]/35 transition-colors hover:text-[#0A0A0A]/60"
+                      >
+                        취소
+                      </button>
+                      <button
+                        onClick={() => void handleSaveInsta()}
+                        disabled={instaSaving}
+                        className="rounded-full bg-[#C9571A] px-2 py-1 text-[10px] font-bold text-white transition-opacity disabled:opacity-50"
+                      >
+                        {instaSaving ? "저장 중" : "저장"}
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <button
-                    className="flex-1 flex items-center justify-between min-w-0 text-left"
+                    className="flex w-full min-w-0 items-start justify-between text-left"
                     onClick={() => setInstaEditing(true)}
                   >
                     <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-[#0A0A0A]/40">Instagram</p>
+                      <p className="text-[11px] font-bold text-[#6B7280]">Instagram</p>
                       {instaHandle ? (
-                        <p className="text-[15px] font-semibold text-[#111827] mt-0.5 truncate">@{instaHandle}</p>
+                        <p className="mt-0.5 truncate text-[13px] font-semibold text-[#111827]">@{instaHandle}</p>
                       ) : (
-                        <p className="text-[14px] text-[#0A0A0A]/25 mt-0.5">아이디를 입력해 주세요</p>
+                        <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-[#0A0A0A]/25">아이디를 입력해 주세요</p>
                       )}
                     </div>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#0A0A0A]/20 flex-shrink-0 ml-2">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="ml-1 mt-0.5 flex-shrink-0 text-[#0A0A0A]/20">
                       <path d="M10.5 2.5L13.5 5.5L5.5 13.5H2.5V10.5L10.5 2.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
                 )}
-                </div>
 
                 {/* 연결된 경우 외부 링크 */}
                 {!instaEditing && instaHandle && (
@@ -661,46 +692,46 @@ export default function MyPage() {
                     href={`https://instagram.com/${instaHandle}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 border-t border-[#F5F5F5] bg-[#FAFAFA] px-4 py-2.5 text-[12px] font-semibold text-[#DD2A7B]/80 transition-colors hover:text-[#DD2A7B]"
+                    className="mt-1.5 flex min-w-0 items-center gap-1 truncate text-[10px] font-semibold text-[#DD2A7B]/75 transition-colors hover:text-[#DD2A7B]"
                   >
-                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className="flex-shrink-0">
                       <path d="M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V7M8 1h3m0 0v3M11 1L5.5 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    instagram.com/{instaHandle}
+                    <span className="truncate">instagram.com/{instaHandle}</span>
                   </a>
                 )}
               </div>
 
-              <div className="flex items-center gap-3 px-4 py-4">
-                <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 text-[#18A98D]">
+              <div className="min-w-0 px-3 py-3">
+                <div className="mb-2 flex h-7 w-7 items-center justify-center text-[#18A98D]">
                   <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                     <circle cx="10" cy="10" r="3" fill="currentColor"/>
                     <path d="M5.5 5.5a6.5 6.5 0 009 9M5.5 14.5a6.5 6.5 0 010-9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-bold text-[#6B7280]">메인 스토리</p>
-                  <p className="text-[14px] font-semibold text-[#111827] mt-0.5">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold text-[#6B7280]">메인 스토리</p>
+                  <p className="mt-0.5 text-[13px] font-semibold text-[#111827]">
                     {showcaseState ? "공개 중" : "미공개"}
                   </p>
                 </div>
                 {showcaseState ? (
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="mt-2 flex min-w-0 items-center gap-1.5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={showcaseState.imageUrl} alt="" className="w-10 h-10 rounded-xl object-cover ring-1 ring-[#E8E8E8]" />
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-[10px] text-[#0A0A0A]/30">{relativeTime(showcaseState.createdAt)}</span>
+                    <img src={showcaseState.imageUrl} alt="" className="h-8 w-8 flex-shrink-0 rounded-lg object-cover ring-1 ring-[#E8E8E8]" />
+                    <div className="min-w-0">
+                      <span className="block truncate text-[10px] text-[#0A0A0A]/30">{relativeTime(showcaseState.createdAt)}</span>
                       <button
                         type="button"
                         onClick={handleHideFromHome}
-                        className="text-[12px] font-semibold text-[#0A0A0A]/40 hover:text-[#0A0A0A]/70 transition-colors"
+                        className="text-[10px] font-semibold text-[#0A0A0A]/40 transition-colors hover:text-[#0A0A0A]/70"
                       >
                         해제
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="w-2 h-2 rounded-full bg-[#DDDDDD] flex-shrink-0" />
+                  <div className="mt-2 h-1.5 w-1.5 rounded-full bg-[#DDDDDD]" />
                 )}
               </div>
             </section>
@@ -1100,6 +1131,89 @@ export default function MyPage() {
               </span>
               {isStandalone ? "이미 홈 화면에서 실행 중" : "StyleDrop 홈 화면에 바로가기 추가"}
             </button>
+          </section>
+        )}
+
+        {!loading && user && !selectedStyle && (
+          <section className="-mx-4 border-y border-[#E7E7E7] bg-white divide-y divide-[#F0F0F0]">
+            <div className="px-4 py-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center text-[#C9571A]">
+                  <svg width="19" height="19" viewBox="0 0 20 20" fill="none">
+                    <path d="M7.25 9.25a3 3 0 100-6 3 3 0 000 6zM12.75 8.25a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM2.75 16.5c0-2.1 1.9-3.75 4.5-3.75s4.5 1.65 4.5 3.75M10.75 12.5c.55-.3 1.25-.5 2-.5 2.15 0 3.75 1.35 3.75 3.15" stroke="currentColor" strokeWidth="1.45" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[12px] font-bold text-[#6B7280]">친구 초대</p>
+                    <span className="flex-shrink-0 rounded-full border border-[#E8D8CE] bg-[#FFF8F3] px-2.5 py-1 text-[11px] font-bold text-[#C9571A]">
+                      30일 유효
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[15px] font-bold text-[#111827]">보상 현황</p>
+                  <p className="mt-1 text-[12px] leading-5 text-[#8A8A8A]">
+                    링크 클릭은 기록만 남고, 친구가 첫 AI 결과를 만들면 1명으로 인정돼요.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <div className="rounded-2xl border border-[#F0F0F0] bg-[#FAFAFA] px-3 py-3">
+                  <p className="text-[11px] font-bold text-[#8A8A8A]">인정된 친구</p>
+                  <p className="mt-1 text-[20px] font-black text-[#111827] tabular-nums">
+                    {referralSummary?.qualifiedCount ?? 0}명
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-[#F0F0F0] bg-[#FAFAFA] px-3 py-3">
+                  <p className="text-[11px] font-bold text-[#8A8A8A]">다음 보상까지</p>
+                  <p className="mt-1 text-[20px] font-black text-[#C9571A] tabular-nums">
+                    {referralSummary?.remainingForNextReward ?? 3}명
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-[#F0F0F0] bg-[#FAFAFA] px-3 py-3">
+                  <p className="text-[11px] font-bold text-[#8A8A8A]">이번 달 보상</p>
+                  <p className="mt-1 text-[20px] font-black text-[#111827] tabular-nums">
+                    {referralSummary
+                      ? `${referralSummary.monthlyRewardCredits}/${referralSummary.monthlyRewardCap}`
+                      : "0/10"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-between gap-3 text-[13px]">
+                <span className="text-[#6B7280]">친구 첫 결과 생성</span>
+                <span className="font-bold text-[#111827]">
+                  {referralSummary?.generationThreshold ?? 3}명마다 {referralSummary?.generationRewardCredits ?? 1}크레딧
+                </span>
+              </div>
+              <div className="mt-2.5 flex items-center justify-between gap-3 text-[13px]">
+                <span className="text-[#6B7280]">친구 첫 결제</span>
+                <span className="font-bold text-[#111827]">
+                  나 {referralSummary?.paymentRewardCredits ?? 2}크레딧 · 친구 {referralSummary?.referredPaymentBonusCredits ?? 1}크레딧
+                </span>
+              </div>
+              <div className="mt-2.5 flex items-center justify-between gap-3 text-[13px]">
+                <span className="text-[#6B7280]">월 최대 보상</span>
+                <span className="font-bold text-[#111827]">
+                  {referralSummary?.monthlyRewardCap ?? 10}크레딧
+                </span>
+              </div>
+            </div>
+
+            <div className="px-4 py-4">
+              <button
+                type="button"
+                onClick={() => void handleCopyReferralLink()}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#C9571A] px-4 py-3.5 text-[15px] font-bold text-white transition-colors hover:bg-[#B34A12]"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M6.5 9.5l3-3M8.25 3.75l.65-.65a2.5 2.5 0 113.54 3.54l-1.65 1.65a2.5 2.5 0 01-3.54 0M7.75 12.25l-.65.65a2.5 2.5 0 11-3.54-3.54l1.65-1.65a2.5 2.5 0 013.54 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                내 초대 링크 복사하기
+              </button>
+            </div>
           </section>
         )}
       </main>
