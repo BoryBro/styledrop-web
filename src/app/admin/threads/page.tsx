@@ -224,7 +224,7 @@ export default function ThreadsAdminPage() {
   const [showForm, setShowForm] = useState(false);
   const [draft, setDraft]     = useState<ThreadDraft>(EMPTY_DRAFT);
   const [toast, setToast]     = useState<string | null>(null);
-  const [tab, setTab]         = useState<"pending" | "needsImage" | "published" | "failed">("pending");
+  const [tab, setTab]         = useState<"pending" | "needsImage" | "approved" | "published" | "failed">("pending");
   const [logging, setLogging] = useState(false);
   const [importing, setImporting] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
@@ -534,9 +534,15 @@ export default function ThreadsAdminPage() {
     post.status === "draft" && new Date(post.scheduled_at).getTime() <= nowMs;
   const pending   = posts.filter(p => (p.status === "draft" || p.status === "approved") && !isExpiredDraft(p));
   const needsImage = pending.filter((p) => p.image_upload_recommended && getPostImageUrls(p).length === 0);
+  const approved  = posts.filter(p => p.status === "approved");
   const published = posts.filter(p => p.status === "published");
   const failed    = posts.filter(p => p.status === "failed");
-  const tabPosts  = tab === "pending" ? pending : tab === "needsImage" ? needsImage : tab === "published" ? published : failed;
+  const tabPosts  =
+    tab === "pending" ? pending :
+    tab === "needsImage" ? needsImage :
+    tab === "approved" ? approved :
+    tab === "published" ? published :
+    failed;
   const approvableDrafts = pending.filter(p =>
     p.status === "draft" &&
     !(p.image_upload_recommended && getPostImageUrls(p).length === 0) &&
@@ -631,6 +637,12 @@ export default function ThreadsAdminPage() {
               이미지 필요 {needsImage.length}
             </button>
             <button
+              onClick={() => setTab("approved")}
+              className={`rounded-lg px-3 py-2 text-left text-[13px] font-bold transition-colors ${tab === "approved" ? "bg-white text-[#111827]" : "text-[#6B7280] hover:bg-white/70"}`}
+            >
+              승인됨 {approved.length}
+            </button>
+            <button
               onClick={() => setTab("published")}
               className={`rounded-lg px-3 py-2 text-left text-[13px] font-bold transition-colors ${tab === "published" ? "bg-white text-[#111827]" : "text-[#6B7280] hover:bg-white/70"}`}
             >
@@ -713,7 +725,7 @@ export default function ThreadsAdminPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-px overflow-hidden border border-[#EEF0F2] bg-[#EEF0F2] md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-px overflow-hidden border border-[#EEF0F2] bg-[#EEF0F2] md:grid-cols-5">
                 <div className="bg-white px-4 py-4">
                   <p className="text-[12px] font-bold text-[#6B7280]">대기</p>
                   <p className="mt-2 text-[30px] font-black tracking-[-0.05em] text-[#111827] tabular-nums">{pending.length}</p>
@@ -723,10 +735,14 @@ export default function ThreadsAdminPage() {
                   <p className="mt-2 text-[30px] font-black tracking-[-0.05em] text-[#F06B35] tabular-nums">{needsImage.length}</p>
                 </div>
                 <div className="bg-white px-4 py-4">
+                  <p className="text-[12px] font-bold text-[#6B7280]">승인됨</p>
+                  <p className="mt-2 text-[30px] font-black tracking-[-0.05em] text-[#16A34A] tabular-nums">{approved.length}</p>
+                </div>
+                <div className="bg-white px-4 py-4">
                   <p className="text-[12px] font-bold text-[#6B7280]">발행</p>
                   <p className="mt-2 text-[30px] font-black tracking-[-0.05em] text-[#111827] tabular-nums">{published.length}</p>
                 </div>
-                <div>
+                <div className="bg-white px-4 py-4">
                   <p className="text-[12px] font-bold text-[#6B7280]">실패</p>
                   <p className={`mt-2 text-[30px] font-black tracking-[-0.05em] tabular-nums ${failed.length > 0 ? "text-red-600" : "text-[#111827]"}`}>
                     {failed.length}
@@ -909,12 +925,12 @@ export default function ThreadsAdminPage() {
       )}
       <section className="rounded-[18px] border border-[#EAECF0] bg-white p-2 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <div className="flex flex-wrap items-center gap-2">
-          {(["pending", "needsImage", "published", "failed"] as const).map(key => (
+          {(["pending", "needsImage", "approved", "published", "failed"] as const).map(key => (
             <button key={key} onClick={() => setTab(key)}
               className={`rounded-md px-4 py-2.5 text-sm font-black transition-colors ${
                 tab === key ? "bg-[#273142] text-white" : "text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]"
               }`}>
-              {key === "pending" ? `대기(${pending.length})` : key === "needsImage" ? `이미지필요(${needsImage.length})` : key === "published" ? `발행(${published.length})` : `실패(${failed.length})`}
+              {key === "pending" ? `대기(${pending.length})` : key === "needsImage" ? `이미지필요(${needsImage.length})` : key === "approved" ? `승인됨(${approved.length})` : key === "published" ? `발행(${published.length})` : `실패(${failed.length})`}
             </button>
           ))}
           <div className="ml-auto flex items-center gap-2">
