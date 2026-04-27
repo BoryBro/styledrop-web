@@ -7,7 +7,7 @@ export async function GET() {
     process.env.SUPABASE_SERVICE_KEY!
   );
 
-  const [{ data, error }, naboCountRes, travelCountRes, personalColorCountRes] = await Promise.all([
+  const [{ data, error }, naboCountRes, naboPredictCountRes, travelCountRes, personalColorCountRes] = await Promise.all([
     supabase
       .from("style_usage")
       .select("style_id"),
@@ -15,6 +15,10 @@ export async function GET() {
       .from("user_events")
       .select("event_type", { count: "exact", head: true })
       .eq("event_type", "lab_nabo_room_created"),
+    supabase
+      .from("user_events")
+      .select("event_type", { count: "exact", head: true })
+      .eq("event_type", "lab_nabo_predict_link_created"),
     supabase
       .from("user_events")
       .select("event_type", { count: "exact", head: true })
@@ -42,6 +46,12 @@ export async function GET() {
     console.error("[usage] nabo count error:", naboCountRes.error.message);
   } else {
     counts.nabo = naboCountRes.count ?? 0;
+  }
+
+  if (naboPredictCountRes.error) {
+    console.error("[usage] nabo-predict count error:", naboPredictCountRes.error.message);
+  } else {
+    counts.nabo_predict = naboPredictCountRes.count ?? 0;
   }
 
   if (travelCountRes.error) {

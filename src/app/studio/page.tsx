@@ -79,6 +79,7 @@ type StyleCard = (typeof BASE_STYLE_CARDS)[number];
 type StudioSectionTab = "cards" | "lab";
 type StyleCategoryTab = (typeof STYLE_CATEGORY_TABS)[number];
 type UploadTarget = { mode: "single" } | { mode: "pair"; slotIndex: 0 | 1 };
+type LoginModalMode = "default" | "lab";
 type ShowcaseItem = {
   userId: string;
   nickname: string;
@@ -118,6 +119,42 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
   );
 }
 
+function LabCardBadges({
+  participants,
+  creditLabel,
+  accent,
+}: {
+  participants: string;
+  creditLabel: string;
+  accent: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className="flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-white/45"
+        style={{ fontFamily: '"Pretendard", sans-serif', fontSize: "clamp(10px, 2.5vw, 12px)" }}
+      >
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.8" />
+          <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
+        {participants}
+      </span>
+      <span
+        className="rounded-full border px-2.5 py-1 font-bold"
+        style={{
+          borderColor: `${accent}66`,
+          color: accent,
+          fontFamily: '"Pretendard", sans-serif',
+          fontSize: "clamp(10px, 2.5vw, 12px)",
+        }}
+      >
+        {creditLabel}
+      </span>
+    </div>
+  );
+}
+
 export default function Studio() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -144,6 +181,7 @@ export default function Studio() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState<LoginModalMode>("default");
   const [showNoCreditModal, setShowNoCreditModal] = useState(false);
   const [requiredCreditsModal, setRequiredCreditsModal] = useState<1 | 2>(2);
   const [showHowToModal, setShowHowToModal] = useState(false);
@@ -280,6 +318,11 @@ export default function Studio() {
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
   }, []);
 
+  const openLoginModal = useCallback((mode: LoginModalMode = "default") => {
+    setLoginModalMode(mode);
+    setShowLoginModal(true);
+  }, []);
+
   const allStyleCards = BASE_STYLE_CARDS
     .map((style) => {
       const control = styleControls[style.id];
@@ -413,7 +456,7 @@ export default function Studio() {
 
   const handleOpenShowcaseJoin = useCallback(async () => {
     if (!user) {
-      setShowLoginModal(true);
+      openLoginModal();
       return;
     }
 
@@ -441,7 +484,7 @@ export default function Studio() {
     } finally {
       setShowcaseHistoryLoading(false);
     }
-  }, [showToast, user]);
+  }, [openLoginModal, showToast, user]);
 
   const handleSubmitShowcaseJoin = useCallback(async () => {
     if (!selectedShowcaseHistoryId) {
@@ -552,7 +595,7 @@ export default function Studio() {
     if (!activeShowcase) return;
     if (!user?.id) {
       showToast("로그인 후 하트를 누를 수 있어요.");
-      setShowLoginModal(true);
+      openLoginModal();
       return;
     }
 
@@ -622,7 +665,7 @@ export default function Studio() {
       likingShowcaseUserIdsRef.current.delete(targetUserId);
       setLikingShowcaseUserIds((current) => current.filter((id) => id !== targetUserId));
     }
-  }, [activeShowcase, likedShowcaseUserIds, showToast, user?.id]);
+  }, [activeShowcase, likedShowcaseUserIds, openLoginModal, showToast, user?.id]);
 
   useEffect(() => {
     if (selectedShowcaseIndex === null) return;
@@ -663,7 +706,7 @@ export default function Studio() {
 
     if (!user) {
       if (!isFreeTrialStyle) {
-        setShowLoginModal(true);
+        openLoginModal();
         return false;
       }
       if (remaining === null) {
@@ -671,7 +714,7 @@ export default function Studio() {
         return false;
       }
       if (remaining <= 0) {
-        setShowLoginModal(true);
+        openLoginModal();
         return false;
       }
       return true;
@@ -688,7 +731,7 @@ export default function Studio() {
     }
 
     return true;
-  }, [credits, getRequiredCreditsForStyle, remaining, showToast, user]);
+  }, [credits, getRequiredCreditsForStyle, openLoginModal, remaining, showToast, user]);
 
   const handleCardClick = (style: StyleCard) => {
     if (!style.active) {
@@ -720,7 +763,31 @@ export default function Studio() {
     }
   };
 
+  const handleLabCardClick = useCallback((href: string) => {
+    if (loading) {
+      showToast("로그인 상태를 확인하는 중이에요. 잠시 후 다시 눌러주세요.");
+      return;
+    }
+
+    if (!user) {
+      openLoginModal("lab");
+      return;
+    }
+
+    router.push(href);
+  }, [loading, openLoginModal, router, showToast, user]);
+
   const handlePersonalColorClick = () => {
+    if (loading) {
+      showToast("로그인 상태를 확인하는 중이에요. 잠시 후 다시 눌러주세요.");
+      return;
+    }
+
+    if (!user) {
+      openLoginModal("lab");
+      return;
+    }
+
     if (!isPersonalColorEnabled) {
       showToast("현재 점검 중입니다. 잠시 후 다시 확인해주세요.");
       return;
@@ -1649,7 +1716,11 @@ export default function Studio() {
                 </div>
 
                 {showNaboLab && (
-                  <Link href="/nabo" className="block mb-4 active:scale-[0.97] transition-transform">
+                  <button
+                    type="button"
+                    onClick={() => handleLabCardClick("/nabo")}
+                    className="block w-full mb-4 text-left active:scale-[0.97] transition-transform"
+                  >
                     <div className="relative rounded-2xl overflow-hidden bg-[#040D07] border border-white/[0.07]" style={{ aspectRatio: '4/3' }}>
 
                       {/* ── 배경: 그린 코너 글로우 ── */}
@@ -1675,7 +1746,7 @@ export default function Studio() {
                           style={{ fontSize: 'clamp(9px, 2.4vw, 11px)' }}
                         >Anonymous Lab</span>
                         <span className="text-[10px] font-bold text-white/30 border border-white/15 rounded-full px-2.5 py-0.5 tracking-widest uppercase"
-                          style={{ fontFamily: '"Unbounded", sans-serif' }}>Beta</span>
+                          style={{ fontFamily: '"Pretendard", sans-serif' }}>베타</span>
                       </div>
 
                       {/* ── 메인 타이틀 블록 ── */}
@@ -1708,22 +1779,11 @@ export default function Studio() {
 
                       {/* ── 바텀 바: 참여 수 + 무료 + 화살표 ── */}
                       <div className="absolute z-20 flex items-center justify-between" style={{ bottom: '6%', left: '6%', right: '6%' }}>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="flex items-center gap-1.5 text-white/40 border border-white/10 rounded-full px-2.5 py-1"
-                            style={{ fontFamily: '"Pretendard", sans-serif', fontSize: 'clamp(10px, 2.5vw, 12px)' }}
-                          >
-                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                              <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.8"/>
-                              <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.6" strokeLinecap="round"/>
-                            </svg>
-                            {usageCounts === null ? "..." : `${formatCount(usageCounts["nabo"] ?? 0)}명 참여`}
-                          </span>
-                          <span
-                            className="text-[#22C55E] border border-[#22C55E]/40 rounded-full px-2.5 py-1 font-bold"
-                            style={{ fontFamily: '"Unbounded", sans-serif', fontSize: 'clamp(9px, 2.2vw, 11px)' }}
-                          >3크레딧</span>
-                        </div>
+                        <LabCardBadges
+                          participants={usageCounts === null ? "..." : `${formatCount(usageCounts["nabo"] ?? 0)}명 참여`}
+                          creditLabel="1크레딧"
+                          accent="#22C55E"
+                        />
 
                         <div className="w-9 h-9 rounded-full bg-[#22C55E] flex items-center justify-center flex-shrink-0">
                           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -1736,11 +1796,105 @@ export default function Studio() {
                       <div className="absolute right-6 z-10" style={{ top: '28%', bottom: '20%', width: '1.5px', background: 'linear-gradient(to bottom, transparent, rgba(34,197,94,0.5), transparent)' }} />
 
                     </div>
-                  </Link>
+                  </button>
+                )}
+
+                {showNaboLab && (
+                  <button
+                    type="button"
+                    onClick={() => handleLabCardClick("/nabo-predict")}
+                    className="block w-full mb-4 text-left active:scale-[0.97] transition-transform"
+                  >
+                    <div className="relative rounded-2xl overflow-hidden bg-[#120B0A] border border-white/[0.07]" style={{ aspectRatio: '4/3' }}>
+                      <div className="absolute inset-0 z-0" style={{ background: "radial-gradient(ellipse 82% 62% at 12% 100%, rgba(249,115,22,0.20) 0%, transparent 70%), radial-gradient(ellipse 64% 52% at 88% 18%, rgba(251,113,133,0.12) 0%, transparent 64%)" }} />
+
+                      <span
+                        className="absolute select-none z-[1] font-unbounded font-black"
+                        style={{
+                          bottom: "-2%",
+                          right: "-4%",
+                          fontSize: "clamp(44px, 13vw, 76px)",
+                          lineHeight: 1,
+                          letterSpacing: "0",
+                          color: "rgba(255,255,255,0.035)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        예측
+                      </span>
+
+                      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 pt-5">
+                        <span
+                          className="font-unbounded font-medium text-[#F97316] tracking-[0.18em]"
+                          style={{ fontSize: "clamp(9px, 2.4vw, 11px)" }}
+                        >
+                          예측 실험실
+                        </span>
+                        <span
+                          className="text-[10px] font-bold text-white/30 border border-white/15 rounded-full px-2.5 py-0.5 tracking-widest"
+                          style={{ fontFamily: '"Pretendard", sans-serif' }}
+                        >
+                          베타
+                        </span>
+                      </div>
+
+                      <div className="absolute z-10 flex flex-col" style={{ top: "28%", left: "6%", right: "6%" }}>
+                        <div className="w-6 h-[2px] bg-[#F97316] mb-3" />
+                        <span
+                          className="font-unbounded font-bold text-white/40 tracking-[0.06em] mb-1"
+                          style={{ fontSize: "clamp(10px, 2.6vw, 13px)" }}
+                        >
+                          행동 예측
+                        </span>
+                        <span
+                          className="text-white leading-[0.9]"
+                          style={{
+                            fontFamily: '"BMKkubulim", sans-serif',
+                            fontSize: "clamp(27px, 7.6vw, 46px)",
+                            letterSpacing: "0",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          너라면 그럴 줄 알았어
+                        </span>
+                      </div>
+
+                      <div className="absolute z-10" style={{ top: "68%", left: "6%", right: "6%" }}>
+                        <p
+                          className="text-white/50 leading-snug"
+                          style={{ fontFamily: '"Pretendard", sans-serif', fontSize: "clamp(11px, 2.8vw, 13px)", fontWeight: 500 }}
+                        >
+                          패턴 분석 · 행동 예측 결과 카드
+                          <br />
+                          <span className="text-white/30">내 예측과 친구의 실제 답변을 비교해요</span>
+                        </p>
+                      </div>
+
+                      <div className="absolute z-20 flex items-center justify-between" style={{ bottom: "6%", left: "6%", right: "6%" }}>
+                        <LabCardBadges
+                          participants={usageCounts === null ? "..." : `${formatCount(usageCounts["nabo_predict"] ?? 0)}명 참여`}
+                          creditLabel="1크레딧"
+                          accent="#FB7185"
+                        />
+
+                        <div className="w-9 h-9 rounded-full bg-[#F97316] flex items-center justify-center flex-shrink-0">
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      <div className="absolute right-6 z-10" style={{ top: "28%", bottom: "20%", width: "1.5px", background: "linear-gradient(to bottom, transparent, rgba(249,115,22,0.55), transparent)" }} />
+                    </div>
+                  </button>
                 )}
 
                 {showTravelTogetherLab && (
-                <Link href="/travel-together" className="block mb-4 active:scale-[0.97] transition-transform">
+                <button
+                  type="button"
+                  onClick={() => handleLabCardClick("/travel-together")}
+                  className="block w-full mb-4 text-left active:scale-[0.97] transition-transform"
+                >
                   <div className="relative rounded-2xl overflow-hidden bg-[#07101D] border border-white/[0.07]" style={{ aspectRatio: "4/3" }}>
 
                     <div className="absolute inset-0 z-0" style={{ background: "radial-gradient(ellipse 80% 60% at 10% 100%, rgba(59,130,246,0.18) 0%, transparent 70%)" }} />
@@ -1769,9 +1923,9 @@ export default function Studio() {
                       </span>
                       <span
                         className="text-[10px] font-bold text-white/30 border border-white/15 rounded-full px-2.5 py-0.5 tracking-widest uppercase"
-                        style={{ fontFamily: '"Unbounded", sans-serif' }}
+                        style={{ fontFamily: '"Pretendard", sans-serif' }}
                       >
-                        Beta
+                        베타
                       </span>
                     </div>
 
@@ -1808,25 +1962,11 @@ export default function Studio() {
                     </div>
 
                     <div className="absolute z-20 flex items-center justify-between" style={{ bottom: "6%", left: "6%", right: "6%" }}>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="flex items-center gap-1.5 text-white/40 border border-white/10 rounded-full px-2.5 py-1"
-                          style={{ fontFamily: '"Pretendard", sans-serif', fontSize: "clamp(10px, 2.5vw, 12px)" }}
-                        >
-                          <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                            <circle cx="5" cy="5" r="3" fill="currentColor" fillOpacity="0.8" />
-                            <circle cx="11" cy="5.5" r="2.6" fill="currentColor" fillOpacity="0.55" />
-                            <path d="M1.2 14.8c0-3.2 2.7-5.8 5.9-5.8s5.8 2.6 5.8 5.8" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.4" strokeLinecap="round" />
-                          </svg>
-                          {usageCounts === null ? "..." : `${formatCount(usageCounts["travel_together"] ?? 0)}명 참여`}
-                        </span>
-                        <span
-                          className="text-[#60A5FA] border border-[#60A5FA]/40 rounded-full px-2.5 py-1 font-bold"
-                          style={{ fontFamily: '"Unbounded", sans-serif', fontSize: "clamp(9px, 2.2vw, 11px)" }}
-                        >
-                          NEW
-                        </span>
-                      </div>
+                      <LabCardBadges
+                        participants={usageCounts === null ? "..." : `${formatCount(usageCounts["travel_together"] ?? 0)}명 참여`}
+                        creditLabel="1크레딧"
+                        accent="#60A5FA"
+                      />
 
                       <div className="w-9 h-9 rounded-full bg-[#3B82F6] flex items-center justify-center flex-shrink-0">
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -1837,11 +1977,15 @@ export default function Studio() {
 
                     <div className="absolute right-6 z-10" style={{ top: "28%", bottom: "20%", width: "1.5px", background: "linear-gradient(to bottom, transparent, rgba(59,130,246,0.5), transparent)" }} />
                   </div>
-                </Link>
+                </button>
                 )}
 
                 {showAuditionLab && (
-                  <Link href="/audition/intro" className="block mb-4 active:scale-[0.97] transition-transform">
+                  <button
+                    type="button"
+                    onClick={() => handleLabCardClick("/audition/intro")}
+                    className="block w-full mb-4 text-left active:scale-[0.97] transition-transform"
+                  >
                     <div className="relative rounded-2xl overflow-hidden bg-[#0A0A0A] border border-white/[0.07]" style={{ aspectRatio: '4/3' }}>
 
                 {/* ── 배경: 미묘한 오렌지 코너 글로우 ── */}
@@ -1867,7 +2011,7 @@ export default function Studio() {
                     style={{ fontSize: 'clamp(9px, 2.4vw, 11px)' }}
                   >AI Audition</span>
                   <span className="text-[10px] font-bold text-white/30 border border-white/15 rounded-full px-2.5 py-0.5 tracking-widest uppercase"
-                    style={{ fontFamily: '"Unbounded", sans-serif' }}>NEW</span>
+                    style={{ fontFamily: '"Pretendard", sans-serif' }}>신규</span>
                 </div>
 
                 {/* ── 메인 타이틀 블록 ── */}
@@ -1900,22 +2044,11 @@ export default function Studio() {
 
                 {/* ── 바텀 바: 유저 수 + 크레딧 + 화살표 ── */}
                 <div className="absolute z-20 flex items-center justify-between" style={{ bottom: '6%', left: '6%', right: '6%' }}>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="flex items-center gap-1.5 text-white/40 border border-white/10 rounded-full px-2.5 py-1"
-                      style={{ fontFamily: '"Pretendard", sans-serif', fontSize: 'clamp(10px, 2.5vw, 12px)' }}
-                    >
-                      <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.8"/>
-                        <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.6" strokeLinecap="round"/>
-                      </svg>
-                      {usageCounts === null ? "..." : `${formatCount(usageCounts["audition"] ?? 0)}명 참여`}
-                    </span>
-                    <span
-                      className="text-[#C9571A] border border-[#C9571A]/40 rounded-full px-2.5 py-1 font-bold"
-                      style={{ fontFamily: '"Unbounded", sans-serif', fontSize: 'clamp(9px, 2.2vw, 11px)' }}
-                    >5 Credits</span>
-                  </div>
+                  <LabCardBadges
+                    participants={usageCounts === null ? "..." : `${formatCount(usageCounts["audition"] ?? 0)}명 참여`}
+                    creditLabel="5크레딧"
+                    accent="#C9571A"
+                  />
 
                   <div className="w-9 h-9 rounded-full bg-[#C9571A] flex items-center justify-center flex-shrink-0">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -1928,7 +2061,7 @@ export default function Studio() {
                 <div className="absolute right-6 z-10" style={{ top: '28%', bottom: '20%', width: '1.5px', background: 'linear-gradient(to bottom, transparent, rgba(201,87,26,0.5), transparent)' }} />
 
                     </div>
-                  </Link>
+                  </button>
                 )}
 
                 {showPersonalColorLab && (
@@ -1973,7 +2106,7 @@ export default function Studio() {
                         className="rounded-full border border-white/15 px-2.5 py-0.5 text-[10px] font-bold tracking-widest text-white/35 uppercase"
                         style={{ fontFamily: '"Unbounded", sans-serif' }}
                       >
-                        {isPersonalColorEnabled ? "FREE" : "PAUSED"}
+                        {isPersonalColorEnabled ? "프리" : "점검"}
                       </span>
                     </div>
 
@@ -2011,20 +2144,11 @@ export default function Studio() {
                     </div>
 
                     <div className="absolute z-20 flex items-center justify-between" style={{ bottom: "6%", left: "6%", right: "6%" }}>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="rounded-full border border-white/10 px-2.5 py-1 text-white/45"
-                          style={{ fontFamily: '"Pretendard", sans-serif', fontSize: "clamp(10px, 2.5vw, 12px)" }}
-                        >
-                          {usageCounts === null ? "..." : `${formatCount(usageCounts["personal_color"] ?? 0)}명 참여`}
-                        </span>
-                        <span
-                          className="rounded-full border border-[#8DAEFF]/40 px-2.5 py-1 font-bold text-[#8DAEFF]"
-                          style={{ fontFamily: '"Unbounded", sans-serif', fontSize: "clamp(9px, 2.2vw, 11px)" }}
-                        >
-                          LIVE LAB
-                        </span>
-                      </div>
+                      <LabCardBadges
+                        participants={usageCounts === null ? "..." : `${formatCount(usageCounts["personal_color"] ?? 0)}명 참여`}
+                        creditLabel="무료"
+                        accent="#8DAEFF"
+                      />
 
                       <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#8DAEFF]">
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -2204,7 +2328,7 @@ export default function Studio() {
               <div className="w-10 h-1 bg-black/10 rounded-full mx-auto mb-5" />
               <p className="text-[#0A0A0A] font-bold text-[18px] mb-1">스타일 옵션 선택</p>
               <p className="text-[#888] text-[13px] mb-5">{variantSelectStyle.name} — 원하는 분위기를 골라주세요</p>
-              <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="-mx-5 mb-5 flex gap-3 overflow-x-auto overscroll-x-contain px-5 pb-3 snap-x snap-mandatory">
                 {variants.map((v) => (
                   <button
                     key={v.id}
@@ -2214,14 +2338,14 @@ export default function Studio() {
                       uploadTargetRef.current = { mode: "single" };
                       setShowPhotoSourceSheet(true);
                     }}
-                    className="group bg-black/[0.03] hover:bg-black/[0.06] border border-black/10 hover:border-[#C9571A]/50 rounded-2xl overflow-hidden transition-all text-left flex flex-col"
+                    className="group flex w-[156px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-black/10 bg-black/[0.03] text-left transition-all hover:border-[#C9571A]/50 hover:bg-black/[0.06] sm:w-[180px]"
                   >
                     {v.thumbnail ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={v.thumbnail}
                         alt={v.label}
-                        className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
                       <div className="w-full aspect-square bg-black/5 flex items-center justify-center">
@@ -2590,11 +2714,30 @@ export default function Studio() {
 
       {/* 로그인 유도 모달 */}
       {showLoginModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => setShowLoginModal(false)}>
+        <div
+          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center"
+          onClick={() => {
+            setShowLoginModal(false);
+            setLoginModalMode("default");
+          }}
+        >
           <div className="bg-white rounded-2xl p-6 max-w-sm mx-4 border border-[#E0E0E0] text-center w-full" onClick={e => e.stopPropagation()}>
-            <p className="text-[40px]">🎁</p>
-            <p className="text-[18px] font-bold text-[#0A0A0A] mt-3">무료 체험이 끝났어요</p>
-            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">카카오 로그인하면<br/><span className="text-[#C9571A] font-bold">1크레딧을 무료로 받아요!</span><br/>지금 바로 체험해보세요</p>
+            <p className="text-[40px]">{loginModalMode === "lab" ? "🔒" : "🎁"}</p>
+            <p className="text-[18px] font-bold text-[#0A0A0A] mt-3">
+              {loginModalMode === "lab" ? "로그인이 필요해요" : "무료 체험이 끝났어요"}
+            </p>
+            <p className="text-[14px] text-[#999] mt-2 leading-relaxed">
+              {loginModalMode === "lab" ? (
+                <>
+                  실험실 카드는 회원만 이용할 수 있어요.<br/>
+                  <span className="text-[#C9571A] font-bold">카카오로 가입하고 바로 체험해보세요.</span>
+                </>
+              ) : (
+                <>
+                  카카오 로그인하면<br/><span className="text-[#C9571A] font-bold">1크레딧을 무료로 받아요!</span><br/>지금 바로 체험해보세요
+                </>
+              )}
+            </p>
             <button
               onClick={() => { window.location.href = buildKakaoLoginUrlWithReferral(); }}
               className="bg-[#FEE500] text-[#3C1E1E] font-bold text-[15px] w-full py-4 rounded-xl mt-4 flex items-center justify-center gap-2"
@@ -2602,9 +2745,15 @@ export default function Studio() {
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
               </svg>
-              카카오로 로그인하고 1크레딧 받기
+              {loginModalMode === "lab" ? "카카오로 가입하고 실험실 이용하기" : "카카오로 로그인하고 1크레딧 받기"}
             </button>
-            <button onClick={() => setShowLoginModal(false)} className="text-[13px] text-[#555] mt-3 hover:text-[#888] transition-colors">
+            <button
+              onClick={() => {
+                setShowLoginModal(false);
+                setLoginModalMode("default");
+              }}
+              className="text-[13px] text-[#555] mt-3 hover:text-[#888] transition-colors"
+            >
               다음에 할게요
             </button>
           </div>
