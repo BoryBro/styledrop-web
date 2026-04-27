@@ -13,6 +13,11 @@ import { addWatermark } from "@/lib/watermark";
 import { addCreditsWithPolicy } from "@/lib/credits.server";
 import { logGenerationError } from "@/lib/generation-errors.server";
 import { loadStyleControlMap } from "@/lib/style-controls.server";
+import {
+  appendStyleFilterPrompt,
+  STYLE_FILTER_ENABLED_STYLES,
+  STYLE_FILTER_PROMPTS,
+} from "@/lib/style-filter-prompts";
 import { rewardReferralForFirstGeneration } from "@/lib/referrals.server";
 import {
   acquireEphemeralRequestLock,
@@ -7284,61 +7289,86 @@ OUTPUT TARGET:
   },
 };
 
-function appendFilterTone(basePrompt: string, filterName: string, filterPrompt: string) {
-  return `${basePrompt}
+const HOLOGRAPHIC_BUTTERFLY_COMPACT_PROMPT = `Transform the uploaded photo into a straight-on upper-body editorial portrait surrounded by very large holographic butterflies against a dense violet cloud backdrop. Match the attached reference image's scene, butterfly scale, color richness, shadow structure, lighting contrast, and mysterious polished editorial finish.
 
-STYLE FILTER ADD-ON — ${filterName}:
-The following style filter must be applied as final photographic color grading, texture, and post-processing only.
-Do not change the core card concept, scene, pose, wardrobe rules, identity preservation rules, rainy crosswalk setting, or composition from the base prompt.
-This is not a second generation step. It is one combined image generation instruction.
+This must look like a real high-resolution editorial portrait photograph with a surreal-but-photographic Y2K/Y3K atmosphere. Not fantasy art. Not stylized illustration. Not CGI. Real.
 
-${filterPrompt}
+IDENTITY LOCK:
+- Preserve the exact same person: face shape, bone structure, eyes, nose, lips, jawline, proportions, skin tone family, and instantly recognizable likeness
+- Keep a calm, direct, slightly enigmatic gaze
+- The face must feel naturally integrated into the scene with matching lighting direction, contrast, skin texture, cool-violet reflections, and image sharpness
+- No pasted-face look
+- No over-cleaning
+- No plastic skin
+- No structural beautification
+- No symmetry correction
+- Keep the hairstyle recognizable with only minimal editorial cleanup
 
-STYLE FILTER STRICT RULES:
-- Apply this only to color, contrast, grain, glow, haze, sharpness, and overall photographic finish
-- Preserve the rainy Korean crosswalk scene and all identity rules from the base card
-- Do not replace the environment with a different scene
-- Do not remove rain, wet pavement, zebra stripes, or city reflections
-- Do not create graphic borders, text, stickers, or film frames
-- The final output must still look like one real high-resolution photograph`;
-}
+COMPOSITION:
+- Straight-on upper-body portrait
+- Centered, close, immersive crop
+- Face dominant in frame
+- Slight natural asymmetry in head angle and shoulders
+- Direct gaze into camera
+- Do not widen the frame
+- Do not flatten into a stiff studio headshot
 
-STYLE_PROMPTS["rainy-crosswalk"]["soft-dreamy"] = appendFilterTone(
-  STYLE_PROMPTS["rainy-crosswalk"]["default"],
-  "Mongle Dreamy",
-  `Render with a dreamy soft film aesthetic.
-- Milky hazy glow across the whole frame
-- Pastel-washed colors
-- Heavy light diffusion
-- Blooming highlights
-- Airy soft fog over the rainy street lights
-- Gentle lifted shadows
-- Slightly faded and ethereal colors
-- No sharp edges
-- No HDR
-- No AI enhancement
-- No film border`
-);
+STYLING:
+- Futuristic structured top or jacket with a sleek metallic or satin-like finish
+- Fully covering and non-revealing
+- Clean, fitted, editorial, physically real fabric
+- No costume armor
+- No fantasy styling
 
-STYLE_PROMPTS["rainy-crosswalk"]["y2k-glossy"] = appendFilterTone(
-  STYLE_PROMPTS["rainy-crosswalk"]["default"],
-  "Y2K Glossy",
-  `Render with an early-2000s glossy photo aesthetic.
-- Over-saturated vivid colors
-- Bright glossy highlights
-- Crunchy contrast
-- Slightly magenta-shifted tones
-- Punchy blue and cyan reflections in the wet pavement
-- Shiny print-photo finish
-- Vivid color depth
-- No skin texture change
-- No smear
-- No moisture on skin beyond the rainy scene
+BUTTERFLIES:
+- 3 to 5 very large holographic butterflies
+- Oversized relative to the head and shoulders
+- Arrange them around the hair, shoulders, and foreground
+- Some butterflies must overlap the subject
+- Wings must feel semi-translucent, reflective, and physically real in violet, blue, aqua, and pink tones
+- No tiny decorative butterflies
+- No flat sticker-like placement
+- No repeated copy-paste arrangement
+
+BACKGROUND AND LIGHTING:
+- Dense violet cloud or synthetic mist filling the entire background
+- Darker, richer, moodier purple-blue atmosphere
+- Cool vivid editorial lighting with clear shadow shaping on the face, neck, and garment
+- Glossy but controlled highlights
+- Richer violet-blue atmosphere than a soft pastel portrait
+- No warm natural light
+- No washed-out pastel haze
+- No flat beauty lighting
+
+DEPTH AND PHOTO STYLE:
+- 50mm portrait feel
+- Shallow depth of field
+- Face sharp, background softer
+- Real photographed futuristic editorial finish
+- Clean, polished, glossy, dreamy, futuristic, mysterious, premium
 - No film grain
-- No HDR
-- No AI enhancement
-- No film border`
-);
+- No digital noise
+- No HDR exaggeration
+- No painterly softness
+- No AI-smooth rendering
+
+STRICT NEGATIVE RULES:
+- Do not change identity
+- Do not make butterflies small or distant
+- Do not flatten into a centered pastel studio portrait
+- Do not remove shadow shaping from the face
+- Do not add text, logos, or extra props
+- Do not stylize into illustration, fantasy poster art, or sterile CGI
+
+OUTPUT TARGET:
+- Same recognizable person
+- Centered upper-body composition
+- Very large holographic butterflies
+- Dense violet cloud background
+- Cool polished blue-violet-pink editorial lighting
+- Real high-end editorial portrait, not AI-generated`;
+
+STYLE_PROMPTS["holographic-butterfly"]["default"] = HOLOGRAPHIC_BUTTERFLY_COMPACT_PROMPT;
 
 // 레퍼런스 이미지 경로 배열 (public/ 기준)
 // - 빈 배열 [] → 멀티모달 스킵 (텍스트 프롬프트만 사용)
@@ -7383,7 +7413,7 @@ const STYLE_REFERENCES: Record<string, Record<string, string[]>> = {
   "escalator-flash-twoshot": { "default": [] },
   "boxing-counterpunch": { "default": [] },
   "yakuza": { "default": [], "mafia": [] },
-  "rainy-crosswalk": { "default": [], "soft-dreamy": [], "y2k-glossy": [] },
+  "rainy-crosswalk": { "default": [] },
   "winter-snow": { "default": [] },
   "y2k-object": { "white": [], "pastel": [] },
   "teddy-bear": { "default": [] },
@@ -7493,7 +7523,14 @@ export async function POST(request: NextRequest) {
   }
 
   const stylePrompts = STYLE_PROMPTS[style];
-  const prompt = stylePrompts?.[variant] ?? stylePrompts?.["default"];
+  const basePrompt = stylePrompts?.["default"];
+  const directPrompt = stylePrompts?.[variant];
+  const filterPrompt = STYLE_FILTER_ENABLED_STYLES.has(style)
+    ? STYLE_FILTER_PROMPTS[variant]
+    : undefined;
+  const prompt = directPrompt
+    ?? (basePrompt && filterPrompt ? appendStyleFilterPrompt(basePrompt, filterPrompt) : undefined)
+    ?? basePrompt;
   if (!prompt) {
     return NextResponse.json({ error: "Invalid style" }, { status: 400 });
   }

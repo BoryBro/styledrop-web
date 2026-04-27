@@ -5,8 +5,16 @@ export type Variant = { id: string; label: string; desc?: string; thumbnail?: st
 
 export const STYLE_VARIANTS: Record<string, Variant[]> = {
   "rainy-crosswalk": [
+    { id: "default", label: "기본", desc: "카드 기본 분위기 그대로" },
     { id: "soft-dreamy", label: "몽글몽글", desc: "밀키하고 부드러운 필름 보정 톤" },
     { id: "y2k-glossy", label: "Y2K 글로시", desc: "푸른 하늘감과 반짝이는 2000년대 글로시 톤" },
+    { id: "film-bokeh", label: "필름 보케", desc: "보케와 파스텔 안개가 도는 필름 톤" },
+    { id: "superia-400", label: "Fujifilm Superia 400", desc: "청록기 섞인 쿨 그린 필름 톤" },
+    { id: "fade-out", label: "페이드 아웃", desc: "희게 날아간 워시드 하이키 톤" },
+    { id: "digicam-warm", label: "디카 웜톤", desc: "노란기 도는 초기 디카 감성 톤" },
+    { id: "portra-400", label: "Kodak Portra 400", desc: "오렌지-크림 계열의 따뜻한 필름 톤" },
+    { id: "cool-blue-haze", label: "쿨 블루 헤이즈", desc: "차가운 블루 캐스트와 안개 낀 톤" },
+    { id: "retro-70s", label: "레트로 70s", desc: "브라운·머스터드 계열의 70년대 빈티지 톤" },
   ],
   "angel": [
     { id: "dark", label: "타락천사",      desc: "다크하고 강렬한 타락천사",       thumbnail: "/thumbnails/angel-dark.jpg" },
