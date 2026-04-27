@@ -1375,7 +1375,7 @@ export default function Studio() {
 
           {/* 터미널 공지 — 최상단 */}
           {notices.length > 0 && (
-            <div className="mb-5 bg-[#F2F2F2] border border-[#D5D5D5] rounded-xl px-4 py-3 font-mono overflow-hidden">
+            <div className="hidden mb-5 bg-[#F2F2F2] border border-[#D5D5D5] rounded-xl px-4 py-3 font-mono overflow-hidden">
               <div className="flex items-center justify-between mb-2.5">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-[#ff5f57]" />
