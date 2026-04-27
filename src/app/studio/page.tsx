@@ -355,6 +355,14 @@ export default function Studio() {
 
     return styleOrder[a.id] - styleOrder[b.id];
   });
+  const popularStyles = [...allStyleCards]
+    .filter((style) => style.active)
+    .sort((a, b) => {
+      const usageDiff = (usageCounts?.[b.id] ?? 0) - (usageCounts?.[a.id] ?? 0);
+      if (usageDiff !== 0) return usageDiff;
+      return styleOrder[a.id] - styleOrder[b.id];
+    })
+    .slice(0, 10);
   const filteredStyles =
     activeStyleCategory === "전체"
       ? styles
@@ -1502,6 +1510,97 @@ export default function Studio() {
           )}
 
           <div ref={generalCardsSectionRef}>
+            {popularStyles.length > 0 && (
+              <section className="mb-8">
+                <div className="mb-4 flex items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-[20px] font-bold text-[#C9571A]">인기 스타일</h2>
+                    <p className="mt-1 text-[18px] font-bold text-[#0A0A0A]">요즘 많이 쓰는 카드 TOP 10이에요</p>
+                  </div>
+                </div>
+
+                <div className="-mx-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="flex w-max snap-x snap-mandatory gap-4 px-4">
+                    {popularStyles.map((style, index) => {
+                      const hasOptions = (STYLE_VARIANTS[style.id]?.length ?? 0) > 1;
+                      return (
+                        <button
+                          key={`popular-${style.id}`}
+                          type="button"
+                          onClick={() => handleCardClick(style)}
+                          aria-label={`${style.name} 인기 스타일 선택`}
+                          className={`group relative aspect-[4/5] w-[78vw] max-w-[360px] shrink-0 snap-start overflow-hidden rounded-[28px] border-2 text-left shadow-[0_18px_44px_rgba(10,10,10,0.14)] transition-all duration-300 hover:-translate-y-1 ${
+                            selectedStyle === style.id
+                              ? "border-[#C9571A] shadow-[0_18px_48px_rgba(201,87,26,0.28)]"
+                              : "border-black/10"
+                          }`}
+                          style={{ backgroundColor: style.bgColor }}
+                        >
+                          {style.beforeImg && style.afterImg ? (
+                            <>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={style.beforeImg} alt={`${style.name} 적용 전`} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={style.afterImg} alt={`${style.name} 적용 후`} className="absolute inset-0 h-full w-full object-cover" style={{ animation: "split-clip 4s ease-in-out infinite" }} draggable={false} />
+                              <div className="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_10px_rgba(255,255,255,0.6)]" style={{ animation: "split-line 4s ease-in-out infinite" }}>
+                                <div className="absolute top-1/2 left-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg">
+                                  <svg width="15" height="10" viewBox="0 0 20 10" fill="none">
+                                    <path d="M1 5H19M1 5L5 2M1 5L5 8M19 5L15 2M19 5L15 8" stroke="#555" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </div>
+                              </div>
+                            </>
+                          ) : style.bgImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={style.bgImage} alt={style.name} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+                          ) : null}
+
+                          <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/55 to-transparent" />
+                          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/42 to-transparent" />
+
+                          <div className="absolute left-4 top-4 flex items-center gap-2">
+                            <span className="rounded-full bg-white px-3 py-1.5 text-[12px] font-black text-[#C9571A] shadow-lg">
+                              TOP {index + 1}
+                            </span>
+                            <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-[12px] font-bold text-white backdrop-blur-md">
+                              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                                <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.85"/>
+                                <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round"/>
+                              </svg>
+                              {usageCounts === null ? "..." : formatCount(usageCounts[style.id] ?? 0)}
+                            </span>
+                          </div>
+
+                          <div className="absolute bottom-0 left-0 right-0 p-5">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                              {hasOptions && (
+                                <span className="inline-flex items-center rounded-lg bg-white/16 px-2.5 py-1 text-[11px] font-extrabold text-white backdrop-blur-md ring-1 ring-white/15">
+                                  옵션
+                                </span>
+                              )}
+                              <span className="rounded-lg bg-[#C9571A] px-2.5 py-1 text-[11px] font-extrabold text-white shadow-lg">
+                                {FREE_TRIAL_STYLE_ID_SET.has(style.id) ? "1크레딧" : "2크레딧"}
+                              </span>
+                            </div>
+                            <p className="text-[27px] font-black leading-tight tracking-[-0.04em] text-white">{style.name}</p>
+                            <p className="mt-2 line-clamp-2 text-[14px] leading-relaxed text-white/78 break-keep">{style.desc}</p>
+                          </div>
+
+                          {selectedStyle === style.id && (
+                            <div className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-[#C9571A] shadow-md">
+                              <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+                                <path d="M1 5L4.5 8.5L13 1" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* 스타일 선택 섹션 헤더 */}
             <div className="mb-4 flex items-end justify-between gap-3">
               <div className="min-w-0">
