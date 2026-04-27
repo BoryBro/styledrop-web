@@ -1,0 +1,217 @@
+Use the uploaded image as the base and transform it, not generate a new person.
+
+Transform the uploaded photo into an intimate close-up portrait of a young Korean woman whose face is framed inside a large translucent glass rose, matching the exact tone, mood, lighting behavior, color wash, softness, reflective detail, and luxurious surreal editorial finish of the attached reference image.
+
+This must look like a real high-resolution editorial portrait photograph with a surreal-but-photographic romantic atmosphere - intimate, moody, luminous, dreamy, glassy, and physically believable within the image world. Not fantasy art. Not stylized illustration. Not CGI. Real.
+
+FACE - PRESERVE IDENTITY, INTEGRATE NATURALLY:
+- Replace the subject's face with the uploaded user's face while preserving exact identity: face shape, bone structure, eye shape, nose, lips, jawline, proportions, and instantly recognizable likeness
+- Maintain a neutral, mysterious, calm, direct-to-camera expression unless minimal adjustment is required
+- CRITICAL: The face must feel naturally integrated into the glass-rose portrait environment - same lighting direction, same contrast, same skin texture, same translucent reflection behavior, same red-pink glow contamination, and same overall image sharpness as the rest of the photograph
+- The face must NOT look pasted, over-cleaned, or artificially beautified
+- Match head position, neck, posture, skin tone, and perspective seamlessly into the close-up composition
+- Preserve real skin texture, pores, subtle asymmetry, and natural facial structure
+- No structural beautification, no plastic skin, no artificial symmetry correction
+- The final result must adapt naturally regardless of gender while preserving the same recognizable identity and the intended surreal romantic portrait context
+- The face must remain softly luminous, finely detailed, and intimate rather than hard-edged or overly contrasty
+- Facial rendering must inherit the same creamy glow, moist highlight behavior, and soft dreamlike polish visible in the attached reference
+
+FACE & CAMERA:
+- Keep the subject instantly recognizable as the original user
+- Maintain believable face proportions and natural structure
+- The face must feel like a real photographed subject inside a physical surreal set, not a composited fantasy face
+- Capture using a professional full-frame digital camera system
+- Lens: 85mm portrait lens
+- Aperture: f/1.8-f/2.2 to create shallow depth of field and soft luxury separation
+- Shutter speed: approximately 1/125 to 1/200 sec
+- ISO: 100 to 400
+- White balance: warm-magenta-neutral balance around 4200K to 5000K with strong red/crimson light contamination
+- Dynamic range: preserve glass highlights, lip sheen, skin detail, and deep rosy shadows without clipping
+- No digital over-sharpening; maintain natural lens softness, shallow-focus falloff, smooth highlight roll-off, and refined editorial polish
+- Optical rendering must match the attached reference: close, intimate, expensive, soft yet detailed, and clearly shot through a premium portrait lens with luxurious shallow depth
+
+HAIR:
+- Preserve the uploaded user's natural hairstyle
+- Hair must remain mostly secondary to the face and glass-rose framing
+- Any visible hair must read dark, soft, and naturally integrated into the warm red-pink environment
+- No unrelated hairstyle redesign
+- No excessive volume or fashion-hair exaggeration
+- Hair must remain elegant and subdued, as in the attached reference
+
+CLOTHING / BODY PRESENTATION:
+- Only the face and upper body / shoulders need to be visible
+- Clothing, if visible at all, must remain minimal, secondary, and visually unobtrusive
+- The composition must prioritize face, skin, glass rose, and crystal floral elements over wardrobe
+- No distracting garment details
+- No text, logos, or brands
+- No revealing emphasis beyond what is naturally implied by a close beauty/editorial framing
+- Body rendering must remain tasteful, elegant, and non-explicit
+
+POSE / COMPOSITION:
+- Tight close-up portrait
+- Straight-on framing with the face centered as the main focal point
+- The face and upper body occupy most of the frame
+- Subject gazes directly into the lens
+- The translucent glass rose wraps around and frames the face prominently
+- Floating crystal-like flower petals appear beside the cheek
+- The framing must closely follow the attached reference:
+  - face fills the frame generously
+  - glass rose petals dominate the foreground framing
+  - one or more crystal floral forms float near the cheek/jaw area
+  - composition feels intimate, enclosed, and sculptural
+- Do not widen the frame
+- Do not move the subject too far back
+- Keep the portrait scale close, luxurious, and emotionally immediate
+
+PROP / ENVIRONMENTAL ELEMENTS:
+- Large translucent glass rose framing the face
+- Glass rose must feel thick, sculptural, curved, and physically real
+- Several crystal-like flower petals or floral elements floating near the cheek
+- Glass and crystal elements must remain transparent to semi-transparent with realistic refraction, reflection, and internal glow
+- The translucent rose must distort and catch light naturally
+- No plastic appearance
+- No cheap acrylic look
+- No repeated or symmetrical decorative copy-paste forms
+- Glass surfaces must feel premium, artistic, and tactile as in the attached reference
+
+SCENE:
+- Minimal surreal beauty/editorial set
+- No visible text or brands
+- Softly colored blurred backdrop
+- Background must remain secondary, velvety, and atmospheric
+- Environment must feel intimate, enclosed, and art-directed rather than environmental or architectural
+- The entire scene must revolve around face, glass rose, floating crystal floral elements, and luminous color atmosphere
+- The image must feel like a luxury beauty-fashion still, not a narrative location shot
+
+LIGHTING:
+- Deep red prism-like light washing over the scene
+- Romantic crimson and blush-toned glow dominating the full composition
+- Slight violet undertone in select shadows and reflections
+- Light must feel soft, enveloping, and luxurious rather than harsh
+- Strong colored light contamination across skin, glass, and background
+- Glass rose edges must catch bright pink-red highlights and soft reflective rims
+- Skin must glow gently with moist, soft specular highlights
+- No hard spotlight
+- No flat beauty-light symmetry
+- Lighting must match the attached reference exactly in feeling:
+  - warm crimson-magenta wash
+  - luminous skin highlights
+  - glowing translucent glass edges
+  - moody but rich shadows
+  - velvety, romantic, surreal color atmosphere
+- The scene must feel expensive, intimate, and softly lit from multiple blended colored sources rather than plainly front-lit
+
+DEPTH & OPTICS:
+- 85mm lens compression
+- Very shallow depth of field
+- Face remains sharply readable
+- Background falls into creamy soft blur
+- Glass rose edges and floating crystal flowers may drift in and out of the focus plane naturally
+- No wide-angle distortion
+- Optical rendering must feel lens-based, intimate, and real
+- Depth behavior must match the attached reference:
+  - closest glass edges may soften slightly
+  - facial center remains the visual anchor
+  - background dissolves into warm blur
+  - crystal elements remain readable but softly integrated
+
+PHOTO STYLE:
+- High-resolution digital portrait photography
+- Luxury beauty/editorial finish
+- Soft dreamlike polish with high detail preserved in skin, lips, and glass highlights
+- Moist luminous lip texture
+- Smooth shallow-focus rendering
+- Rich but controlled color wash
+- No film grain
+- No visible digital noise
+- No HDR exaggeration
+- No painterly brush texture
+- No AI-smooth rendering
+- Must feel like a real photographed surreal beauty portrait, not a digitally painted fantasy image
+- Must match the attached reference in finish:
+  - glossy but soft
+  - intimate but surreal
+  - luminous but controlled
+  - high-resolution yet dreamlike
+  - editorial and art-directed without looking synthetic
+
+REAL CAMERA IMPERFECTIONS (CONTROLLED):
+- Slight highlight bloom along the brightest glass edges
+- Mild contrast falloff through translucent glass surfaces
+- Slight internal reflection complexity within the glass rose and crystal petals
+- Very subtle depth softness at the extreme near foreground glass edges
+- No perfectly sterile gradient transitions in the background glow
+- No unnaturally cut-out subject edges
+- No artificial subject separation from the glass structure
+- Maintain natural optical softness and reflective complexity matching the reference
+
+EXPOSURE & RESPONSE:
+- Exposure balanced for skin clarity, glass highlights, and luminous lip texture
+- Highlights must roll off softly on the glass rose and cheekbone areas
+- Shadows must remain rich, moody, and colored, not crushed
+- Midtones must preserve facial structure, lip texture, and translucent glass detail
+- Crimson/blush atmospheric wash must remain controlled and integrated into the light
+- No flat global exposure balance
+- Exposure must feel rich, close, and editorial, with the face floating inside a warm glass-lit atmosphere
+- Contrast must remain soft-luxurious rather than aggressive
+
+ANTI-AI CONSTRAINT:
+- Do NOT turn the glass rose into fantasy CGI plastic
+- Do NOT over-beautify the face
+- Do NOT over-clean the skin into cosmetic perfection
+- Do NOT flatten the reflections or simplify the glass optics
+- Do NOT stylize into illustration or beauty-ad CGI
+- Do NOT introduce extra decorative elements beyond the glass rose and crystal floral forms
+- Do NOT make the composition wider, cleaner, or more minimal than the attached reference
+- Maintain real photographic rendering with surreal subject matter only
+- Follow the attached reference's intimate framing, crimson mood, glass realism, and dreamy luxury finish exactly
+
+COLOR:
+- Dominant palette:
+  - deep crimson
+  - blush pink
+  - warm rose-red
+  - barely-there violet
+- Secondary tones:
+  - soft natural skin tone
+  - translucent pink-glass highlights
+  - rosy shadow gradients
+- The scene must remain deeply saturated in red-pink atmosphere without becoming neon
+- No harsh color separation
+- No artificial grading spikes
+- Color must match the attached reference closely:
+  - rich magenta-red wash
+  - warm blush skin glow
+  - soft violet traces in shadow or glass edge
+  - luminous pink glass reflections
+  - intimate romantic color atmosphere
+
+MOOD:
+- Mysterious
+- Romantic
+- Dreamlike
+- Sophisticated
+- Intimate
+- Moody
+- Surreal
+- Quietly luxurious
+- Ethereal yet grounded
+- Must match the emotional tone of the attached reference exactly
+
+STRICT RULES:
+- Must use the uploaded image identity as the base
+- Must not generate a new face
+- Preserve the close-up composition, direct gaze, glass rose framing, floating crystal-like floral elements, deep crimson light, 85mm shallow depth of field, moist glossy lips, and soft blurred background
+- The attached reference image's tone, mood, redness, lighting behavior, optical softness, reflective complexity, framing intimacy, and editorial finish must be followed as closely as possible
+- Do not stylize into fantasy art or glossy CGI beauty illustration
+- Keep all elements grounded in a real photographed image with surreal subject matter
+- The uploaded face identity must remain unchanged and clearly preserved
+
+OUTPUT TARGET:
+- Ultra-realistic surreal beauty portrait
+- Same recognizable person framed inside a large translucent glass rose
+- Floating crystal-like flowers near the cheek
+- Deep crimson, blush, and faint violet color atmosphere
+- Moist glossy lips, shallow 85mm depth, and soft luxury blur
+- Exact attached-reference feeling: intimate, romantic, glassy, moody, luminous, and luxurious
+- Looks like a real photographed surreal editorial image, not AI-generated

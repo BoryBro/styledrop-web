@@ -7289,6 +7289,74 @@ OUTPUT TARGET:
   },
 };
 
+const CRIMSON_GLASS_ROSE_COMPACT_PROMPT = `Transform the uploaded photo into an intimate close-up surreal beauty portrait of the same person framed inside a large translucent glass rose, with floating crystal-like floral petals near the cheek. Match the attached reference image's tight framing, crimson-magenta color wash, realistic glass refraction, soft reflections, luminous skin, shallow depth, dreamy luxury softness, and romantic editorial finish.
+
+This must look like a real high-resolution editorial portrait photograph. Not fantasy art. Not illustration. Not CGI. Real.
+
+IDENTITY LOCK:
+- Preserve the exact same person: face shape, bone structure, eyes, nose, lips, jawline, proportions, skin tone family, hairstyle identity, and instantly recognizable likeness
+- Keep a neutral, mysterious, calm, direct-to-camera expression
+- Face must naturally match the red-pink lighting, glass reflections, skin texture, contrast, perspective, and image sharpness
+- No pasted-face look, no plastic skin, no over-cleaning, no structural beautification, no symmetry correction
+- Keep real pores, subtle asymmetry, natural facial volume, soft luminosity, and fine detail
+
+COMPOSITION:
+- Tight close-up portrait with face centered and dominant
+- Direct gaze into the lens
+- Face and upper shoulders fill most of the frame
+- Large translucent glass rose wraps around and frames the face prominently
+- Crystal-like flower petals float near the cheek and jaw
+- Keep the composition intimate, enclosed, sculptural, luxurious, and emotionally immediate
+- Do not widen the frame or move the subject back
+
+STYLING:
+- Clothing, if visible, stays minimal, tasteful, secondary, and non-distracting
+- Adapt naturally to the uploaded person's gender presentation while keeping the romantic glass-rose beauty/editorial concept
+- No revealing emphasis, logos, text, brands, extra accessories, or distracting garment details
+
+GLASS ROSE:
+- Glass rose must feel thick, curved, sculptural, transparent to semi-transparent, and physically real
+- Show realistic refraction, reflection, internal glow, soft distortion, and pink-red reflective rims
+- Floating crystal petals must vary naturally in size, placement, focus, and brightness
+- No plastic look, cheap acrylic look, repeated copy-paste petals, or symmetrical decorative layout
+
+LIGHTING / COLOR:
+- Deep crimson, blush pink, warm rose-red, and faint violet atmosphere
+- Strong red-pink light contamination across skin, glass, and background
+- Soft luxurious blended lighting, not hard spotlight or flat beauty light
+- Skin has moist soft specular highlights
+- Glass and crystal elements glow with pink-red reflections
+- Shadows stay rich, moody, colored, and soft
+- Deep red-pink mood without neon color spikes or harsh grading
+
+DEPTH / PHOTO STYLE:
+- 85mm portrait lens feel
+- Very shallow depth of field
+- Face sharp and readable, background creamy and warm-blurred
+- Nearest glass edges may soften naturally
+- Premium lens-based beauty/editorial photography
+- Soft dreamlike polish with real skin, lip, and glass detail preserved
+- Slight bloom on brightest glass edges and realistic reflective complexity inside the glass
+- No HDR, film grain, digital noise, painterly texture, AI-smooth rendering, wide-angle distortion, or cut-out edges
+
+STRICT NEGATIVE RULES:
+- Do not change identity or generate a new face
+- Do not turn the glass rose into CGI plastic
+- Do not over-beautify or over-clean the face
+- Do not flatten or simplify the glass optics
+- Do not add props, text, logos, architecture, extra people, or extra decorative elements
+- Do not stylize into fantasy art, illustration, painting, poster art, beauty-ad CGI, or sterile CGI
+
+OUTPUT TARGET:
+- Same recognizable person
+- Intimate close-up face portrait inside a large translucent glass rose
+- Floating crystal floral petals near the cheek
+- Deep crimson-pink romantic atmosphere
+- Realistic glass refraction, soft glossy skin highlights, shallow 85mm depth, creamy blur
+- Real high-end surreal beauty editorial photograph, not AI-generated`;
+
+STYLE_PROMPTS["crimson-glass-rose"]["default"] = CRIMSON_GLASS_ROSE_COMPACT_PROMPT;
+
 const WHITE_FEATHER_VEIL_COMPACT_PROMPT = `Transform the uploaded photo into a medium-long straight-on sacred editorial portrait of the same person standing in an endless landscape made of giant white swan feathers. Match the attached reference image's feather desert, thick white veil, pearl-beaded ceremonial styling, pastel pink-white haze, upper-left ethereal sunlight, soft diffusion, framing intimacy, and luxury surreal photographic finish.
 
 This must look like a real high-resolution editorial portrait photograph with a sacred, ethereal, surreal-but-photographic atmosphere. Not fantasy art. Not religious illustration. Not CGI. Real.
