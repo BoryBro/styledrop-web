@@ -8,14 +8,6 @@ import { ADSENSE_PAGE_SLOTS } from "@/lib/adsense";
 import { buildKakaoLoginUrlWithReferral, storeReferralCodeFromCurrentUrl } from "@/lib/referral";
 
 type User = { id: string; nickname: string | null; profileImage: string | null };
-type ShowcaseItem = {
-  userId: string;
-  nickname: string;
-  profileImage: string | null;
-  imageUrl: string;
-  styleId: string | null;
-  createdAt: string;
-};
 
 const PUBLIC_GUIDES = [
   { href: "/ai-photo-transform", label: "AI 사진 변환" },
@@ -29,10 +21,8 @@ export default function Home() {
   const [isAgreed, setIsAgreed] = useState(false);
   const [shaking, setShaking] = useState(false);
   const [user, setUser] = useState<User | null | undefined>(undefined);
-  const [visitors, setVisitors] = useState<{ today: number; total: number } | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
-  const [showcaseItems, setShowcaseItems] = useState<ShowcaseItem[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -40,15 +30,6 @@ export default function Home() {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((data) => setUser(data.loggedIn ? data.user : null))
-      .catch(() => {});
-    const alreadyVisited = sessionStorage.getItem("sd_visited");
-    fetch("/api/visitors", { method: alreadyVisited ? "GET" : "POST" })
-      .then((r) => r.json())
-      .then((d) => { setVisitors(d); sessionStorage.setItem("sd_visited", "1"); })
-      .catch(() => {});
-    fetch("/api/public-showcase")
-      .then((r) => r.json())
-      .then((data) => setShowcaseItems(Array.isArray(data.items) ? data.items : []))
       .catch(() => {});
   }, []);
 
@@ -90,24 +71,6 @@ export default function Home() {
       <div className="absolute inset-0 bg-black/45" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(201,87,26,0.18),transparent_42%)]" />
 
-      {visitors && (
-        <div className="absolute top-5 left-0 right-0 flex justify-center z-10 px-4">
-          <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-black/35 border border-white/10 backdrop-blur-md font-mono">
-            <span className="flex items-center gap-1.5 text-[11px] text-white/65">
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <circle cx="5" cy="5" r="3" fill="#C9571A" opacity="0.7"/>
-                <circle cx="5" cy="5" r="1.5" fill="#C9571A"/>
-              </svg>
-              오늘 <span className="text-white/90">{visitors.today.toLocaleString()}</span>
-            </span>
-            <span className="text-white/25">·</span>
-            <span className="text-[11px] text-white/65">
-              누적 <span className="text-white/90">{visitors.total.toLocaleString()}</span>
-            </span>
-          </div>
-        </div>
-      )}
-
       <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center py-24">
         <div className="flex w-full max-w-xs flex-col items-center gap-8">
 
@@ -134,29 +97,6 @@ export default function Home() {
 
           {/* Subcopy */}
           <p className="text-[18px] text-white/80 tracking-[-0.02em]">사진 한 장, 감성은 AI가</p>
-
-          {showcaseItems.length > 0 && (
-            <div className="w-screen max-w-none px-0 overflow-hidden">
-              <div className="mx-auto w-full max-w-md">
-                <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
-                  <div
-                    className="flex gap-3 w-max px-4"
-                    style={{ animation: showcaseItems.length > 1 ? "showcase-marquee 22s linear infinite" : undefined }}
-                  >
-                    {(showcaseItems.length > 1 ? [...showcaseItems, ...showcaseItems] : showcaseItems).map((item, index) => (
-                      <div
-                        key={`${item.userId}-${index}`}
-                        className="h-24 w-20 shrink-0 overflow-hidden rounded-[22px] border border-white/12 bg-black/20 shadow-[0_14px_28px_rgba(0,0,0,0.24)] backdrop-blur-sm"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={item.imageUrl} alt={item.nickname} className="h-full w-full object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* 로그인 상태 */}
           {user === undefined ? null : user ? (
@@ -262,13 +202,6 @@ export default function Home() {
         </div>
       )}
 
-      <style>{`
-        @keyframes showcase-marquee {
-          from { transform: translateX(0); }
-          to { transform: translateX(calc(-50% - 6px)); }
-        }
-      `}</style>
-
       {/* Footer */}
       <footer className="relative z-10 w-[calc(100%+3rem)] -mx-6 pb-0">
         <div className="w-full border-t border-white/10 px-5 py-4">
@@ -288,7 +221,6 @@ export default function Home() {
                 <div className="mt-2 flex flex-col gap-1 text-[10px] leading-4 text-white/42">
                   <p className="flex flex-wrap gap-x-5 gap-y-1">
                     <span className="font-medium">상호: 핑거</span>
-                    <span className="font-medium">대표자: 문지환</span>
                     <span className="font-medium">사업자: 707-79-00261</span>
                     <span className="font-semibold text-white/55">0505-007-3670</span>
                   </p>
