@@ -52,6 +52,9 @@ export type NaboRoomView = {
   ownerPath: string | null;
 };
 
+export const NABO_BASIC_RESULT_COUNT = 3;
+export const NABO_FULL_RESULT_COUNT = 5;
+
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -97,7 +100,7 @@ export function buildNaboRoomView(args: {
   const responseCount = responses.length;
   const resultAvailableTime = new Date(room.result_available_after).getTime();
   const canViewResults =
-    responseCount >= 1 &&
+    responseCount >= NABO_BASIC_RESULT_COUNT &&
     Number.isFinite(resultAvailableTime) &&
     resultAvailableTime <= Date.now();
 

@@ -212,7 +212,7 @@ export default async function NaboOgImage() {
               }}
             >
               <div style={{ display: "flex", gap: 14 }}>
-                {["익명 답변", "관계 이미지", "5명 참여"].map((tag) => (
+                {["3명 기본 공개", "5명 전체 공개", "익명 보호"].map((tag) => (
                   <div
                     key={tag}
                     style={{

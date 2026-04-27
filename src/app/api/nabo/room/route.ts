@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { readSessionFromRequest } from "@/lib/auth-session";
 import { buildNaboRoomView, createNaboRoom } from "@/lib/nabo-room.server";
+import { addCreditsWithPolicy } from "@/lib/credits.server";
 import { loadNaboFeatureControl } from "@/lib/style-controls.server";
+
+const NABO_ROOM_CREATE_CREDITS = 1;
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +15,13 @@ export async function POST(request: NextRequest) {
     }
 
     const session = readSessionFromRequest(request);
+    if (!session) {
+      return NextResponse.json(
+        { error: "카카오 로그인 후 이용할 수 있습니다." },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const ownerName = String(body?.ownerName ?? body?.myName ?? "").trim();
 
@@ -22,12 +33,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "닉네임은 30자 이하로 입력해주세요." }, { status: 400 });
     }
 
-    const created = await createNaboRoom({
-      ownerName,
-      ownerUserId: session?.id ?? null,
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!,
+    );
+
+    const { data: remainingCredits, error: deductError } = await supabase.rpc("deduct_credit", {
+      p_user_id: session.id,
+      p_amount: NABO_ROOM_CREATE_CREDITS,
     });
 
+    if (deductError || remainingCredits === null || remainingCredits === undefined) {
+      return NextResponse.json(
+        { error: "내가 보는 너 링크를 만들려면 1크레딧이 필요해요." },
+        { status: 429 },
+      );
+    }
+
+    const created = await createNaboRoom({
+      ownerName,
+      ownerUserId: session.id,
+    }, supabase);
+
     if (created.error || !created.room || !created.ownerToken || !created.respondentToken) {
+      await addCreditsWithPolicy(supabase, {
+        userId: session.id,
+        credits: NABO_ROOM_CREATE_CREDITS,
+        sourceType: "refund",
+        sourceId: `nabo-room-create-refund:${session.id}:${Date.now()}`,
+      }).catch(() => undefined);
+
       return NextResponse.json(
         { error: created.error ?? "방을 만들지 못했습니다." },
         { status: 500 },
@@ -40,6 +75,8 @@ export async function POST(request: NextRequest) {
       ownerToken: created.ownerToken,
       ownerPath: created.ownerPath,
       invitePath: created.invitePath,
+      chargedCredits: NABO_ROOM_CREATE_CREDITS,
+      remainingCredits,
       view: buildNaboRoomView({
         bundle: { room: created.room, responses: [] },
         role: "owner",

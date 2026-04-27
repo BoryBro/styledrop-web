@@ -40,7 +40,9 @@ type KakaoShareSDK = {
 
 const EXTRA = "기타 (직접 입력) ✏️";
 const LOCK_MS = 24 * 60 * 60 * 1000;
-const PREMIUM_ACCESS_CREDITS = 3;
+const NABO_CREATE_CREDITS = 1;
+const BASIC_RESULT_COUNT = 3;
+const FULL_RESULT_COUNT = 5;
 
 // ── 12문항 정의 ───────────────────────────────────────────────────
 const QS = [
@@ -215,7 +217,6 @@ export default function NaboPage() {
   const [slider, setSlider]           = useState(50);
   const [curResp, setCurResp]         = useState<AnsMap>({});
   const [now, setNow]                 = useState(Date.now());
-  const [premiumAccess, setPremiumAccess] = useState(false);
   const [roomCode, setRoomCode]       = useState("");
   const [ownerToken, setOwnerToken]   = useState("");
   const [respondentToken, setRespondentToken] = useState("");
@@ -228,7 +229,6 @@ export default function NaboPage() {
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
-  const [isProcessingPremiumAccess, setIsProcessingPremiumAccess] = useState(false);
   const [isSharingKakao, setIsSharingKakao] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -241,7 +241,6 @@ export default function NaboPage() {
     setMyName(view.ownerName);
     setServerResponseCount(view.responseCount);
     setResultAvailableAfter(view.resultAvailableAfter);
-    setPremiumAccess(view.premiumAccess);
     if (tokens?.ownerToken) setOwnerToken(tokens.ownerToken);
     if (tokens?.respondentToken) setRespondentToken(tokens.respondentToken);
     if (tokens?.invitePath) setInvitePath(tokens.invitePath);
@@ -250,7 +249,6 @@ export default function NaboPage() {
       localStorage.setItem("nabo_room_code", view.roomCode);
       localStorage.setItem("nabo_name", view.ownerName);
       localStorage.setItem("nabo_result_available_after", view.resultAvailableAfter);
-      localStorage.setItem("nabo_premium_access", view.premiumAccess ? "1" : "0");
       if (tokens?.ownerToken) localStorage.setItem("nabo_owner_token", tokens.ownerToken);
       if (tokens?.respondentToken) localStorage.setItem("nabo_respondent_token", tokens.respondentToken);
       if (tokens?.invitePath) localStorage.setItem("nabo_invite_path", tokens.invitePath);
@@ -337,7 +335,7 @@ export default function NaboPage() {
   }, [applyRoomView]);
 
   useEffect(() => {
-    if (!roomCode || !ownerToken || viewerRole !== "owner" || premiumAccess) return;
+    if (!roomCode || !ownerToken || viewerRole !== "owner") return;
 
     let cancelled = false;
     const refreshOwnerRoom = () => {
@@ -364,7 +362,7 @@ export default function NaboPage() {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [applyRoomView, ownerToken, roomCode, viewerRole, premiumAccess]);
+  }, [applyRoomView, ownerToken, roomCode, viewerRole]);
 
   // ── 응답 저장 ─────────────────────────────────────────────────
   useEffect(() => {
@@ -380,7 +378,9 @@ export default function NaboPage() {
       ? createdAt + LOCK_MS
       : 0;
   const timeLeft = resultAvailableTime ? Math.max(0, resultAvailableTime - now) : LOCK_MS;
-  const canSeeResults = timeLeft === 0 && serverResponseCount >= 1;
+  const hasBasicResult = serverResponseCount >= BASIC_RESULT_COUNT;
+  const hasFullResult = serverResponseCount >= FULL_RESULT_COUNT;
+  const canSeeResults = timeLeft === 0 && hasBasicResult;
   const inviteLink = invitePath ? `${shareOrigin}${invitePath}` : `${shareOrigin}/nabo`;
 
   const goTo = useCallback((s: Step) => {
@@ -400,7 +400,7 @@ export default function NaboPage() {
   const handleReset = () => {
     ["nabo_name","nabo_created_at","nabo_responses","nabo_step","nabo_room_code",
      "nabo_owner_token","nabo_respondent_token","nabo_invite_path",
-     "nabo_result_available_after","nabo_premium_access"].forEach(k => {
+     "nabo_result_available_after"].forEach(k => {
       try { localStorage.removeItem(k); } catch {}
     });
     setStep("intro");
@@ -413,7 +413,7 @@ export default function NaboPage() {
     setInvitePath("");
     setResultAvailableAfter("");
     setResponses([]);
-    setPremiumAccess(false);
+    setServerAnswers([]);
     setServerResponseCount(0);
     setCreatedAt(0);
     setViewerRole(null);
@@ -530,37 +530,6 @@ export default function NaboPage() {
     }
   };
 
-  const handlePremiumAccess = async () => {
-    if (!roomCode || !ownerToken || isProcessingPremiumAccess) return;
-
-    setIsProcessingPremiumAccess(true);
-    setErrorMessage("");
-
-    try {
-      const response = await fetch(`/api/nabo/room/${encodeURIComponent(roomCode)}/premium-access`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerToken }),
-      });
-      const payload = await response.json().catch(() => ({}));
-
-      if (!response.ok || !payload?.view) {
-        throw new Error(payload?.error ?? "전체 결과 처리에 실패했습니다.");
-      }
-
-      applyRoomView(payload.view as NaboRoomViewPayload, {
-        ownerToken,
-        invitePath: payload.view.invitePath,
-      });
-      void trackClientEvent("lab_nabo_premium_access");
-      void fetchServerAnswers();
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "전체 결과 처리에 실패했습니다.");
-    } finally {
-      setIsProcessingPremiumAccess(false);
-    }
-  };
-
   // ── 질문 진행 ─────────────────────────────────────────────────
   const Q = QS[qIdx];
   const isSlider  = Q?.type === "slider";
@@ -636,14 +605,16 @@ export default function NaboPage() {
 
   // ── 결과 진입 시 서버 answers 자동 fetch ──────────────────────
   useEffect(() => {
-    if (step === "results" && premiumAccess && serverAnswers.length === 0 && !isFetchingAnswers) {
+    if (step === "results" && canSeeResults && serverAnswers.length === 0 && !isFetchingAnswers) {
       void fetchServerAnswers();
     }
-  }, [step, premiumAccess, serverAnswers.length, isFetchingAnswers, fetchServerAnswers]);
+  }, [step, canSeeResults, serverAnswers.length, isFetchingAnswers, fetchServerAnswers]);
 
   // ── Results data ──────────────────────────────────────────────
   // 우선순위: 서버 answers → 로컬 responses → MOCK(잠금 상태 미리보기용)
-  const R = serverAnswers.length > 0 ? serverAnswers : responses.length > 0 ? responses : MOCK;
+  const actualAnswers = serverAnswers.length > 0 ? serverAnswers : responses;
+  const R = actualAnswers.length > 0 ? actualAnswers : canSeeResults ? [] : MOCK;
+  const reportCount = serverAnswers.length > 0 ? serverAnswers.length : serverResponseCount;
   const chemAvg     = avg("q3", R);
   const funAvg      = avg("q7", R);
   const intimAvg    = avg("q11", R);
@@ -701,13 +672,13 @@ export default function NaboPage() {
               <div className="relative z-10 w-14 h-14 rounded-full flex items-center justify-center text-[24px] shadow-md" style={{ background: G.mid }}>🪞</div>
             </div>
             <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-4" style={{ color: G.mid }}>익명 관계 분석</p>
-            <h1 className="text-[34px] font-black text-gray-900 leading-[1.12] mb-5">나는 5명의 눈에<br />어떻게 보일까?</h1>
+            <h1 className="text-[34px] font-black text-gray-900 leading-[1.12] mb-5">나는 친구들 눈에<br />어떻게 보일까?</h1>
             <p className="text-[16px] text-gray-500 leading-relaxed max-w-[280px]">
-              링크를 5명에게 보내면 익명으로 나를 평가해줘요<br />
-              <span className="text-[14px]" style={{ color: G.text }}>누가 뭐라 했는지는 절대 안 보여요</span>
+              3명이 답하면 기본 결과가 열리고<br />
+              <span className="text-[14px]" style={{ color: G.text }}>5명이 답하면 익명 한마디까지 보여요</span>
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
-              {["완전 익명", "12가지 질문", "24시간 후 공개"].map(tag => (
+              {["3명 기본 공개", "5명 전체 공개", "24시간 후 공개"].map(tag => (
                 <span key={tag} className="text-[12px] font-bold rounded-full px-3 py-1"
                   style={{ background: G.bg, color: G.deep, border: `1px solid ${G.border}` }}>{tag}</span>
               ))}
@@ -718,9 +689,9 @@ export default function NaboPage() {
             <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em]">How it works</p>
             {[
               { num: "01", en: "CREATE",   ko: "링크를 만들어요",        desc: "닉네임을 설정하고\n익명 초대 링크를 생성해요." },
-              { num: "02", en: "SHARE",    ko: "5명에게 보내요",          desc: "친구, 동료, 지인 누구에게나 공유해요.\n누가 참여했는지 절대 알 수 없어요." },
+              { num: "02", en: "SHARE",    ko: "친구에게 보내요",          desc: "친구, 동료, 지인 누구에게나 공유해요.\n3명 이상 모이면 익명성이 더 안전해져요." },
               { num: "03", en: "ANSWER",   ko: "12가지 질문에 답해요",   desc: "첫인상·매력·단점·연애 스타일까지\n솔직하게 답해요." },
-              { num: "04", en: "WAIT 24H", ko: "24시간 후 결과 공개",    desc: "1명이라도 응답하면 24시간 뒤에\n익명 분석 리포트가 열려요." },
+              { num: "04", en: "WAIT 24H", ko: "24시간 후 결과 공개",    desc: "3명부터 기본 결과,\n5명부터 전체 익명 리포트가 열려요." },
             ].map(f => (
               <div key={f.num} className="flex gap-4 items-start">
                 <span className="text-[26px] font-black text-gray-200 leading-none flex-shrink-0 w-10 text-right tabular-nums">{f.num}</span>
@@ -773,8 +744,8 @@ export default function NaboPage() {
             <div className="rounded-2xl p-4 flex gap-3" style={{ background: G.bg, border: `1px solid ${G.border}` }}>
               <span className="text-xl flex-shrink-0">🔒</span>
               <div>
-                <p className="text-[13px] font-black text-gray-900 mb-1">완전 익명 보장</p>
-                <p className="text-[12px] text-gray-500 leading-relaxed">누가 응답했는지 절대 알 수 없어요. 응답자 정보는 수집되지 않아요.</p>
+                <p className="text-[13px] font-black text-gray-900 mb-1">익명 보호 기준</p>
+                <p className="text-[12px] text-gray-500 leading-relaxed">응답이 적으면 누군지 추측될 수 있어요. 그래서 3명부터 결과를 열어요.</p>
               </div>
             </div>
 
@@ -789,7 +760,7 @@ export default function NaboPage() {
             <button onClick={() => myName.trim() && void createRoom()}
               className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]"
               style={{ background: myName.trim() && !isCreatingRoom ? "#111" : "#F3F4F6", color: myName.trim() && !isCreatingRoom ? "#fff" : "#9CA3AF" }}>
-              {isCreatingRoom ? "링크 만드는 중..." : "초대 링크 생성 →"}
+              {isCreatingRoom ? "링크 만드는 중..." : `${NABO_CREATE_CREDITS}크레딧으로 링크 생성 →`}
             </button>
             {!myName.trim() && <p className="text-center text-[12px] text-gray-400 mt-2">닉네임을 입력해주세요</p>}
           </div>
@@ -802,7 +773,7 @@ export default function NaboPage() {
           <section className="px-6 pt-10 pb-6">
             <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-3" style={{ color: G.mid }}>Step 2 · 링크 공유</p>
             <h2 className="text-[28px] font-black text-gray-900 leading-tight mb-2">{myName}의 링크가<br />생성됐어요!</h2>
-            <p className="text-[14px] text-gray-500">5명에게 보낼수록 더 정확한 분석 결과가 나와요</p>
+            <p className="text-[14px] text-gray-500">3명부터 기본 결과, 5명부터 전체 결과가 열려요</p>
           </section>
           <section className="px-6 flex flex-col gap-4 pb-6">
             <div className="rounded-2xl p-4 flex items-center gap-3" style={{ border: `1px solid ${G.border}`, background: G.bg }}>
@@ -834,9 +805,10 @@ export default function NaboPage() {
               <p className="text-[13px] font-black text-gray-900 mb-3">결과 공개 조건</p>
               <div className="flex flex-col gap-2.5">
                 {[
-                  { icon: "👥", text: "5명에게 링크를 공유하세요" },
-                  { icon: "⏰", text: "1명이라도 응답하면 24시간 후 결과가 열려요" },
-                  { icon: "🔒", text: "누가 뭐라 했는지 절대 알 수 없어요" },
+                  { icon: "👥", text: "3명이 답하면 기본 결과가 열려요" },
+                  { icon: "🔓", text: "5명이 답하면 익명 한마디까지 보여요" },
+                  { icon: "⏰", text: "결과는 24시간 후 확인할 수 있어요" },
+                  { icon: "🔒", text: "응답이 적을 땐 추측 방지를 위해 일부를 숨겨요" },
                 ].map(({ icon, text }) => (
                   <div key={text} className="flex items-center gap-2.5">
                     <span className="text-base flex-shrink-0">{icon}</span>
@@ -861,24 +833,25 @@ export default function NaboPage() {
           <div>
             <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-3" style={{ color: G.mid }}>대기 중</p>
             <h2 className="text-[28px] font-black text-gray-900 leading-tight mb-1">응답을 기다리는 중</h2>
-            <p className="text-[14px] text-gray-500">1명 이상 응답 + 24시간이 지나면 결과가 열려요</p>
+            <p className="text-[14px] text-gray-500">3명부터 기본 결과, 5명부터 전체 결과가 열려요</p>
           </div>
 
           <div className="rounded-3xl p-5" style={{ background: G.bg, border: `1px solid ${G.border}` }}>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[13px] font-black text-gray-900">현재 응답 현황</p>
-              <p className="text-[26px] font-black" style={{ color: G.mid }}>{responseCount}<span className="text-[16px] text-gray-400"> / 5</span></p>
+              <p className="text-[26px] font-black" style={{ color: G.mid }}>{responseCount}<span className="text-[16px] text-gray-400"> / {FULL_RESULT_COUNT}</span></p>
             </div>
             <div className="flex gap-2 mb-3">
-              {[0,1,2,3,4].map(i => (
+              {Array.from({ length: FULL_RESULT_COUNT }).map((_, i) => (
                 <div key={i} className="flex-1 h-2.5 rounded-full transition-all duration-500"
                   style={{ background: i < responseCount ? G.mid : G.light }} />
               ))}
             </div>
             <p className="text-[12px] text-gray-400">
               {responseCount === 0 && "아직 아무도 응답하지 않았어요"}
-              {responseCount > 0 && responseCount < 5 && `${responseCount}명이 응답했어요`}
-              {responseCount >= 5 && "5명 모두 응답 완료!"}
+              {responseCount > 0 && responseCount < BASIC_RESULT_COUNT && `${responseCount}명이 응답했어요 · 기본 결과까지 ${BASIC_RESULT_COUNT - responseCount}명 남았어요`}
+              {responseCount >= BASIC_RESULT_COUNT && responseCount < FULL_RESULT_COUNT && `기본 결과 조건 달성 · 전체 결과까지 ${FULL_RESULT_COUNT - responseCount}명 남았어요`}
+              {responseCount >= FULL_RESULT_COUNT && "전체 결과 조건 달성!"}
             </p>
           </div>
 
@@ -890,7 +863,7 @@ export default function NaboPage() {
                   {fmtCountdown(timeLeft)}
                 </p>
                 <p className="text-[12px] text-gray-400 mt-2">
-                  {responseCount === 0 ? "응답이 1건 이상 있어야 공개돼요" : `${responseCount}명 응답 완료 · 시간이 지나면 자동으로 열려요`}
+                  {responseCount < BASIC_RESULT_COUNT ? "기본 결과는 3명 이상 응답해야 공개돼요" : `${responseCount}명 응답 완료 · 시간이 지나면 자동으로 열려요`}
                 </p>
               </>
             ) : (
@@ -898,7 +871,9 @@ export default function NaboPage() {
                 <span className="text-3xl">🎉</span>
                 <div>
                   <p className="text-[16px] font-black text-gray-900">24시간 완료!</p>
-                  <p className="text-[12px] text-gray-500">아래 버튼으로 결과를 확인해요</p>
+                  <p className="text-[12px] text-gray-500">
+                    {hasBasicResult ? "아래 버튼으로 결과를 확인해요" : "3명 이상 응답하면 결과가 열려요"}
+                  </p>
                 </div>
               </div>
             )}
@@ -912,15 +887,11 @@ export default function NaboPage() {
             </button>
           )}
 
-          <div className="rounded-2xl border border-gray-200 bg-white px-5 py-5">
-            <p className="text-[13px] font-black text-gray-900 mb-1">응답자로 직접 체험</p>
-            <p className="text-[12px] text-gray-500 mb-3">링크를 받은 사람의 경험을 직접 해볼 수 있어요</p>
-            <button
-              onClick={() => { setQIdx(0); setCurAns(""); setCustomAns(""); setSlider(50); setCurResp({}); goTo("questions"); }}
-              className="w-full py-3 rounded-xl font-bold text-[14px] border-2 transition-all active:scale-[0.98]"
-              style={{ borderColor: G.mid, color: G.text, background: G.bg }}>
-              12문항 직접 체험 → ({responses.length + 1}번째 응답)
-            </button>
+          <div className="rounded-2xl border border-gray-100 bg-gray-50 px-5 py-5">
+            <p className="text-[13px] font-black text-gray-900 mb-1">왜 3명부터 열리나요?</p>
+            <p className="text-[12px] text-gray-500 leading-relaxed">
+              1명이나 2명 응답은 누가 썼는지 쉽게 추측될 수 있어요. 익명성을 지키기 위해 기본 결과도 3명부터 공개해요.
+            </p>
           </div>
         </div>
       )}
@@ -1023,8 +994,8 @@ export default function NaboPage() {
         <div className="flex flex-col pb-16">
           <section className="px-6 pt-10 pb-6 text-center">
             <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-3" style={{ color: G.mid }}>관계 분석 완료</p>
-            <h2 className="text-[28px] font-black text-gray-900 leading-tight mb-1">{serverResponseCount}명이 본 {myName}</h2>
-            <p className="text-[13px] text-gray-400">익명 응답자 {serverResponseCount}명 기준 · {new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}</p>
+            <h2 className="text-[28px] font-black text-gray-900 leading-tight mb-1">{reportCount}명이 본 {myName}</h2>
+            <p className="text-[13px] text-gray-400">익명 응답자 {reportCount}명 기준 · {new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}</p>
           </section>
 
           {/* ── 종합 점수 (항상 공개) ── */}
@@ -1060,13 +1031,12 @@ export default function NaboPage() {
           </section>
 
           {/* ── 상세 결과 공개 상태 ── */}
-          {isFetchingAnswers && (
+          {isFetchingAnswers && actualAnswers.length === 0 ? (
             <div className="mx-6 mb-4 flex items-center justify-center gap-3 py-10">
               <div className="w-6 h-6 rounded-full border-2 border-gray-200 border-t-green-500 animate-spin" />
               <span className="text-[14px] text-gray-500 font-semibold">응답 데이터 불러오는 중...</span>
             </div>
-          )}
-          {premiumAccess && !isFetchingAnswers ? (
+          ) : (
             <>
               {/* 첫인상 전체 분포 */}
               <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
@@ -1099,43 +1069,71 @@ export default function NaboPage() {
                 ))}
               </section>
 
-              {/* 의외의 매력 */}
-              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">🌟 발견된 의외의 매력</p>
-                <div className="flex flex-col gap-3">
-                  {charms.map((c, i) => (
-                    <div key={i} className="rounded-xl px-4 py-3 text-[14px] text-gray-700 leading-relaxed" style={{ background: G.bg }}>&ldquo;{c}&rdquo;</div>
-                  ))}
-                </div>
-              </section>
-
-              {/* 아쉬운 점 */}
-              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">😅 아쉬운 점</p>
-                <div className="flex flex-col gap-3">
-                  {annoyances.map((a, i) => (
-                    <div key={i} className="rounded-xl px-4 py-3 text-[14px] text-gray-700 leading-relaxed border border-gray-100">{a}</div>
-                  ))}
-                </div>
-              </section>
-
-              {/* 익명 한마디 */}
-              <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">✉️ 익명의 한마디</p>
-                <div className="flex flex-col gap-2">
-                  {messages.map((msg, i) => (
-                    <div key={i} className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-                      <p className="text-[14px] text-gray-800 leading-relaxed italic">&ldquo;{msg}&rdquo;</p>
-                      <p className="text-[11px] text-gray-400 mt-1">— 익명</p>
+              {hasFullResult ? (
+                <>
+                  {/* 의외의 매력 */}
+                  <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">🌟 발견된 의외의 매력</p>
+                    <div className="flex flex-col gap-3">
+                      {charms.map((c, i) => (
+                        <div key={i} className="rounded-xl px-4 py-3 text-[14px] text-gray-700 leading-relaxed" style={{ background: G.bg }}>&ldquo;{c}&rdquo;</div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </section>
+                  </section>
 
-              <div className="px-6">
+                  {/* 아쉬운 점 */}
+                  <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">😅 아쉬운 점</p>
+                    <div className="flex flex-col gap-3">
+                      {annoyances.map((a, i) => (
+                        <div key={i} className="rounded-xl px-4 py-3 text-[14px] text-gray-700 leading-relaxed border border-gray-100">{a}</div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* 익명 한마디 */}
+                  <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">✉️ 익명의 한마디</p>
+                    <div className="flex flex-col gap-2">
+                      {messages.map((msg, i) => (
+                        <div key={i} className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+                          <p className="text-[14px] text-gray-800 leading-relaxed italic">&ldquo;{msg}&rdquo;</p>
+                          <p className="text-[11px] text-gray-400 mt-1">— 익명</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              ) : (
+                <section className="mx-6 mb-4 rounded-3xl overflow-hidden" style={{ background: "linear-gradient(135deg, #052e16 0%, #14532d 100%)", border: `1px solid ${G.dark}` }}>
+                  <div className="px-6 py-7 flex flex-col items-center text-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                      🔒
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black tracking-[0.25em] uppercase mb-2" style={{ color: G.mid }}>익명 보호 중</p>
+                      <p className="text-[22px] font-black text-white leading-tight mb-2">전체 결과는 5명부터</p>
+                      <p className="text-[13px] leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
+                        의외의 매력 · 아쉬운 점 · 익명 한마디는<br />
+                        누가 썼는지 추측될 수 있어 아직 숨겨둘게요.
+                      </p>
+                    </div>
+                    <button
+                      onClick={copyLink}
+                      className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]"
+                      style={{ background: G.mid, color: "white" }}
+                    >
+                      친구 더 초대하기
+                    </button>
+                    <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>{FULL_RESULT_COUNT - responseCount}명만 더 답하면 전체 결과가 열려요</p>
+                  </div>
+                </section>
+              )}
+
+              <div className="px-6 mb-4">
                 <button
                   onClick={() => {
-                    const text = `나는 ${serverResponseCount}명의 눈에 이렇게 보였어요! 익명 관계 분석 →`;
+                    const text = `나는 ${reportCount}명의 눈에 이렇게 보였어요! 익명 관계 분석 →`;
                     if (navigator.share) {
                       navigator.share({ title: `${myName}의 관계 분석 결과`, text, url: `${shareOrigin}/nabo` }).catch(() => {});
                     } else {
@@ -1147,74 +1145,6 @@ export default function NaboPage() {
                   결과 공유하기
                 </button>
               </div>
-            </>
-          ) : !premiumAccess ? (
-            /* ── 잠금 상태 ── */
-            <>
-              {/* 흐릿한 미리보기 */}
-              <section className="mx-6 mb-4 relative overflow-hidden rounded-2xl border border-gray-100">
-                <div className="blur-[3px] select-none pointer-events-none px-5 py-5" aria-hidden>
-                  <p className="text-[11px] font-black text-gray-400 mb-4">💎 핵심 매력 분포</p>
-                  <div className="flex flex-col gap-3">
-                    {charmDist.slice(0, 3).map(([label, cnt]) => <BarRow key={label} label={label} count={cnt} total={R.length} />)}
-                  </div>
-                </div>
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px]" />
-              </section>
-
-              <section className="mx-6 mb-4 grid grid-cols-2 gap-3 relative overflow-hidden">
-                {[
-                  { title: "동물 유형",   val: topAnimal.split(" (")[0],   emoji: "🐾" },
-                  { title: "연애 스타일", val: "•  •  •",                   emoji: "💘" },
-                ].map(({ title, val, emoji }) => (
-                  <div key={title} className="rounded-2xl border border-gray-100 bg-white px-4 py-4 blur-[2px] select-none" aria-hidden>
-                    <p className="text-[10px] font-bold text-gray-400 mb-1">{emoji} {title}</p>
-                    <p className="text-[13px] font-black text-gray-900 leading-tight">{val}</p>
-                  </div>
-                ))}
-              </section>
-
-              <section className="mx-6 mb-4 relative overflow-hidden rounded-2xl border border-gray-100">
-                <div className="blur-[3px] select-none pointer-events-none px-5 py-5" aria-hidden>
-                  <p className="text-[11px] font-black text-gray-400 mb-3">✉️ 익명의 한마디</p>
-                  <div className="flex flex-col gap-2">
-                    {[0,1].map(i => (
-                      <div key={i} className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-                        <p className="text-[14px] text-gray-800 italic">&ldquo;████ █████ ████ ██&rdquo;</p>
-                        <p className="text-[11px] text-gray-400 mt-1">— 익명</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px]" />
-              </section>
-
-              {/* 전체결과 보기 CTA */}
-              <section className="mx-6 mb-4 rounded-3xl overflow-hidden" style={{ background: "linear-gradient(135deg, #052e16 0%, #14532d 100%)", border: `1px solid ${G.dark}` }}>
-                <div className="px-6 py-7 flex flex-col items-center text-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)" }}>
-                    🔓
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-black tracking-[0.25em] uppercase mb-2" style={{ color: G.mid }}>Full Report</p>
-                    <p className="text-[22px] font-black text-white leading-tight mb-2">전체 결과 보기</p>
-                    <p className="text-[13px] leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
-                      핵심 매력 분포 · 유형 카드 4종<br />
-                      의외의 매력 · 아쉬운 점 전체<br />
-                      익명 한마디 전체
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => void handlePremiumAccess()}
-                    disabled={isProcessingPremiumAccess}
-                    className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97] disabled:opacity-60"
-                    style={{ background: G.mid, color: "white" }}
-                  >
-                    {isProcessingPremiumAccess ? "처리 중..." : `${PREMIUM_ACCESS_CREDITS}크레딧으로 전체 결과 열기`}
-                  </button>
-                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>1회 결제로 모든 항목이 열려요</p>
-                </div>
-              </section>
 
               <div className="mx-6 mb-8">
                 <button
@@ -1226,7 +1156,7 @@ export default function NaboPage() {
                 </button>
               </div>
             </>
-          ) : null}
+          )}
         </div>
       )}
     </main>
