@@ -1014,6 +1014,7 @@ export default function NaboPredictPage() {
   const [shareNotice, setShareNotice] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [analysisIndex, setAnalysisIndex] = useState(0);
+  const [isResultSaved, setIsResultSaved] = useState(false);
   const savedResultSessionRef = useRef("");
   const senderName = ownerName.trim() || "나";
   const activeRelationship = sharePayload?.relationshipType ?? relationshipType;
@@ -1066,6 +1067,7 @@ export default function NaboPredictPage() {
             setActualAnswers(toAnswerMap(stored.actualAnswers));
             setQuestionIndex(0);
             savedResultSessionRef.current = restoredPayload.sessionId;
+            setIsResultSaved(true);
             setStep("result");
           })
           .catch(() => {
@@ -1089,6 +1091,7 @@ export default function NaboPredictPage() {
       setRelationshipType(decoded.relationshipType ?? DEFAULT_RELATIONSHIP);
       setPredictionAnswers(decoded.predictions);
       setActualAnswers({});
+      setIsResultSaved(false);
       setQuestionIndex(0);
       setStep("answerIntro");
     }, 0);
@@ -1118,6 +1121,11 @@ export default function NaboPredictPage() {
     return `${shareOrigin}/nabo-predict?data=${encodeURIComponent(encodePayload(sharePayload))}`;
   }, [shareOrigin, sharePayload]);
 
+  const resultShareLink = useMemo(() => {
+    if (!sharePayload) return "";
+    return `${shareOrigin}/nabo-predict?result=${encodeURIComponent(sharePayload.sessionId)}`;
+  }, [shareOrigin, sharePayload]);
+
   const result = useMemo(() => {
     if (!sharePayload || Object.keys(actualAnswers).length < getQuestions(sharePayload.relationshipType).length) return null;
     return buildResult(sharePayload, actualAnswers);
@@ -1125,8 +1133,12 @@ export default function NaboPredictPage() {
 
   useEffect(() => {
     if (step !== "result" || !sharePayload || !result) return;
-    if (savedResultSessionRef.current === sharePayload.sessionId) return;
+    if (savedResultSessionRef.current === sharePayload.sessionId) {
+      setIsResultSaved(true);
+      return;
+    }
     savedResultSessionRef.current = sharePayload.sessionId;
+    setIsResultSaved(false);
 
     fetch("/api/nabo-predict/result", {
       method: "POST",
@@ -1137,6 +1149,7 @@ export default function NaboPredictPage() {
       .then(({ ok, payload }) => {
         if (!ok || !payload?.resultPath || typeof window === "undefined") return;
         window.history.replaceState(null, "", String(payload.resultPath));
+        setIsResultSaved(true);
       })
       .catch(() => undefined);
   }, [actualAnswers, result, sharePayload, step]);
@@ -1166,6 +1179,7 @@ export default function NaboPredictPage() {
     setSharePayload(null);
     setShareNotice("");
     setIsSharingKakao(false);
+    setIsResultSaved(false);
     setCopied(false);
     setErrorMessage("");
     if (typeof window !== "undefined") {
@@ -1251,8 +1265,9 @@ export default function NaboPredictPage() {
     window.setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleKakaoShare = async () => {
-    if (!inviteLink || isSharingKakao) return;
+  const handleKakaoShare = async (mode: "invite" | "result" = "invite") => {
+    const shareLink = mode === "result" ? resultShareLink : inviteLink;
+    if (!shareLink || isSharingKakao) return;
     setIsSharingKakao(true);
     setShareNotice("");
 
@@ -1268,17 +1283,19 @@ export default function NaboPredictPage() {
 
       sendDefault({
         objectType: "text",
-        text: `${senderName}님이 ${friendName}님의 행동을 예측했어요.\n8개 질문에 답하고 얼마나 맞았는지 확인해보세요.`,
+        text: mode === "result"
+          ? `${senderName}님과 ${friendName}님의 예측 결과가 나왔어요.\n${result ? `${result.exactCount}/${result.totalCount}개가 일치했어요. ` : ""}링크에서 바로 확인해보세요.`
+          : `${senderName}님이 ${friendName}님의 행동을 예측했어요.\n8개 질문에 답하고 얼마나 맞았는지 확인해보세요.`,
         link: {
-          mobileWebUrl: inviteLink,
-          webUrl: inviteLink,
+          mobileWebUrl: shareLink,
+          webUrl: shareLink,
         },
       });
       setShareNotice("카카오톡 공유창을 열었어요.");
     } catch {
-      await navigator.clipboard?.writeText(inviteLink).catch(() => {});
+      await navigator.clipboard?.writeText(shareLink).catch(() => {});
       setCopied(true);
-      setShareNotice("카카오 공유가 어려워서 링크를 복사했어요.");
+      setShareNotice(mode === "result" ? "카카오 공유가 어려워서 결과 링크를 복사했어요." : "카카오 공유가 어려워서 링크를 복사했어요.");
       window.setTimeout(() => setCopied(false), 2000);
     } finally {
       window.setTimeout(() => setIsSharingKakao(false), 1200);
@@ -1735,6 +1752,16 @@ export default function NaboPredictPage() {
           >
             나도 해보기
           </button>
+          <button
+            type="button"
+            onClick={() => void handleKakaoShare("result")}
+            disabled={!resultShareLink || !isResultSaved || isSharingKakao}
+            className="w-full rounded-2xl py-4 text-[16px] font-black transition-all active:scale-[0.97] disabled:opacity-60"
+            style={{ background: "#FEE500", color: "#191919" }}
+          >
+            {!isResultSaved ? "결과 링크 준비 중..." : isSharingKakao ? "카카오 여는 중..." : "결과 친구에게 보내기"}
+          </button>
+          {shareNotice && <p className="text-center text-[12px] font-bold text-gray-400">{shareNotice}</p>}
         </div>
       )}
 
