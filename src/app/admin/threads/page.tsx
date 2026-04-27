@@ -1094,39 +1094,39 @@ export default function ThreadsAdminPage() {
                 </div>
               )}
               {post.status !== "published" && (
-                <div className="flex flex-wrap gap-2 border-t border-[#E5E7EB] pt-3">
+                <div className="border-t border-[#E5E7EB] pt-3">
                   {isEditing ? (
-                    <>
+                    <div className="grid grid-cols-2 gap-2">
                       <button onClick={() => void saveEdit(post)} disabled={busy || editOver}
-                        className="flex-1 rounded-md bg-[#273142] px-3 py-2 text-[13px] font-black text-white disabled:opacity-40">저장</button>
+                        className="h-10 rounded-lg bg-[#273142] px-3 text-[12px] font-black text-white transition-colors hover:bg-[#1F2937] disabled:opacity-40">저장</button>
                       <button onClick={() => { setEditingPostId(null); setEditDraft({ content: "" }); }} disabled={busy}
-                        className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[13px] font-black text-[#4B5563] disabled:opacity-40">취소</button>
-                    </>
+                        className="h-10 rounded-lg border border-[#D1D5DB] bg-white px-3 text-[12px] font-black text-[#4B5563] transition-colors hover:bg-[#F9FAFB] disabled:opacity-40">취소</button>
+                    </div>
                   ) : (
-                    <>
+                    <div className="grid grid-cols-5 gap-1.5">
                       <button onClick={() => startEdit(post)} disabled={busy}
-                        className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[13px] font-black text-[#4B5563] disabled:opacity-40">수정</button>
+                        className="h-10 min-w-0 rounded-lg border border-[#D1D5DB] bg-white px-1 text-[11px] font-black text-[#4B5563] transition-colors hover:bg-[#F9FAFB] disabled:opacity-40">수정</button>
                       <button onClick={() => void toggleStudioLink(post)} disabled={busy}
-                        className="rounded-md border border-[#D1D5DB] bg-white px-3 py-2 text-[13px] font-black disabled:opacity-40"
+                        className="h-10 min-w-0 rounded-lg border border-[#D1D5DB] bg-white px-1 text-[11px] font-black transition-colors hover:bg-[#F9FAFB] disabled:opacity-40"
                         style={{ color: linkOn ? "#15803D" : "#4B5563" }}>
-                        링크 {linkOn ? "ON" : "OFF"}
+                        {linkOn ? "링크ON" : "링크OFF"}
                       </button>
                       {(post.status === "draft" || post.status === "approved") && (
                         <button onClick={() => void approve(post.id)} disabled={busy || (post.status === "draft" && (missingRequiredImage || scheduledPassed))}
-                          className="flex-1 rounded-md py-2 text-[13px] font-black disabled:opacity-40"
+                          className="h-10 min-w-0 rounded-lg px-1 text-[11px] font-black transition-colors disabled:opacity-40"
                           style={{ background: post.status === "approved" ? "#F3F4F6" : "#6ED26A", color: post.status === "approved" ? "#6B7280" : "#111827", border: post.status === "approved" ? "1px solid #D1D5DB" : "none" }}>
-                          {post.status === "draft" && missingRequiredImage ? "이미지 필요" : post.status === "draft" && scheduledPassed ? "시간 지남" : post.status === "approved" ? "승인취소" : "✓ 승인"}
+                          {post.status === "draft" && missingRequiredImage ? "이미지" : post.status === "draft" && scheduledPassed ? "지남" : post.status === "approved" ? "승인취소" : "승인"}
                         </button>
                       )}
                       {(post.status === "approved" || post.status === "failed") && (
                         <button onClick={() => void publish(post.id, post.status === "failed")} disabled={busy || missingRequiredImage}
-                          className="flex-1 rounded-md bg-[#273142] py-2 text-[13px] font-black text-white disabled:opacity-40">
-                          {missingRequiredImage ? "이미지 필요" : busy ? (post.status === "failed" ? "재시도 중..." : "발행 중...") : post.status === "failed" ? "재시도 →" : "지금 발행 →"}
+                          className="h-10 min-w-0 rounded-lg bg-[#273142] px-1 text-[11px] font-black text-white transition-colors hover:bg-[#1F2937] disabled:opacity-40">
+                          {missingRequiredImage ? "이미지" : busy ? (post.status === "failed" ? "재시도중" : "발행중") : post.status === "failed" ? "재시도" : "발행"}
                         </button>
                       )}
                       <button onClick={() => void del(post.id)} disabled={busy}
-                        className="rounded-md px-4 py-2 text-[13px] font-black text-red-500 disabled:opacity-40">삭제</button>
-                    </>
+                        className="h-10 min-w-0 rounded-lg border border-transparent px-1 text-[11px] font-black text-red-500 transition-colors hover:bg-red-50 disabled:opacity-40">삭제</button>
+                    </div>
                   )}
                 </div>
               )}
