@@ -759,6 +759,7 @@ function TravelTogetherPageContent() {
   }, []);
 
   const resetRoomSession = useCallback((clearNames = false) => {
+    try { localStorage.removeItem("travel_together_state"); } catch {}
     setRoomId("");
     setParticipantToken("");
     setParticipantRole(null);
@@ -995,6 +996,16 @@ function TravelTogetherPageContent() {
     resetRoomSession(true);
     goTo("setup");
   };
+
+  const handleResetAll = useCallback(() => {
+    resetRoomSession(true);
+    setAgreed(false);
+    setHistory(["intro"]);
+    setStep("intro");
+    setResultAnalysisMode(null);
+    resultAnalysisCompleteRef.current = null;
+    router.replace("/travel-together");
+  }, [resetRoomSession, router]);
 
   const handleViewResults = useCallback(() => {
     startResultAnalysis("basic", () => goTo("results"));
@@ -1586,6 +1597,14 @@ function TravelTogetherPageContent() {
             >
               대기 화면으로
             </button>
+
+            <button
+              type="button"
+              onClick={handleResetAll}
+              className="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-[15px] font-black text-gray-500 transition-all active:scale-[0.98]"
+            >
+              새로 시작하기
+            </button>
           </section>
         </div>
       )}
@@ -1651,6 +1670,14 @@ function TravelTogetherPageContent() {
               </button>
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={handleResetAll}
+            className="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-[15px] font-black text-gray-500 transition-all active:scale-[0.98]"
+          >
+            새로 시작하기
+          </button>
         </div>
       )}
 
@@ -1921,6 +1948,16 @@ function TravelTogetherPageContent() {
               </section>
             </>
           )}
+
+          <section className="mx-6 mt-2">
+            <button
+              type="button"
+              onClick={handleResetAll}
+              className="w-full py-4 rounded-2xl border border-gray-200 bg-white text-[16px] font-black text-gray-500 transition-all active:scale-[0.98]"
+            >
+              새로 시작하기
+            </button>
+          </section>
         </div>
       )}
     </main>

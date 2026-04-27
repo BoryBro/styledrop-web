@@ -1475,6 +1475,13 @@ export default function NaboPredictPage() {
             >
               {copied ? "링크 복사됨" : "링크 복사하기"}
             </button>
+            <button
+              type="button"
+              onClick={resetAll}
+              className="w-full max-w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-[15px] font-black text-gray-500 transition-all active:scale-[0.98]"
+            >
+              새로 시작하기
+            </button>
             <div className="rounded-2xl px-4 py-4" style={{ background: P.bg, border: `1px solid ${P.border}` }}>
               <p className="text-[13px] font-black text-gray-900">상대는 로그인 없이 바로 참여할 수 있어요</p>
               <p className="mt-1 text-[12px] leading-relaxed text-gray-500">

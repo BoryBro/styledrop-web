@@ -402,10 +402,19 @@ export default function NaboPage() {
      "nabo_result_available_after"].forEach(k => {
       try { localStorage.removeItem(k); } catch {}
     });
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", "/nabo");
+    }
     setStep("intro");
     setStepHistory(["intro"]);
     setMyName("");
     setAgreed(false);
+    setCopied(false);
+    setQIdx(0);
+    setCurAns("");
+    setCustomAns("");
+    setSlider(50);
+    setCurResp({});
     setRoomCode("");
     setOwnerToken("");
     setRespondentToken("");
@@ -416,6 +425,7 @@ export default function NaboPage() {
     setServerResponseCount(0);
     setCreatedAt(0);
     setViewerRole(null);
+    setErrorMessage("");
   };
 
   const createRoom = async () => {
@@ -822,6 +832,14 @@ export default function NaboPage() {
               style={{ background: "#111", color: "#fff" }}>
               응답 대기 화면으로 →
             </button>
+
+            <button
+              type="button"
+              onClick={handleReset}
+              className="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-[15px] font-black text-gray-500 transition-all active:scale-[0.98]"
+            >
+              새로 시작하기
+            </button>
           </section>
         </div>
       )}
@@ -892,6 +910,14 @@ export default function NaboPage() {
               1명이나 2명 응답은 누가 썼는지 쉽게 추측될 수 있어요. 익명성을 지키기 위해 기본 결과도 3명부터 공개해요.
             </p>
           </div>
+
+          <button
+            type="button"
+            onClick={handleReset}
+            className="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-[15px] font-black text-gray-500 transition-all active:scale-[0.98]"
+          >
+            새로 시작하기
+          </button>
         </div>
       )}
 
