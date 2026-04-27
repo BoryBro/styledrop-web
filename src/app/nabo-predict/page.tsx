@@ -30,6 +30,7 @@ type Step =
 
 type TraitKey = "steady" | "spark" | "care" | "logic" | "direct" | "quiet";
 type AnswerMap = Record<string, string>;
+type RelationshipType = "friend" | "lover" | "crush" | "family" | "acquaintance";
 
 type Choice = {
   id: string;
@@ -51,6 +52,7 @@ type InvitePayload = {
   version: 1;
   ownerName: string;
   targetName: string;
+  relationshipType?: RelationshipType;
   predictions: AnswerMap;
   createdAt: number;
   sessionId: string;
@@ -126,112 +128,453 @@ const TRAITS: Record<TraitKey, { label: string; title: string; copy: string }> =
   },
 };
 
-const QUESTIONS: Question[] = [
+const DEFAULT_RELATIONSHIP: RelationshipType = "friend";
+
+const RELATIONSHIPS: Record<RelationshipType, { label: string; targetLabel: string; helper: string; answerBadge: string }> = {
+  friend: {
+    label: "친구",
+    targetLabel: "친구 이름",
+    helper: "찐친만 아는 습관과 반응을 맞혀요.",
+    answerBadge: "친구",
+  },
+  lover: {
+    label: "연인",
+    targetLabel: "연인 이름",
+    helper: "서운함, 애정표현, 연락 스타일을 맞혀요.",
+    answerBadge: "연인",
+  },
+  crush: {
+    label: "썸",
+    targetLabel: "상대 이름",
+    helper: "호감 신호와 애매한 반응을 맞혀요.",
+    answerBadge: "썸",
+  },
+  family: {
+    label: "가족",
+    targetLabel: "가족 이름",
+    helper: "집에서만 보이는 생활 패턴을 맞혀요.",
+    answerBadge: "가족",
+  },
+  acquaintance: {
+    label: "직장/학교 지인",
+    targetLabel: "지인 이름",
+    helper: "사회적 모습과 실제 성향 차이를 맞혀요.",
+    answerBadge: "지인",
+  },
+};
+
+const QUESTION_BANK: Record<RelationshipType, Question[]> = {
+  friend: [
   {
     id: "q1",
     mark: "01",
-    short: "빈 시간",
-    category: "예상 밖 상황",
-    text: (name) => `${name}님은 약속이 갑자기 취소되면?`,
+    short: "연락 잠수",
+    category: "친구 패턴",
+    text: (name) => `${name}님이 갑자기 연락이 뜸해졌다면?`,
     options: [
-      { id: "rest", label: "집에서 조용히 쉰다", trait: "steady", summary: "쉬는 쪽" },
-      { id: "reroute", label: "바로 다른 약속을 잡는다", trait: "spark", summary: "다른 약속" },
-      { id: "solo", label: "혼자 가고 싶던 곳을 간다", trait: "quiet", summary: "혼자 이동" },
-      { id: "organize", label: "밀린 일을 정리한다", trait: "logic", summary: "정리 모드" },
+      { id: "charge", label: "혼자 충전 중이다", trait: "quiet", summary: "혼자 충전" },
+      { id: "busy", label: "진짜 바빠서 정신없다", trait: "logic", summary: "바쁨" },
+      { id: "hurt", label: "은근히 서운한 게 있다", trait: "care", summary: "서운함" },
+      { id: "forgot", label: "그냥 답장 타이밍을 놓쳤다", trait: "steady", summary: "타이밍 놓침" },
     ],
   },
   {
     id: "q2",
     mark: "02",
-    short: "메뉴 결정",
-    category: "선택 방식",
-    text: (name) => `${name}님은 메뉴를 못 정할 때?`,
+    short: "찐 삐짐",
+    category: "감정 표현",
+    text: (name) => `${name}님이 진짜 삐졌을 때 가장 티 나는 건?`,
     options: [
-      { id: "same", label: "늘 먹던 안전한 메뉴를 고른다", trait: "steady", summary: "안전한 선택" },
-      { id: "new", label: "처음 보는 메뉴를 시도한다", trait: "spark", summary: "새로운 선택" },
-      { id: "other", label: "상대가 먹고 싶은 걸 먼저 묻는다", trait: "care", summary: "상대 우선" },
-      { id: "review", label: "후기와 평점을 빠르게 본다", trait: "logic", summary: "후기 확인" },
+      { id: "quiet", label: "말수가 확 줄어든다", trait: "quiet", summary: "말수 줄어듦" },
+      { id: "late", label: "답장이 갑자기 느려진다", trait: "steady", summary: "답장 느려짐" },
+      { id: "fine", label: "괜찮다고 하는데 안 괜찮다", trait: "care", summary: "괜찮은 척" },
+      { id: "direct", label: "그 자리에서 바로 말한다", trait: "direct", summary: "바로 말함" },
     ],
   },
   {
     id: "q3",
     mark: "03",
-    short: "기분 상함",
-    category: "감정 표현",
-    text: (name) => `${name}님은 기분이 상하면?`,
+    short: "단톡방 역할",
+    category: "친구 무리",
+    text: (name) => `${name}님은 단톡방에서 보통 어떤 쪽?`,
     options: [
-      { id: "say", label: "바로 말한다", trait: "direct", summary: "바로 말함" },
-      { id: "cool", label: "티 안 내고 혼자 정리한다", trait: "quiet", summary: "혼자 정리" },
-      { id: "soft", label: "분위기 상하지 않게 돌려 말한다", trait: "care", summary: "부드럽게 말함" },
-      { id: "reason", label: "왜 그랬는지 먼저 따져본다", trait: "logic", summary: "이유 확인" },
+      { id: "react", label: "리액션으로 살린다", trait: "care", summary: "리액션 담당" },
+      { id: "watch", label: "조용히 다 보고 있다", trait: "quiet", summary: "관전" },
+      { id: "mood", label: "분위기를 띄운다", trait: "spark", summary: "분위기 담당" },
+      { id: "need", label: "필요한 말만 한다", trait: "logic", summary: "필요한 말" },
     ],
   },
   {
     id: "q4",
     mark: "04",
-    short: "답장",
-    category: "연락 패턴",
-    text: (name) => `${name}님은 메시지 답장이 늦어졌을 때?`,
+    short: "칭찬 포인트",
+    category: "자존감 버튼",
+    text: (name) => `${name}님이 은근 제일 좋아할 칭찬은?`,
     options: [
-      { id: "explain", label: "늦은 이유를 설명한다", trait: "care", summary: "이유 설명" },
-      { id: "normal", label: "아무 일 없듯 이어간다", trait: "steady", summary: "자연스럽게 이어감" },
-      { id: "short", label: "짧게 답하고 다시 사라진다", trait: "quiet", summary: "짧은 답장" },
-      { id: "call", label: "답장보다 전화가 빠르다고 본다", trait: "direct", summary: "전화 선호" },
+      { id: "look", label: "오늘 분위기 좋다", trait: "spark", summary: "분위기 칭찬" },
+      { id: "sense", label: "센스 있다", trait: "logic", summary: "센스 칭찬" },
+      { id: "fun", label: "너 진짜 웃기다", trait: "direct", summary: "웃김 칭찬" },
+      { id: "trust", label: "너랑 있으면 편하다", trait: "care", summary: "편안함 칭찬" },
     ],
   },
   {
     id: "q5",
     mark: "05",
-    short: "새 제안",
-    category: "행동 속도",
-    text: (name) => `${name}님은 갑자기 새로운 제안을 받으면?`,
+    short: "돈 쓰는 곳",
+    category: "취향",
+    text: (name) => `${name}님이 돈 아깝지 않게 쓰는 쪽은?`,
     options: [
-      { id: "yes", label: "재밌겠다며 일단 한다", trait: "spark", summary: "일단 해봄" },
-      { id: "check", label: "일정과 조건을 먼저 확인한다", trait: "logic", summary: "조건 확인" },
-      { id: "ask", label: "다른 사람 의견을 먼저 듣는다", trait: "care", summary: "의견 확인" },
-      { id: "pass", label: "익숙하지 않으면 보류한다", trait: "steady", summary: "보류" },
+      { id: "food", label: "맛있는 음식", trait: "steady", summary: "음식" },
+      { id: "style", label: "옷이나 꾸미는 것", trait: "spark", summary: "스타일" },
+      { id: "travel", label: "여행과 경험", trait: "quiet", summary: "경험" },
+      { id: "hobby", label: "취미나 덕질", trait: "direct", summary: "취미" },
     ],
   },
   {
     id: "q6",
     mark: "06",
-    short: "칭찬 반응",
-    category: "표현 방식",
-    text: (name) => `${name}님은 칭찬을 들으면?`,
+    short: "편한 사람",
+    category: "친밀도",
+    text: (name) => `${name}님이 진짜 편한 사람 앞에서만 보이는 모습은?`,
     options: [
-      { id: "deny", label: "아니라고 하면서 살짝 좋아한다", trait: "quiet", summary: "살짝 좋아함" },
-      { id: "thanks", label: "고맙다고 바로 받는다", trait: "direct", summary: "바로 받음" },
-      { id: "return", label: "상대도 같이 칭찬해준다", trait: "care", summary: "칭찬 돌려줌" },
-      { id: "joke", label: "농담으로 분위기를 넘긴다", trait: "spark", summary: "농담으로 넘김" },
+      { id: "talk", label: "말이 많아진다", trait: "spark", summary: "말 많아짐" },
+      { id: "soft", label: "애교나 장난이 나온다", trait: "care", summary: "장난 많아짐" },
+      { id: "blank", label: "무표정으로 편하게 있는다", trait: "quiet", summary: "무장해제" },
+      { id: "eat", label: "아무거나 막 먹는다", trait: "steady", summary: "막 먹음" },
     ],
   },
   {
     id: "q7",
     mark: "07",
-    short: "돈 쓰기",
-    category: "소비 판단",
-    text: (name) => `${name}님은 갖고 싶은 게 생기면?`,
+    short: "스트레스",
+    category: "회복 방식",
+    text: (name) => `${name}님이 스트레스 받을 때 제일 가까운 모습은?`,
     options: [
-      { id: "buy", label: "마음 가면 바로 산다", trait: "spark", summary: "바로 구매" },
-      { id: "compare", label: "가격 비교 후 산다", trait: "logic", summary: "가격 비교" },
-      { id: "wait", label: "며칠 지나도 생각나면 산다", trait: "steady", summary: "며칠 대기" },
-      { id: "gift", label: "내 것보다 선물에 더 잘 쓴다", trait: "care", summary: "선물 우선" },
+      { id: "sleep", label: "일단 잔다", trait: "steady", summary: "수면 회복" },
+      { id: "eat", label: "먹는 걸로 푼다", trait: "spark", summary: "먹기" },
+      { id: "buy", label: "갑자기 뭘 산다", trait: "direct", summary: "소비" },
+      { id: "silent", label: "아무 말 안 한다", trait: "quiet", summary: "침묵" },
     ],
   },
   {
     id: "q8",
     mark: "08",
-    short: "피곤한 날",
-    category: "에너지 회복",
-    text: (name) => `${name}님은 피곤한 날에 더 가까운 쪽은?`,
+    short: "반전 포인트",
+    category: "의외의 모습",
+    text: (name) => `${name}님에게 제일 의외일 것 같은 면은?`,
     options: [
-      { id: "alone", label: "혼자 있어야 회복된다", trait: "quiet", summary: "혼자 회복" },
-      { id: "routine", label: "평소 루틴을 지키며 회복한다", trait: "steady", summary: "루틴 회복" },
-      { id: "people", label: "좋아하는 사람을 만나야 풀린다", trait: "care", summary: "사람으로 회복" },
-      { id: "move", label: "나가서 움직여야 풀린다", trait: "spark", summary: "움직이며 회복" },
+      { id: "sensitive", label: "생각보다 예민하다", trait: "quiet", summary: "예민함" },
+      { id: "simple", label: "생각보다 단순하다", trait: "steady", summary: "단순함" },
+      { id: "deep", label: "생각보다 깊게 생각한다", trait: "logic", summary: "깊은 생각" },
+      { id: "wild", label: "생각보다 즉흥적이다", trait: "spark", summary: "즉흥성" },
     ],
   },
-];
+  ],
+  lover: [
+    {
+      id: "q1", mark: "01", short: "서운함", category: "연애 패턴", text: (name) => `${name}님이 서운할 때 제일 가까운 반응은?`,
+      options: [
+        { id: "say", label: "바로 말한다", trait: "direct", summary: "바로 말함" },
+        { id: "hide", label: "괜찮은 척하다가 티 난다", trait: "care", summary: "괜찮은 척" },
+        { id: "quiet", label: "혼자 조용해진다", trait: "quiet", summary: "조용해짐" },
+        { id: "logic", label: "왜 서운한지 정리해본다", trait: "logic", summary: "이유 정리" },
+      ],
+    },
+    {
+      id: "q2", mark: "02", short: "애정표현", category: "표현 방식", text: (name) => `${name}님이 가장 편하게 하는 애정표현은?`,
+      options: [
+        { id: "words", label: "말로 표현한다", trait: "direct", summary: "말 표현" },
+        { id: "care", label: "챙겨주는 행동으로 보인다", trait: "care", summary: "챙김" },
+        { id: "time", label: "시간을 같이 보내려 한다", trait: "steady", summary: "함께 시간" },
+        { id: "joke", label: "장난과 스킨십으로 푼다", trait: "spark", summary: "장난 표현" },
+      ],
+    },
+    {
+      id: "q3", mark: "03", short: "질투", category: "감정 포인트", text: (name) => `${name}님이 은근 질투 날 가능성이 큰 순간은?`,
+      options: [
+        { id: "ex", label: "전 연인 얘기가 나올 때", trait: "quiet", summary: "전 연인 얘기" },
+        { id: "reply", label: "답장이 늦는데 온라인일 때", trait: "logic", summary: "답장 타이밍" },
+        { id: "friend", label: "다른 사람을 너무 챙길 때", trait: "care", summary: "다른 사람 챙김" },
+        { id: "cool", label: "질투 안 나는 척할 때", trait: "steady", summary: "아닌 척" },
+      ],
+    },
+    {
+      id: "q4", mark: "04", short: "싸운 뒤", category: "화해 방식", text: (name) => `${name}님은 다툰 뒤 보통 어떻게 풀릴까?`,
+      options: [
+        { id: "talk", label: "대화를 해야 풀린다", trait: "direct", summary: "대화" },
+        { id: "time", label: "시간이 조금 필요하다", trait: "quiet", summary: "시간 필요" },
+        { id: "food", label: "같이 밥 먹으면 풀린다", trait: "steady", summary: "밥으로 화해" },
+        { id: "hug", label: "따뜻하게 안아주면 풀린다", trait: "care", summary: "스킨십" },
+      ],
+    },
+    {
+      id: "q5", mark: "05", short: "연락", category: "연락 스타일", text: (name) => `${name}님에게 제일 편한 연락 방식은?`,
+      options: [
+        { id: "often", label: "짧아도 자주 연락", trait: "care", summary: "자주 연락" },
+        { id: "deep", label: "적어도 길게 대화", trait: "quiet", summary: "깊은 대화" },
+        { id: "call", label: "문자보다 전화", trait: "direct", summary: "전화" },
+        { id: "free", label: "각자 시간 존중", trait: "steady", summary: "자유로운 연락" },
+      ],
+    },
+    {
+      id: "q6", mark: "06", short: "기념일", category: "관계 취향", text: (name) => `${name}님은 기념일에 더 가까운 쪽은?`,
+      options: [
+        { id: "plan", label: "미리 계획된 데이트", trait: "logic", summary: "계획형" },
+        { id: "letter", label: "진심 담긴 편지", trait: "care", summary: "편지" },
+        { id: "simple", label: "부담 없이 소소하게", trait: "steady", summary: "소소함" },
+        { id: "surprise", label: "깜짝 이벤트", trait: "spark", summary: "이벤트" },
+      ],
+    },
+    {
+      id: "q7", mark: "07", short: "사랑 확인", category: "불안 신호", text: (name) => `${name}님이 사랑받는다고 느끼는 순간은?`,
+      options: [
+        { id: "remember", label: "작은 걸 기억해줄 때", trait: "care", summary: "기억해줌" },
+        { id: "choose", label: "나를 우선순위에 둘 때", trait: "direct", summary: "우선순위" },
+        { id: "stable", label: "늘 변함없이 있을 때", trait: "steady", summary: "안정감" },
+        { id: "notice", label: "말 안 해도 알아줄 때", trait: "quiet", summary: "눈치" },
+      ],
+    },
+    {
+      id: "q8", mark: "08", short: "헤어짐 위기", category: "민감 버튼", text: (name) => `${name}님이 관계에서 제일 못 견디는 건?`,
+      options: [
+        { id: "lie", label: "거짓말", trait: "logic", summary: "거짓말" },
+        { id: "cold", label: "차가운 태도", trait: "care", summary: "차가움" },
+        { id: "control", label: "심한 간섭", trait: "direct", summary: "간섭" },
+        { id: "neglect", label: "방치되는 느낌", trait: "quiet", summary: "방치" },
+      ],
+    },
+  ],
+  crush: [
+    {
+      id: "q1", mark: "01", short: "호감 신호", category: "썸 기류", text: (name) => `${name}님이 호감 있을 때 제일 티 나는 행동은?`,
+      options: [
+        { id: "reply", label: "답장이 빨라진다", trait: "direct", summary: "빠른 답장" },
+        { id: "question", label: "질문이 많아진다", trait: "care", summary: "질문 많음" },
+        { id: "joke", label: "괜히 장난친다", trait: "spark", summary: "장난" },
+        { id: "hide", label: "오히려 티 안 내려 한다", trait: "quiet", summary: "숨김" },
+      ],
+    },
+    {
+      id: "q2", mark: "02", short: "답장 텀", category: "연락 눈치", text: (name) => `${name}님이 답장을 늦게 한다면 진짜 이유는?`,
+      options: [
+        { id: "think", label: "뭐라고 답할지 고민 중", trait: "logic", summary: "답장 고민" },
+        { id: "busy", label: "진짜 바쁨", trait: "steady", summary: "바쁨" },
+        { id: "push", label: "일부러 텀을 둠", trait: "quiet", summary: "일부러 텀" },
+        { id: "forget", label: "보고 까먹음", trait: "spark", summary: "까먹음" },
+      ],
+    },
+    {
+      id: "q3", mark: "03", short: "만남 후", category: "썸 반응", text: (name) => `${name}님이 만남 후 좋았을 때 하는 행동은?`,
+      options: [
+        { id: "message", label: "먼저 연락한다", trait: "direct", summary: "먼저 연락" },
+        { id: "story", label: "티 안 나게 스토리를 올린다", trait: "spark", summary: "스토리" },
+        { id: "recall", label: "대화 내용을 다시 떠올린다", trait: "quiet", summary: "회상" },
+        { id: "next", label: "다음 약속을 자연스럽게 만든다", trait: "care", summary: "다음 약속" },
+      ],
+    },
+    {
+      id: "q4", mark: "04", short: "선 긋기", category: "애매함", text: (name) => `${name}님이 관심 없을 때 제일 가까운 모습은?`,
+      options: [
+        { id: "short", label: "답장이 짧아진다", trait: "steady", summary: "짧은 답장" },
+        { id: "busy", label: "바쁘다는 말이 많아진다", trait: "logic", summary: "바쁨 핑계" },
+        { id: "friend", label: "친구 느낌을 강조한다", trait: "direct", summary: "친구 강조" },
+        { id: "kind", label: "상처 안 주려고 애매하게 군다", trait: "care", summary: "애매한 배려" },
+      ],
+    },
+    {
+      id: "q5", mark: "05", short: "질투 테스트", category: "숨은 감정", text: (name) => `${name}님이 썸에서 질투를 느낄 만한 순간은?`,
+      options: [
+        { id: "other", label: "다른 사람 얘기가 자주 나올 때", trait: "quiet", summary: "다른 사람 얘기" },
+        { id: "late", label: "약속 우선순위가 밀릴 때", trait: "care", summary: "우선순위" },
+        { id: "seen", label: "읽고 답이 늦을 때", trait: "logic", summary: "읽씹 느낌" },
+        { id: "none", label: "질투 안 하는 척 넘긴다", trait: "steady", summary: "아닌 척" },
+      ],
+    },
+    {
+      id: "q6", mark: "06", short: "첫 고백", category: "속도감", text: (name) => `${name}님은 관계가 애매할 때 어떻게 움직일까?`,
+      options: [
+        { id: "wait", label: "상대가 먼저 오길 기다린다", trait: "quiet", summary: "기다림" },
+        { id: "hint", label: "티 나는 힌트를 준다", trait: "spark", summary: "힌트" },
+        { id: "ask", label: "확실히 물어본다", trait: "direct", summary: "확인" },
+        { id: "read", label: "분위기를 더 지켜본다", trait: "logic", summary: "관찰" },
+      ],
+    },
+    {
+      id: "q7", mark: "07", short: "설렘 포인트", category: "취향", text: (name) => `${name}님이 제일 설렐 만한 순간은?`,
+      options: [
+        { id: "remember", label: "작은 취향을 기억해줄 때", trait: "care", summary: "취향 기억" },
+        { id: "direct", label: "솔직하게 표현할 때", trait: "direct", summary: "솔직함" },
+        { id: "unexpected", label: "예상 밖으로 챙겨줄 때", trait: "spark", summary: "뜻밖의 챙김" },
+        { id: "comfortable", label: "말 없어도 편할 때", trait: "steady", summary: "편안함" },
+      ],
+    },
+    {
+      id: "q8", mark: "08", short: "끝나는 신호", category: "반전", text: (name) => `${name}님이 마음이 식으면 제일 먼저 달라지는 건?`,
+      options: [
+        { id: "question", label: "질문이 줄어든다", trait: "quiet", summary: "질문 줄어듦" },
+        { id: "schedule", label: "약속을 미룬다", trait: "logic", summary: "약속 미룸" },
+        { id: "reaction", label: "리액션이 짧아진다", trait: "steady", summary: "짧은 리액션" },
+        { id: "clear", label: "확실히 선을 긋는다", trait: "direct", summary: "선 긋기" },
+      ],
+    },
+  ],
+  family: [
+    {
+      id: "q1", mark: "01", short: "집 모드", category: "가족 패턴", text: (name) => `${name}님이 집에서 제일 자주 보이는 모습은?`,
+      options: [
+        { id: "room", label: "방에 들어가 혼자 있는다", trait: "quiet", summary: "방콕" },
+        { id: "talk", label: "괜히 말을 건다", trait: "care", summary: "말 걸기" },
+        { id: "routine", label: "늘 하던 루틴을 한다", trait: "steady", summary: "루틴" },
+        { id: "move", label: "갑자기 뭔가 벌인다", trait: "spark", summary: "즉흥 행동" },
+      ],
+    },
+    {
+      id: "q2", mark: "02", short: "잔소리", category: "반응", text: (name) => `${name}님은 잔소리를 들으면?`,
+      options: [
+        { id: "yes", label: "대답은 잘하고 안 한다", trait: "steady", summary: "대답만" },
+        { id: "why", label: "왜 그런지 따진다", trait: "logic", summary: "이유 따짐" },
+        { id: "silent", label: "조용히 피한다", trait: "quiet", summary: "회피" },
+        { id: "joke", label: "농담으로 넘긴다", trait: "spark", summary: "농담" },
+      ],
+    },
+    {
+      id: "q3", mark: "03", short: "기분 나쁨", category: "가족 앞 감정", text: (name) => `${name}님이 가족 앞에서 기분 안 좋을 때는?`,
+      options: [
+        { id: "face", label: "표정에 바로 나온다", trait: "direct", summary: "표정" },
+        { id: "room", label: "방으로 들어간다", trait: "quiet", summary: "방으로 감" },
+        { id: "normal", label: "아무렇지 않은 척한다", trait: "care", summary: "괜찮은 척" },
+        { id: "eat", label: "먹을 걸 찾는다", trait: "steady", summary: "먹기" },
+      ],
+    },
+    {
+      id: "q4", mark: "04", short: "부탁", category: "생활 습관", text: (name) => `${name}님이 가족 부탁을 받으면?`,
+      options: [
+        { id: "now", label: "말은 투덜대도 해준다", trait: "care", summary: "투덜 챙김" },
+        { id: "later", label: "이따 한다고 미룬다", trait: "steady", summary: "미룸" },
+        { id: "why", label: "왜 나인지 먼저 묻는다", trait: "logic", summary: "이유 확인" },
+        { id: "fast", label: "빨리 끝내고 자유를 얻는다", trait: "direct", summary: "빠른 처리" },
+      ],
+    },
+    {
+      id: "q5", mark: "05", short: "가족 칭찬", category: "민망함", text: (name) => `${name}님은 가족에게 칭찬받으면?`,
+      options: [
+        { id: "awkward", label: "민망해서 딴소리한다", trait: "quiet", summary: "민망함" },
+        { id: "proud", label: "아닌 척 좋아한다", trait: "steady", summary: "좋아함" },
+        { id: "joke", label: "바로 장난친다", trait: "spark", summary: "장난" },
+        { id: "thanks", label: "고맙다고 말한다", trait: "direct", summary: "감사 표현" },
+      ],
+    },
+    {
+      id: "q6", mark: "06", short: "비밀", category: "숨기는 모습", text: (name) => `${name}님이 가족에게 제일 잘 숨기는 건?`,
+      options: [
+        { id: "worry", label: "걱정거리", trait: "care", summary: "걱정" },
+        { id: "money", label: "쓴 돈", trait: "logic", summary: "소비" },
+        { id: "love", label: "연애/호감", trait: "quiet", summary: "연애" },
+        { id: "plan", label: "갑자기 세운 계획", trait: "spark", summary: "즉흥 계획" },
+      ],
+    },
+    {
+      id: "q7", mark: "07", short: "화해", category: "가족 싸움", text: (name) => `${name}님은 가족과 싸운 뒤 어떻게 풀릴까?`,
+      options: [
+        { id: "food", label: "밥 먹다가 자연스럽게 풀린다", trait: "steady", summary: "밥으로 풀림" },
+        { id: "sorry", label: "먼저 사과한다", trait: "care", summary: "먼저 사과" },
+        { id: "time", label: "시간 지나면 풀린다", trait: "quiet", summary: "시간" },
+        { id: "talk", label: "확실히 얘기하고 끝낸다", trait: "direct", summary: "대화" },
+      ],
+    },
+    {
+      id: "q8", mark: "08", short: "가족만 아는 면", category: "진짜 모습", text: (name) => `${name}님이 밖에서는 잘 안 보이는 모습은?`,
+      options: [
+        { id: "baby", label: "은근 애교 있음", trait: "care", summary: "애교" },
+        { id: "lazy", label: "생각보다 게으름", trait: "steady", summary: "게으름" },
+        { id: "talkative", label: "집에서는 말 많음", trait: "spark", summary: "말 많음" },
+        { id: "deep", label: "혼자 생각이 많음", trait: "quiet", summary: "생각 많음" },
+      ],
+    },
+  ],
+  acquaintance: [
+    {
+      id: "q1", mark: "01", short: "첫인상", category: "사회적 모습", text: (name) => `${name}님의 첫인상과 실제 성격 차이는?`,
+      options: [
+        { id: "cold", label: "차가워 보이지만 편해지면 다정함", trait: "care", summary: "숨은 다정함" },
+        { id: "quiet", label: "조용해 보이지만 은근 웃김", trait: "spark", summary: "은근 웃김" },
+        { id: "easy", label: "편해 보이지만 선이 확실함", trait: "direct", summary: "선 있음" },
+        { id: "same", label: "첫인상과 실제가 비슷함", trait: "steady", summary: "그대로" },
+      ],
+    },
+    {
+      id: "q2", mark: "02", short: "일 처리", category: "업무/학교", text: (name) => `${name}님은 같이 일하거나 과제할 때 어떤 쪽?`,
+      options: [
+        { id: "plan", label: "계획을 먼저 잡는다", trait: "logic", summary: "계획형" },
+        { id: "quiet", label: "맡은 건 조용히 해낸다", trait: "quiet", summary: "조용히 처리" },
+        { id: "lead", label: "필요하면 주도한다", trait: "direct", summary: "주도" },
+        { id: "mood", label: "분위기를 부드럽게 만든다", trait: "care", summary: "분위기 완충" },
+      ],
+    },
+    {
+      id: "q3", mark: "03", short: "모임", category: "사회생활", text: (name) => `${name}님은 회식/모임에서 보통?`,
+      options: [
+        { id: "talk", label: "말을 꽤 한다", trait: "spark", summary: "대화형" },
+        { id: "listen", label: "듣는 쪽이 편하다", trait: "quiet", summary: "듣는 편" },
+        { id: "leave", label: "적당히 있다가 빠진다", trait: "logic", summary: "타이밍 퇴장" },
+        { id: "care", label: "주변 사람을 챙긴다", trait: "care", summary: "챙김" },
+      ],
+    },
+    {
+      id: "q4", mark: "04", short: "불편함", category: "선 긋기", text: (name) => `${name}님이 불편한 사람을 대하는 방식은?`,
+      options: [
+        { id: "polite", label: "예의 있게 거리를 둔다", trait: "logic", summary: "예의 거리" },
+        { id: "clear", label: "티 나게 선을 긋는다", trait: "direct", summary: "선 긋기" },
+        { id: "avoid", label: "가능하면 피한다", trait: "quiet", summary: "회피" },
+        { id: "smooth", label: "분위기 안 깨게 넘긴다", trait: "care", summary: "부드럽게 넘김" },
+      ],
+    },
+    {
+      id: "q5", mark: "05", short: "칭찬", category: "인정 욕구", text: (name) => `${name}님이 지인에게 들으면 제일 좋아할 말은?`,
+      options: [
+        { id: "reliable", label: "믿고 맡길 수 있다", trait: "steady", summary: "신뢰" },
+        { id: "sense", label: "센스 있다", trait: "logic", summary: "센스" },
+        { id: "comfortable", label: "같이 있으면 편하다", trait: "care", summary: "편안함" },
+        { id: "fun", label: "생각보다 재밌다", trait: "spark", summary: "재밌음" },
+      ],
+    },
+    {
+      id: "q6", mark: "06", short: "부탁", category: "관계 거리", text: (name) => `${name}님이 지인 부탁을 받으면?`,
+      options: [
+        { id: "possible", label: "가능한 선에서 도와준다", trait: "care", summary: "도움" },
+        { id: "limit", label: "내 기준을 먼저 본다", trait: "logic", summary: "기준 확인" },
+        { id: "refuse", label: "어려우면 확실히 거절한다", trait: "direct", summary: "거절" },
+        { id: "delay", label: "일단 생각해본다고 한다", trait: "quiet", summary: "보류" },
+      ],
+    },
+    {
+      id: "q7", mark: "07", short: "숨은 성격", category: "반전", text: (name) => `${name}님에게 가까워지면 보일 것 같은 모습은?`,
+      options: [
+        { id: "talk", label: "말이 훨씬 많아진다", trait: "spark", summary: "말 많아짐" },
+        { id: "soft", label: "생각보다 정이 많다", trait: "care", summary: "정 많음" },
+        { id: "firm", label: "생각보다 단호하다", trait: "direct", summary: "단호함" },
+        { id: "deep", label: "생각보다 생각이 많다", trait: "quiet", summary: "생각 많음" },
+      ],
+    },
+    {
+      id: "q8", mark: "08", short: "사회적 가면", category: "진짜 성향", text: (name) => `${name}님이 밖에서 가장 많이 숨기는 건?`,
+      options: [
+        { id: "tired", label: "사실 많이 피곤함", trait: "quiet", summary: "피곤함" },
+        { id: "annoyed", label: "불편한 걸 참고 있음", trait: "logic", summary: "참는 중" },
+        { id: "sensitive", label: "생각보다 예민함", trait: "care", summary: "예민함" },
+        { id: "bold", label: "사실 더 튀고 싶음", trait: "spark", summary: "튀고 싶음" },
+      ],
+    },
+  ],
+};
+
+function getQuestions(relationshipType: RelationshipType = DEFAULT_RELATIONSHIP) {
+  return QUESTION_BANK[relationshipType] ?? QUESTION_BANK[DEFAULT_RELATIONSHIP];
+}
+
+function resolveRelationship(value: unknown): RelationshipType {
+  return typeof value === "string" && value in RELATIONSHIPS ? (value as RelationshipType) : DEFAULT_RELATIONSHIP;
+}
 
 const RESULT_PROFILES: Array<{ min: number; profile: ResultProfile }> = [
   {
@@ -272,7 +615,7 @@ const RESULT_TITLE_VARIANTS: Record<ResultTone, string[]> = {
     "너무 잘 아는 사이",
     "완전 일치 모드",
     "소름 돋는 예측력",
-    "친구 사용 설명서 보유자",
+    "상대 사용 설명서 보유자",
     "이건 거의 정답지",
   ],
   high: [
@@ -280,7 +623,7 @@ const RESULT_TITLE_VARIANTS: Record<ResultTone, string[]> = {
     "이 정도면 눈치왕",
     "꽤 잘 봤네?",
     "반쯤은 마음 읽기",
-    "친구 레이더 좋음",
+    "상대 레이더 좋음",
     "아는 만큼 맞혔다",
     "예측 감각 살아있음",
     "거의 손바닥 안",
@@ -297,7 +640,7 @@ const RESULT_TITLE_VARIANTS: Record<ResultTone, string[]> = {
   low: [
     "생각보다 다른 사람",
     "반전이 꽤 많음",
-    "친구 설명서 업데이트 필요",
+    "상대 설명서 업데이트 필요",
     "예상 밖 선택 모음",
     "오히려 더 궁금해짐",
     "새로운 면 발견",
@@ -311,19 +654,19 @@ const RESULT_BODY_VARIANTS: Record<ResultTone, string[]> = {
     "이건 찍은 게 아니라 기억한 수준이에요. 작은 습관까지 꽤 정확했어요.",
     "둘의 답이 완전히 맞았어요. 서로의 선택 흐름을 거의 그대로 알고 있어요.",
     "예측과 실제 답변이 모두 일치했어요. 오늘 결과는 자랑해도 됩니다.",
-    "친구가 고를 답을 하나도 놓치지 않았어요. 꽤 오래 본 사이 느낌이에요.",
+    "상대가 고를 답을 하나도 놓치지 않았어요. 꽤 오래 본 사이 느낌이에요.",
     "결과가 너무 깔끔해요. 서로의 기본값을 아주 잘 알고 있어요.",
     "8문항 전부 같은 답이에요. 이 정도면 다음 선택도 맞힐 기세예요.",
     "완전 일치가 나왔어요. 둘 사이에 설명이 필요 없는 부분이 많네요.",
   ],
   high: [
     "대부분의 선택을 맞혔어요. 몇 개만 살짝 다른 게 오히려 더 재밌어요.",
-    "큰 방향은 거의 맞았어요. 친구의 익숙한 모습을 잘 기억하고 있네요.",
+    "큰 방향은 거의 맞았어요. 상대의 익숙한 모습을 잘 기억하고 있네요.",
     "맞힌 답이 꽤 많아요. 평소 행동을 그냥 넘기지 않고 보고 있었던 쪽이에요.",
     "이 정도면 충분히 잘 맞혔어요. 다른 답은 톡에서 물어보면 딱 좋아요.",
-    "예측력이 꽤 좋아요. 친구의 기본 선택을 잘 알고 있는 관계예요.",
+    "예측력이 꽤 좋아요. 상대의 기본 선택을 잘 알고 있는 관계예요.",
     "많이 맞고 조금 갈렸어요. 그래서 결과가 너무 뻔하지 않고 좋아요.",
-    "친구의 자주 나오는 선택을 잘 잡았어요. 다른 부분은 새로 알게 된 포인트예요.",
+    "상대의 자주 나오는 선택을 잘 잡았어요. 다른 부분은 새로 알게 된 포인트예요.",
     "거의 맞혔지만 완전 복붙은 아니에요. 딱 대화하기 좋은 결과예요.",
   ],
   middle: [
@@ -332,16 +675,16 @@ const RESULT_BODY_VARIANTS: Record<ResultTone, string[]> = {
     "예상과 실제가 적당히 갈렸어요. 결과를 보면서 웃을 포인트가 많아요.",
     "친한 것 같은데 은근히 다른 선택도 있어요. 바로 얘기해보기 좋은 결과예요.",
     "익숙한 부분은 맞혔고, 디테일은 꽤 달랐어요. 여기서부터 재밌어집니다.",
-    "완전히 틀리진 않았지만 반전도 있어요. 친구의 새 면이 조금 보였어요.",
+    "완전히 틀리진 않았지만 반전도 있어요. 상대의 새 면이 조금 보였어요.",
     "딱 중간 정도예요. 서로가 생각한 이미지와 실제 선택이 살짝 다르네요.",
   ],
   low: [
-    "예상과 실제가 많이 달랐어요. 그래서 오히려 친구를 새로 보는 느낌이에요.",
+    "예상과 실제가 많이 달랐어요. 그래서 오히려 상대를 새로 보는 느낌이에요.",
     "생각한 답과 다른 선택이 많아요. 오늘 결과로 업데이트할 게 꽤 있어요.",
-    "친구가 은근히 반전 많은 타입일 수 있어요. 바로 물어보고 싶은 답이 많네요.",
+    "상대가 은근히 반전 많은 타입일 수 있어요. 바로 물어보고 싶은 답이 많네요.",
     "많이 엇갈렸지만 실패는 아니에요. 몰랐던 취향을 발견한 결과예요.",
     "예측은 빗나갔지만 대화거리는 확실히 생겼어요.",
-    "친구의 실제 선택이 생각보다 달랐어요. 다음엔 더 잘 맞힐 수 있을지도요.",
+    "상대의 실제 선택이 생각보다 달랐어요. 다음엔 더 잘 맞힐 수 있을지도요.",
     "의외의 답이 많았어요. 관계가 얕다는 뜻보다 새로 알 부분이 많다는 쪽에 가까워요.",
   ],
 };
@@ -396,7 +739,7 @@ function getTopTrait(choices: Choice[]) {
 }
 
 function buildComparisons(payload: InvitePayload, answers: AnswerMap): Comparison[] {
-  return QUESTIONS.map((question) => {
+  return getQuestions(payload.relationshipType).map((question) => {
     const predicted = getChoice(question, payload.predictions[question.id]);
     const actual = getChoice(question, answers[question.id]);
     return {
@@ -451,7 +794,7 @@ function buildConversationCards(comparisons: Comparison[], senderName: string, f
     cards.push({
       label: "소름 포인트",
       title: "8문항 전부 같은 답",
-      body: "친구의 기본 선택을 정말 잘 알고 있었어요. 이건 그냥 자랑해도 됩니다.",
+      body: "상대의 기본 선택을 정말 잘 알고 있었어요. 이건 그냥 자랑해도 됩니다.",
       tone: "green",
     });
     cards.push({
@@ -469,7 +812,8 @@ function buildResult(payload: InvitePayload, answers: AnswerMap) {
   const comparisons = buildComparisons(payload, answers);
   const exactCount = comparisons.filter((item) => item.exact).length;
   const closeCount = comparisons.filter((item) => !item.exact && item.close).length;
-  const score = Math.round((exactCount / TOTAL_QUESTIONS) * 100);
+  const totalCount = comparisons.length || TOTAL_QUESTIONS;
+  const score = Math.round((exactCount / totalCount) * 100);
   const profile = RESULT_PROFILES.find((item) => score >= item.min)?.profile ?? RESULT_PROFILES[RESULT_PROFILES.length - 1].profile;
   const predictedTrait = getTopTrait(comparisons.map((item) => item.predicted));
   const actualTrait = getTopTrait(comparisons.map((item) => item.actual));
@@ -488,6 +832,7 @@ function buildResult(payload: InvitePayload, answers: AnswerMap) {
     predictedCopy: getTraitCopy(predictedTrait, profile.tone, seed + 3),
     actualCopy: getTraitCopy(actualTrait, profile.tone, seed + 4),
     conversationCards: buildConversationCards(comparisons, payload.ownerName, payload.targetName),
+    totalCount,
   };
 }
 
@@ -509,8 +854,10 @@ function decodePayload(value: string): InvitePayload | null {
     if (parsed.version !== 1) return null;
     if (typeof parsed.ownerName !== "string" || typeof parsed.targetName !== "string") return null;
     if (!parsed.predictions || typeof parsed.predictions !== "object") return null;
+    const relationshipType = resolveRelationship(parsed.relationshipType);
+    const questions = getQuestions(relationshipType);
     const predictions: AnswerMap = {};
-    for (const question of QUESTIONS) {
+    for (const question of questions) {
       const answer = parsed.predictions[question.id];
       if (typeof answer !== "string" || !question.options.some((option) => option.id === answer)) return null;
       predictions[question.id] = answer;
@@ -519,6 +866,7 @@ function decodePayload(value: string): InvitePayload | null {
       version: 1,
       ownerName: parsed.ownerName.trim().slice(0, 16) || "나",
       targetName: parsed.targetName.trim().slice(0, 16) || "친구",
+      relationshipType,
       predictions,
       createdAt: typeof parsed.createdAt === "number" ? parsed.createdAt : Date.now(),
       sessionId: typeof parsed.sessionId === "string" ? parsed.sessionId : String(Date.now()),
@@ -535,8 +883,8 @@ function createSessionId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function ProgressBar({ index }: { index: number }) {
-  const pct = ((index + 1) / TOTAL_QUESTIONS) * 100;
+function ProgressBar({ index, total = TOTAL_QUESTIONS }: { index: number; total?: number }) {
+  const pct = ((index + 1) / total) * 100;
   return (
     <div className="h-1.5 overflow-hidden rounded-full" style={{ background: P.light }}>
       <div
@@ -642,6 +990,7 @@ export default function NaboPredictPage() {
   const [step, setStep] = useState<Step>("intro");
   const [ownerName, setOwnerName] = useState("");
   const [targetName, setTargetName] = useState("");
+  const [relationshipType, setRelationshipType] = useState<RelationshipType>(DEFAULT_RELATIONSHIP);
   const [predictionAnswers, setPredictionAnswers] = useState<AnswerMap>({});
   const [actualAnswers, setActualAnswers] = useState<AnswerMap>({});
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -653,7 +1002,10 @@ export default function NaboPredictPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [analysisIndex, setAnalysisIndex] = useState(0);
   const senderName = ownerName.trim() || "나";
-  const friendName = targetName.trim() || "친구";
+  const activeRelationship = sharePayload?.relationshipType ?? relationshipType;
+  const relationshipMeta = RELATIONSHIPS[activeRelationship];
+  const currentQuestions = useMemo(() => getQuestions(activeRelationship), [activeRelationship]);
+  const friendName = targetName.trim() || relationshipMeta.label;
   const analysisSteps = useMemo(
     () => [
       `${senderName}님의 예측 답안지를 불러오는 중`,
@@ -683,6 +1035,7 @@ export default function NaboPredictPage() {
       setSharePayload(decoded);
       setOwnerName(decoded.ownerName);
       setTargetName(decoded.targetName);
+      setRelationshipType(decoded.relationshipType ?? DEFAULT_RELATIONSHIP);
       setPredictionAnswers(decoded.predictions);
       setActualAnswers({});
       setQuestionIndex(0);
@@ -715,20 +1068,29 @@ export default function NaboPredictPage() {
   }, [shareOrigin, sharePayload]);
 
   const result = useMemo(() => {
-    if (!sharePayload || Object.keys(actualAnswers).length < TOTAL_QUESTIONS) return null;
+    if (!sharePayload || Object.keys(actualAnswers).length < getQuestions(sharePayload.relationshipType).length) return null;
     return buildResult(sharePayload, actualAnswers);
   }, [actualAnswers, sharePayload]);
 
-  const currentQuestion = QUESTIONS[questionIndex];
+  const currentQuestion = currentQuestions[questionIndex];
   const activeAnswers = step === "answerQuestions" ? actualAnswers : predictionAnswers;
   const selectedChoice = currentQuestion ? activeAnswers[currentQuestion.id] : "";
 
   const canStart = ownerName.trim().length > 0 && targetName.trim().length > 0;
+  const selectRelationship = (type: RelationshipType) => {
+    setRelationshipType(type);
+    setPredictionAnswers({});
+    setActualAnswers({});
+    setQuestionIndex(0);
+    setSharePayload(null);
+    setErrorMessage("");
+  };
 
   const resetAll = useCallback(() => {
     setStep("intro");
     setOwnerName("");
     setTargetName("");
+    setRelationshipType(DEFAULT_RELATIONSHIP);
     setPredictionAnswers({});
     setActualAnswers({});
     setQuestionIndex(0);
@@ -769,7 +1131,7 @@ export default function NaboPredictPage() {
   const nextQuestion = () => {
     if (!currentQuestion || !selectedChoice) return;
 
-    if (questionIndex < QUESTIONS.length - 1) {
+    if (questionIndex < currentQuestions.length - 1) {
       setQuestionIndex((current) => current + 1);
       return;
     }
@@ -784,6 +1146,7 @@ export default function NaboPredictPage() {
       version: 1,
       ownerName: ownerName.trim().slice(0, 16),
       targetName: targetName.trim().slice(0, 16),
+      relationshipType,
       predictions: predictionAnswers,
       createdAt: Date.now(),
       sessionId: createSessionId(),
@@ -907,7 +1270,7 @@ export default function NaboPredictPage() {
               그럴 줄 알았어
             </h1>
             <p className="mx-auto max-w-[310px] text-[16px] leading-relaxed text-gray-500">
-              내가 먼저 친구의 선택을 예측하고, 친구가 실제로 답하면 두 답안지를 비교해요.
+              내가 먼저 상대의 선택을 예측하고, 상대가 실제로 답하면 두 답안지를 비교해요.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               {["패턴 분석", "링크 공유", "결과 답안지 생성"].map((tag) => (
@@ -922,9 +1285,9 @@ export default function NaboPredictPage() {
             <p className="mb-6 text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">진행 방식</p>
             <div className="grid gap-5">
               {[
-                ["01", "내가 먼저 예측", "친구라면 어떤 행동을 할지 8개 질문에 답해요."],
-                ["02", "링크 보내기", "예측 답안지는 링크 안에 숨겨지고, 친구는 결과 전까지 볼 수 없어요."],
-                ["03", "친구가 실제 답변", "친구가 같은 질문에 직접 답하면 바로 비교 카드가 열려요."],
+                ["01", "내가 먼저 예측", "상대라면 어떤 행동을 할지 8개 질문에 답해요."],
+                ["02", "링크 보내기", "예측 답안지는 링크 안에 숨겨지고, 상대는 결과 전까지 볼 수 없어요."],
+                ["03", "상대가 실제 답변", "상대가 같은 질문에 직접 답하면 바로 비교 카드가 열려요."],
               ].map(([num, title, desc]) => (
                 <div key={num} className="flex gap-4">
                   <span className="w-10 shrink-0 text-right text-[26px] font-black leading-none text-gray-200">{num}</span>
@@ -959,9 +1322,34 @@ export default function NaboPredictPage() {
               1단계 · 예측 대상
             </p>
             <h2 className="mb-2 text-[28px] font-black leading-tight text-gray-900">누구의 행동을<br />예측할까요?</h2>
-            <p className="text-[14px] text-gray-500">내 이름과 친구 이름만 정하면 바로 시작할 수 있어요.</p>
+            <p className="text-[14px] text-gray-500">보낼 대상을 고르고 이름만 입력하면 바로 시작할 수 있어요.</p>
           </section>
           <section className="grid gap-5 px-6">
+            <div className="grid gap-3">
+              <label className="text-[12px] font-black uppercase tracking-widest text-gray-400">누구한테 보낼건가요?</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.entries(RELATIONSHIPS) as Array<[RelationshipType, (typeof RELATIONSHIPS)[RelationshipType]]>).map(([type, item]) => {
+                  const active = relationshipType === type;
+
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => selectRelationship(type)}
+                      className="rounded-2xl border px-4 py-3 text-left transition-all active:scale-[0.98]"
+                      style={{
+                        borderColor: active ? P.mid : "#E5E7EB",
+                        background: active ? P.bg : "#FFFFFF",
+                        boxShadow: active ? `0 0 0 3px ${P.light}` : undefined,
+                      }}
+                    >
+                      <span className="block text-[15px] font-black text-gray-900">{item.label}</span>
+                      <span className="mt-1 block text-[11px] font-bold leading-snug text-gray-400">{item.helper}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="grid gap-2">
               <label className="text-[12px] font-black uppercase tracking-widest text-gray-400">내 이름</label>
               <input
@@ -973,11 +1361,11 @@ export default function NaboPredictPage() {
               />
             </div>
             <div className="grid gap-2">
-              <label className="text-[12px] font-black uppercase tracking-widest text-gray-400">친구/지인 이름</label>
+              <label className="text-[12px] font-black uppercase tracking-widest text-gray-400">{relationshipMeta.targetLabel}</label>
               <input
                 value={targetName}
                 onChange={(event) => setTargetName(event.target.value)}
-                placeholder="예: 지환"
+                placeholder={relationshipType === "family" ? "예: 엄마" : "예: 지환"}
                 className="w-full rounded-2xl border bg-white px-4 py-4 text-[16px] font-semibold text-gray-900 outline-none transition-all"
                 style={{ borderColor: targetName ? P.rose : "#E5E7EB", boxShadow: targetName ? "0 0 0 3px #FFE4E6" : undefined }}
               />
@@ -985,7 +1373,7 @@ export default function NaboPredictPage() {
             <div className="rounded-2xl p-4" style={{ background: P.bg, border: `1px solid ${P.border}` }}>
               <p className="text-[13px] font-black text-gray-900">답변 패턴 기준으로 생성</p>
               <p className="mt-1 text-[12px] leading-relaxed text-gray-500">
-                내 예측과 친구의 실제 선택을 비교해서 관계 리포트 카드로 정리해요.
+                내 예측과 상대의 실제 선택을 비교해서 관계 리포트 카드로 정리해요.
               </p>
             </div>
           </section>
@@ -999,7 +1387,7 @@ export default function NaboPredictPage() {
               >
                 {friendName}님 답변 예측하기
               </button>
-              {!canStart && <p className="mt-2 text-center text-[12px] text-gray-400">내 이름과 친구 이름을 입력해주세요</p>}
+              {!canStart && <p className="mt-2 text-center text-[12px] text-gray-400">내 이름과 상대 이름을 입력해주세요</p>}
             </div>
           </div>
         </div>
@@ -1016,10 +1404,10 @@ export default function NaboPredictPage() {
           </div>
           <section className="px-6 pb-4 pt-5">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-[12px] font-bold text-gray-400">{questionIndex + 1} / {TOTAL_QUESTIONS}</p>
+              <p className="text-[12px] font-bold text-gray-400">{questionIndex + 1} / {currentQuestions.length}</p>
               <p className="text-[12px] font-bold" style={{ color: P.mid }}>{currentQuestion.category}</p>
             </div>
-            <ProgressBar index={questionIndex} />
+            <ProgressBar index={questionIndex} total={currentQuestions.length} />
           </section>
 
           <section className="flex flex-1 flex-col gap-5 px-6 pb-4 pt-7">
@@ -1051,7 +1439,7 @@ export default function NaboPredictPage() {
                 className="w-full rounded-2xl py-4 text-[17px] font-black transition-all active:scale-[0.97]"
                 style={{ background: selectedChoice ? "#111827" : "#F3F4F6", color: selectedChoice ? "#FFFFFF" : "#9CA3AF" }}
               >
-                {questionIndex < QUESTIONS.length - 1 ? "다음" : step === "predictQuestions" ? "예측 답안지 완성" : "결과 답안지 생성"}
+                {questionIndex < currentQuestions.length - 1 ? "다음" : step === "predictQuestions" ? "예측 답안지 완성" : "결과 답안지 생성"}
               </button>
               {!selectedChoice && <p className="mt-2 text-center text-[12px] text-gray-400">하나를 선택해주세요</p>}
             </div>
@@ -1088,9 +1476,9 @@ export default function NaboPredictPage() {
               {copied ? "링크 복사됨" : "링크 복사하기"}
             </button>
             <div className="rounded-2xl px-4 py-4" style={{ background: P.bg, border: `1px solid ${P.border}` }}>
-              <p className="text-[13px] font-black text-gray-900">친구는 로그인 없이 바로 참여할 수 있어요</p>
+              <p className="text-[13px] font-black text-gray-900">상대는 로그인 없이 바로 참여할 수 있어요</p>
               <p className="mt-1 text-[12px] leading-relaxed text-gray-500">
-                결과는 친구가 8개 질문에 모두 답한 뒤에만 열립니다.
+                결과는 상대가 8개 질문에 모두 답한 뒤에만 열립니다.
               </p>
             </div>
             {shareNotice && <p className="text-center text-[12px] font-bold text-gray-400">{shareNotice}</p>}
@@ -1102,7 +1490,7 @@ export default function NaboPredictPage() {
         <div className="mx-auto flex w-full max-w-2xl flex-col pb-32">
           <section className="px-6 pb-8 pt-14 text-center">
             <div className="mx-auto mb-8 flex h-[92px] w-[92px] items-center justify-center rounded-[30px]" style={{ background: P.bg, border: `1px solid ${P.border}` }}>
-              <span className="text-[22px] font-black" style={{ color: P.mid }}>친구</span>
+              <span className="text-[22px] font-black" style={{ color: P.mid }}>{relationshipMeta.answerBadge}</span>
             </div>
             <p className="mb-4 text-[11px] font-black uppercase tracking-[0.3em]" style={{ color: P.mid }}>초대 도착</p>
             <h1 className="mb-5 text-[30px] font-black leading-tight text-gray-900">
@@ -1173,7 +1561,7 @@ export default function NaboPredictPage() {
             </p>
             <h2 className="text-[28px] font-black leading-tight text-gray-900">{ownerName}님이 본 {targetName}님</h2>
             <p className="mt-2 text-[13px] text-gray-400">
-              예측 {TOTAL_QUESTIONS}문항 비교 · {new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}
+              예측 {result.totalCount}문항 비교 · {new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}
             </p>
           </section>
 
@@ -1197,7 +1585,7 @@ export default function NaboPredictPage() {
             <div className="mt-5 grid grid-cols-3 gap-2">
               <MiniStat label="일치" value={`${result.exactCount}개`} />
               <MiniStat label="비슷한 답" value={`${result.closeCount}개`} tone="rose" />
-              <MiniStat label="다른 선택" value={`${TOTAL_QUESTIONS - result.exactCount}개`} tone="teal" />
+              <MiniStat label="다른 선택" value={`${result.totalCount - result.exactCount}개`} tone="teal" />
             </div>
           </section>
 
@@ -1215,7 +1603,7 @@ export default function NaboPredictPage() {
           </section>
 
           <section className="rounded-2xl border border-gray-100 bg-white px-5 py-5">
-            <p className="mb-3 text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">친구랑 얘기할 거리</p>
+            <p className="mb-3 text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">같이 얘기할 거리</p>
             <div className="grid gap-3">
               {result.conversationCards.map((card) => {
                 const toneStyle = getConversationToneStyle(card.tone);
@@ -1238,7 +1626,7 @@ export default function NaboPredictPage() {
                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-gray-400">질문별 비교</p>
                 <p className="mt-1 text-[13px] font-semibold text-gray-500">좌우로 넘겨서 일치/불일치를 확인해요.</p>
               </div>
-              <p className="text-[12px] font-black tabular-nums" style={{ color: P.mid }}>{result.exactCount}/{TOTAL_QUESTIONS}</p>
+              <p className="text-[12px] font-black tabular-nums" style={{ color: P.mid }}>{result.exactCount}/{result.totalCount}</p>
             </div>
             <div className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-2">
               {result.comparisons.map((comparison) => (
