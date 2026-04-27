@@ -492,13 +492,13 @@ export default function ThreadsAdminPage() {
     }
   };
 
-  const publish = async (id: string) => {
-    if (!confirm("지금 발행할까요?")) return;
+  const publish = async (id: string, retry = false) => {
+    if (!confirm(retry ? "실패한 글을 다시 발행할까요?" : "지금 발행할까요?")) return;
     setActionId(id);
     const res = await fetch(`/api/threads/${id}/publish`, { method: "POST", headers: h(pw) });
     const data = await res.json();
     await fetchPosts(pw); setActionId(null);
-    toast$(res.ok ? `발행 완료 ${data.threadId}` : `실패: ${data.error}`);
+    toast$(res.ok ? `${retry ? "재시도" : "발행"} 완료 ${data.threadId}` : `실패: ${data.error}`);
   };
 
   const del = async (id: string) => {
@@ -1102,10 +1102,10 @@ export default function ThreadsAdminPage() {
                           {post.status === "draft" && missingRequiredImage ? "이미지 필요" : post.status === "draft" && scheduledPassed ? "시간 지남" : post.status === "approved" ? "승인취소" : "✓ 승인"}
                         </button>
                       )}
-                      {post.status === "approved" && (
-                        <button onClick={() => void publish(post.id)} disabled={busy || missingRequiredImage}
+                      {(post.status === "approved" || post.status === "failed") && (
+                        <button onClick={() => void publish(post.id, post.status === "failed")} disabled={busy || missingRequiredImage}
                           className="flex-1 rounded-md bg-[#273142] py-2 text-[13px] font-black text-white disabled:opacity-40">
-                          {missingRequiredImage ? "이미지 필요" : busy ? "발행 중..." : "지금 발행 →"}
+                          {missingRequiredImage ? "이미지 필요" : busy ? (post.status === "failed" ? "재시도 중..." : "발행 중...") : post.status === "failed" ? "재시도 →" : "지금 발행 →"}
                         </button>
                       )}
                       <button onClick={() => void del(post.id)} disabled={busy}

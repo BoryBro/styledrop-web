@@ -9,7 +9,7 @@ function getSupabase() {
   );
 }
 
-// POST /api/threads/[id]/publish — 승인된 포스트를 즉시 발행
+// POST /api/threads/[id]/publish — 승인/실패 포스트를 즉시 발행
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const password = req.headers.get("x-admin-password");
   if (password !== process.env.ADMIN_PASSWORD) {
@@ -27,7 +27,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (!post) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (post.status === "published") return NextResponse.json({ error: "already published" }, { status: 400 });
-  if (post.status !== "approved") return NextResponse.json({ error: "must be approved first" }, { status: 400 });
+  if (post.status !== "approved" && post.status !== "failed") {
+    return NextResponse.json({ error: "must be approved first" }, { status: 400 });
+  }
   if (post.image_upload_recommended && !post.image_url) {
     return NextResponse.json({ error: "image required before publishing" }, { status: 400 });
   }
