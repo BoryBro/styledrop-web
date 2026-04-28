@@ -50,23 +50,16 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   }
 
   const responseCount = bundle.responses.length;
-  const resultAvailableTime = new Date(bundle.room.result_available_after).getTime();
+  const hasEarlyAccess = Boolean(bundle.room.premium_access_at);
 
-  if (responseCount < NABO_BASIC_RESULT_COUNT) {
+  if (responseCount < 1 || (responseCount < NABO_BASIC_RESULT_COUNT && !hasEarlyAccess)) {
     return NextResponse.json(
-      { error: "기본 결과는 3명 이상 응답한 뒤 확인할 수 있습니다." },
+      { error: "기본 결과는 3명 이상 응답하거나 2크레딧으로 먼저 열 수 있습니다." },
       { status: 403 },
     );
   }
 
-  if (!Number.isFinite(resultAvailableTime) || resultAvailableTime > Date.now()) {
-    return NextResponse.json(
-      { error: "결과 공개 시간이 아직 지나지 않았습니다." },
-      { status: 403 },
-    );
-  }
-
-  const full = responseCount >= NABO_FULL_RESULT_COUNT;
+  const full = hasEarlyAccess || responseCount >= NABO_FULL_RESULT_COUNT;
   const answers = bundle.responses.map((r) => full ? r.answers : toBasicAnswers(r.answers));
 
   return NextResponse.json({

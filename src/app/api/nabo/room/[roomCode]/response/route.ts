@@ -33,6 +33,12 @@ function sanitizeAnswers(value: unknown): NaboAnswerMap | null {
   return Object.keys(result).length > 0 ? result : null;
 }
 
+function sanitizeRespondentName(value: unknown) {
+  const name = String(value ?? "").trim().replace(/\s+/g, " ");
+  if (!name) return null;
+  return name.slice(0, 20);
+}
+
 export async function POST(request: NextRequest, { params }: RoomResponseRouteContext) {
   const control = await loadNaboFeatureControl();
   if (!control.is_visible || !control.is_enabled) {
@@ -40,14 +46,12 @@ export async function POST(request: NextRequest, { params }: RoomResponseRouteCo
   }
 
   const session = readSessionFromRequest(request);
-  if (!session) {
-    return NextResponse.json({ error: "카카오 로그인 후 응답할 수 있습니다." }, { status: 401 });
-  }
 
   const { roomCode } = await params;
   const body = await request.json().catch(() => ({}));
   const token = String(body?.token ?? "").trim();
   const answers = sanitizeAnswers(body?.answers);
+  const respondentName = sanitizeRespondentName(body?.respondentName);
   const clientFingerprint = String(body?.clientFingerprint ?? "").trim();
 
   if (!token) {
@@ -58,11 +62,18 @@ export async function POST(request: NextRequest, { params }: RoomResponseRouteCo
     return NextResponse.json({ error: "저장할 답변이 없습니다." }, { status: 400 });
   }
 
+  if (!respondentName) {
+    return NextResponse.json({ error: "닉네임이 필요합니다." }, { status: 400 });
+  }
+
   const submitted = await submitNaboResponse({
     roomCode,
     respondentToken: token,
-    answers,
-    respondentUserId: session.id,
+    answers: {
+      ...answers,
+      _respondentName: respondentName,
+    },
+    respondentUserId: session?.id ?? null,
     clientFingerprint: clientFingerprint || null,
   });
 

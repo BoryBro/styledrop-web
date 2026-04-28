@@ -31,6 +31,9 @@ const ALLOWED_PUBLIC_EVENTS = new Set([
   "save_image",
   "gift_share_kakao",
   "revisit",
+  "lab_nabo_room_created",
+  "lab_nabo_response_completed",
+  "lab_nabo_share_kakao",
 ]);
 
 function parseSession(request: NextRequest): { id: string } | null {

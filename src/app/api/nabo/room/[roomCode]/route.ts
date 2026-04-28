@@ -23,10 +23,6 @@ export async function GET(request: NextRequest, { params }: RoomRouteContext) {
   const respondentToken = request.nextUrl.searchParams.get("token");
   const session = readSessionFromRequest(request);
 
-  if (!session) {
-    return NextResponse.json({ error: "카카오 로그인 후 이용할 수 있습니다." }, { status: 401 });
-  }
-
   if (!ownerToken && !respondentToken) {
     return NextResponse.json({ error: "접속 토큰이 필요합니다." }, { status: 400 });
   }
@@ -41,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RoomRouteContext) {
     if (!verifyNaboOwnerToken(bundle.room, ownerToken)) {
       return NextResponse.json({ error: "방 접근 권한이 없습니다." }, { status: 403 });
     }
-    if (bundle.room.owner_user_id && bundle.room.owner_user_id !== session.id) {
+    if (bundle.room.owner_user_id && (!session || bundle.room.owner_user_id !== session.id)) {
       return NextResponse.json({ error: "방을 만든 계정으로만 확인할 수 있습니다." }, { status: 403 });
     }
 
@@ -58,7 +54,7 @@ export async function GET(request: NextRequest, { params }: RoomRouteContext) {
   if (!respondentToken || !verifyNaboRespondentToken(bundle.room, respondentToken)) {
     return NextResponse.json({ error: "응답 권한이 없습니다." }, { status: 403 });
   }
-  if (bundle.room.owner_user_id === session.id) {
+  if (session && bundle.room.owner_user_id === session.id) {
     return NextResponse.json({ error: "방을 만든 계정으로는 응답할 수 없습니다." }, { status: 403 });
   }
 

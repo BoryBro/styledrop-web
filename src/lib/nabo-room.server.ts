@@ -54,6 +54,7 @@ export type NaboRoomView = {
 
 export const NABO_BASIC_RESULT_COUNT = 3;
 export const NABO_FULL_RESULT_COUNT = 5;
+export const NABO_EARLY_RESULT_CREDIT_COST = 2;
 
 function getSupabase() {
   return createClient(
@@ -98,11 +99,8 @@ export function buildNaboRoomView(args: {
 }): NaboRoomView {
   const { room, responses } = args.bundle;
   const responseCount = responses.length;
-  const resultAvailableTime = new Date(room.result_available_after).getTime();
-  const canViewResults =
-    responseCount >= NABO_BASIC_RESULT_COUNT &&
-    Number.isFinite(resultAvailableTime) &&
-    resultAvailableTime <= Date.now();
+  const premiumAccess = Boolean(room.premium_access_at);
+  const canViewResults = responseCount >= NABO_BASIC_RESULT_COUNT || (premiumAccess && responseCount >= 1);
 
   return {
     roomCode: room.room_code,
@@ -112,7 +110,7 @@ export function buildNaboRoomView(args: {
     responseTarget: room.response_target,
     resultAvailableAfter: room.result_available_after,
     canViewResults,
-    premiumAccess: Boolean(room.premium_access_at),
+    premiumAccess,
     invitePath:
       args.role === "owner"
         ? buildNaboInvitePath(room.room_code, args.respondentToken ?? room.respondent_token)

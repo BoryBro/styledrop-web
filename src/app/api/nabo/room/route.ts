@@ -11,12 +11,6 @@ export async function POST(request: NextRequest) {
     }
 
     const session = readSessionFromRequest(request);
-    if (!session) {
-      return NextResponse.json(
-        { error: "카카오 로그인 후 이용할 수 있습니다." },
-        { status: 401 },
-      );
-    }
 
     const body = await request.json().catch(() => ({}));
     const ownerName = String(body?.ownerName ?? body?.myName ?? "").trim();
@@ -31,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     const created = await createNaboRoom({
       ownerName,
-      ownerUserId: session.id,
+      ownerUserId: session?.id ?? null,
     });
 
     if (created.error || !created.room || !created.ownerToken || !created.respondentToken) {

@@ -9,7 +9,7 @@ import { trackClientEvent } from "@/lib/client-events";
 const G = { bg: "#F0FDF4", border: "#BBF7D0", light: "#DCFCE7", mid: "#22C55E", dark: "#16A34A", text: "#15803D", deep: "#166534" } as const;
 
 // ── 타입 ─────────────────────────────────────────────────────────
-type Step = "intro" | "setup" | "link" | "waiting" | "questions" | "results";
+type Step = "intro" | "setup" | "link" | "waiting" | "respondent-name" | "questions" | "results" | "single-result";
 type AnsMap = Record<string, string | number>;
 type NaboRoomViewPayload = {
   roomCode: string;
@@ -43,6 +43,8 @@ const EXTRA = "기타 (직접 입력) ✏️";
 const LOCK_MS = 24 * 60 * 60 * 1000;
 const BASIC_RESULT_COUNT = 3;
 const FULL_RESULT_COUNT = 5;
+const EARLY_RESULT_CREDIT_COST = 2;
+const RESPONDENT_NAME_KEY = "_respondentName";
 
 // ── 12문항 정의 ───────────────────────────────────────────────────
 const QS = [
@@ -160,6 +162,13 @@ const getNaboClientFingerprint = () => {
   return next;
 };
 
+const getRespondentNameStorageKey = (roomCode: string) => `nabo_respondent_name:${roomCode}`;
+const getRespondedStorageKey = (roomCode: string) => `nabo_responded:${roomCode}`;
+const getRespondentName = (answer: AnsMap | null | undefined, index: number) => {
+  const savedName = typeof answer?.[RESPONDENT_NAME_KEY] === "string" ? String(answer[RESPONDENT_NAME_KEY]).trim() : "";
+  return savedName || `익명 ${index + 1}`;
+};
+
 // ── ScoreRing ─────────────────────────────────────────────────────
 function ScoreRing({ score, size = 130, color = G.mid }: { score: number; size?: number; color?: string }) {
   const [shown, setShown] = useState(0);
@@ -208,6 +217,7 @@ export default function NaboPage() {
   const [step, setStep]               = useState<Step>("intro");
   const [stepHistory, setStepHistory] = useState<Step[]>(["intro"]);
   const [myName, setMyName]           = useState("");
+  const [respondentName, setRespondentName] = useState("");
   const [agreed, setAgreed]           = useState(false);
   const [copied, setCopied]           = useState(false);
   const [createdAt, setCreatedAt]     = useState<number>(0);
@@ -227,10 +237,13 @@ export default function NaboPage() {
   const [resultAvailableAfter, setResultAvailableAfter] = useState("");
   const [serverResponseCount, setServerResponseCount] = useState(0);
   const [serverAnswers, setServerAnswers] = useState<AnsMap[]>([]);
+  const [premiumAccess, setPremiumAccess] = useState(false);
+  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState(0);
   const [isFetchingAnswers, setIsFetchingAnswers] = useState(false);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
   const [isSharingKakao, setIsSharingKakao] = useState(false);
+  const [isUnlockingEarly, setIsUnlockingEarly] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const handleLogin = useCallback(() => {
     if (typeof window === "undefined") {
@@ -249,6 +262,7 @@ export default function NaboPage() {
     setMyName(view.ownerName);
     setServerResponseCount(view.responseCount);
     setResultAvailableAfter(view.resultAvailableAfter);
+    setPremiumAccess(view.premiumAccess);
     if (tokens?.ownerToken) setOwnerToken(tokens.ownerToken);
     if (tokens?.respondentToken) setRespondentToken(tokens.respondentToken);
     if (tokens?.invitePath) setInvitePath(tokens.invitePath);
@@ -290,12 +304,19 @@ export default function NaboPage() {
       if (n)  setMyName(n);
       if (at) setCreatedAt(Number(at));
       if (rs) { try { setResponses(JSON.parse(rs)); } catch {} }
-      if (st && st !== "intro") { setStep(st); setStepHistory(["intro", st]); }
       if (savedRoomCode) setRoomCode(savedRoomCode);
       if (savedOwnerToken) setOwnerToken(savedOwnerToken);
       if (savedRespondentToken) setRespondentToken(savedRespondentToken);
       if (savedInvitePath) setInvitePath(savedInvitePath);
       if (savedAvailableAfter) setResultAvailableAfter(savedAvailableAfter);
+      if (savedRoomCode && savedOwnerToken) {
+        setViewerRole("owner");
+        setStep("waiting");
+        setStepHistory(["intro", "waiting"]);
+      } else if (st && st !== "intro") {
+        setStep(st);
+        setStepHistory(["intro", st]);
+      }
     } catch {}
   }, []);
 
@@ -328,8 +349,18 @@ export default function NaboPage() {
           respondentToken: nextRespondentToken,
           invitePath: payload.view.invitePath,
         });
-        setStep(payload.view.role === "owner" ? "waiting" : "questions");
-        setStepHistory(["intro", payload.view.role === "owner" ? "waiting" : "questions"]);
+        if (payload.view.role === "owner") {
+          setStep("waiting");
+          setStepHistory(["intro", "waiting"]);
+          return;
+        }
+
+        const savedName = localStorage.getItem(getRespondentNameStorageKey(payload.view.roomCode)) ?? "";
+        const alreadyResponded = localStorage.getItem(getRespondedStorageKey(payload.view.roomCode)) === "1";
+        if (savedName) setRespondentName(savedName);
+        const nextStep: Step = alreadyResponded ? "waiting" : savedName ? "questions" : "respondent-name";
+        setStep(nextStep);
+        setStepHistory(["intro", nextStep]);
       })
       .catch(error => {
         if (!cancelled) {
@@ -388,7 +419,10 @@ export default function NaboPage() {
   const timeLeft = resultAvailableTime ? Math.max(0, resultAvailableTime - now) : LOCK_MS;
   const hasBasicResult = serverResponseCount >= BASIC_RESULT_COUNT;
   const hasFullResult = serverResponseCount >= FULL_RESULT_COUNT;
-  const canSeeResults = timeLeft === 0 && hasBasicResult;
+  const canShowFullResult = premiumAccess || hasFullResult;
+  const canSeeResults = hasBasicResult || (premiumAccess && serverResponseCount >= 1);
+  const canStartNewRoom = !roomCode || timeLeft === 0;
+  const canUnlockEarly = viewerRole === "owner" && serverResponseCount > 0 && serverResponseCount < BASIC_RESULT_COUNT && !premiumAccess;
   const inviteLink = invitePath ? `${shareOrigin}${invitePath}` : `${shareOrigin}/nabo`;
 
   const goTo = useCallback((s: Step) => {
@@ -417,6 +451,7 @@ export default function NaboPage() {
     setStep("intro");
     setStepHistory(["intro"]);
     setMyName("");
+    setRespondentName("");
     setAgreed(false);
     setCopied(false);
     setQIdx(0);
@@ -432,6 +467,8 @@ export default function NaboPage() {
     setResponses([]);
     setServerAnswers([]);
     setServerResponseCount(0);
+    setPremiumAccess(false);
+    setSelectedAnswerIndex(0);
     setCreatedAt(0);
     setViewerRole(null);
     setErrorMessage("");
@@ -515,7 +552,7 @@ export default function NaboPage() {
   };
 
   const fetchServerAnswers = useCallback(async () => {
-    if (!roomCode || !ownerToken || isFetchingAnswers) return;
+    if (!roomCode || !ownerToken || isFetchingAnswers) return null;
 
     setIsFetchingAnswers(true);
     setErrorMessage("");
@@ -528,9 +565,12 @@ export default function NaboPage() {
 
       if (!response.ok) throw new Error(payload?.error ?? "응답 데이터를 불러오지 못했습니다.");
 
-      setServerAnswers((payload.answers as AnsMap[]) ?? []);
+      const answers = (payload.answers as AnsMap[]) ?? [];
+      setServerAnswers(answers);
+      return answers;
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "응답 데이터를 불러오지 못했습니다.");
+      return null;
     } finally {
       setIsFetchingAnswers(false);
     }
@@ -545,6 +585,69 @@ export default function NaboPage() {
       }).catch(() => copyLink());
     } else {
       copyLink();
+    }
+  };
+
+  const openResults = async () => {
+    if (!canSeeResults || viewerRole !== "owner") return;
+    if (!user) {
+      goTo("results");
+      return;
+    }
+
+    const answers = serverAnswers.length > 0 ? serverAnswers : await fetchServerAnswers();
+    const resultAnswers = answers ?? serverAnswers;
+    if (premiumAccess && resultAnswers.length === 1) {
+      setSelectedAnswerIndex(0);
+      goTo("single-result");
+      return;
+    }
+
+    goTo("results");
+  };
+
+  const unlockEarlyResults = async () => {
+    if (!roomCode || !ownerToken || isUnlockingEarly) return;
+    if (!user) {
+      handleLogin();
+      return;
+    }
+
+    setIsUnlockingEarly(true);
+    setErrorMessage("");
+
+    try {
+      const response = await fetch(`/api/nabo/room/${encodeURIComponent(roomCode)}/premium-access`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerToken }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok || !payload?.view) {
+        throw new Error(payload?.error ?? "결과를 열지 못했습니다.");
+      }
+
+      applyRoomView(payload.view as NaboRoomViewPayload, {
+        ownerToken,
+        invitePath,
+      });
+      void trackClientEvent("lab_nabo_premium_access", {
+        credits: payload.chargedCredits ?? EARLY_RESULT_CREDIT_COST,
+        responseCount,
+      });
+
+      const answers = await fetchServerAnswers();
+      if ((answers ?? []).length === 1) {
+        setSelectedAnswerIndex(0);
+        goTo("single-result");
+      } else {
+        goTo("results");
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "결과를 열지 못했습니다.");
+    } finally {
+      setIsUnlockingEarly(false);
     }
   };
 
@@ -568,6 +671,7 @@ export default function NaboPage() {
         body: JSON.stringify({
           token: respondentToken,
           answers,
+          respondentName: respondentName.trim(),
           clientFingerprint: getNaboClientFingerprint(),
         }),
       });
@@ -585,6 +689,10 @@ export default function NaboPage() {
       applyRoomView(payload.view as NaboRoomViewPayload, {
         respondentToken,
       });
+      try {
+        localStorage.setItem(getRespondentNameStorageKey(roomCode), respondentName.trim());
+        localStorage.setItem(getRespondedStorageKey(roomCode), "1");
+      } catch {}
       return true;
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "응답 저장에 실패했습니다.");
@@ -623,16 +731,18 @@ export default function NaboPage() {
 
   // ── 결과 진입 시 서버 answers 자동 fetch ──────────────────────
   useEffect(() => {
-    if (step === "results" && canSeeResults && serverAnswers.length === 0 && !isFetchingAnswers) {
+    if ((step === "results" || step === "single-result") && user && canSeeResults && serverAnswers.length === 0 && !isFetchingAnswers) {
       void fetchServerAnswers();
     }
-  }, [step, canSeeResults, serverAnswers.length, isFetchingAnswers, fetchServerAnswers]);
+  }, [step, user, canSeeResults, serverAnswers.length, isFetchingAnswers, fetchServerAnswers]);
 
   // ── Results data ──────────────────────────────────────────────
   // 우선순위: 서버 answers → 로컬 responses → MOCK(잠금 상태 미리보기용)
   const actualAnswers = serverAnswers.length > 0 ? serverAnswers : responses;
   const R = actualAnswers.length > 0 ? actualAnswers : canSeeResults ? [] : MOCK;
   const reportCount = serverAnswers.length > 0 ? serverAnswers.length : serverResponseCount;
+  const selectedAnswer = actualAnswers[selectedAnswerIndex] ?? null;
+  const selectedRespondentName = getRespondentName(selectedAnswer, selectedAnswerIndex);
   const chemAvg     = avg("q3", R);
   const funAvg      = avg("q7", R);
   const intimAvg    = avg("q11", R);
@@ -652,32 +762,6 @@ export default function NaboPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white">
         <span className="h-8 w-8 rounded-full border-2 border-[#DCFCE7] border-t-[#22C55E]" style={{ animation: "spin 0.9s linear infinite" }} />
-      </main>
-    );
-  }
-
-  if (!user) {
-    return (
-      <main className="min-h-screen bg-white px-5 py-6" style={{ fontFamily: '"Pretendard", "SUIT Variable", sans-serif' }}>
-        <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md flex-col justify-center">
-          <Link href="/studio" className="mb-8 text-[14px] font-bold text-gray-400">← 실험실로 돌아가기</Link>
-          <p className="text-[12px] font-black uppercase tracking-[0.24em]" style={{ color: G.text }}>Anonymous Lab</p>
-          <h1 className="mt-4 text-[38px] font-black leading-[1.05] tracking-[-0.06em] text-gray-950">
-            로그인 후
-            <br />
-            참여할 수 있어요
-          </h1>
-          <p className="mt-4 text-[15px] font-medium leading-7 text-gray-500 break-keep">
-            실험실 초대 링크는 카카오 로그인 후 열립니다. 응답자 중복과 본인 응답을 막기 위한 처리입니다.
-          </p>
-          <button
-            type="button"
-            onClick={handleLogin}
-            className="mt-8 h-14 rounded-2xl bg-[#FEE500] text-[16px] font-black text-[#191919]"
-          >
-            카카오로 계속하기
-          </button>
-        </div>
       </main>
     );
   }
@@ -859,7 +943,7 @@ export default function NaboPage() {
                 {[
                   { icon: "👥", text: "3명이 답하면 기본 결과가 열려요" },
                   { icon: "🔓", text: "5명이 답하면 익명 한마디까지 보여요" },
-                  { icon: "⏰", text: "결과는 24시간 후 확인할 수 있어요" },
+                  { icon: "⏰", text: "새 링크는 24시간 후 다시 만들 수 있어요" },
                   { icon: "🔒", text: "응답이 적을 땐 추측 방지를 위해 일부를 숨겨요" },
                 ].map(({ icon, text }) => (
                   <div key={text} className="flex items-center gap-2.5">
@@ -876,13 +960,15 @@ export default function NaboPage() {
               응답 대기 화면으로 →
             </button>
 
-            <button
-              type="button"
-              onClick={handleReset}
-              className="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-[15px] font-black text-gray-500 transition-all active:scale-[0.98]"
-            >
-              새로 시작하기
-            </button>
+            {canStartNewRoom && (
+              <button
+                type="button"
+                onClick={handleReset}
+                className="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-[15px] font-black text-gray-500 transition-all active:scale-[0.98]"
+              >
+                새로 시작하기
+              </button>
+            )}
           </section>
         </div>
       )}
@@ -891,15 +977,21 @@ export default function NaboPage() {
       {step === "waiting" && (
         <div className="flex flex-col px-6 pt-10 pb-12 gap-5">
           <div>
-            <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-3" style={{ color: G.mid }}>대기 중</p>
-            <h2 className="text-[28px] font-black text-gray-900 leading-tight mb-1">응답을 기다리는 중</h2>
-            <p className="text-[14px] text-gray-500">3명부터 기본 결과, 5명부터 전체 결과가 열려요</p>
+            <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-3" style={{ color: G.mid }}>
+              {viewerRole === "respondent" ? "제출 완료" : "대기 중"}
+            </p>
+            <h2 className="text-[28px] font-black text-gray-900 leading-tight mb-1">
+              {viewerRole === "respondent" ? "응답이 저장됐어요" : "응답을 기다리는 중"}
+            </h2>
+            <p className="text-[14px] text-gray-500">
+              {viewerRole === "respondent" ? `${myName || "친구"}님에게 익명으로 전달돼요` : "3명부터 기본 결과, 5명부터 전체 결과가 열려요"}
+            </p>
           </div>
 
           <div className="rounded-3xl p-5" style={{ background: G.bg, border: `1px solid ${G.border}` }}>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[13px] font-black text-gray-900">현재 응답 현황</p>
-              <p className="text-[26px] font-black" style={{ color: G.mid }}>{responseCount}<span className="text-[16px] text-gray-400"> / {FULL_RESULT_COUNT}</span></p>
+              <p className="text-[26px] font-black" style={{ color: G.mid }}>{responseCount}<span className="text-[16px] text-gray-400">명</span></p>
             </div>
             <div className="flex gap-2 mb-3">
               {Array.from({ length: FULL_RESULT_COUNT }).map((_, i) => (
@@ -915,52 +1007,133 @@ export default function NaboPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white px-5 py-5">
-            <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3">⏰ 결과 공개까지</p>
-            {timeLeft > 0 ? (
-              <>
-                <p className="text-[38px] font-black text-gray-900 leading-none tabular-nums" style={{ fontFamily: "monospace" }}>
-                  {fmtCountdown(timeLeft)}
-                </p>
-                <p className="text-[12px] text-gray-400 mt-2">
-                  {responseCount < BASIC_RESULT_COUNT ? "기본 결과는 3명 이상 응답해야 공개돼요" : `${responseCount}명 응답 완료 · 시간이 지나면 자동으로 열려요`}
-                </p>
-              </>
-            ) : (
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">🎉</span>
-                <div>
-                  <p className="text-[16px] font-black text-gray-900">24시간 완료!</p>
-                  <p className="text-[12px] text-gray-500">
-                    {hasBasicResult ? "아래 버튼으로 결과를 확인해요" : "3명 이상 응답하면 결과가 열려요"}
+          {viewerRole === "owner" && (
+            <div className="rounded-2xl border border-gray-200 bg-white px-5 py-5">
+              <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3">⏰ 새 시작까지</p>
+              {timeLeft > 0 ? (
+                <>
+                  <p className="text-[38px] font-black text-gray-900 leading-none tabular-nums" style={{ fontFamily: "monospace" }}>
+                    {fmtCountdown(timeLeft)}
                   </p>
+                  <p className="text-[12px] text-gray-400 mt-2">
+                    24시간 안에는 기존 링크의 응답을 계속 모아요.
+                  </p>
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🎉</span>
+                  <div>
+                    <p className="text-[16px] font-black text-gray-900">새로 시작할 수 있어요</p>
+                    <p className="text-[12px] text-gray-500">기존 결과는 유지되고 새 링크를 만들 수 있어요.</p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
-          {canSeeResults && (
-            <button onClick={() => goTo("results")}
+          {viewerRole === "owner" && canSeeResults && (
+            <button onClick={() => void openResults()}
               className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97]"
               style={{ background: G.mid, color: "white" }}>
               결과 확인하기 🎉
             </button>
           )}
 
+          {canUnlockEarly && (
+            <button
+              type="button"
+              onClick={() => void unlockEarlyResults()}
+              disabled={isUnlockingEarly}
+              className="w-full rounded-2xl py-4 text-[17px] font-black text-white transition-all active:scale-[0.97] disabled:opacity-60"
+              style={{ background: "#111827" }}
+            >
+              {isUnlockingEarly ? "여는 중..." : `1명 결과부터 보기 · ${EARLY_RESULT_CREDIT_COST}크레딧`}
+            </button>
+          )}
+
+          {errorMessage && (
+            <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] font-bold text-red-600">
+              {errorMessage}
+            </div>
+          )}
+
           <div className="rounded-2xl border border-gray-100 bg-gray-50 px-5 py-5">
             <p className="text-[13px] font-black text-gray-900 mb-1">왜 3명부터 열리나요?</p>
             <p className="text-[12px] text-gray-500 leading-relaxed">
-              1명이나 2명 응답은 누가 썼는지 쉽게 추측될 수 있어요. 익명성을 지키기 위해 기본 결과도 3명부터 공개해요.
+              1명이나 2명 응답은 누가 썼는지 쉽게 추측될 수 있어요. 다만 궁금하면 2크레딧으로 1명 결과부터 먼저 열 수 있어요.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleReset}
-            className="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-[15px] font-black text-gray-500 transition-all active:scale-[0.98]"
-          >
-            새로 시작하기
-          </button>
+          {viewerRole === "owner" && canStartNewRoom && (
+            <button
+              type="button"
+              onClick={handleReset}
+              className="w-full py-3.5 rounded-2xl border border-gray-200 bg-white text-[15px] font-black text-gray-500 transition-all active:scale-[0.98]"
+            >
+              새로 시작하기
+            </button>
+          )}
+
+          {viewerRole === "respondent" && (
+            <Link
+              href="/nabo"
+              className="flex w-full items-center justify-center rounded-2xl py-4 text-[17px] font-black text-white"
+              style={{ background: "#111" }}
+            >
+              내 링크도 만들기
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* ════════════════════ RESPONDENT NAME ════════════════════ */}
+      {step === "respondent-name" && (
+        <div className="flex flex-col pb-36">
+          <section className="px-6 pt-10 pb-6">
+            <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-3" style={{ color: G.mid }}>익명 참여</p>
+            <h2 className="break-keep text-[30px] font-black leading-tight text-gray-900">
+              어떤 이름으로
+              <br />
+              남겨질까요?
+            </h2>
+            <p className="mt-3 break-keep text-[14px] leading-6 text-gray-500">
+              결과 화면에는 이 닉네임으로 보여요. 카카오 로그인 없이도 참여할 수 있어요.
+            </p>
+          </section>
+
+          <section className="px-6">
+            <label htmlFor="nabo-respondent-name" className="text-[12px] font-black uppercase tracking-widest text-gray-400">
+              내 닉네임
+            </label>
+            <input
+              id="nabo-respondent-name"
+              value={respondentName}
+              onChange={(event) => setRespondentName(event.target.value.slice(0, 20))}
+              placeholder="예: 친한 친구, 유공님, 익명 A"
+              className="mt-2 w-full rounded-2xl border px-4 py-4 text-[16px] font-semibold text-gray-900 outline-none transition-all"
+              style={{ borderColor: respondentName.trim() ? G.mid : "#E5E7EB", boxShadow: respondentName.trim() ? `0 0 0 3px ${G.bg}` : undefined }}
+            />
+            <div className="mt-5 rounded-2xl px-4 py-4" style={{ background: G.bg, border: `1px solid ${G.border}` }}>
+              <p className="text-[13px] font-black text-gray-900">응답 대상</p>
+              <p className="mt-1 text-[18px] font-black" style={{ color: G.text }}>{myName || "친구"}님</p>
+            </div>
+          </section>
+
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-white via-white/95 to-transparent px-5 pb-8 pt-5">
+            <button
+              type="button"
+              onClick={() => {
+                const name = respondentName.trim();
+                if (!name || !roomCode) return;
+                try { localStorage.setItem(getRespondentNameStorageKey(roomCode), name); } catch {}
+                goTo("questions");
+              }}
+              className="w-full rounded-2xl py-4 text-[17px] font-black transition-all active:scale-[0.97]"
+              style={{ background: respondentName.trim() ? "#111" : "#F3F4F6", color: respondentName.trim() ? "#fff" : "#9CA3AF" }}
+            >
+              익명으로 답변하기 →
+            </button>
+          </div>
         </div>
       )}
 
@@ -1058,13 +1231,56 @@ export default function NaboPage() {
       )}
 
       {/* ════════════════════ RESULTS ════════════════════ */}
-      {step === "results" && (
+      {step === "results" && !user && (
+        <div className="flex flex-1 flex-col justify-center px-6 pb-20">
+          <p className="text-[11px] font-black uppercase tracking-[0.28em]" style={{ color: G.mid }}>결과 확인</p>
+          <h2 className="mt-4 break-keep text-[34px] font-black leading-tight text-gray-950">
+            카카오로 가입하면
+            <br />
+            결과가 열려요
+          </h2>
+          <p className="mt-4 break-keep text-[15px] leading-7 text-gray-500">
+            응답자는 비회원도 참여할 수 있지만, 만든 사람이 결과를 확인할 때는 계정 연결이 필요해요.
+          </p>
+          <button
+            type="button"
+            onClick={handleLogin}
+            className="mt-8 h-14 rounded-2xl bg-[#FEE500] text-[16px] font-black text-[#191919]"
+          >
+            카카오로 결과 보기
+          </button>
+        </div>
+      )}
+
+      {step === "results" && user && (
         <div className="flex flex-col pb-16">
           <section className="px-6 pt-10 pb-6 text-center">
             <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-3" style={{ color: G.mid }}>관계 분석 완료</p>
             <h2 className="text-[28px] font-black text-gray-900 leading-tight mb-1">{reportCount}명이 본 {myName}</h2>
             <p className="text-[13px] text-gray-400">익명 응답자 {reportCount}명 기준 · {new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}</p>
           </section>
+
+          {actualAnswers.length > 0 && (
+            <section className="mx-6 mb-4 rounded-2xl border border-gray-100 bg-white px-5 py-5">
+              <p className="mb-3 text-[11px] font-black uppercase tracking-[0.25em] text-gray-400">응답자별 결과</p>
+              <div className="flex flex-col gap-2">
+                {actualAnswers.map((answer, index) => (
+                  <button
+                    key={`${getRespondentName(answer, index)}-${index}`}
+                    type="button"
+                    onClick={() => {
+                      setSelectedAnswerIndex(index);
+                      goTo("single-result");
+                    }}
+                    className="flex items-center justify-between rounded-2xl border border-gray-100 px-4 py-3 text-left transition-all active:scale-[0.99]"
+                  >
+                    <span className="text-[15px] font-black text-gray-900">{getRespondentName(answer, index)}님의 결과</span>
+                    <span className="text-[20px] font-black text-gray-300">›</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* ── 종합 점수 (항상 공개) ── */}
           <section className="mx-6 rounded-3xl p-6 mb-4" style={{ background: G.bg, border: `1px solid ${G.border}` }}>
@@ -1137,7 +1353,7 @@ export default function NaboPage() {
                 ))}
               </section>
 
-              {hasFullResult ? (
+              {canShowFullResult ? (
                 <>
                   {/* 의외의 매력 */}
                   <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
@@ -1193,7 +1409,7 @@ export default function NaboPage() {
                     >
                       친구 더 초대하기
                     </button>
-                    <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>{FULL_RESULT_COUNT - responseCount}명만 더 답하면 전체 결과가 열려요</p>
+                    <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>{Math.max(0, FULL_RESULT_COUNT - responseCount)}명만 더 답하면 전체 결과가 열려요</p>
                   </div>
                 </section>
               )}
@@ -1214,14 +1430,87 @@ export default function NaboPage() {
                 </button>
               </div>
 
-              <div className="mx-6 mb-8">
+              {canStartNewRoom && (
+                <div className="mx-6 mb-8">
+                  <button
+                    onClick={handleReset}
+                    className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97] text-white"
+                    style={{ background: "#111827" }}
+                  >
+                    새로 시작하기
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ════════════════════ SINGLE RESULT ════════════════════ */}
+      {step === "single-result" && user && (
+        <div className="flex flex-col pb-16">
+          <section className="px-6 pt-10 pb-6">
+            <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-3" style={{ color: G.mid }}>응답자 결과</p>
+            <h2 className="break-keep text-[32px] font-black leading-tight text-gray-900">
+              {selectedRespondentName}님의 결과
+            </h2>
+            <p className="mt-2 text-[14px] text-gray-500">{myName || "나"}를 이렇게 봤어요</p>
+          </section>
+
+          {!selectedAnswer ? (
+            <section className="mx-6 rounded-2xl border border-gray-100 bg-gray-50 px-5 py-8 text-center">
+              <p className="text-[14px] font-bold text-gray-500">응답 데이터를 불러오는 중이에요.</p>
+              <button
+                type="button"
+                onClick={() => void fetchServerAnswers()}
+                className="mt-4 rounded-xl px-4 py-2 text-[13px] font-black text-white"
+                style={{ background: G.mid }}
+              >
+                다시 불러오기
+              </button>
+            </section>
+          ) : (
+            <>
+              <section className="mx-6 mb-4 rounded-3xl p-5" style={{ background: G.bg, border: `1px solid ${G.border}` }}>
+                <p className="text-[13px] font-black text-gray-900">한 사람의 시선</p>
+                <p className="mt-2 break-keep text-[15px] leading-7 text-gray-600">
+                  응답이 추가되면 이 화면에서 사람별 결과를 계속 확인할 수 있어요.
+                </p>
+              </section>
+
+              <section className="mx-6 flex flex-col gap-3">
+                {QS.map((question) => {
+                  const value = selectedAnswer[question.id];
+                  if (typeof value === "undefined" || value === "") return null;
+                  return (
+                    <article key={question.id} className="rounded-2xl border border-gray-100 bg-white px-5 py-4">
+                      <p className="text-[12px] font-black text-gray-400">{question.emoji} {question.short}</p>
+                      <p className="mt-2 break-keep text-[16px] font-black leading-7 text-gray-900">
+                        {question.type === "slider" ? `${value} / 100` : String(value)}
+                      </p>
+                    </article>
+                  );
+                })}
+              </section>
+
+              <div className="mx-6 mt-5 flex flex-col gap-3">
                 <button
-                  onClick={handleReset}
-                  className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97] text-white"
-                  style={{ background: "linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)" }}
+                  type="button"
+                  onClick={() => goTo("results")}
+                  className="w-full rounded-2xl py-4 text-[17px] font-black text-white"
+                  style={{ background: G.mid }}
                 >
-                  새로 시작하기
+                  전체 결과로 돌아가기
                 </button>
+                {canStartNewRoom && (
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="w-full rounded-2xl border border-gray-200 bg-white py-3.5 text-[15px] font-black text-gray-500"
+                  >
+                    새로 시작하기
+                  </button>
+                )}
               </div>
             </>
           )}
