@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { storeReferralCode } from "@/lib/referral";
 
 type ShareClientProps = {
@@ -10,8 +10,6 @@ type ShareClientProps = {
 };
 
 export function ShareClient({ id, refCode }: ShareClientProps) {
-  const [view, setView] = useState<"before" | "after">("after");
-
   useEffect(() => {
     storeReferralCode(refCode);
   }, [refCode]);
@@ -24,7 +22,6 @@ export function ShareClient({ id, refCode }: ShareClientProps) {
     );
   }
 
-  const beforeUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/shared-images/shared/${id}-before.jpg`;
   const afterUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/shared-images/shared/${id}-after.jpg`;
 
   return (
@@ -55,60 +52,22 @@ export function ShareClient({ id, refCode }: ShareClientProps) {
             지인이 공유한 AI 변환 결과입니다
           </h1>
           <p className="text-sm text-white/50">
-            버튼을 눌러 원본과 결과물을 비교해 보세요.
+            마음에 들면 내 사진도 같은 감성으로 바꿔보세요.
           </p>
         </div>
 
-        <div className="w-full max-w-sm bg-[#1A1A1A] p-1.5 rounded-full flex relative mb-6 border border-white/10 shadow-lg">
-          <div
-            className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-[#333] border border-white/10 rounded-full transition-all duration-300 ease-in-out ${
-              view === "after" ? "left-[calc(50%+3px)]" : "left-[4px]"
-            }`}
-          />
-          <button
-            type="button"
-            onClick={() => setView("before")}
-            className={`relative flex-1 py-3 text-sm font-bold z-10 transition-colors ${
-              view === "before" ? "text-white" : "text-white/40"
-            }`}
-          >
-            원본 사진 (BEFORE)
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("after")}
-            className={`relative flex-1 py-3 text-sm font-bold z-10 transition-colors ${
-              view === "after" ? "text-point" : "text-white/40"
-            }`}
-          >
-            AI 변환 (AFTER)
-          </button>
-        </div>
-
-        <div className="relative w-full aspect-[3/4] sm:aspect-[4/5] max-w-md rounded-2xl overflow-hidden bg-[#1A1A1A] border-2 border-white/5 shadow-2xl transition-all duration-500 flex items-center justify-center group">
+        <div className="relative w-full aspect-[3/4] sm:aspect-[4/5] max-w-md rounded-2xl overflow-hidden bg-[#1A1A1A] border-2 border-white/5 shadow-2xl transition-all duration-500 flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={view === "before" ? beforeUrl : afterUrl}
-            alt={view === "before" ? "Original Image" : "AI Generated Image"}
+            src={afterUrl}
+            alt="AI Generated Image"
             className="w-full h-full object-contain"
           />
 
           <div className="absolute top-4 left-4 z-10">
-            <span
-              className={`text-xs font-bold tracking-widest px-4 py-2 rounded-full backdrop-blur-md shadow-lg transition-colors ${
-                view === "before"
-                  ? "bg-black/70 text-white border border-white/20"
-                  : "bg-point text-white border border-white/20"
-              }`}
-            >
-              {view === "before" ? "BEFORE" : "AFTER"}
+            <span className="text-xs font-bold tracking-widest px-4 py-2 rounded-full backdrop-blur-md shadow-lg bg-point text-white border border-white/20">
+              AFTER
             </span>
-          </div>
-
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-            <div className="bg-black/60 backdrop-blur-sm text-white/80 text-xs px-4 py-2 rounded-full">
-              위 버튼을 눌러 상태를 전환하세요
-            </div>
           </div>
         </div>
       </section>

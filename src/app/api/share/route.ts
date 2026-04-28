@@ -3,10 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: Request) {
   try {
-    const { beforeBase64, afterBase64 } = await req.json();
+    const { afterBase64 } = await req.json();
 
-    if (!beforeBase64 || !afterBase64) {
-      return NextResponse.json({ error: 'Both original and result images are required' }, { status: 400 });
+    if (!afterBase64) {
+      return NextResponse.json({ error: 'Result image is required' }, { status: 400 });
     }
 
     const supabase = createClient(
@@ -15,20 +15,10 @@ export async function POST(req: Request) {
     );
 
     const shareId = Date.now().toString();
-    const beforeBuffer = Buffer.from(beforeBase64, 'base64');
     const afterBuffer = Buffer.from(afterBase64, 'base64');
 
-    const beforeFilename = `shared/${shareId}-before.jpg`;
     const afterFilename = `shared/${shareId}-after.jpg`;
 
-    // Upload Before Image
-    const { error: beforeError } = await supabase.storage
-      .from('shared-images')
-      .upload(beforeFilename, beforeBuffer, { contentType: 'image/jpeg', cacheControl: '3600', upsert: false });
-
-    if (beforeError) throw beforeError;
-
-    // Upload After Image
     const { error: afterError } = await supabase.storage
       .from('shared-images')
       .upload(afterFilename, afterBuffer, { contentType: 'image/jpeg', cacheControl: '3600', upsert: false });
