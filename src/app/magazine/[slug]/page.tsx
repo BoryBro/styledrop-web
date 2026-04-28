@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { GoogleAd } from "@/components/ads/GoogleAd";
 import { StyleDropHeader } from "@/components/layout/StyleDropHeader";
 import { MagazineArticleView } from "@/components/magazine/MagazineArticleView";
@@ -10,6 +11,7 @@ import {
   getMagazineHeroImage,
 } from "@/lib/magazine";
 import { ADSENSE_PAGE_SLOTS } from "@/lib/adsense";
+import { loadMagazineFeatureControl } from "@/lib/style-controls.server";
 
 const SITE_URL = "https://www.styledrop.cloud";
 
@@ -28,6 +30,11 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: MagazineDetailPageProps): Promise<Metadata> {
+  await connection();
+
+  const magazineControl = await loadMagazineFeatureControl();
+  if (!magazineControl.is_visible || !magazineControl.is_enabled) notFound();
+
   const { slug } = await params;
   const article = getMagazineArticle(slug);
 
@@ -72,6 +79,11 @@ export async function generateMetadata({ params }: MagazineDetailPageProps): Pro
 }
 
 export default async function MagazineDetailPage({ params }: MagazineDetailPageProps) {
+  await connection();
+
+  const magazineControl = await loadMagazineFeatureControl();
+  if (!magazineControl.is_visible || !magazineControl.is_enabled) notFound();
+
   const { slug } = await params;
   const article = getMagazineArticle(slug);
   if (!article) notFound();

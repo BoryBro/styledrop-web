@@ -20,19 +20,17 @@ const ALLOWED_EVENTS = [
   "lab_travel_partner_ready",
   "lab_travel_unlock",
   "lab_personal_color_completed",
+  "lab_balance_started",
+  "lab_balance_completed",
+  "lab_balance_share_link_copy",
 ];
 
 const ALLOWED_PUBLIC_EVENTS = new Set([
-  "lab_nabo_room_created",
-  "lab_nabo_response_completed",
-  "lab_nabo_premium_access",
-  "lab_nabo_share_kakao",
-  "lab_nabo_predict_link_created",
-  "lab_travel_room_created",
-  "lab_travel_response_completed",
-  "lab_travel_partner_ready",
-  "lab_travel_unlock",
-  "lab_personal_color_completed",
+  "share_kakao",
+  "share_link_copy",
+  "save_image",
+  "gift_share_kakao",
+  "revisit",
 ]);
 
 function parseSession(request: NextRequest): { id: string } | null {

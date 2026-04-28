@@ -7,7 +7,14 @@ import { decodeSignedState } from "@/lib/signed-state";
 
 type KakaoAuthState = {
   ref?: string;
+  returnTo?: string;
 };
+
+function normalizeReturnTo(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed.length > 600) return null;
+  return trimmed.startsWith("/") && !trimmed.startsWith("//") ? trimmed : null;
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -15,6 +22,7 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get("error");
   const state = decodeSignedState<KakaoAuthState>(searchParams.get("state"));
   const referralCode = normalizeReferralCode(state?.ref);
+  const returnTo = normalizeReturnTo(state?.returnTo);
 
   if (error || !code) {
     return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/?error=kakao_denied`);
@@ -92,8 +100,8 @@ export async function GET(request: NextRequest) {
       console.error("[kakao callback] db error:", dbErr);
     }
 
-    // 4. 세션 쿠키 설정 후 /studio로 리다이렉트
-    const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/studio`);
+    // 4. 세션 쿠키 설정 후 원래 열던 실험실 링크로 복귀
+    const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}${returnTo ?? "/studio"}`);
     setSessionCookie(response, {
       id: userId,
       nickname: nickname ?? "",

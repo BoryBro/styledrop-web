@@ -218,6 +218,7 @@ export async function submitNaboResponse(input: {
   roomCode: string;
   respondentToken: string;
   answers: NaboAnswerMap;
+  respondentUserId?: string | null;
   clientFingerprint?: string | null;
 }, supabase: SupabaseClient = getSupabase()): Promise<{
   bundle: NaboRoomBundle | null;
@@ -242,8 +243,13 @@ export async function submitNaboResponse(input: {
     return { bundle: null, duplicate: false, error: "응답 권한이 없습니다." };
   }
 
-  const clientFingerprintHash = input.clientFingerprint
-    ? hashNaboToken(input.clientFingerprint)
+  if (input.respondentUserId && bundle.room.owner_user_id === input.respondentUserId) {
+    return { bundle: null, duplicate: false, error: "방을 만든 계정으로는 응답할 수 없습니다." };
+  }
+
+  const duplicateKey = input.respondentUserId ?? input.clientFingerprint;
+  const clientFingerprintHash = duplicateKey
+    ? hashNaboToken(duplicateKey)
     : null;
 
   const { error: insertError } = await supabase

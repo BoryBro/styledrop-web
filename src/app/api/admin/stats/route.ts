@@ -438,6 +438,19 @@ export async function POST(request: NextRequest) {
       todayExtraCount: todayEventCounts["lab_travel_partner_ready"] ?? 0,
       paidParticipants: countPaidUsersWithEvent(["lab_travel_room_created"]),
     },
+    {
+      key: "balance_100",
+      label: "극악 밸런스 100",
+      totalParticipants: eventCounts["lab_balance_started"] ?? eventCounts["lab_balance_completed"] ?? 0,
+      todayParticipants: todayEventCounts["lab_balance_started"] ?? todayEventCounts["lab_balance_completed"] ?? 0,
+      completedCount: eventCounts["lab_balance_completed"] ?? 0,
+      todayCompletedCount: todayEventCounts["lab_balance_completed"] ?? 0,
+      unlockCount: eventCounts["lab_balance_share_link_copy"] ?? 0,
+      todayUnlockCount: todayEventCounts["lab_balance_share_link_copy"] ?? 0,
+      completedLabel: "100문항 완료",
+      unlockLabel: "공유",
+      paidParticipants: countPaidUsersWithEvent(["lab_balance_started", "lab_balance_completed"]),
+    },
   ];
 
   // 스타일 이름 붙여서 배열로 변환 (공유 많은 순)
@@ -537,6 +550,7 @@ export async function POST(request: NextRequest) {
   const naboRoomRows = events.filter((event) => event.event_type === "lab_nabo_room_created");
   const travelRoomRows = events.filter((event) => event.event_type === "lab_travel_room_created");
   const personalColorRows = events.filter((event) => event.event_type === "lab_personal_color_completed");
+  const balanceRows = events.filter((event) => event.event_type === "lab_balance_completed");
 
   const collectUniqueUsers = (rows: Array<{ user_id: string | null }>) =>
     new Set(
@@ -590,6 +604,13 @@ export async function POST(request: NextRequest) {
       note: "브라우저 분석 완료",
       count: personalColorRows.length,
       uniqueUsers: collectUniqueUsers(personalColorRows).size,
+    },
+    {
+      key: "balance_100",
+      label: "밸런스 100",
+      note: "100문항 완료",
+      count: balanceRows.length,
+      uniqueUsers: collectUniqueUsers(balanceRows).size,
     },
   ] as const;
   const trackedApiUsageTotal = apiUsageBreakdownBase.reduce((sum, item) => sum + item.count, 0);

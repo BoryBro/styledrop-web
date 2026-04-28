@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import {
   AUDITION_CONTROL_ID,
+  BALANCE_100_CONTROL_ID,
+  MAGAZINE_CONTROL_ID,
   NABO_CONTROL_ID,
   NABO_PREDICT_CONTROL_ID,
   PERSONAL_COLOR_CONTROL_ID,
@@ -549,6 +551,7 @@ function ApiUsageBreakdownSection({ stats }: { stats: Stats }) {
     nabo: "#22C55E",
     travel_together: "#3B82F6",
     personal_color: "#8DAEFF",
+    balance_100: "#E11D48",
   };
   const trackedTotal = stats.apiUsageBreakdown.reduce((sum, item) => sum + item.count, 0);
   const activeUsers = Math.max(...stats.apiUsageBreakdown.map((item) => item.uniqueUsers), 0);
@@ -1501,12 +1504,16 @@ export default function AdminPage() {
   const naboControl = styleControls.find((row) => row.style_id === NABO_CONTROL_ID);
   const naboPredictControl = styleControls.find((row) => row.style_id === NABO_PREDICT_CONTROL_ID);
   const travelTogetherControl = styleControls.find((row) => row.style_id === TRAVEL_TOGETHER_CONTROL_ID);
+  const balance100Control = styleControls.find((row) => row.style_id === BALANCE_100_CONTROL_ID);
+  const magazineControl = styleControls.find((row) => row.style_id === MAGAZINE_CONTROL_ID);
   const specialFeatureControls = [
     auditionControl ? { title: "AI 오디션", control: auditionControl } : null,
     personalColorControl ? { title: "퍼스널 컬러", control: personalColorControl } : null,
     naboControl ? { title: "내가 보는 너", control: naboControl } : null,
     naboPredictControl ? { title: "너라면 그럴 줄 알았어", control: naboPredictControl } : null,
     travelTogetherControl ? { title: "여행을 같이 간다면", control: travelTogetherControl } : null,
+    balance100Control ? { title: "극악 밸런스 100", control: balance100Control } : null,
+    magazineControl ? { title: "매거진", control: magazineControl } : null,
   ].filter((item): item is { title: string; control: StyleControlState } => Boolean(item));
   const specialFeatureControlIds = new Set(specialFeatureControls.map((item) => item.control.style_id));
   const cardStyleControls = styleControls.filter(
@@ -2176,7 +2183,7 @@ export default function AdminPage() {
                     styleOpsView === "lab" ? "text-[#C9571A]" : "text-gray-500"
                   }`}
                 >
-                  실험실 {specialFeatureControls.length}
+                  실험실/기능 {specialFeatureControls.length}
                 </button>
               </div>
 
@@ -2185,12 +2192,17 @@ export default function AdminPage() {
                   {specialFeatureControls.length > 0 ? (
                     specialFeatureControls.map(({ title, control }) => {
                       const isSaving = styleSavingId === control.style_id;
+                      const isMagazineControl = control.style_id === MAGAZINE_CONTROL_ID;
+                      const activeText = isMagazineControl ? "매거진 경로 공개" : "실험실 진입 가능";
+                      const inactiveText = isMagazineControl ? "현재 숨김 또는 차단" : "현재 숨김 또는 중지";
+                      const enabledText = isMagazineControl ? "접속" : "생성";
+                      const disabledText = isMagazineControl ? "차단" : "중지";
                       return (
                         <div key={control.style_id} className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0">
                           <div className="min-w-0 flex-1">
                             <p className="text-[13px] font-bold text-gray-900 truncate">{title}</p>
                             <p className="text-[11px] text-gray-500">
-                              {control.is_visible && control.is_enabled ? "실험실 진입 가능" : "현재 숨김 또는 중지"}
+                              {control.is_visible && control.is_enabled ? activeText : inactiveText}
                             </p>
                           </div>
                           <div className="flex items-center gap-1.5">
@@ -2214,7 +2226,7 @@ export default function AdminPage() {
                                   : "bg-white text-gray-600 border border-gray-300"
                               } disabled:opacity-50`}
                             >
-                              {control.is_enabled ? "생성" : "중지"}
+                              {control.is_enabled ? enabledText : disabledText}
                             </button>
                           </div>
                           <div className="w-10 text-right">

@@ -473,7 +473,7 @@ export default function Result() {
               </Link>
             </div>
           ) : (
-            <button onClick={login} className="bg-[#FEE500] text-[#3C1E1E] text-[13px] font-bold px-3 py-1.5 rounded-lg">
+            <button onClick={() => login()} className="bg-[#FEE500] text-[#3C1E1E] text-[13px] font-bold px-3 py-1.5 rounded-lg">
               카카오 로그인
             </button>
           )

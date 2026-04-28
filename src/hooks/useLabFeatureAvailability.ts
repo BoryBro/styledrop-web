@@ -1,16 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AUDITION_ENABLED } from "@/lib/feature-flags";
-import {
-  AUDITION_CONTROL_ID,
-  resolveFeatureControlState,
-  type StyleControlState,
-} from "@/lib/style-controls";
+import { resolveFeatureControlState, type StyleControlState } from "@/lib/style-controls";
 
-export function useAuditionAvailability() {
+export function useLabFeatureAvailability(controlId: string, fallbackEnabled: boolean) {
   const [state, setState] = useState(() =>
-    resolveFeatureControlState(undefined, AUDITION_ENABLED)
+    resolveFeatureControlState(undefined, fallbackEnabled)
   );
   const [isLoading, setIsLoading] = useState(true);
 
@@ -22,14 +17,14 @@ export function useAuditionAvailability() {
       .then((data) => {
         if (cancelled) return;
         const controls = Array.isArray(data.controls) ? data.controls : [];
-        const auditionControl = controls.find(
-          (control: StyleControlState) => control.style_id === AUDITION_CONTROL_ID
+        const control = controls.find(
+          (item: StyleControlState) => item.style_id === controlId
         );
-        setState(resolveFeatureControlState(auditionControl, AUDITION_ENABLED));
+        setState(resolveFeatureControlState(control, fallbackEnabled));
       })
       .catch(() => {
         if (cancelled) return;
-        setState(resolveFeatureControlState(undefined, AUDITION_ENABLED));
+        setState(resolveFeatureControlState(undefined, fallbackEnabled));
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -38,11 +33,11 @@ export function useAuditionAvailability() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [controlId, fallbackEnabled]);
 
   return {
     isLoading,
     isVisible: state.is_visible,
-    isEnabled: state.is_visible && state.is_enabled,
+    isEnabled: state.is_enabled,
   };
 }

@@ -46,11 +46,14 @@ export function storeReferralCodeFromCurrentUrl() {
   return storeReferralCode(params.get(REFERRAL_QUERY_PARAM));
 }
 
-export function buildKakaoLoginUrlWithReferral() {
+export function buildKakaoLoginUrlWithReferral(returnTo?: string | null) {
   const code = getStoredReferralCode();
-  if (!code) return "/api/auth/kakao";
+  const params = new URLSearchParams();
 
-  const params = new URLSearchParams({ [REFERRAL_QUERY_PARAM]: code });
+  if (code) params.set(REFERRAL_QUERY_PARAM, code);
+  if (returnTo) params.set("returnTo", returnTo);
+
+  if (params.size === 0) return "/api/auth/kakao";
   return `/api/auth/kakao?${params.toString()}`;
 }
 

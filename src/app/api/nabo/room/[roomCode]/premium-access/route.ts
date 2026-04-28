@@ -5,12 +5,18 @@ import {
   getNaboRoomBundleByCode,
   verifyNaboOwnerToken,
 } from "@/lib/nabo-room.server";
+import { loadNaboFeatureControl } from "@/lib/style-controls.server";
 
 type PremiumAccessRouteContext = {
   params: Promise<{ roomCode: string }>;
 };
 
 export async function POST(request: NextRequest, { params }: PremiumAccessRouteContext) {
+  const control = await loadNaboFeatureControl();
+  if (!control.is_visible || !control.is_enabled) {
+    return NextResponse.json({ error: "현재 이용할 수 없는 실험실 기능입니다." }, { status: 403 });
+  }
+
   const session = readSessionFromRequest(request);
 
   if (!session) {
@@ -36,6 +42,9 @@ export async function POST(request: NextRequest, { params }: PremiumAccessRouteC
 
   if (!verifyNaboOwnerToken(bundle.room, ownerToken)) {
     return NextResponse.json({ error: "결제 권한이 없습니다." }, { status: 403 });
+  }
+  if (bundle.room.owner_user_id && bundle.room.owner_user_id !== session.id) {
+    return NextResponse.json({ error: "방을 만든 계정으로만 열 수 있습니다." }, { status: 403 });
   }
 
   return NextResponse.json({

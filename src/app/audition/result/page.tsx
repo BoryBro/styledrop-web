@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useId } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
 import { analyzePhysioPhoto, getPhysioPointMap } from "@/lib/physio-face";
 
@@ -2391,7 +2392,15 @@ function AuditionResultInner() {
 
 export default function AuditionResult() {
   const router = useRouter();
+  const { user, loading: authLoading, login } = useAuth();
   const { isLoading: isAuditionLoading, isEnabled: isAuditionEnabled } = useAuditionAvailability();
+  const handleLogin = useCallback(() => {
+    if (typeof window === "undefined") {
+      login("/audition/result");
+      return;
+    }
+    login(`${window.location.pathname}${window.location.search}`);
+  }, [login]);
 
   useEffect(() => {
     if (!isAuditionLoading && !isAuditionEnabled) {
@@ -2399,7 +2408,29 @@ export default function AuditionResult() {
     }
   }, [isAuditionEnabled, isAuditionLoading, router]);
 
-  if (isAuditionLoading || !isAuditionEnabled) return null;
+  if (isAuditionLoading || authLoading || !isAuditionEnabled) return null;
+
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-[#fbfbfd] px-6 py-8">
+        <Link href="/audition/intro" className="text-[14px] font-semibold text-gray-500">← AI 오디션 소개로</Link>
+        <section className="mx-auto mt-16 max-w-[420px] rounded-[32px] border border-gray-200 bg-white px-6 py-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#315EFB]">AI Audition</p>
+          <h1 className="mt-3 text-[30px] font-black leading-[1.15] text-gray-900">로그인 후 결과를 볼 수 있어요.</h1>
+          <p className="mt-4 text-[14px] leading-relaxed text-gray-500">
+            오디션 결과와 스틸컷 생성은 계정 기준으로 관리됩니다.
+          </p>
+          <button
+            type="button"
+            onClick={handleLogin}
+            className="mt-8 w-full rounded-[22px] bg-black px-5 py-4 text-[16px] font-black text-white"
+          >
+            카카오로 계속하기
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   return <AuditionResultInner />;
 }

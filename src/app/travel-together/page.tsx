@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import { trackClientEvent } from "@/lib/client-events";
 
 const T = {
@@ -65,6 +66,15 @@ type AnswerEvidenceBlock = {
   myLabel: string;
   partnerLabel: string;
   takeaway: string;
+};
+
+type AnswerComparisonItem = {
+  key: string;
+  emoji: string;
+  category: string;
+  question: string;
+  myLabel: string;
+  partnerLabel: string;
 };
 
 type TravelParticipantRole = "host" | "guest";
@@ -213,6 +223,37 @@ function getAnswerLabel(questionId: string, answers: AnswerMap) {
 
 function getAnswerGap(questionId: string, myAnswers: AnswerMap, partnerAnswers: AnswerMap) {
   return Math.abs(getQuestionValue(questionId, myAnswers) - getQuestionValue(questionId, partnerAnswers));
+}
+
+function stableHash(value: string) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+  return hash;
+}
+
+function buildAnswerComparisons(myAnswers: AnswerMap, partnerAnswers: AnswerMap): AnswerComparisonItem[] {
+  return QUESTIONS.flatMap((question) => {
+    if (typeof myAnswers[question.id] === "undefined" || typeof partnerAnswers[question.id] === "undefined") {
+      return [];
+    }
+
+    return [{
+      key: question.id,
+      emoji: question.emoji,
+      category: question.category,
+      question: question.text,
+      myLabel: getAnswerLabel(question.id, myAnswers),
+      partnerLabel: getAnswerLabel(question.id, partnerAnswers),
+    }];
+  });
+}
+
+function pickPreviewAnswerComparisons(items: AnswerComparisonItem[], seed: string) {
+  return [...items]
+    .sort((a, b) => stableHash(`${seed}:${a.key}`) - stableHash(`${seed}:${b.key}`))
+    .slice(0, 3);
 }
 
 function ScoreRing({ score, size = 136, color = T.mid }: { score: number; size?: number; color?: string }) {
@@ -704,6 +745,7 @@ function TravelTogetherFallback() {
 function TravelTogetherPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, loading: authLoading, login } = useAuth();
   const [step, setStep] = useState<Step>("intro");
   const [history, setHistory] = useState<Step[]>(["intro"]);
   const [myName, setMyName] = useState("");
@@ -741,6 +783,13 @@ function TravelTogetherPageContent() {
   const isDirectResultView = resultOnlyView && Boolean(searchParams.get("room")) && Boolean(searchParams.get("token"));
   const isLocalDebug =
     shareOrigin.includes("localhost") || shareOrigin.includes("127.0.0.1");
+  const handleLogin = useCallback(() => {
+    if (typeof window === "undefined") {
+      login("/travel-together");
+      return;
+    }
+    login(`${window.location.pathname}${window.location.search}`);
+  }, [login]);
 
   const applyRoomView = useCallback((view: TravelRoomView) => {
     setRoomId(view.roomId);
@@ -815,7 +864,6 @@ function TravelTogetherPageContent() {
         partnerSubmitted?: boolean;
         myAnswers?: AnswerMap;
         partnerAnswersState?: AnswerMap;
-        unlocked?: boolean;
       };
       if (parsed.step) {
         setStep(parsed.step);
@@ -835,7 +883,7 @@ function TravelTogetherPageContent() {
         if (parsed.partnerSubmitted) setPartnerSubmitted(parsed.partnerSubmitted);
         if (parsed.myAnswers) setMyAnswers(parsed.myAnswers);
         if (parsed.partnerAnswersState) setPartnerAnswersState(parsed.partnerAnswersState);
-        if (parsed.unlocked) setUnlocked(parsed.unlocked);
+        setUnlocked(false);
       }
     } catch {}
   }, []);
@@ -931,11 +979,10 @@ function TravelTogetherPageContent() {
           partnerSubmitted,
           myAnswers,
           partnerAnswersState,
-          unlocked,
         }),
       );
     } catch {}
-  }, [step, myName, partnerName, relation, roomId, participantToken, participantRole, invitePath, partnerResultPath, mySubmitted, partnerSubmitted, myAnswers, partnerAnswersState, unlocked]);
+  }, [step, myName, partnerName, relation, roomId, participantToken, participantRole, invitePath, partnerResultPath, mySubmitted, partnerSubmitted, myAnswers, partnerAnswersState]);
 
   useEffect(() => {
     if (!resultAnalysisMode) return;
@@ -1019,8 +1066,11 @@ function TravelTogetherPageContent() {
   const resultNotifyLink = useMemo(() => {
     if (partnerResultPath) return `${shareOrigin}${partnerResultPath}`;
     if (participantRole === "host" && invitePath) return `${shareOrigin}${invitePath}&view=result`;
+    if (roomId && participantToken && unlocked) {
+      return `${shareOrigin}/travel-together?room=${encodeURIComponent(roomId)}&token=${encodeURIComponent(participantToken)}&view=result`;
+    }
     return "";
-  }, [invitePath, participantRole, partnerResultPath, shareOrigin]);
+  }, [invitePath, participantRole, participantToken, partnerResultPath, roomId, shareOrigin, unlocked]);
 
   const writeClipboard = useCallback(async (text: string) => {
     try {
@@ -1050,6 +1100,16 @@ function TravelTogetherPageContent() {
     await writeClipboard(inviteLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
+  };
+
+  const copyResultLink = async () => {
+    if (!resultNotifyLink) return;
+    const didCopy = await writeClipboard(resultNotifyLink);
+    if (!didCopy) return;
+    setShareStatus("copied");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+    setTimeout(() => setShareStatus("idle"), 1800);
   };
 
   const createRoom = async () => {
@@ -1179,6 +1239,11 @@ function TravelTogetherPageContent() {
 
   const handleUnlock = async () => {
     if (!roomId || !participantToken || isUnlockingDetails) return;
+    if (participantRole !== "host") {
+      setRoomError("상세 결과는 방을 만든 사람이 1크레딧으로 열 수 있어요.");
+      return;
+    }
+
     setIsUnlockingDetails(true);
     setRoomError("");
     try {
@@ -1243,6 +1308,11 @@ function TravelTogetherPageContent() {
     const paceScore = categories.find((item) => item.label === "여행 페이스")?.score ?? overall;
     const spots = pickPreviewSpots(overall, photoScore, paceScore);
     const finalContent = getTravelFinalContent(myAnswers, partnerAnswers, myName, partnerName);
+    const answerComparisons = buildAnswerComparisons(myAnswers, partnerAnswers);
+    const previewAnswerComparisons = pickPreviewAnswerComparisons(
+      answerComparisons,
+      roomId || `${myName}:${partnerName}:${relation}`,
+    );
 
     return {
       overall,
@@ -1256,8 +1326,10 @@ function TravelTogetherPageContent() {
       overseas: spots.overseas,
       finalVerdict: getFinalVerdict(overall),
       finalContent,
+      answerComparisons,
+      previewAnswerComparisons,
     };
-  }, [myAnswers, partnerAnswersState, relation, myName, partnerName]);
+  }, [myAnswers, partnerAnswersState, relation, myName, partnerName, roomId]);
 
   const startTest = () => {
     setCurrentAnswer("");
@@ -1268,18 +1340,18 @@ function TravelTogetherPageContent() {
     goTo("questions");
   };
 
-  const fillLocalPreviewResults = () => {
+  const fillLocalPreviewResults = (nextUnlocked = false) => {
     const demoMyName = myName.trim() || "지환";
     const demoPartnerName = partnerName.trim() || "민지";
     setMyName(demoMyName);
     setPartnerName(demoPartnerName);
-    setRoomId("");
-    setParticipantToken("");
-    setParticipantRole(null);
+    setRoomId("local-preview");
+    setParticipantToken("local-preview-token");
+    setParticipantRole("host");
     setInvitePath("");
     setMySubmitted(true);
     setPartnerSubmitted(true);
-    setUnlocked(true);
+    setUnlocked(nextUnlocked);
     setMyAnswers(buildDemoTravelAnswers(1));
     setPartnerAnswersState(buildDemoTravelAnswers(3));
     setQIdx(0);
@@ -1291,6 +1363,40 @@ function TravelTogetherPageContent() {
 
   const resultAnalysisSteps = resultAnalysisMode ? RESULT_ANALYSIS_STEPS[resultAnalysisMode] : RESULT_ANALYSIS_STEPS.basic;
   const resultAnalysisLabel = resultAnalysisSteps[resultAnalysisStepIndex] ?? resultAnalysisSteps[0];
+
+  if (authLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-white">
+        <span className="h-8 w-8 rounded-full border-2 border-[#DBEAFE] border-t-[#3B82F6]" style={{ animation: "spin 0.9s linear infinite" }} />
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-white px-5 py-6" style={{ fontFamily: '"Pretendard", "SUIT Variable", sans-serif' }}>
+        <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md flex-col justify-center">
+          <Link href="/studio" className="mb-8 text-[14px] font-bold text-gray-400">← 실험실로 돌아가기</Link>
+          <p className="text-[12px] font-black uppercase tracking-[0.24em]" style={{ color: T.text }}>Travel Match</p>
+          <h1 className="mt-4 text-[38px] font-black leading-[1.05] tracking-[-0.06em] text-gray-950">
+            로그인 후
+            <br />
+            참여할 수 있어요
+          </h1>
+          <p className="mt-4 text-[15px] font-medium leading-7 text-gray-500 break-keep">
+            같은 사람이 두 역할로 응답하거나, 결제 전 결과가 열리는 문제를 막기 위해 실험실 카드는 카카오 로그인 후 이용합니다.
+          </p>
+          <button
+            type="button"
+            onClick={handleLogin}
+            className="mt-8 h-14 rounded-2xl bg-[#FEE500] text-[16px] font-black text-[#191919]"
+          >
+            카카오로 계속하기
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-white flex flex-col" style={{ fontFamily: '"Pretendard", "SUIT Variable", sans-serif' }}>
@@ -1527,14 +1633,24 @@ function TravelTogetherPageContent() {
               {isCreatingRoom ? "링크 만드는 중..." : "초대 링크 만들기"}
             </button>
             {isLocalDebug && (
-              <button
-                type="button"
-                onClick={fillLocalPreviewResults}
-                className="mt-3 w-full py-4 rounded-2xl font-black text-[15px] transition-all active:scale-[0.97]"
-                style={{ background: T.bg, color: T.text, border: `1px solid ${T.border}` }}
-              >
-                로컬 테스트용 결과 바로 보기
-              </button>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => fillLocalPreviewResults(false)}
+                  className="w-full py-4 rounded-2xl font-black text-[14px] transition-all active:scale-[0.97]"
+                  style={{ background: T.bg, color: T.text, border: `1px solid ${T.border}` }}
+                >
+                  결제 전 보기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillLocalPreviewResults(true)}
+                  className="w-full py-4 rounded-2xl font-black text-[14px] transition-all active:scale-[0.97]"
+                  style={{ background: "#111827", color: "white" }}
+                >
+                  열린 결과 보기
+                </button>
+              </div>
             )}
             {(!myName.trim() || !partnerName.trim()) && <p className="text-center text-[12px] text-gray-400 mt-2">이름 두 개를 모두 입력해주세요</p>}
           </div>
@@ -1796,18 +1912,72 @@ function TravelTogetherPageContent() {
             </div>
           </section>
 
-          <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">기본 공개</p>
-            <div className="rounded-2xl px-4 py-4" style={{ background: T.bg }}>
-              <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: T.text }}>국내 추천 미리보기</p>
-              <p className="text-[20px] font-black text-gray-900 mt-2">{results.previewDomestic.title}</p>
-              <p className="text-[13px] text-gray-500 mt-1">{results.previewDomestic.mood}</p>
-              <p className="text-[13px] text-gray-600 leading-relaxed mt-3">{results.previewDomestic.blurb}</p>
-            </div>
-          </section>
+            <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">기본 공개</p>
+              <div className="rounded-2xl px-4 py-4" style={{ background: T.bg }}>
+                <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: T.text }}>국내 추천 미리보기</p>
+                <p className="text-[20px] font-black text-gray-900 mt-2">{results.previewDomestic.title}</p>
+                <p className="text-[13px] text-gray-500 mt-1">{results.previewDomestic.mood}</p>
+                <p className="text-[13px] text-gray-600 leading-relaxed mt-3">{results.previewDomestic.blurb}</p>
+              </div>
+            </section>
 
-          {unlocked ? (
-            <>
+            <section className="mx-6 border-t border-gray-200 py-7">
+              <div className="mb-5 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-[12px] font-black uppercase tracking-[0.24em] text-gray-400">Choice Log</p>
+                  <h3 className="mt-2 text-[25px] font-black tracking-[-0.05em] leading-tight text-gray-950">
+                    서로 선택한 답변
+                  </h3>
+                </div>
+                <span
+                  className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-black"
+                  style={{ background: unlocked ? T.bg : "#F3F4F6", color: unlocked ? T.text : "#6B7280" }}
+                >
+                  {unlocked ? `전체 ${results.answerComparisons.length}개` : "무료 3개"}
+                </span>
+              </div>
+              <p className="mb-4 text-[13px] font-semibold leading-relaxed text-gray-500">
+                {unlocked
+                  ? "1크레딧으로 열린 전체 선택 결과입니다. 좌우로 넘기면서 확인하세요."
+                  : "결제 전에는 무작위 3개만 먼저 보여줘요. 전체 답변 비교는 방장이 열 수 있어요."}
+              </p>
+              <div className="-mx-6 overflow-x-auto px-6 pb-1 [scrollbar-width:none]">
+                <div className="flex gap-3">
+                  {(unlocked ? results.answerComparisons : results.previewAnswerComparisons).map((item) => (
+                    <article
+                      key={item.key}
+                      className="min-w-[252px] rounded-[24px] border border-gray-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="text-[28px] leading-none">{item.emoji}</span>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: T.text }}>
+                            {item.category}
+                          </p>
+                          <h4 className="mt-1 text-[17px] font-black leading-snug tracking-[-0.04em] text-gray-950">
+                            {item.question}
+                          </h4>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div className="rounded-2xl bg-gray-50 px-3 py-3">
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400">{myName || "나"}</p>
+                          <p className="mt-1 text-[14px] font-black leading-snug text-gray-950">{item.myLabel}</p>
+                        </div>
+                        <div className="rounded-2xl px-3 py-3" style={{ background: T.bg }}>
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: T.text }}>{partnerName || "상대"}</p>
+                          <p className="mt-1 text-[14px] font-black leading-snug text-gray-950">{item.partnerLabel}</p>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {unlocked ? (
+              <>
               <section className="mx-6 border-t border-gray-200 pt-8 pb-7">
                 <p className="text-[11px] font-black uppercase tracking-[0.28em] text-gray-400 mb-4">Paid Report</p>
                 <h3 className="text-[34px] font-black tracking-[-0.055em] leading-[1.05] text-gray-950">
@@ -1940,12 +2110,23 @@ function TravelTogetherPageContent() {
                       터지는 순간 TOP3 · 역할 분담 결과
                     </p>
                   </div>
-                  <button onClick={handleUnlock} disabled={isUnlockingDetails} className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97] disabled:opacity-70" style={{ background: "#60A5FA", color: "white" }}>
-                    {isUnlockingDetails ? "결제 중..." : `${DETAIL_UNLOCK_CREDITS}크레딧으로 보기`}
-                  </button>
-                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>한 명만 결제하면 두 사람 모두 같은 상세 결과를 볼 수 있어요</p>
-                </div>
-              </section>
+                    <button
+                      onClick={handleUnlock}
+                      disabled={isUnlockingDetails || participantRole !== "host"}
+                      className="w-full py-4 rounded-2xl font-black text-[17px] transition-all active:scale-[0.97] disabled:opacity-70"
+                      style={{ background: participantRole === "host" ? "#60A5FA" : "rgba(255,255,255,0.16)", color: "white" }}
+                    >
+                      {participantRole !== "host"
+                        ? "방장이 열면 볼 수 있어요"
+                        : isUnlockingDetails
+                          ? "결제 중..."
+                          : `${DETAIL_UNLOCK_CREDITS}크레딧으로 전체 보기`}
+                    </button>
+                    <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                      방장이 1크레딧으로 열면 두 사람 모두 같은 상세 결과를 볼 수 있어요
+                    </p>
+                  </div>
+                </section>
             </>
           )}
 
@@ -1957,6 +2138,33 @@ function TravelTogetherPageContent() {
             >
               새로 시작하기
             </button>
+            {unlocked && (
+              <div className="mt-3 rounded-[24px] border border-gray-200 bg-white p-4">
+                <p className="text-[14px] font-black text-gray-950">친구에게 결과 공유하기</p>
+                <p className="mt-1 text-[12px] font-semibold leading-relaxed text-gray-500">
+                  링크를 받은 사람도 열린 상세 결과 화면으로 바로 들어올 수 있어요.
+                </p>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleKakaoShare("result")}
+                    disabled={!resultNotifyLink || isSharingKakao}
+                    className="rounded-2xl px-3 py-3.5 text-[14px] font-black transition-all active:scale-[0.98] disabled:opacity-50"
+                    style={{ background: "#FEE500", color: "#191919" }}
+                  >
+                    {isSharingKakao ? "공유 중..." : "카카오톡 공유"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={copyResultLink}
+                    disabled={!resultNotifyLink}
+                    className="rounded-2xl border border-gray-200 bg-gray-950 px-3 py-3.5 text-[14px] font-black text-white transition-all active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {shareStatus === "copied" || copied ? "링크 복사됨 ✓" : "링크 복사"}
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
         </div>
       )}

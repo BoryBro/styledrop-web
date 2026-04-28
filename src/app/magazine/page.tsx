@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { GoogleAd } from "@/components/ads/GoogleAd";
 import { StyleDropHeader } from "@/components/layout/StyleDropHeader";
 import { MagazineArticleView } from "@/components/magazine/MagazineArticleView";
 import { MAGAZINE_ARTICLES } from "@/lib/magazine";
 import { ADSENSE_PAGE_SLOTS } from "@/lib/adsense";
+import { loadMagazineFeatureControl } from "@/lib/style-controls.server";
 
 export const metadata: Metadata = {
   title: "매거진",
@@ -12,7 +15,12 @@ export const metadata: Metadata = {
     "스타일 카드의 배경 이야기와 재미있는 사실, 공개 동의 결과물을 함께 읽는 StyleDrop 매거진.",
 };
 
-export default function MagazinePage() {
+export default async function MagazinePage() {
+  await connection();
+
+  const magazineControl = await loadMagazineFeatureControl();
+  if (!magazineControl.is_visible || !magazineControl.is_enabled) notFound();
+
   const visibleArticles = MAGAZINE_ARTICLES;
 
   return (

@@ -7,6 +7,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
 import { getGuestHistory, type GuestHistoryItem } from "@/lib/guest-history";
+import {
+  BALANCE_TOTAL_QUESTIONS,
+  analyzeBalanceAnswers,
+  getBalance100Progress,
+  getBalance100StorageKey,
+  type Balance100LocalState,
+} from "@/lib/balance-100";
 import { buildKakaoLoginUrlWithReferral, buildReferralShareUrl } from "@/lib/referral";
 import { MULTI_SOURCE_STYLE_IDS, STYLE_LABELS, VISIBLE_STYLE_IDS } from "@/lib/styles";
 import { STYLE_VARIANTS } from "@/lib/variants";
@@ -178,6 +185,7 @@ export default function MyPage() {
   const [auditionHistory, setAuditionHistory] = useState<AuditionHistoryItem[]>([]);
   const [travelHistory, setTravelHistory] = useState<TravelHistoryItem[]>([]);
   const [naboPredictHistory, setNaboPredictHistory] = useState<NaboPredictHistoryItem[]>([]);
+  const [balance100State, setBalance100State] = useState<Balance100LocalState | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -215,8 +223,16 @@ export default function MyPage() {
       setGuestHistory(getGuestHistory());
       setTravelHistory([]);
       setNaboPredictHistory([]);
+      setBalance100State(null);
       setHistoryLoading(false);
       return;
+    }
+    try {
+      const raw = window.localStorage.getItem(getBalance100StorageKey(user.id));
+      const parsed = raw ? JSON.parse(raw) as Balance100LocalState : null;
+      setBalance100State(parsed?.answers ? parsed : null);
+    } catch {
+      setBalance100State(null);
     }
     const requests: Promise<void>[] = [
       fetch("/api/history").then(r => r.json()).then(d => setHistory(d.history ?? [])).catch(() => {}),
@@ -495,6 +511,12 @@ export default function MyPage() {
       setDeleting(false);
     }
   };
+
+  const balance100Progress = getBalance100Progress(balance100State?.answers);
+  const balance100Completed = balance100Progress.answered >= BALANCE_TOTAL_QUESTIONS;
+  const balance100Result =
+    balance100State?.result ??
+    (balance100Completed && balance100State?.answers ? analyzeBalanceAnswers(balance100State.answers) : null);
 
   return (
     <div className="min-h-screen bg-[#F7F6F3] flex flex-col">
@@ -825,6 +847,37 @@ export default function MyPage() {
 
               {historyTab === "lab" && (
                 <div className="flex flex-col gap-5">
+                  {/* 극악 밸런스 100 */}
+                  <div>
+                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">극악 밸런스 100</p>
+                    <Link href="/balance-100" className="flex items-center justify-between bg-white border border-[#E7E7E7] rounded-2xl px-4 py-4 hover:border-[#D1D5DB] transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-[14px] font-bold text-[#111827]">100문항 선택 매칭</p>
+                          <span className="rounded-full bg-[#FFF1F2] px-2 py-0.5 text-[10px] font-black text-[#E11D48]">
+                            무료
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-[#9CA3AF] font-normal mt-0.5">
+                          {balance100Completed
+                            ? `${balance100Result?.typeTitle ?? "결과 완료"} · 결과 다시 보기`
+                            : balance100Progress.answered > 0
+                              ? `${balance100Progress.answered} / ${BALANCE_TOTAL_QUESTIONS} 진행 중 · 이어하기`
+                              : "아직 기록이 없어요 · 시작하기"}
+                        </p>
+                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#F1F1F4]">
+                          <div
+                            className="h-full rounded-full bg-[#E11D48]"
+                            style={{ width: `${Math.round((balance100Progress.answered / BALANCE_TOTAL_QUESTIONS) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="ml-3 text-[#D1D5DB] flex-shrink-0">
+                        <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </Link>
+                  </div>
+
                   {/* AI 오디션 기록 */}
                   <div>
                     <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">AI 오디션</p>

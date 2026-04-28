@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import { usePersonalColorAvailability } from "@/hooks/usePersonalColorAvailability";
 import { useRecentPhotos } from "@/hooks/useRecentPhotos";
 import { trackClientEvent } from "@/lib/client-events";
@@ -266,6 +267,7 @@ async function resizeImageFile(file: File) {
 
 export default function PersonalColorPage() {
   const router = useRouter();
+  const { user, loading: authLoading, login } = useAuth();
   const {
     isLoading: isPersonalColorLoading,
     isVisible: isPersonalColorVisible,
@@ -412,7 +414,7 @@ export default function PersonalColorPage() {
     ? ALL_STYLES.find((style) => style.id === pendingStyleId) ?? null
     : null;
 
-  if (isPersonalColorLoading) {
+  if (isPersonalColorLoading || authLoading) {
     return (
       <main className="min-h-screen bg-[#F5F7FC] text-[#131A2A]">
         <div className="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center px-4 py-10">
@@ -420,6 +422,41 @@ export default function PersonalColorPage() {
             <span className="mx-auto inline-flex h-11 w-11 animate-spin rounded-full border-[3px] border-[#DDE4F2] border-t-[#315EFB]" />
             <p className="mt-4 text-[15px] font-semibold text-[#465067]">퍼스널 컬러 실험실 상태를 확인 중이에요</p>
           </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-[#F5F7FC] text-[#131A2A]">
+        <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 pb-14 pt-5 sm:px-6">
+          <header className="mb-5 flex items-center justify-between">
+            <Link href="/studio" className="flex items-center gap-2 text-[14px] font-semibold text-[#465067]">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M11.25 4.5L6.75 9L11.25 13.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              실험실로 돌아가기
+            </Link>
+          </header>
+          <section className="my-auto rounded-[32px] border border-[#DCE2EF] bg-white px-6 py-8 shadow-[0_30px_80px_rgba(12,18,32,0.08)] sm:px-7 sm:py-9">
+            <p className="text-[12px] font-bold uppercase tracking-[0.24em] text-[#C9571A]">AI Personal Color</p>
+            <h1 className="mt-3 text-[32px] font-black leading-[1.08] tracking-[-0.04em] text-[#111827]">
+              로그인 후
+              <br />
+              이용할 수 있어요
+            </h1>
+            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#677084]">
+              실험실 카드는 카카오 로그인 후 이용합니다. 분석 완료 기록과 추천 흐름을 계정 기준으로 관리하기 위한 처리입니다.
+            </p>
+            <button
+              type="button"
+              onClick={() => login("/personal-color")}
+              className="mt-6 inline-flex h-14 items-center justify-center rounded-[20px] bg-[#FEE500] px-5 py-3 text-[15px] font-black text-[#191919]"
+            >
+              카카오로 계속하기
+            </button>
+          </section>
         </div>
       </main>
     );

@@ -15,6 +15,10 @@ export async function POST(request: NextRequest) {
     }
 
     const session = readSessionFromRequest(request);
+    if (!session) {
+      return NextResponse.json({ error: "카카오 로그인 후 이용할 수 있습니다." }, { status: 401 });
+    }
+
     const body = await request.json();
     const myName = String(body?.myName ?? "").trim();
     const partnerName = String(body?.partnerName ?? "").trim();
@@ -32,7 +36,7 @@ export async function POST(request: NextRequest) {
       myName,
       partnerName,
       relation,
-    }, session?.id ?? null);
+    }, session.id);
 
     if (error || !room) {
       return NextResponse.json({ error: error ?? "방을 만들지 못했습니다." }, { status: 500 });

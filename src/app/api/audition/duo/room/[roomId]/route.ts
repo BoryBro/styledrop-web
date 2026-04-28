@@ -12,11 +12,6 @@ import {
   type DuoRoomState,
 } from "@/lib/audition-duo";
 import { pickRandomDuoBattleScene } from "@/lib/audition-duo-scenes";
-import {
-  createTemporaryDuoGuest,
-  readValidatedDuoGuest,
-  setDuoGuestCookie,
-} from "@/lib/audition-duo-guest.server";
 import { getDuoRoomById, updateDuoRoom } from "@/lib/audition-duo.server";
 import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 
@@ -53,16 +48,6 @@ function resolveViewerId(request: NextRequest, room: DuoRoomState) {
     };
   }
 
-  const guest = readValidatedDuoGuest(request, room);
-  if (guest) {
-    return {
-      type: "guest" as const,
-      userId: guest.userId,
-      nickname: guest.nickname,
-      profileImage: null,
-    };
-  }
-
   return {
     type: "spectator" as const,
     userId: null,
@@ -73,7 +58,7 @@ function resolveViewerId(request: NextRequest, room: DuoRoomState) {
 
 export async function GET(request: NextRequest, { params }: RoomRouteContext) {
   const auditionControl = await loadAuditionFeatureControl();
-  if (!auditionControl.is_enabled) {
+  if (!auditionControl.is_visible || !auditionControl.is_enabled) {
     return jsonError("AI 오디션이 현재 비공개 상태입니다.", 503);
   }
 
@@ -83,6 +68,9 @@ export async function GET(request: NextRequest, { params }: RoomRouteContext) {
   if (!room) return jsonError("방을 찾지 못했습니다.", 404);
 
   const viewer = resolveViewerId(request, room);
+  if (viewer.type !== "session") {
+    return jsonError("로그인 후 이용할 수 있습니다.", 401);
+  }
 
   return NextResponse.json({
     ok: true,
@@ -92,7 +80,7 @@ export async function GET(request: NextRequest, { params }: RoomRouteContext) {
 
 export async function POST(request: NextRequest, { params }: RoomRouteContext) {
   const auditionControl = await loadAuditionFeatureControl();
-  if (!auditionControl.is_enabled) {
+  if (!auditionControl.is_visible || !auditionControl.is_enabled) {
     return jsonError("AI 오디션이 현재 비공개 상태입니다.", 503);
   }
 
@@ -106,10 +94,12 @@ export async function POST(request: NextRequest, { params }: RoomRouteContext) {
   const body = await request.json().catch(() => ({}));
   const action = typeof body.action === "string" ? body.action : "";
   const viewer = resolveViewerId(request, roomRes.room);
+  if (viewer.type !== "session") {
+    return jsonError("로그인 후 이용할 수 있습니다.", 401);
+  }
   const currentRole = getDuoViewerRole(roomRes.room, viewer.userId);
   const now = new Date().toISOString();
   let nextRoom = roomRes.room;
-  let guestCookieToSet: ReturnType<typeof createTemporaryDuoGuest>["session"] | null = null;
 
   if (action === "join") {
     if (currentRole !== "spectator") {
@@ -119,21 +109,15 @@ export async function POST(request: NextRequest, { params }: RoomRouteContext) {
       return jsonError("이미 두 명이 모두 입장한 방입니다.", 409);
     }
 
-    const participant = viewer.type === "session"
-      ? {
-          userId: viewer.userId!,
-          nickname: viewer.nickname ?? "친구",
-          profileImage: viewer.profileImage,
-          joinedAt: now,
-          ready: false,
-          readyAt: null,
-          accessToken: null,
-        }
-      : (() => {
-          const temporaryGuest = createTemporaryDuoGuest(roomId, body.guestName, now);
-          guestCookieToSet = temporaryGuest.session;
-          return temporaryGuest.participant;
-        })();
+    const participant = {
+      userId: viewer.userId!,
+      nickname: viewer.nickname ?? "친구",
+      profileImage: viewer.profileImage,
+      joinedAt: now,
+      ready: false,
+      readyAt: null,
+      accessToken: null,
+    };
 
     nextRoom = withResolvedDuoRoomStatus({
       ...nextRoom,
@@ -235,10 +219,6 @@ export async function POST(request: NextRequest, { params }: RoomRouteContext) {
     ok: true,
     ...sanitizeRoom(updated.room, viewer.userId ?? updated.room.guest?.userId ?? null),
   });
-
-  if (guestCookieToSet) {
-    setDuoGuestCookie(response, guestCookieToSet);
-  }
 
   return response;
 }

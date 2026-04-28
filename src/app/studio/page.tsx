@@ -33,12 +33,16 @@ import {
   writeHowToSeenPreference,
 } from "@/lib/how-to";
 import {
+  BALANCE_100_LAB_ENABLED,
+  MAGAZINE_ENABLED,
   NABO_LAB_ENABLED,
   NABO_PREDICT_LAB_ENABLED,
   PERSONAL_COLOR_LAB_ENABLED,
   TRAVEL_TOGETHER_LAB_ENABLED,
 } from "@/lib/feature-flags";
 import {
+  BALANCE_100_CONTROL_ID,
+  MAGAZINE_CONTROL_ID,
   NABO_CONTROL_ID,
   NABO_PREDICT_CONTROL_ID,
   PERSONAL_COLOR_CONTROL_ID,
@@ -122,26 +126,14 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
 }
 
 function LabCardBadges({
-  participants,
   creditLabel,
   accent,
 }: {
-  participants: string;
   creditLabel: string;
   accent: string;
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span
-        className="flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-white/45"
-        style={{ fontFamily: '"Pretendard", sans-serif', fontSize: "clamp(10px, 2.5vw, 12px)" }}
-      >
-        <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.8" />
-          <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.8" strokeWidth="1.6" strokeLinecap="round" />
-        </svg>
-        {participants}
-      </span>
       <span
         className="rounded-full border px-2.5 py-1 font-bold"
         style={{
@@ -395,13 +387,24 @@ export default function Studio() {
     styleControls[TRAVEL_TOGETHER_CONTROL_ID],
     TRAVEL_TOGETHER_LAB_ENABLED
   );
+  const balance100Control = resolveFeatureControlState(
+    styleControls[BALANCE_100_CONTROL_ID],
+    BALANCE_100_LAB_ENABLED
+  );
+  const magazineControl = resolveFeatureControlState(
+    styleControls[MAGAZINE_CONTROL_ID],
+    MAGAZINE_ENABLED
+  );
   const showPersonalColorLab = personalColorControl.is_visible;
   const isPersonalColorEnabled = personalColorControl.is_enabled;
   const showNaboLab = naboControl.is_visible;
   const showNaboPredictLab = naboPredictControl.is_visible;
   const isNaboPredictEnabled = naboPredictControl.is_enabled;
   const showTravelTogetherLab = travelTogetherControl.is_visible;
-  const showLabSection = showAuditionLab || showPersonalColorLab || showNaboLab || showNaboPredictLab || showTravelTogetherLab;
+  const showBalance100Lab = balance100Control.is_visible;
+  const isBalance100Enabled = balance100Control.is_enabled;
+  const showMagazineLink = magazineControl.is_visible && magazineControl.is_enabled;
+  const showLabSection = showAuditionLab || showPersonalColorLab || showNaboLab || showNaboPredictLab || showTravelTogetherLab || showBalance100Lab;
 
   const scrollToSection = useCallback((section: StudioSectionTab) => {
     const target = section === "cards" ? generalCardsSectionRef.current : labSectionRef.current;
@@ -1388,14 +1391,16 @@ export default function Studio() {
                         </span>
                       </span>
                     </Link>
-                    <Link
-                      href="/magazine"
-                      onClick={() => setShowStudioMenu(false)}
-                      className="flex items-center justify-between px-4 py-3 text-[13px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#FFF4EE] hover:text-[#C9571A]"
-                    >
-                      <span>매거진</span>
-                      <span aria-hidden="true">›</span>
-                    </Link>
+                    {showMagazineLink && (
+                      <Link
+                        href="/magazine"
+                        onClick={() => setShowStudioMenu(false)}
+                        className="flex items-center justify-between px-4 py-3 text-[13px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#FFF4EE] hover:text-[#C9571A]"
+                      >
+                        <span>매거진</span>
+                        <span aria-hidden="true">›</span>
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>
@@ -1913,7 +1918,7 @@ export default function Studio() {
                           className="text-white/50 leading-snug"
                           style={{ fontFamily: '"Pretendard", sans-serif', fontSize: 'clamp(11px, 2.8vw, 13px)', fontWeight: 500 }}
                         >
-                          {usageCounts === null ? "..." : `${formatCount(usageCounts["nabo"] ?? 0)}명 참여`} · 관계 분석 리포트<br />
+                          관계 분석 리포트<br />
                           <span className="text-white/30">누가 뭐라 했는지는 절대 안 보여요</span>
                         </p>
                       </div>
@@ -1921,7 +1926,6 @@ export default function Studio() {
                       {/* ── 바텀 바: 참여 수 + 무료 + 화살표 ── */}
                       <div className="absolute z-20 flex items-center justify-between" style={{ bottom: '6%', left: '6%', right: '6%' }}>
                         <LabCardBadges
-                          participants={usageCounts === null ? "..." : `${formatCount(usageCounts["nabo"] ?? 0)}명 참여`}
                           creditLabel="무료"
                           accent="#22C55E"
                         />
@@ -2019,7 +2023,6 @@ export default function Studio() {
 
                       <div className="absolute z-20 flex items-center justify-between" style={{ bottom: "6%", left: "6%", right: "6%" }}>
                         <LabCardBadges
-                          participants={usageCounts === null ? "..." : `${formatCount(usageCounts["nabo_predict"] ?? 0)}명 참여`}
                           creditLabel="무료"
                           accent="#FB7185"
                         />
@@ -2102,7 +2105,7 @@ export default function Studio() {
                         className="text-white/50 leading-snug"
                         style={{ fontFamily: '"Pretendard", sans-serif', fontSize: "clamp(11px, 2.8vw, 13px)", fontWeight: 500 }}
                       >
-                        {usageCounts === null ? "..." : `${formatCount(usageCounts["travel_together"] ?? 0)}명 참여`} · 티어 결과 · 여행지 추천
+                        티어 결과 · 여행지 추천
                         <br />
                         <span className="text-white/30">같이 가면 진짜 맞는지 먼저 봅니다</span>
                       </p>
@@ -2110,7 +2113,6 @@ export default function Studio() {
 
                     <div className="absolute z-20 flex items-center justify-between" style={{ bottom: "6%", left: "6%", right: "6%" }}>
                       <LabCardBadges
-                        participants={usageCounts === null ? "..." : `${formatCount(usageCounts["travel_together"] ?? 0)}명 참여`}
                         creditLabel="무료"
                         accent="#60A5FA"
                       />
@@ -2125,6 +2127,105 @@ export default function Studio() {
                     <div className="absolute right-6 z-10" style={{ top: "28%", bottom: "20%", width: "1.5px", background: "linear-gradient(to bottom, transparent, rgba(59,130,246,0.5), transparent)" }} />
                   </div>
                 </button>
+                )}
+
+                {showBalance100Lab && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isBalance100Enabled) {
+                        showToast("현재 점검 중입니다. 잠시 후 다시 확인해주세요.");
+                        return;
+                      }
+                      handleLabCardClick("/balance-100");
+                    }}
+                    className="block w-full mb-4 text-left active:scale-[0.97] transition-transform"
+                  >
+                    <div className="relative rounded-2xl overflow-hidden bg-[#150711] border border-white/[0.07]" style={{ aspectRatio: "4/3" }}>
+                      <div
+                        className="absolute inset-0 z-0"
+                        style={{
+                          background: "radial-gradient(ellipse 80% 60% at 10% 100%, rgba(225,29,72,0.20) 0%, transparent 70%), radial-gradient(ellipse 70% 55% at 90% 12%, rgba(251,113,133,0.14) 0%, transparent 66%)",
+                        }}
+                      />
+
+                      <span
+                        className="absolute select-none z-[1] font-unbounded font-black"
+                        style={{
+                          bottom: "-2%",
+                          right: "-4%",
+                          fontSize: "clamp(48px, 14vw, 82px)",
+                          lineHeight: 1,
+                          letterSpacing: "-4px",
+                          color: "rgba(255,255,255,0.035)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        100
+                      </span>
+
+                      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 pt-5">
+                        <span
+                          className="font-unbounded font-medium text-[#FB7185] tracking-[0.18em] uppercase"
+                          style={{ fontSize: "clamp(9px, 2.4vw, 11px)" }}
+                        >
+                          Balance Lab
+                        </span>
+                        <span
+                          className="text-[10px] font-bold text-white/30 border border-white/15 rounded-full px-2.5 py-0.5 tracking-widest uppercase"
+                          style={{ fontFamily: '"Pretendard", sans-serif' }}
+                        >
+                          신규
+                        </span>
+                      </div>
+
+                      <div className="absolute z-10 flex flex-col" style={{ top: "28%", left: "6%", right: "6%" }}>
+                        <div className="w-6 h-[2px] bg-[#FB7185] mb-3" />
+                        <span
+                          className="font-unbounded font-bold text-white/40 uppercase tracking-[0.06em] mb-1"
+                          style={{ fontSize: "clamp(10px, 2.6vw, 13px)" }}
+                        >
+                          100 choices
+                        </span>
+                        <span
+                          className="text-white leading-[0.9]"
+                          style={{
+                            fontFamily: '"BMKkubulim", sans-serif',
+                            fontSize: "clamp(31px, 8.8vw, 52px)",
+                            letterSpacing: "-1px",
+                          }}
+                        >
+                          극악 밸런스 100
+                        </span>
+                      </div>
+
+                      <div className="absolute z-10" style={{ top: "68%", left: "6%", right: "6%" }}>
+                        <p
+                          className="text-white/50 leading-snug"
+                          style={{ fontFamily: '"Pretendard", sans-serif', fontSize: "clamp(11px, 2.8vw, 13px)", fontWeight: 500 }}
+                        >
+                          자동 저장 · 결과 공유
+                          <br />
+                          <span className="text-white/30">나와 100개 선택이 같은 사람을 찾는 실험</span>
+                        </p>
+                      </div>
+
+                      <div className="absolute z-20 flex items-center justify-between" style={{ bottom: "6%", left: "6%", right: "6%" }}>
+                        <LabCardBadges
+                          creditLabel="무료"
+                          accent="#FB7185"
+                        />
+
+                        <div className="w-9 h-9 rounded-full bg-[#E11D48] flex items-center justify-center flex-shrink-0">
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      <div className="absolute right-6 z-10" style={{ top: "28%", bottom: "20%", width: "1.5px", background: "linear-gradient(to bottom, transparent, rgba(251,113,133,0.55), transparent)" }} />
+                    </div>
+                  </button>
                 )}
 
                 {showAuditionLab && (
@@ -2184,7 +2285,7 @@ export default function Studio() {
                     className="text-white/50 leading-snug"
                     style={{ fontFamily: '"Pretendard", sans-serif', fontSize: 'clamp(11px, 2.8vw, 13px)', fontWeight: 500 }}
                   >
-                    {usageCounts === null ? "..." : `${formatCount(usageCounts["audition"] ?? 0)}명 참여`} · 성향 퀴즈 · 표정 연기<br />
+                    성향 퀴즈 · 표정 연기<br />
                     <span className="text-white/30">AI 감독이 당신을 심사합니다</span>
                   </p>
                 </div>
@@ -2192,7 +2293,6 @@ export default function Studio() {
                 {/* ── 바텀 바: 유저 수 + 크레딧 + 화살표 ── */}
                 <div className="absolute z-20 flex items-center justify-between" style={{ bottom: '6%', left: '6%', right: '6%' }}>
                   <LabCardBadges
-                    participants={usageCounts === null ? "..." : `${formatCount(usageCounts["audition"] ?? 0)}명 참여`}
                     creditLabel="5크레딧"
                     accent="#C9571A"
                   />
@@ -2292,7 +2392,6 @@ export default function Studio() {
 
                     <div className="absolute z-20 flex items-center justify-between" style={{ bottom: "6%", left: "6%", right: "6%" }}>
                       <LabCardBadges
-                        participants={usageCounts === null ? "..." : `${formatCount(usageCounts["personal_color"] ?? 0)}명 참여`}
                         creditLabel="무료"
                         accent="#8DAEFF"
                       />
@@ -2356,7 +2455,7 @@ export default function Studio() {
             © 2026 StyleDrop v2.0 · <Link href="/terms" className="hover:text-[#0A0A0A]/30 transition-colors">이용약관</Link> · <Link href="/privacy" className="hover:text-[#0A0A0A]/30 transition-colors">개인정보처리방침</Link>
           </p>
           <p className="text-[10px] text-[#CCCCCC] mt-1 leading-relaxed">
-            상호: 핑거 · 대표자: 문지환 · 사업자등록번호: 707-79-00261<br/>
+            상호: 핑거 · 사업자등록번호: 707-79-00261<br/>
             주소: 서울특별시 송파구 오금로 551, 1동 2층 201호 257 · 연락처: 0505-007-3670
           </p>
         </footer>

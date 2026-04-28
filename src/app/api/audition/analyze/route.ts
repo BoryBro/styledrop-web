@@ -945,7 +945,7 @@ function mockScores(): Scores {
 
 export async function POST(request: NextRequest) {
   const auditionControl = await loadAuditionFeatureControl();
-  if (!auditionControl.is_enabled) {
+  if (!auditionControl.is_visible || !auditionControl.is_enabled) {
     return NextResponse.json({ error: "AI 오디션이 현재 비공개 상태입니다." }, { status: 503 });
   }
 

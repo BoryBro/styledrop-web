@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 import { trackClientEvent } from "@/lib/client-events";
 
 // ── 팔레트 ────────────────────────────────────────────────────────
@@ -203,6 +204,7 @@ function BarRow({ label, count, total }: { label: string; count: number; total: 
 // Main
 // ═════════════════════════════════════════════════════════════════
 export default function NaboPage() {
+  const { user, loading: authLoading, login } = useAuth();
   const [step, setStep]               = useState<Step>("intro");
   const [stepHistory, setStepHistory] = useState<Step[]>(["intro"]);
   const [myName, setMyName]           = useState("");
@@ -230,6 +232,13 @@ export default function NaboPage() {
   const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
   const [isSharingKakao, setIsSharingKakao] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const handleLogin = useCallback(() => {
+    if (typeof window === "undefined") {
+      login("/nabo");
+      return;
+    }
+    login(`${window.location.pathname}${window.location.search}`);
+  }, [login]);
 
   const applyRoomView = useCallback((
     view: NaboRoomViewPayload,
@@ -639,6 +648,40 @@ export default function NaboPage() {
   const annoyances  = texts("q2", R);
 
   // ─────────────────────────────────────────────────────────────
+  if (authLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-white">
+        <span className="h-8 w-8 rounded-full border-2 border-[#DCFCE7] border-t-[#22C55E]" style={{ animation: "spin 0.9s linear infinite" }} />
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-white px-5 py-6" style={{ fontFamily: '"Pretendard", "SUIT Variable", sans-serif' }}>
+        <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md flex-col justify-center">
+          <Link href="/studio" className="mb-8 text-[14px] font-bold text-gray-400">← 실험실로 돌아가기</Link>
+          <p className="text-[12px] font-black uppercase tracking-[0.24em]" style={{ color: G.text }}>Anonymous Lab</p>
+          <h1 className="mt-4 text-[38px] font-black leading-[1.05] tracking-[-0.06em] text-gray-950">
+            로그인 후
+            <br />
+            참여할 수 있어요
+          </h1>
+          <p className="mt-4 text-[15px] font-medium leading-7 text-gray-500 break-keep">
+            실험실 초대 링크는 카카오 로그인 후 열립니다. 응답자 중복과 본인 응답을 막기 위한 처리입니다.
+          </p>
+          <button
+            type="button"
+            onClick={handleLogin}
+            className="mt-8 h-14 rounded-2xl bg-[#FEE500] text-[16px] font-black text-[#191919]"
+          >
+            카카오로 계속하기
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-white flex flex-col" style={{ fontFamily: '"Pretendard", "SUIT Variable", sans-serif' }}>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { readSessionFromRequest } from "@/lib/auth-session";
+import { loadNaboPredictFeatureControl } from "@/lib/style-controls.server";
 
 function getSupabase() {
   return createClient(
@@ -14,7 +15,16 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export async function POST(request: NextRequest) {
+  const control = await loadNaboPredictFeatureControl();
+  if (!control.is_visible || !control.is_enabled) {
+    return NextResponse.json({ error: "현재 이용할 수 없는 실험실 기능입니다." }, { status: 403 });
+  }
+
   const session = readSessionFromRequest(request);
+  if (!session) {
+    return NextResponse.json({ error: "카카오 로그인 후 이용할 수 있습니다." }, { status: 401 });
+  }
+
   const body = await request.json().catch(() => null);
 
   if (!isPlainRecord(body)) {
@@ -49,7 +59,7 @@ export async function POST(request: NextRequest) {
 
   const supabase = getSupabase();
   const { error } = await supabase.from("user_events").insert({
-    user_id: session?.id ?? null,
+    user_id: session.id,
     event_type: "lab_nabo_predict_result_completed",
     metadata,
   });

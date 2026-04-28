@@ -3,6 +3,8 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import {
   AUDITION_CONTROL_ID,
+  BALANCE_100_CONTROL_ID,
+  MAGAZINE_CONTROL_ID,
   NABO_CONTROL_ID,
   NABO_PREDICT_CONTROL_ID,
   PERSONAL_COLOR_CONTROL_ID,
@@ -16,6 +18,8 @@ import {
 } from "@/lib/style-controls";
 import {
   AUDITION_ENABLED,
+  BALANCE_100_LAB_ENABLED,
+  MAGAZINE_ENABLED,
   NABO_LAB_ENABLED,
   NABO_PREDICT_LAB_ENABLED,
   PERSONAL_COLOR_LAB_ENABLED,
@@ -82,6 +86,16 @@ export async function loadNaboPredictFeatureControl() {
 export async function loadTravelTogetherFeatureControl() {
   const controlMap = await loadStyleControlMap();
   return resolveFeatureControlState(controlMap[TRAVEL_TOGETHER_CONTROL_ID], TRAVEL_TOGETHER_LAB_ENABLED);
+}
+
+export async function loadBalance100FeatureControl() {
+  const controlMap = await loadStyleControlMap();
+  return resolveFeatureControlState(controlMap[BALANCE_100_CONTROL_ID], BALANCE_100_LAB_ENABLED);
+}
+
+export async function loadMagazineFeatureControl() {
+  const controlMap = await loadStyleControlMap();
+  return resolveFeatureControlState(controlMap[MAGAZINE_CONTROL_ID], MAGAZINE_ENABLED);
 }
 
 export async function saveStyleControls(rows: StyleControlRow[]) {

@@ -72,11 +72,17 @@ function AuditionFriendPageContent() {
   const [room, setRoom] = useState<DuoRoomState | null>(null);
   const [viewerRole, setViewerRole] = useState<DuoViewerRole>("spectator");
   const [roomInput, setRoomInput] = useState("");
-  const [guestName, setGuestName] = useState("초대 친구");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isActing, setIsActing] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const handleLogin = useCallback(() => {
+    if (typeof window === "undefined") {
+      login("/audition/friend");
+      return;
+    }
+    login(`${window.location.pathname}${window.location.search}`);
+  }, [login]);
 
   useEffect(() => {
     if (!isAuditionLoading && !isAuditionEnabled) {
@@ -93,7 +99,7 @@ function AuditionFriendPageContent() {
   }, [user]);
 
   const fetchRoom = useCallback(async () => {
-    if (!roomId) return;
+    if (!roomId || !user) return;
     const response = await fetch(`/api/audition/duo/room/${encodeURIComponent(roomId)}`, { cache: "no-store" });
     const data = await response.json().catch(() => null);
     if (!response.ok) {
@@ -102,10 +108,10 @@ function AuditionFriendPageContent() {
     setRoom(data.room);
     setViewerRole(data.viewerRole ?? "spectator");
     setErrorMsg(null);
-  }, [roomId]);
+  }, [roomId, user]);
 
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !user) return;
 
     let timer: ReturnType<typeof setInterval> | null = null;
     let cancelled = false;
@@ -127,7 +133,7 @@ function AuditionFriendPageContent() {
       cancelled = true;
       if (timer) clearInterval(timer);
     };
-  }, [fetchRoom, roomId]);
+  }, [fetchRoom, roomId, user]);
 
   const createRoom = useCallback(async () => {
     setIsCreating(true);
@@ -156,7 +162,6 @@ function AuditionFriendPageContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action,
-          guestName,
           ...extra,
         }),
       });
@@ -174,7 +179,7 @@ function AuditionFriendPageContent() {
     } finally {
       setIsActing(false);
     }
-  }, [guestName, roomId, router]);
+  }, [roomId, router]);
 
   const shareUrl = useMemo(() => (room ? buildAbsoluteShareUrl(room.roomId) : ""), [room]);
   const myReady = viewerRole === "host"
@@ -185,7 +190,7 @@ function AuditionFriendPageContent() {
 
   if (isAuditionLoading || authLoading || !isAuditionEnabled) return null;
 
-  if (!roomId && !user) {
+  if (!user) {
     return (
       <main className="min-h-screen bg-[#fbfbfd] px-6 py-8">
         <Link href="/audition/intro" className="text-[14px] font-semibold text-gray-500">← AI 오디션 소개로</Link>
@@ -197,7 +202,7 @@ function AuditionFriendPageContent() {
           </p>
           <button
             type="button"
-            onClick={login}
+            onClick={handleLogin}
             className="mt-8 w-full rounded-[22px] bg-black px-5 py-4 text-[16px] font-black text-white"
           >
             카카오로 시작하기
@@ -341,23 +346,17 @@ function AuditionFriendPageContent() {
                 </button>
               ) : (
                 <div className="rounded-[22px] border border-gray-200 bg-[#fbfbfd] px-4 py-4">
-                  <p className="text-[12px] font-black uppercase tracking-[0.2em] text-gray-400">Temporary Guest</p>
-                  <input
-                    value={guestName}
-                    onChange={(event) => setGuestName(event.target.value)}
-                    placeholder="이름을 적어주세요"
-                    className="mt-3 w-full rounded-[16px] border border-gray-200 bg-white px-4 py-3 text-[14px] text-gray-900 outline-none placeholder:text-gray-400"
-                  />
+                  <p className="text-[12px] font-black uppercase tracking-[0.2em] text-gray-400">Login Required</p>
                   <p className="mt-3 text-[13px] leading-relaxed text-gray-500">
-                    로그인 없이 임시 친구로 입장합니다.
+                    친구도 카카오 로그인 후 참가할 수 있어요.
                   </p>
                   <button
                     type="button"
                     disabled={isActing}
-                    onClick={() => runRoomAction("join")}
+                    onClick={handleLogin}
                     className="mt-4 w-full rounded-[22px] bg-[#315EFB] px-5 py-4 text-[16px] font-black text-white disabled:opacity-50"
                   >
-                    임시 친구로 참가하기
+                    카카오로 참가하기
                   </button>
                 </div>
               )

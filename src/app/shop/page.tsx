@@ -592,7 +592,7 @@ export default function ShopPage() {
                       닫기
                     </button>
                     <button
-                      onClick={login}
+                      onClick={() => login()}
                       className="flex-1 h-[48px] rounded-2xl bg-[#111827] text-white font-bold text-[14px]"
                     >
                       로그인

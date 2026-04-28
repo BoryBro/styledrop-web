@@ -756,7 +756,7 @@ function AuditionSoloInner() {
             </p>
           </div>
           <button
-            onClick={login}
+            onClick={() => login("/audition/solo")}
             className="w-full h-[52px] bg-[#FEE500] hover:bg-[#F0D900] text-[#191919] font-bold text-[15px] rounded-full transition-colors flex items-center justify-center gap-2"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">

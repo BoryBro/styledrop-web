@@ -7,13 +7,23 @@ import {
   submitTravelAnswers,
 } from "@/lib/travel-together-room.server";
 import { readSessionFromRequest } from "@/lib/auth-session";
+import { loadTravelTogetherFeatureControl } from "@/lib/style-controls.server";
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ roomId: string }> },
 ) {
+  const control = await loadTravelTogetherFeatureControl();
+  if (!control.is_visible || !control.is_enabled) {
+    return NextResponse.json({ error: "현재 이용할 수 없는 실험실 기능입니다." }, { status: 403 });
+  }
+
   const { roomId } = await context.params;
   const session = readSessionFromRequest(request);
+
+  if (!session) {
+    return NextResponse.json({ error: "카카오 로그인 후 응답할 수 있습니다." }, { status: 401 });
+  }
 
   try {
     const body = await request.json();
@@ -36,13 +46,11 @@ export async function POST(
 
     let currentRoom = room;
 
-    if (session?.id) {
-      const attached = await attachTravelParticipantUserId(currentRoom, role, session.id);
-      if (attached.error || !attached.room) {
-        return NextResponse.json({ error: attached.error ?? "참여자 확인에 실패했습니다." }, { status: 403 });
-      }
-      currentRoom = attached.room;
+    const attached = await attachTravelParticipantUserId(currentRoom, role, session.id);
+    if (attached.error || !attached.room) {
+      return NextResponse.json({ error: attached.error ?? "참여자 확인에 실패했습니다." }, { status: 403 });
     }
+    currentRoom = attached.room;
 
     const submitted = await submitTravelAnswers({ room: currentRoom, role, answers });
     if (submitted.error || !submitted.room) {

@@ -16,7 +16,11 @@ export function useAuth() {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = () => { window.location.href = buildKakaoLoginUrlWithReferral(); };
+  const login = (returnTo?: string | null) => {
+    window.location.href = buildKakaoLoginUrlWithReferral(
+      typeof returnTo === "string" ? returnTo : null
+    );
+  };
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);

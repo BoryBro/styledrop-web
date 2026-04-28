@@ -1,5 +1,7 @@
 import {
   AUDITION_ENABLED,
+  BALANCE_100_LAB_ENABLED,
+  MAGAZINE_ENABLED,
   NABO_LAB_ENABLED,
   NABO_PREDICT_LAB_ENABLED,
   PERSONAL_COLOR_LAB_ENABLED,
@@ -29,6 +31,10 @@ export const NABO_PREDICT_CONTROL_ID = "nabo_predict";
 export const NABO_PREDICT_CONTROL_NAME = "너라면 그럴 줄 알았어";
 export const TRAVEL_TOGETHER_CONTROL_ID = "travel_together";
 export const TRAVEL_TOGETHER_CONTROL_NAME = "여행을 같이 간다면";
+export const BALANCE_100_CONTROL_ID = "balance_100";
+export const BALANCE_100_CONTROL_NAME = "극악 밸런스 100";
+export const MAGAZINE_CONTROL_ID = "magazine";
+export const MAGAZINE_CONTROL_NAME = "매거진";
 
 function buildFeatureControls(): StyleControlState[] {
   return [
@@ -69,6 +75,22 @@ function buildFeatureControls(): StyleControlState[] {
       style_name: TRAVEL_TOGETHER_CONTROL_NAME,
       is_visible: TRAVEL_TOGETHER_LAB_ENABLED,
       is_enabled: TRAVEL_TOGETHER_LAB_ENABLED,
+      disabled_reason: null,
+      updated_at: null,
+    },
+    {
+      style_id: BALANCE_100_CONTROL_ID,
+      style_name: BALANCE_100_CONTROL_NAME,
+      is_visible: BALANCE_100_LAB_ENABLED,
+      is_enabled: BALANCE_100_LAB_ENABLED,
+      disabled_reason: null,
+      updated_at: null,
+    },
+    {
+      style_id: MAGAZINE_CONTROL_ID,
+      style_name: MAGAZINE_CONTROL_NAME,
+      is_visible: MAGAZINE_ENABLED,
+      is_enabled: MAGAZINE_ENABLED,
       disabled_reason: null,
       updated_at: null,
     },

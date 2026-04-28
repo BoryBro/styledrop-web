@@ -9,6 +9,7 @@ import {
   getTravelRoom,
   unlockTravelRoom,
 } from "@/lib/travel-together-room.server";
+import { loadTravelTogetherFeatureControl } from "@/lib/style-controls.server";
 
 const DETAIL_UNLOCK_CREDITS = 1;
 
@@ -23,6 +24,11 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ roomId: string }> },
 ) {
+  const control = await loadTravelTogetherFeatureControl();
+  if (!control.is_visible || !control.is_enabled) {
+    return NextResponse.json({ error: "현재 이용할 수 없는 실험실 기능입니다." }, { status: 403 });
+  }
+
   const session = readSessionFromRequest(request);
   if (!session) {
     return NextResponse.json(
@@ -51,6 +57,13 @@ export async function POST(
       return NextResponse.json({ error: "상세 결과를 볼 권한이 없습니다." }, { status: 403 });
     }
 
+    if (role !== "host") {
+      return NextResponse.json(
+        { error: "상세 결과는 방을 만든 사람만 1크레딧으로 열 수 있습니다." },
+        { status: 403 },
+      );
+    }
+
     const attached = await attachTravelParticipantUserId(room, role, session.id);
     if (attached.error || !attached.room) {
       return NextResponse.json(
@@ -77,6 +90,15 @@ export async function POST(
     );
 
     if (deductError || remainingCredits === null || remainingCredits === undefined) {
+      const latest = await getTravelRoom(roomId);
+      if (latest.room?.unlockedAt) {
+        return NextResponse.json({
+          ok: true,
+          view: buildTravelRoomView(latest.room, role),
+          chargedCredits: 0,
+        });
+      }
+
       return NextResponse.json(
         { error: "크레딧이 부족합니다. 1크레딧 충전 후 다시 시도해주세요." },
         { status: 429 },
@@ -101,6 +123,22 @@ export async function POST(
         { error: unlocked.error ?? "상세 결과를 열지 못했습니다." },
         { status: 500 },
       );
+    }
+
+    if (!unlocked.didUnlock) {
+      await addCreditsWithPolicy(supabase, {
+        userId: session.id,
+        credits: DETAIL_UNLOCK_CREDITS,
+        sourceType: "refund",
+        sourceId: `travel-together-unlock-race-refund:${roomId}:${session.id}:${Date.now()}`,
+      }).catch(() => undefined);
+
+      return NextResponse.json({
+        ok: true,
+        view: buildTravelRoomView(unlocked.room, role),
+        chargedCredits: 0,
+        refundedCredits: DETAIL_UNLOCK_CREDITS,
+      });
     }
 
     return NextResponse.json({

@@ -7,7 +7,7 @@ export async function GET() {
     process.env.SUPABASE_SERVICE_KEY!
   );
 
-  const [{ data, error }, naboCountRes, naboPredictCountRes, travelCountRes, personalColorCountRes] = await Promise.all([
+  const [{ data, error }, naboCountRes, naboPredictCountRes, travelCountRes, personalColorCountRes, balanceCountRes] = await Promise.all([
     supabase
       .from("style_usage")
       .select("style_id"),
@@ -27,6 +27,10 @@ export async function GET() {
       .from("user_events")
       .select("event_type", { count: "exact", head: true })
       .eq("event_type", "lab_personal_color_completed"),
+    supabase
+      .from("user_events")
+      .select("event_type", { count: "exact", head: true })
+      .eq("event_type", "lab_balance_completed"),
   ]);
 
   if (error) {
@@ -64,6 +68,12 @@ export async function GET() {
     console.error("[usage] personal color count error:", personalColorCountRes.error.message);
   } else {
     counts.personal_color = personalColorCountRes.count ?? 0;
+  }
+
+  if (balanceCountRes.error) {
+    console.error("[usage] balance 100 count error:", balanceCountRes.error.message);
+  } else {
+    counts.balance_100 = balanceCountRes.count ?? 0;
   }
 
   return NextResponse.json({ counts });

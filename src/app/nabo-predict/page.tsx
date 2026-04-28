@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useLabFeatureAvailability } from "@/hooks/useLabFeatureAvailability";
 import { trackClientEvent } from "@/lib/client-events";
+import { NABO_PREDICT_LAB_ENABLED } from "@/lib/feature-flags";
+import { NABO_PREDICT_CONTROL_ID } from "@/lib/style-controls";
 import { NABO_PREDICT_EXTRA_QUESTION_SEEDS } from "@/lib/nabo-predict-extra-questions";
 
 const P = {
@@ -1102,6 +1106,12 @@ function QuestionCard({
 }
 
 export default function NaboPredictPage() {
+  const { user, loading: authLoading, login } = useAuth();
+  const {
+    isLoading: isAvailabilityLoading,
+    isVisible: isLabVisible,
+    isEnabled: isLabEnabled,
+  } = useLabFeatureAvailability(NABO_PREDICT_CONTROL_ID, NABO_PREDICT_LAB_ENABLED);
   const [step, setStep] = useState<Step>("intro");
   const [ownerName, setOwnerName] = useState("");
   const [targetName, setTargetName] = useState("");
@@ -1120,6 +1130,13 @@ export default function NaboPredictPage() {
   const [isResultSaved, setIsResultSaved] = useState(false);
   const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
   const savedResultSessionRef = useRef("");
+  const handleLogin = useCallback(() => {
+    if (typeof window === "undefined") {
+      login("/nabo-predict");
+      return;
+    }
+    login(`${window.location.pathname}${window.location.search}`);
+  }, [login]);
   const senderName = ownerName.trim() || "나";
   const activeRelationship = sharePayload?.relationshipType ?? relationshipType;
   const activeQuestionIds = sharePayload?.questionIds ?? selectedQuestionIds;
@@ -1479,6 +1496,59 @@ export default function NaboPredictPage() {
     }
   };
 
+  if (authLoading || isAvailabilityLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-white">
+        <span className="h-8 w-8 rounded-full border-2 border-[#FFEDD5] border-t-[#F97316]" style={{ animation: "spin 0.9s linear infinite" }} />
+      </main>
+    );
+  }
+
+  if (!isLabVisible || !isLabEnabled) {
+    return (
+      <main className="min-h-screen bg-white px-5 py-6" style={{ fontFamily: '"Pretendard", "SUIT Variable", sans-serif' }}>
+        <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md flex-col justify-center">
+          <Link href="/studio" className="mb-8 text-[14px] font-bold text-gray-400">← 실험실로 돌아가기</Link>
+          <p className="text-[12px] font-black uppercase tracking-[0.24em]" style={{ color: P.text }}>Prediction Lab</p>
+          <h1 className="mt-4 text-[38px] font-black leading-[1.05] tracking-[-0.06em] text-gray-950">
+            지금은 잠시
+            <br />
+            점검 중이에요
+          </h1>
+          <p className="mt-4 text-[15px] font-medium leading-7 text-gray-500 break-keep">
+            어드민에서 현재 실험실 진입 또는 결과 생성을 중지한 상태입니다.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-white px-5 py-6" style={{ fontFamily: '"Pretendard", "SUIT Variable", sans-serif' }}>
+        <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md flex-col justify-center">
+          <Link href="/studio" className="mb-8 text-[14px] font-bold text-gray-400">← 실험실로 돌아가기</Link>
+          <p className="text-[12px] font-black uppercase tracking-[0.24em]" style={{ color: P.text }}>Prediction Lab</p>
+          <h1 className="mt-4 text-[38px] font-black leading-[1.05] tracking-[-0.06em] text-gray-950">
+            로그인 후
+            <br />
+            참여할 수 있어요
+          </h1>
+          <p className="mt-4 text-[15px] font-medium leading-7 text-gray-500 break-keep">
+            예측 링크 생성과 친구 답변 저장은 카카오 로그인 후 진행됩니다.
+          </p>
+          <button
+            type="button"
+            onClick={handleLogin}
+            className="mt-8 h-14 rounded-2xl bg-[#FEE500] text-[16px] font-black text-[#191919]"
+          >
+            카카오로 계속하기
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-white text-gray-900" style={{ fontFamily: '"Pretendard", "SUIT Variable", sans-serif' }}>
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-gray-100 bg-white/90 px-5 backdrop-blur">
@@ -1822,9 +1892,9 @@ export default function NaboPredictPage() {
               새로 시작하기
             </button>
             <div className="rounded-2xl px-4 py-4" style={{ background: P.bg, border: `1px solid ${P.border}` }}>
-              <p className="text-[13px] font-black text-gray-900">상대는 로그인 없이 바로 참여할 수 있어요</p>
+              <p className="text-[13px] font-black text-gray-900">상대도 로그인 후 참여할 수 있어요</p>
               <p className="mt-1 text-[12px] leading-relaxed text-gray-500">
-                결과는 상대가 8개 질문에 모두 답한 뒤에만 열립니다.
+                결과는 상대가 로그인하고 8개 질문에 모두 답한 뒤에만 열립니다.
               </p>
             </div>
             {shareNotice && <p className="text-center text-[12px] font-bold text-gray-400">{shareNotice}</p>}

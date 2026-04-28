@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -159,7 +159,7 @@ function AuditionFriendBattlePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roomId = searchParams.get("room")?.trim() ?? "";
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const { isLoading: isAuditionLoading, isEnabled: isAuditionEnabled } = useAuditionAvailability();
 
   const [room, setRoom] = useState<DuoRoomState | null>(null);
@@ -171,6 +171,13 @@ function AuditionFriendBattlePageContent() {
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
   const [analysisFrame, setAnalysisFrame] = useState<FrameCandidate | null>(null);
   const [isReviewVideoReady, setIsReviewVideoReady] = useState(false);
+  const handleLogin = useCallback(() => {
+    if (typeof window === "undefined") {
+      login("/audition/friend");
+      return;
+    }
+    login(`${window.location.pathname}${window.location.search}`);
+  }, [login]);
 
   const previewVideoRef = useRef<HTMLVideoElement | null>(null);
   const reviewVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -208,7 +215,7 @@ function AuditionFriendBattlePageContent() {
   }, [phase, recordedUrl]);
 
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !user) return;
 
     let cancelled = false;
     let timer: ReturnType<typeof setInterval> | null = null;
@@ -274,7 +281,7 @@ function AuditionFriendBattlePageContent() {
       cancelled = true;
       if (timer) clearInterval(timer);
     };
-  }, [roomId, router]);
+  }, [roomId, router, user]);
 
   useEffect(() => {
     if (!room?.startedAt || viewerRole === "spectator" || streamRef.current) return;
@@ -417,6 +424,28 @@ function AuditionFriendBattlePageContent() {
   };
 
   if (isAuditionLoading || authLoading || !isAuditionEnabled) return null;
+
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-[#fbfbfd] px-6 py-8">
+        <Link href="/audition/friend" className="text-[14px] font-semibold text-gray-500">← 친구랑 함께하기로</Link>
+        <section className="mx-auto mt-16 max-w-[420px] rounded-[32px] border border-gray-200 bg-white px-6 py-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+          <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#315EFB]">Friend Battle</p>
+          <h1 className="mt-3 text-[30px] font-black leading-[1.15] text-gray-900">로그인 후 참가할 수 있어요.</h1>
+          <p className="mt-4 text-[14px] leading-relaxed text-gray-500">
+            영상 제출과 크레딧 차감은 계정 기준으로 처리됩니다.
+          </p>
+          <button
+            type="button"
+            onClick={handleLogin}
+            className="mt-8 w-full rounded-[22px] bg-black px-5 py-4 text-[16px] font-black text-white"
+          >
+            카카오로 계속하기
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   if (!roomId) {
     return (

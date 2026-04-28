@@ -4,7 +4,22 @@ import { encodeSignedState } from "@/lib/signed-state";
 
 type KakaoAuthState = {
   ref?: string;
+  returnTo?: string;
 };
+
+function normalizeReturnTo(value: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed.length > 600) return null;
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) return trimmed;
+
+  try {
+    const url = new URL(trimmed);
+    if (url.origin !== process.env.NEXTAUTH_URL) return null;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest) {
   const kakaoAuthUrl = new URL("https://kauth.kakao.com/oauth/authorize");
@@ -14,8 +29,12 @@ export async function GET(request: NextRequest) {
   kakaoAuthUrl.searchParams.set("scope", "profile_nickname profile_image");
 
   const ref = normalizeReferralCode(request.nextUrl.searchParams.get("ref"));
-  if (ref) {
-    kakaoAuthUrl.searchParams.set("state", encodeSignedState<KakaoAuthState>({ ref }));
+  const returnTo = normalizeReturnTo(request.nextUrl.searchParams.get("returnTo"));
+  if (ref || returnTo) {
+    kakaoAuthUrl.searchParams.set("state", encodeSignedState<KakaoAuthState>({
+      ...(ref ? { ref } : {}),
+      ...(returnTo ? { returnTo } : {}),
+    }));
   }
 
   return NextResponse.redirect(kakaoAuthUrl.toString());

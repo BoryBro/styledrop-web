@@ -4,6 +4,8 @@ import {
   submitNaboResponse,
   type NaboAnswerMap,
 } from "@/lib/nabo-room.server";
+import { readSessionFromRequest } from "@/lib/auth-session";
+import { loadNaboFeatureControl } from "@/lib/style-controls.server";
 
 type RoomResponseRouteContext = {
   params: Promise<{ roomCode: string }>;
@@ -32,6 +34,16 @@ function sanitizeAnswers(value: unknown): NaboAnswerMap | null {
 }
 
 export async function POST(request: NextRequest, { params }: RoomResponseRouteContext) {
+  const control = await loadNaboFeatureControl();
+  if (!control.is_visible || !control.is_enabled) {
+    return NextResponse.json({ error: "현재 이용할 수 없는 실험실 기능입니다." }, { status: 403 });
+  }
+
+  const session = readSessionFromRequest(request);
+  if (!session) {
+    return NextResponse.json({ error: "카카오 로그인 후 응답할 수 있습니다." }, { status: 401 });
+  }
+
   const { roomCode } = await params;
   const body = await request.json().catch(() => ({}));
   const token = String(body?.token ?? "").trim();
@@ -50,6 +62,7 @@ export async function POST(request: NextRequest, { params }: RoomResponseRouteCo
     roomCode,
     respondentToken: token,
     answers,
+    respondentUserId: session.id,
     clientFingerprint: clientFingerprint || null,
   });
 

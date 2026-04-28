@@ -3,19 +3,12 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { addWatermark } from "@/lib/watermark";
 import { readSessionFromRequest } from "@/lib/auth-session";
 import {
   assertBase64ImageSize,
   assertRequestBodySize,
-  enforceAnonymousDailyLimit,
 } from "@/lib/api-abuse-guard";
 import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
-import {
-  GUEST_LIMIT, WINDOW_MS,
-  GUEST_COOKIE,
-  parseLimitCookie, encodeLimitCookie,
-} from "@/lib/rate-limit";
 
 type ScoreMap = Partial<Record<"이해도" | "표정연기" | "창의성" | "몰입도", number>>;
 type GenerateScene = {
@@ -271,58 +264,14 @@ function resolvePromptTemplateId(templateId: unknown, genre: string) {
 
 export async function POST(request: NextRequest) {
   const auditionControl = await loadAuditionFeatureControl();
-  if (!auditionControl.is_enabled) {
+  if (!auditionControl.is_visible || !auditionControl.is_enabled) {
     return NextResponse.json({ error: "AI 오디션이 현재 비공개 상태입니다." }, { status: 503 });
   }
 
   const session = parseSession(request);
-  const now = Date.now();
-
-  // ── 비회원: 쿠키 기반 무료 체험 제한 ──────────────────────────────────
-  const raw = !session ? request.cookies.get(GUEST_COOKIE)?.value : undefined;
-  const limitData = !session ? parseLimitCookie(raw) : null;
-  let guestCount = 0;
-  let resetAt = now + WINDOW_MS;
-  if (!session && limitData && now < limitData.resetAt) {
-    guestCount = limitData.count;
-    resetAt = limitData.resetAt;
-  }
-  if (!session && guestCount >= GUEST_LIMIT) {
-    return NextResponse.json(
-      { error: "무료 체험이 끝났어요. 카카오 로그인하면 1크레딧을 무료로 받을 수 있어요!" },
-      { status: 429 }
-    );
-  }
   if (!session) {
-    try {
-      const allowed = await enforceAnonymousDailyLimit(request, {
-        scope: "audition-still-generate",
-        limit: GUEST_LIMIT,
-      });
-
-      if (!allowed) {
-        return NextResponse.json(
-          { error: "무료 체험이 끝났어요. 카카오 로그인하면 1크레딧을 무료로 받을 수 있어요!" },
-          { status: 429 }
-        );
-      }
-    } catch (error) {
-      console.error("[audition/generate] anonymous throttle error:", error);
-      return NextResponse.json(
-        { error: "요청이 잠시 많아요. 잠시 후 다시 시도해주세요." },
-        { status: 503 }
-      );
-    }
+    return NextResponse.json({ error: "AI 오디션은 로그인 후 이용할 수 있습니다." }, { status: 401 });
   }
-
-  const cookieValue = !session ? encodeLimitCookie({ count: guestCount + 1, resetAt }) : "";
-  const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: Math.ceil((resetAt - now) / 1000),
-  };
 
   try {
     assertRequestBodySize(request, 18 * 1024 * 1024);
@@ -469,9 +418,7 @@ export async function POST(request: NextRequest) {
     let generatedImage: string | null = null;
     for (const part of parts) {
       if (part.inlineData) {
-        generatedImage = session
-          ? part.inlineData.data!
-          : await addWatermark(part.inlineData.data!);
+        generatedImage = part.inlineData.data!;
         break;
       }
     }
@@ -484,7 +431,6 @@ export async function POST(request: NextRequest) {
     ).from("style_usage").insert({ style_id: "audition" }).then(() => {});
 
     const res = NextResponse.json({ image: generatedImage, mimeType: "image/jpeg" });
-    if (!session) res.cookies.set(GUEST_COOKIE, cookieValue, cookieOptions);
     return res;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";

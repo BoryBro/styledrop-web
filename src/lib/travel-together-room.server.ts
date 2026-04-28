@@ -278,8 +278,13 @@ export async function attachTravelParticipantUserId(
   userId: string,
 ) {
   const current = role === "host" ? room.host : room.guest;
+  const other = role === "host" ? room.guest : room.host;
   if (current.userId === userId) {
     return { room, error: null };
+  }
+
+  if (other.userId === userId) {
+    return { room, error: "같은 계정으로 두 사람의 답변을 모두 제출할 수 없습니다." };
   }
 
   if (current.userId && current.userId !== userId) {
@@ -311,26 +316,35 @@ export async function unlockTravelRoom(
   creditCost: number,
 ) {
   if (room.unlockedAt) {
-    return { room, error: null };
+    return { room, error: null, didUnlock: false };
+  }
+
+  const latest = await getTravelRoom(room.roomId);
+  if (latest.error || !latest.room) {
+    return { room: null, error: latest.error ?? "room not found", didUnlock: false };
+  }
+
+  if (latest.room.unlockedAt) {
+    return { room: latest.room, error: null, didUnlock: false };
   }
 
   const now = new Date().toISOString();
   const nextRoom: TravelRoomState = {
-    ...room,
+    ...latest.room,
     unlockedAt: now,
     unlockedByUserId: actorUserId,
     unlockCreditsCost: creditCost,
     updatedAt: now,
-    version: room.version + 1,
+    version: latest.room.version + 1,
   };
 
   const saved = await saveTravelRoom(nextRoom, actorUserId);
   if (!saved.ok) {
-    return { room: null, error: saved.error };
+    return { room: null, error: saved.error, didUnlock: false };
   }
 
   const refreshed = await getTravelRoom(nextRoom.roomId);
-  return { room: refreshed.room ?? nextRoom, error: refreshed.error };
+  return { room: refreshed.room ?? nextRoom, error: refreshed.error, didUnlock: true };
 }
 
 export async function submitTravelAnswers(input: {

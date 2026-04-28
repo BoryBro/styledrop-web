@@ -18,7 +18,6 @@ import {
   type DuoScoreMap,
 } from "@/lib/audition-duo";
 import { addCreditsWithPolicy, getAvailableCredits } from "@/lib/credits.server";
-import { readValidatedDuoGuest } from "@/lib/audition-duo-guest.server";
 import { getDuoRoomById, updateDuoRoom } from "@/lib/audition-duo.server";
 import { createRequestFingerprint, hasActiveRequestEvent, acquireEphemeralRequestLock } from "@/lib/request-lock.server";
 import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
@@ -54,17 +53,6 @@ function resolveActor(request: NextRequest, room: Awaited<ReturnType<typeof getD
       nickname: session.nickname,
       profileImage: session.profileImage,
       role: getRoleForUser(session.id, room),
-    };
-  }
-
-  const guest = room ? readValidatedDuoGuest(request, room) : null;
-  if (guest) {
-    return {
-      type: "guest" as const,
-      userId: guest.userId,
-      nickname: guest.nickname,
-      profileImage: null,
-      role: getRoleForUser(guest.userId, room),
     };
   }
 
@@ -185,7 +173,7 @@ async function evaluateFrame(args: {
 
 export async function POST(request: NextRequest, { params }: SubmissionRouteContext) {
   const auditionControl = await loadAuditionFeatureControl();
-  if (!auditionControl.is_enabled) {
+  if (!auditionControl.is_visible || !auditionControl.is_enabled) {
     return jsonError("AI 오디션이 현재 비공개 상태입니다.", 503);
   }
 
@@ -197,6 +185,9 @@ export async function POST(request: NextRequest, { params }: SubmissionRouteCont
   if (!roomRes.room) return jsonError("방을 찾지 못했습니다.", 404);
 
   const actor = resolveActor(request, roomRes.room);
+  if (actor.type !== "session") {
+    return jsonError("로그인 후 제출할 수 있습니다.", 401);
+  }
   const role = actor.role;
   if (!role) return jsonError("참가자만 제출할 수 있습니다.", 403);
   if (!roomRes.room.startedAt || !roomRes.room.battle.scene) {
