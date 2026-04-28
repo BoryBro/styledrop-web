@@ -58,6 +58,21 @@ type HistoryImage = {
   created_at: string;
 };
 
+type KakaoShareSDK = {
+  init?: (key: string | undefined) => void;
+  isInitialized?: () => boolean;
+  Share?: {
+    sendDefault?: (options: {
+      objectType: "text";
+      text: string;
+      link: {
+        mobileWebUrl: string;
+        webUrl: string;
+      };
+    }) => void;
+  };
+};
+
 const SCORE_ORDER: BalanceDimension[] = ["money", "love", "social", "pride", "risk", "comfort"];
 const GREEN = "#20D879";
 
@@ -497,40 +512,59 @@ export default function Balance100Page() {
     setMode("result");
   }, []);
 
-  const sharePredictionForSession = useCallback(async (sessionId: string, level?: BalanceLevel) => {
+  const createPredictionShareUrl = useCallback(async (sessionId: string) => {
+    const response = await fetch(`/api/balance-100/session/${encodeURIComponent(sessionId)}/prediction-link`, {
+      method: "POST",
+    });
+    const data = await response.json();
+    if (!response.ok || !data?.path) throw new Error(data?.error ?? "failed");
+    if (data.session) upsertCompletedSession(data.session as BalanceServerSession);
+    return `${window.location.origin}${data.path}`;
+  }, [upsertCompletedSession]);
+
+  const handleKakaoPredictionShare = useCallback(async (sessionId: string, level?: BalanceLevel) => {
     setIsSaving(true);
     setShareStatus("");
     try {
-      const response = await fetch(`/api/balance-100/session/${encodeURIComponent(sessionId)}/prediction-link`, {
-        method: "POST",
-      });
-      const data = await response.json();
-      if (!response.ok || !data?.path) throw new Error(data?.error ?? "failed");
-      if (data.session) upsertCompletedSession(data.session as BalanceServerSession);
-      const shareUrl = `${window.location.origin}${data.path}`;
+      const shareUrl = await createPredictionShareUrl(sessionId);
+      const Kakao = (window as Window & { Kakao?: KakaoShareSDK }).Kakao;
+      const isInitialized = Kakao?.isInitialized?.() ?? false;
+      if (!isInitialized) {
+        Kakao?.init?.(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
+      }
+      const sendDefault = Kakao?.Share?.sendDefault;
+      if (!sendDefault) throw new Error("Kakao SDK unavailable");
 
-      if (navigator.share) {
-        await navigator.share({
-          title: "밸런스 100 예측하기",
-          text: "내가 어떻게 골랐을 것 같아? 100문항으로 맞혀봐.",
-          url: shareUrl,
-        });
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        setShareStatus(level ? `Lv.${level} 예측 링크가 복사됐어요.` : "예측 링크가 복사됐어요.");
-      }
+      sendDefault({
+        objectType: "text",
+        text: `내가 밸런스 100에서 뭘 골랐을 것 같아?\n친구 입장에서 내 선택을 맞혀봐.`,
+        link: {
+          mobileWebUrl: shareUrl,
+          webUrl: shareUrl,
+        },
+      });
+      setShareStatus(level ? `Lv.${level} 카카오 공유창을 열었어요.` : "카카오 공유창을 열었어요.");
     } catch {
-      try {
-        const fallback = `${window.location.origin}/balance-100`;
-        await navigator.clipboard.writeText(fallback);
-      } catch {
-        // ignore clipboard fallback failure
-      }
-      setShareStatus("링크 생성에 실패했어요.");
+      setShareStatus("카카오 공유에 실패했어요. 링크 복사를 이용해주세요.");
+    } finally {
+      window.setTimeout(() => setIsSaving(false), 1200);
+    }
+  }, [createPredictionShareUrl]);
+
+  const handleCopyPredictionLink = useCallback(async (sessionId: string, level?: BalanceLevel) => {
+    setIsSaving(true);
+    setShareStatus("");
+    try {
+      const shareUrl = await createPredictionShareUrl(sessionId);
+      await navigator.clipboard.writeText(shareUrl);
+      setShareStatus(level ? `Lv.${level} 친구 맞히기 링크가 복사됐어요.` : "친구 맞히기 링크가 복사됐어요.");
+      void trackClientEvent("lab_balance_share_link_copy", { level });
+    } catch {
+      setShareStatus("링크 복사에 실패했어요.");
     } finally {
       setIsSaving(false);
     }
-  }, [upsertCompletedSession]);
+  }, [createPredictionShareUrl]);
 
   const handleShare = useCallback(async () => {
     if (!result) return;
@@ -572,8 +606,8 @@ export default function Balance100Page() {
 
   const handlePredictionShare = useCallback(async () => {
     if (!serverSession) return;
-    await sharePredictionForSession(serverSession.sessionId, serverSession.level);
-  }, [serverSession, sharePredictionForSession]);
+    await handleKakaoPredictionShare(serverSession.sessionId, serverSession.level);
+  }, [handleKakaoPredictionShare, serverSession]);
 
   if (loading || isAvailabilityLoading) {
     return (
@@ -673,7 +707,15 @@ export default function Balance100Page() {
               disabled={isSaving}
               className="h-[62px] w-full rounded-[34px] bg-black text-[17px] font-black text-white disabled:opacity-50"
             >
-              내가 고른 답 맞혀보기 링크
+              친구에게 카카오로 물어보기
+            </button>
+            <button
+              type="button"
+              onClick={() => serverSession && void handleCopyPredictionLink(serverSession.sessionId, serverSession.level)}
+              disabled={isSaving || !serverSession}
+              className="h-[56px] w-full rounded-[30px] border border-[#D9F7E5] bg-[#F0FFF7] text-[15px] font-black text-[#20D879] disabled:opacity-50"
+            >
+              친구 맞히기 링크 복사
             </button>
             <button
               type="button"
@@ -793,68 +835,28 @@ export default function Balance100Page() {
         {progress.answered === 0 && !serverSession && (
           <section className="mt-5">
             <p className="px-1 text-[13px] font-black text-[#111827]">난이도 선택</p>
-            <div className="mt-3 grid gap-3">
+            <div className="-mx-6 mt-3 flex gap-3 overflow-x-auto px-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {BALANCE_LEVELS.map((level) => (
                 <button
                   key={level.level}
                   type="button"
                   onClick={() => setSelectedLevel(level.level)}
-                  className={`rounded-[26px] border px-5 py-4 text-left transition ${
+                  className={`flex aspect-square min-w-[168px] flex-col justify-between rounded-[30px] border p-4 text-left transition ${
                     selectedLevel === level.level
                       ? "border-[#20D879] bg-[#F0FFF7]"
                       : "border-[#E5E7EB] bg-white"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="text-[15px] font-black text-[#111827]">Lv.{level.level} {level.title}</p>
-                    <span className="text-[10px] font-black text-[#20D879]">{level.badge}</span>
+                  <div>
+                    <span className="text-[12px] font-black text-[#20D879]">{level.badge}</span>
+                    <p className="mt-3 break-keep text-[22px] font-black leading-[1.1] tracking-[-0.05em] text-[#111827]">
+                      Lv.{level.level}
+                      <br />
+                      {level.title}
+                    </p>
                   </div>
-                  <p className="mt-1 text-[12px] font-bold leading-5 text-[#6B7280] break-keep">{level.description}</p>
+                  <p className="line-clamp-3 break-keep text-[12px] font-bold leading-5 text-[#6B7280]">{level.description}</p>
                 </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {completedSessions.length > 0 && (
-          <section className="mt-5">
-            <p className="px-1 text-[13px] font-black text-[#111827]">완료한 레벨</p>
-            <div className="mt-3 grid gap-3">
-              {completedSessions.map((session) => (
-                <div
-                  key={session.sessionId}
-                  className="rounded-[26px] border border-[#D9F7E5] bg-[#F0FFF7] p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[15px] font-black text-black">Lv.{session.level} 완료</p>
-                      <p className="mt-1 truncate text-[12px] font-bold text-[#6B7280]">
-                        {session.result?.typeTitle ?? "결과 완료"} · {formatShortDate(session.completedAt ?? session.updatedAt)}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black text-[#20D879]">
-                      저장됨
-                    </span>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openCompletedResult(session)}
-                      className="h-[46px] rounded-[24px] bg-white text-[13px] font-black text-[#111827]"
-                    >
-                      결과 보기
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void sharePredictionForSession(session.sessionId, session.level)}
-                      disabled={isSaving}
-                      className="h-[46px] rounded-[24px] text-[13px] font-black text-white disabled:opacity-50"
-                      style={{ backgroundColor: GREEN }}
-                    >
-                      내가 보는 너 공유
-                    </button>
-                  </div>
-                </div>
               ))}
             </div>
           </section>
@@ -885,6 +887,60 @@ export default function Balance100Page() {
           )}
           {shareStatus && <p className="text-center text-[12px] font-bold text-[#20D879]">{shareStatus}</p>}
         </div>
+
+        {completedSessions.length > 0 && (
+          <section className="mt-7">
+            <p className="px-1 text-[20px] font-black tracking-[-0.04em] text-[#111827]">완료한 레벨</p>
+            <div className="mt-3 grid gap-3">
+              {completedSessions.map((session) => (
+                <div
+                  key={session.sessionId}
+                  className="rounded-[30px] border border-[#CFF7DF] bg-[#F0FFF7] p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[24px] font-black tracking-[-0.05em] text-black">Lv.{session.level} 완료</p>
+                      <p className="mt-2 truncate text-[14px] font-bold text-[#6B7280]">
+                        {session.result?.typeTitle ?? "결과 완료"} · {formatShortDate(session.completedAt ?? session.updatedAt)}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-white px-3 py-1.5 text-[12px] font-black text-[#20D879]">
+                      저장됨
+                    </span>
+                  </div>
+                  <div className="mt-5 grid gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openCompletedResult(session)}
+                      className="h-[50px] rounded-[26px] bg-white text-[14px] font-black text-[#111827]"
+                    >
+                      결과 보기
+                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleKakaoPredictionShare(session.sessionId, session.level)}
+                        disabled={isSaving}
+                        className="h-[50px] rounded-[26px] text-[14px] font-black text-white disabled:opacity-50"
+                        style={{ backgroundColor: GREEN }}
+                      >
+                        친구에게 카카오로 물어보기
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyPredictionLink(session.sessionId, session.level)}
+                        disabled={isSaving}
+                        className="h-[50px] rounded-[26px] border border-[#CFF7DF] bg-white text-[14px] font-black text-[#20D879] disabled:opacity-50"
+                      >
+                        친구 맞히기 링크 복사
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="mt-auto pt-8 text-[12px] leading-5 text-[#9CA3AF] break-keep">
           진행 중이면 자동으로 이어서 열립니다. 새 문제 세트는 새로 시작하기를 눌렀을 때만 만들어집니다.
