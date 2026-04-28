@@ -75,31 +75,31 @@ export const BALANCE_LEVELS: Array<{
   {
     level: 1,
     title: "일상 선택",
-    description: "가볍게 시작하는 쉬운 질문",
+    description: "가볍게 시작하는\n쉬운 질문",
     badge: "EASY",
   },
   {
     level: 2,
     title: "관계 선택",
-    description: "친구·연애 기준이 보이는 질문",
+    description: "친구·연애 기준이\n보이는 질문",
     badge: "NORMAL",
   },
   {
     level: 3,
     title: "현실 선택",
-    description: "돈·감정 기준이 갈리는 질문",
+    description: "돈·감정 기준이\n갈리는 질문",
     badge: "HARD",
   },
   {
     level: 4,
     title: "진지한 선택",
-    description: "쉽게 못 고르는 무거운 질문",
+    description: "쉽게 못 고르는\n무거운 질문",
     badge: "VERY HARD",
   },
   {
     level: 5,
     title: "극한 선택",
-    description: "친한 사이도 갈리는 어려운 질문",
+    description: "친한 사이도 갈리는\n어려운 질문",
     badge: "EXTREME",
   },
 ];

@@ -851,7 +851,7 @@ export default function Balance100Page() {
                       {level.title}
                     </p>
                   </div>
-                  <p className="line-clamp-3 break-keep text-[12px] font-bold leading-5 text-[#6B7280]">{level.description}</p>
+                  <p className="line-clamp-3 whitespace-pre-line break-keep text-[12px] font-bold leading-5 text-[#6B7280]">{level.description}</p>
                 </button>
               ))}
             </div>
