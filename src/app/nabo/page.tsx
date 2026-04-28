@@ -1045,7 +1045,7 @@ export default function NaboPage() {
           <div className="rounded-2xl border border-gray-100 bg-gray-50 px-5 py-5">
             <p className="text-[13px] font-black text-gray-900 mb-1">왜 3명부터 열리나요?</p>
             <p className="text-[12px] text-gray-500 leading-relaxed">
-              1명이나 2명 응답은 누가 썼는지 쉽게 추측될 수 있어요. 다만 궁금하면 2크레딧으로 1명 결과부터 먼저 열 수 있어요.
+              1명이나 2명 응답은 누가 썼는지 쉽게 추측될 수 있어요.
             </p>
           </div>
 
