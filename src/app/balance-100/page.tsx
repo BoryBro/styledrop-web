@@ -8,17 +8,16 @@ import { useLabFeatureAvailability } from "@/hooks/useLabFeatureAvailability";
 import { trackClientEvent } from "@/lib/client-events";
 import { BALANCE_100_LAB_ENABLED } from "@/lib/feature-flags";
 import {
-  BALANCE_DIMENSION_LABELS,
   BALANCE_LEVELS,
   BALANCE_TOTAL_QUESTIONS,
   analyzeBalanceAnswers,
   getBalance100Progress,
   getBalanceQuestions,
+  getBalanceResultStory,
   getFirstUnansweredIndex,
   normalizeBalanceLevel,
   type BalanceAnswerValue,
   type BalanceAnswers,
-  type BalanceDimension,
   type BalanceLevel,
   type BalanceResultSummary,
 } from "@/lib/balance-100";
@@ -71,7 +70,6 @@ type KakaoShareSDK = {
   };
 };
 
-const SCORE_ORDER: BalanceDimension[] = ["money", "love", "social", "pride", "risk", "comfort"];
 const GREEN = "#20D879";
 
 function TopProgress({
@@ -221,55 +219,18 @@ function ChoiceCard({
   );
 }
 
-function ScoreBar({ label, value }: { label: string; value: number }) {
-  const strength = value >= 68 ? "강함" : value >= 55 ? "자주 나옴" : "보통";
-
-  return (
-    <div>
-      <div className="mb-2 flex items-center justify-between text-[13px] font-bold">
-        <span className="text-[#111827]">{label}</span>
-        <span className="text-[#20D879]">{strength}</span>
-      </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-[#F1F1F4]">
-        <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${Math.max(8, Math.min(100, value))}%`, backgroundColor: GREEN }}
-        />
-      </div>
-    </div>
-  );
-}
-
 function ResultReport({
   result,
   representativeImageUrl,
-  matches,
   historyImages,
   onSelectRepresentativeImage,
 }: {
   result: BalanceResultSummary;
   representativeImageUrl?: string;
-  matches: BalanceMatchItem[];
   historyImages: HistoryImage[];
   onSelectRepresentativeImage: (imageUrl: string) => void;
 }) {
-  const sortedScores = [...SCORE_ORDER].sort((a, b) => result.scores[b] - result.scores[a]);
-  const topDimension = sortedScores[0];
-  const secondDimension = sortedScores[1];
-  const bottomDimension = sortedScores[sortedScores.length - 1];
-  const topScore = result.scores[topDimension];
-  const secondScore = result.scores[secondDimension];
-  const scoreSpread = topScore - result.scores[bottomDimension];
-  const isBalanced = topScore - secondScore <= 4 && scoreSpread <= 12;
-  const signalTitle = isBalanced
-    ? "선택 기준이 고르게 나뉘었어요"
-    : `가장 자주 드러난 기준은 ${BALANCE_DIMENSION_LABELS[topDimension]}`;
-  const signalDescription = isBalanced
-    ? "한 가지 기준으로 몰리기보다 상황마다 판단 기준을 바꾼 편입니다."
-    : `${BALANCE_DIMENSION_LABELS[topDimension]} 쪽 점수가 가장 높게 나왔어요. 비슷한 선택지에서 이 기준을 더 자주 우선했습니다.`;
-  const headline = result.resultHeadline ?? result.typeTitle;
-  const reason = result.resultReason ?? result.typeDesc;
-  const evidenceChoices = result.evidenceChoices ?? [];
+  const story = getBalanceResultStory(result);
 
   return (
     <div className="flex flex-col gap-4">
@@ -302,86 +263,65 @@ function ResultReport({
         )}
         <div className="p-6">
           <p className="text-[12px] font-black uppercase tracking-[0.22em] text-[#20D879]">
-            Balance 100
+            첫 판정
           </p>
           <h1 className="mt-3 text-[34px] font-black leading-[1.12] tracking-[-0.05em] text-black">
-            {headline}
+            {story.verdictTitle}
           </h1>
-          {headline !== result.typeTitle && (
-            <p className="mt-3 inline-flex rounded-full bg-[#F0FFF7] px-3 py-1 text-[12px] font-black text-[#20D879]">
-              {result.typeTitle}
-            </p>
-          )}
           <p className="mt-4 break-keep text-[16px] font-bold leading-8 text-[#555]">
-            {reason}
+            {story.verdictSubtitle}
           </p>
         </div>
       </section>
 
       <section className="rounded-[30px] border border-[#E9E9E9] bg-white p-6">
-        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">근거</p>
-        <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">왜 이렇게 나왔나</h2>
-        <p className="mt-2 break-keep text-[14px] leading-6 text-[#6B7280]">
-          실제로 고른 답 중 결과에 크게 반영된 선택입니다.
-        </p>
-        <div className="mt-4 flex flex-col gap-3">
-          {evidenceChoices.length > 0 ? (
-            evidenceChoices.slice(0, 4).map((choice) => (
-              <div key={choice.id} className="rounded-[24px] bg-[#F7F8F7] p-4">
-                <p className="text-[11px] font-black text-[#20D879]">{choice.label}</p>
-                <p className="mt-1 break-keep text-[17px] font-black leading-6 text-[#111827]">{choice.text}</p>
-                <p className="mt-2 break-keep text-[13px] font-semibold leading-6 text-[#6B7280]">{choice.reason}</p>
-              </div>
-            ))
-          ) : (
-            result.topChoices.slice(0, 4).map((choice) => (
-              <div key={choice.id} className="rounded-[24px] bg-[#F7F8F7] p-4">
-                <p className="text-[11px] font-black text-[#20D879]">선택 근거</p>
-                <p className="mt-1 break-keep text-[17px] font-black leading-6 text-[#111827]">{choice.text}</p>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      <section className="rounded-[30px] border border-[#E9E9E9] bg-white p-6">
-        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">기준 요약</p>
-        <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">
-          {signalTitle}
-        </h2>
-        <p className="mt-2 text-[14px] leading-6 text-[#6B7280] break-keep">
-          {signalDescription}
-        </p>
-        <div className="mt-5 flex flex-col gap-4">
-          {SCORE_ORDER.map((dimension) => (
-            <ScoreBar key={dimension} label={BALANCE_DIMENSION_LABELS[dimension]} value={result.scores[dimension]} />
+        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">선택 패턴</p>
+        <h2 className="mt-2 text-[25px] font-black tracking-[-0.05em] text-[#111827]">네가 자주 고른 선택</h2>
+        <p className="mt-2 break-keep text-[14px] font-bold leading-6 text-[#6B7280]">{story.patternIntro}</p>
+        <div className="mt-5 flex flex-col gap-2.5">
+          {story.patterns.map((pattern) => (
+            <div key={pattern} className="rounded-[22px] bg-[#F7F8F7] px-4 py-3 text-[16px] font-black leading-6 text-[#111827]">
+              {pattern}
+            </div>
           ))}
         </div>
       </section>
 
-      <section className="rounded-[30px] border border-[#CFF7DF] bg-[#F0FFF7] p-6">
-        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">비슷한 사람</p>
-        <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">
-          나와 비슷한 선택자
-        </h2>
-        {matches.length === 0 ? (
-          <p className="mt-2 text-[14px] leading-6 text-[#6B7280] break-keep">
-            아직 같은 레벨을 완료한 비교 대상이 부족합니다. 친구에게 예측 링크를 보내면 데이터가 쌓입니다.
-          </p>
-        ) : (
-          <div className="mt-4 grid gap-2">
-            {matches.map((match, index) => (
-              <div key={match.sessionId} className="flex items-center justify-between rounded-[22px] bg-white px-4 py-3">
-                <div>
-                  <p className="text-[12px] font-black text-[#20D879]">TOP {index + 1}</p>
-                  <p className="mt-0.5 text-[14px] font-black text-[#111827]">{match.ownerName}</p>
-                  <p className="text-[11px] font-bold text-[#9CA3AF]">{match.typeTitle}</p>
-                </div>
-                <p className="text-[20px] font-black text-[#111827]">{match.matchedCount}/100</p>
-              </div>
-            ))}
-          </div>
-        )}
+      <section className="rounded-[30px] border border-[#E9E9E9] bg-white p-6">
+        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">관계 해석</p>
+        <h2 className="mt-2 break-keep text-[25px] font-black tracking-[-0.05em] text-[#111827]">{story.relationTitle}</h2>
+        <div className="mt-4 flex flex-col gap-2">
+          {story.relationLines.map((line) => (
+            <p key={line} className="break-keep text-[16px] font-bold leading-8 text-[#555]">
+              {line}
+            </p>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-[#E9E9E9] bg-white p-6">
+        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">흔드는 버튼</p>
+        <h2 className="mt-2 text-[25px] font-black tracking-[-0.05em] text-[#111827]">너를 흔드는 버튼</h2>
+        <div className="mt-5 grid gap-3">
+          {story.triggers.map((trigger) => (
+            <div key={trigger.title} className="rounded-[24px] border border-[#D9F7E5] bg-[#F0FFF7] p-4">
+              <p className="text-[17px] font-black text-[#111827]">{trigger.title}</p>
+              <p className="mt-2 break-keep text-[13px] font-bold leading-6 text-[#667085]">{trigger.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] bg-[#111827] p-6 text-white shadow-[0_18px_40px_rgba(17,24,39,0.18)]">
+        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">공유 요약</p>
+        <h2 className="mt-2 text-[26px] font-black tracking-[-0.05em]">{story.shareTitle}</h2>
+        <div className="mt-5 flex flex-col gap-2">
+          {story.shareLines.map((line) => (
+            <p key={line} className="break-keep text-[15px] font-bold leading-7 text-white/86">
+              {line}
+            </p>
+          ))}
+        </div>
       </section>
     </div>
   );
@@ -398,7 +338,7 @@ export default function Balance100Page() {
   const [mode, setMode] = useState<Mode>("intro");
   const [serverSession, setServerSession] = useState<BalanceServerSession | null>(null);
   const [completedSessions, setCompletedSessions] = useState<BalanceServerSession[]>([]);
-  const [matches, setMatches] = useState<BalanceMatchItem[]>([]);
+  const [, setMatches] = useState<BalanceMatchItem[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<BalanceLevel>(1);
   const [answers, setAnswers] = useState<BalanceAnswers>({});
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -413,7 +353,7 @@ export default function Balance100Page() {
   const result = useMemo(
     () => {
       if (serverSession?.result) {
-        return serverSession.result.evidenceChoices?.length
+        return serverSession.result.resultStory
           ? serverSession.result
           : isCompleted
             ? analyzeBalanceAnswers(answers, questions)
@@ -742,7 +682,6 @@ export default function Balance100Page() {
             <ResultReport
               result={result}
               representativeImageUrl={representativeImageUrl}
-              matches={matches}
               historyImages={historyImages}
               onSelectRepresentativeImage={selectRepresentativeImage}
             />
@@ -915,45 +854,40 @@ export default function Balance100Page() {
         {completedSessions.length > 0 && (
           <section className="mt-7">
             <p className="px-1 text-[20px] font-black tracking-[-0.04em] text-[#111827]">완료한 레벨</p>
-            <div className="mt-3 grid gap-3">
+            <div className="mt-3 divide-y divide-[#E5E7EB] border-y border-[#E5E7EB]">
               {completedSessions.map((session) => (
                 <div
                   key={session.sessionId}
-                  className="rounded-[30px] border border-[#CFF7DF] bg-[#F0FFF7] p-4"
+                  className="py-4"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[24px] font-black tracking-[-0.05em] text-black">Lv.{session.level} 완료</p>
-                    </div>
-                  </div>
-                  <div className="mt-5 grid gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[22px] font-black tracking-[-0.05em] text-black">Lv.{session.level} 완료</p>
                     <button
                       type="button"
                       onClick={() => openCompletedResult(session)}
-                      className="h-[56px] rounded-[28px] bg-[#111827] text-[15px] font-black text-white shadow-[0_14px_24px_rgba(17,24,39,0.14)]"
+                      className="flex-shrink-0 text-[13px] font-black text-[#111827] underline decoration-[#20D879] decoration-2 underline-offset-4"
                     >
                       결과 보기
                     </button>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void handleKakaoPredictionShare(session.sessionId, session.level)}
-                        disabled={isSaving}
-                        className="flex h-[50px] items-center justify-center gap-1.5 rounded-[26px] bg-[#FEE500] text-[13px] font-black text-[#191919] disabled:opacity-50"
-                      >
-                        <span className="grid h-5 w-5 place-items-center rounded-full bg-[#191919] text-[10px] font-black text-[#FEE500]">K</span>
-                        친구에게 물어보기
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleCopyPredictionLink(session.sessionId, session.level)}
-                        disabled={isSaving}
-                        className="flex h-[50px] items-center justify-center gap-1.5 rounded-[26px] border border-[#CFF7DF] bg-white text-[13px] font-black text-[#20D879] disabled:opacity-50"
-                      >
-                        <span className="rounded-full bg-[#F0FFF7] px-2 py-1 text-[10px] font-black text-[#20D879]">🔗 Link</span>
-                        친구에게 물어보기
-                      </button>
-                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleKakaoPredictionShare(session.sessionId, session.level)}
+                      disabled={isSaving}
+                      className="flex h-[48px] items-center justify-center gap-1.5 rounded-xl bg-[#FEE500] text-[13px] font-black text-[#191919] disabled:opacity-50"
+                    >
+                      <span className="grid h-5 w-5 place-items-center rounded-full bg-[#191919] text-[10px] font-black text-[#FEE500]">K</span>
+                      카카오 공유
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleCopyPredictionLink(session.sessionId, session.level)}
+                      disabled={isSaving}
+                      className="flex h-[48px] items-center justify-center gap-1.5 rounded-xl border border-[#E5E7EB] bg-white text-[13px] font-black text-[#20D879] disabled:opacity-50"
+                    >
+                      링크 복사
+                    </button>
                   </div>
                 </div>
               ))}
