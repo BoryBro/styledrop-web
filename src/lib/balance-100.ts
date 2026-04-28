@@ -24,6 +24,15 @@ export type BalanceTopChoice = {
   picked: BalanceAnswerValue;
 };
 
+export type BalanceEvidenceChoice = {
+  id: string;
+  dimension: BalanceDimension;
+  label: string;
+  picked: BalanceAnswerValue;
+  text: string;
+  reason: string;
+};
+
 export type BalanceResultSummary = {
   typeTitle: string;
   typeDesc: string;
@@ -31,6 +40,12 @@ export type BalanceResultSummary = {
   matchCode: string;
   answeredCount: number;
   topChoices: BalanceTopChoice[];
+  resultHeadline?: string;
+  resultReason?: string;
+  primaryDimension?: BalanceDimension;
+  secondaryDimension?: BalanceDimension;
+  lowestDimension?: BalanceDimension;
+  evidenceChoices?: BalanceEvidenceChoice[];
 };
 
 export type Balance100LocalState = {
@@ -53,6 +68,9 @@ export type BalanceSharePayload = {
   completedAt: string;
   representativeImageUrl?: string;
   topChoices: BalanceTopChoice[];
+  resultHeadline?: string;
+  resultReason?: string;
+  evidenceChoices?: BalanceEvidenceChoice[];
 };
 
 const STORAGE_PREFIX = "styledrop_balance_100_v1";
@@ -357,6 +375,104 @@ function getResultType(scores: BalanceScoreMap) {
   };
 }
 
+function sortDimensionsByScore(scores: BalanceScoreMap) {
+  return (Object.entries(scores) as Array<[BalanceDimension, number]>)
+    .sort((a, b) => b[1] - a[1])
+    .map(([dimension]) => dimension);
+}
+
+function buildResultNarrative(scores: BalanceScoreMap) {
+  const sortedDimensions = sortDimensionsByScore(scores);
+  const primaryDimension = sortedDimensions[0];
+  const secondaryDimension = sortedDimensions[1];
+  const lowestDimension = sortedDimensions[sortedDimensions.length - 1];
+  const primaryLabel = DIMENSION_LABELS[primaryDimension];
+  const secondaryLabel = DIMENSION_LABELS[secondaryDimension];
+  const lowestLabel = DIMENSION_LABELS[lowestDimension];
+  const topGap = scores[primaryDimension] - scores[secondaryDimension];
+  const spread = scores[primaryDimension] - scores[lowestDimension];
+
+  if (topGap <= 4 && spread <= 12) {
+    return {
+      primaryDimension,
+      secondaryDimension,
+      lowestDimension,
+      resultHeadline: "상황마다 기준을 바꾸는 타입",
+      resultReason:
+        `${primaryLabel}와 ${secondaryLabel} 기준이 비슷하게 높고, ${lowestLabel}도 크게 낮지 않습니다. 한 가지 성향으로 몰리기보다 질문의 맥락에 맞춰 답을 바꾼 쪽에 가깝습니다.`,
+    };
+  }
+
+  if (topGap <= 5) {
+    return {
+      primaryDimension,
+      secondaryDimension,
+      lowestDimension,
+      resultHeadline: `${primaryLabel}와 ${secondaryLabel} 사이에서 많이 흔들리는 타입`,
+      resultReason:
+        `${primaryLabel} 기준이 가장 높지만 ${secondaryLabel}도 거의 비슷하게 따라옵니다. 그래서 단순한 취향보다 상황, 사람, 손익을 같이 재는 선택이 많았습니다.`,
+    };
+  }
+
+  return {
+    primaryDimension,
+    secondaryDimension,
+    lowestDimension,
+    resultHeadline: `${primaryLabel}을 먼저 보는 타입`,
+    resultReason:
+      `${primaryLabel} 기준이 가장 자주 드러났고, 다음으로 ${secondaryLabel} 기준이 따라왔습니다. 반대로 ${lowestLabel} 쪽은 상대적으로 덜 중요하게 본 선택이 많았습니다.`,
+  };
+}
+
+function getEvidenceReason(dimension: BalanceDimension, picked: string) {
+  switch (dimension) {
+    case "money":
+      return `${picked}을 고른 건 감정보다 손익, 효율, 현실성을 먼저 계산한 선택입니다.`;
+    case "love":
+      return `${picked}을 고른 건 관계의 온도와 마음의 움직임을 크게 본 선택입니다.`;
+    case "social":
+      return `${picked}을 고른 건 내 기준만큼 분위기와 사람 사이의 흐름을 의식한 선택입니다.`;
+    case "pride":
+      return `${picked}을 고른 건 자존심, 인정, 체면이 걸린 상황에서 기준이 드러난 선택입니다.`;
+    case "risk":
+      return `${picked}을 고른 건 안정적인 쪽보다 변화나 자극을 받아들이는지 보여주는 선택입니다.`;
+    case "comfort":
+      return `${picked}을 고른 건 무리해서 얻는 것보다 오래 편한 쪽을 중요하게 본 선택입니다.`;
+  }
+}
+
+function buildEvidenceChoices(
+  questions: BalanceQuestion[],
+  answers: BalanceAnswers,
+  sortedDimensions: BalanceDimension[],
+) {
+  const priorityDimensions = new Set(sortedDimensions.slice(0, 3));
+  const pickedQuestions = questions.filter((question) => answers[question.id]);
+  const primary = pickedQuestions
+    .filter((question) => priorityDimensions.has(question.dimension))
+    .sort((a, b) => b.heat - a.heat)
+    .slice(0, 4);
+
+  const fallback = pickedQuestions
+    .filter((question) => !primary.some((item) => item.id === question.id))
+    .sort((a, b) => b.heat - a.heat)
+    .slice(0, Math.max(0, 4 - primary.length));
+
+  return [...primary, ...fallback].map((question) => {
+    const picked = answers[question.id] as BalanceAnswerValue;
+    const text = picked === "A" ? question.left : question.right;
+
+    return {
+      id: question.id,
+      dimension: question.dimension,
+      label: DIMENSION_LABELS[question.dimension],
+      picked,
+      text,
+      reason: getEvidenceReason(question.dimension, text),
+    };
+  });
+}
+
 export function analyzeBalanceAnswers(
   answers: BalanceAnswers,
   levelOrQuestions: BalanceLevel | BalanceQuestion[] = 3,
@@ -388,6 +504,8 @@ export function analyzeBalanceAnswers(
 
   const pickedText = questions.map((question) => answers[question.id] ?? "-").join("");
   const { typeTitle, typeDesc } = getResultType(scores);
+  const narrative = buildResultNarrative(scores);
+  const sortedDimensions = sortDimensionsByScore(scores);
 
   const topChoices = questions
     .filter((question) => answers[question.id])
@@ -401,6 +519,7 @@ export function analyzeBalanceAnswers(
         text: picked === "A" ? question.left : question.right,
       };
     });
+  const evidenceChoices = buildEvidenceChoices(questions, answers, sortedDimensions);
 
   return {
     typeTitle,
@@ -409,6 +528,8 @@ export function analyzeBalanceAnswers(
     matchCode: hashString(pickedText).slice(0, 6),
     answeredCount: Object.keys(answers).length,
     topChoices,
+    ...narrative,
+    evidenceChoices,
   };
 }
 

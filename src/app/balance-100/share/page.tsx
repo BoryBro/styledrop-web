@@ -110,11 +110,13 @@ function ChoiceCard({
 }
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
+  const strength = value >= 68 ? "강함" : value >= 55 ? "자주 나옴" : "보통";
+
   return (
     <div>
       <div className="mb-2 flex items-center justify-between text-[13px] font-bold">
         <span className="text-[#111827]">{label}</span>
-        <span className="tabular-nums text-[#20D879]">{value}</span>
+        <span className="text-[#20D879]">{strength}</span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-[#F1F1F4]">
         <div
@@ -129,6 +131,9 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 function SharedResultView({ payload }: { payload: BalanceSharePayload }) {
   const sortedScores = [...SCORE_ORDER].sort((a, b) => payload.scores[b] - payload.scores[a]);
   const topDimension = sortedScores[0];
+  const headline = payload.resultHeadline ?? payload.typeTitle;
+  const reason = payload.resultReason ?? payload.typeDesc;
+  const evidenceChoices = payload.evidenceChoices ?? [];
 
   return (
     <main className="min-h-screen bg-white px-6 py-4">
@@ -136,55 +141,64 @@ function SharedResultView({ payload }: { payload: BalanceSharePayload }) {
         <TopProgress progressRatio={100} backHref="/balance-100" />
         <section className="overflow-hidden rounded-[32px] border border-[#E9E9E9] bg-white shadow-[0_12px_34px_rgba(0,0,0,0.06)]">
           {payload.representativeImageUrl && (
-            <div className="aspect-[4/3] w-full overflow-hidden bg-black">
+            <div className="relative aspect-square w-full overflow-hidden bg-[#F4F5F4]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={payload.representativeImageUrl} alt="" className="h-full w-full object-cover" />
+              <img src={payload.representativeImageUrl} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-2xl" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={payload.representativeImageUrl} alt="" className="relative z-10 h-full w-full object-contain" />
             </div>
           )}
           <div className="p-6">
             <p className="text-[12px] font-black uppercase tracking-[0.22em] text-[#20D879]">
-              Friend Result
+              Balance 100
             </p>
             <h1 className="mt-3 text-[34px] font-black leading-[1.12] tracking-[-0.05em] text-black">
-              {payload.typeTitle}
+              {headline}
             </h1>
-            <p className="mt-4 break-keep text-[16px] font-medium leading-8 text-[#555]">
-              {payload.typeDesc}
+            {headline !== payload.typeTitle && (
+              <p className="mt-3 inline-flex rounded-full bg-[#F0FFF7] px-3 py-1 text-[12px] font-black text-[#20D879]">
+                {payload.typeTitle}
+              </p>
+            )}
+            <p className="mt-4 break-keep text-[16px] font-bold leading-8 text-[#555]">
+              {reason}
             </p>
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-[24px] bg-[#F5FFF9] p-4">
-                <p className="text-[12px] font-bold text-[#777]">완료 인증</p>
-                <p className="mt-1 text-[25px] font-black text-black">100/100</p>
-              </div>
-              <div className="rounded-[24px] bg-[#F5FFF9] p-4">
-                <p className="text-[12px] font-bold text-[#777]">선택 코드</p>
-                <p className="mt-1 text-[25px] font-black tracking-[-0.04em] text-black">{payload.matchCode}</p>
-              </div>
-            </div>
           </div>
         </section>
 
+        {(evidenceChoices.length > 0 || payload.topChoices.length > 0) && (
+          <section className="mt-4 rounded-[30px] border border-[#E9E9E9] bg-white p-6">
+            <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">근거</p>
+            <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">왜 이렇게 나왔나</h2>
+            <div className="mt-4 flex flex-col gap-3">
+              {evidenceChoices.length > 0 ? (
+                evidenceChoices.slice(0, 4).map((choice) => (
+                  <div key={choice.id} className="rounded-[24px] bg-[#F7F8F7] p-4">
+                    <p className="text-[11px] font-black text-[#20D879]">{choice.label}</p>
+                    <p className="mt-1 break-keep text-[17px] font-black leading-6 text-[#111827]">{choice.text}</p>
+                    <p className="mt-2 break-keep text-[13px] font-semibold leading-6 text-[#6B7280]">{choice.reason}</p>
+                  </div>
+                ))
+              ) : (
+                payload.topChoices.slice(0, 4).map((choice) => (
+                  <div key={choice.id} className="rounded-[24px] bg-[#F7F8F7] p-4">
+                    <p className="text-[11px] font-black text-[#20D879]">선택 근거</p>
+                    <p className="mt-1 break-keep text-[17px] font-black leading-6 text-[#111827]">{choice.text}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        )}
+
         <section className="mt-4 rounded-[30px] border border-[#E9E9E9] bg-white p-6">
-          <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">Main Signal</p>
+          <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">기준 요약</p>
           <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">
             가장 강한 기준은 {BALANCE_DIMENSION_LABELS[topDimension]}
           </h2>
           <div className="mt-5 flex flex-col gap-4">
             {SCORE_ORDER.map((dimension) => (
               <ScoreBar key={dimension} label={BALANCE_DIMENSION_LABELS[dimension]} value={payload.scores[dimension]} />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-4 rounded-[30px] border border-[#E9E9E9] bg-white p-6">
-          <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">Pick Review</p>
-          <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">흔들림 컸던 선택 TOP 5</h2>
-          <div className="mt-4 flex flex-col gap-3">
-            {payload.topChoices.map((choice, index) => (
-              <div key={choice.id} className="rounded-[24px] bg-[#F7F7F7] p-4">
-                <p className="text-[11px] font-black text-[#20D879]">#{index + 1} · {choice.picked}</p>
-                <p className="mt-1 text-[15px] font-bold leading-6 text-[#111827] break-keep">{choice.text}</p>
-              </div>
             ))}
           </div>
         </section>

@@ -119,7 +119,10 @@ function normalizeSessionSnapshot(value: unknown): Balance100SessionState | null
   const level = normalizeBalanceLevel(snapshot.level);
   const answers = sanitizeAnswers(snapshot.answers, level);
   const now = new Date().toISOString();
-  const result = snapshot.result ?? buildResult(level, answers);
+  const rebuiltResult = buildResult(level, answers);
+  const result = snapshot.result?.evidenceChoices?.length
+    ? snapshot.result
+    : rebuiltResult ?? snapshot.result ?? null;
 
   return {
     sessionId: String(snapshot.sessionId),

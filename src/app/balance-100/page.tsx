@@ -267,6 +267,9 @@ function ResultReport({
   const signalDescription = isBalanced
     ? "한 가지 기준으로 몰리기보다 상황마다 판단 기준을 바꾼 편입니다."
     : `${BALANCE_DIMENSION_LABELS[topDimension]} 쪽 점수가 가장 높게 나왔어요. 비슷한 선택지에서 이 기준을 더 자주 우선했습니다.`;
+  const headline = result.resultHeadline ?? result.typeTitle;
+  const reason = result.resultReason ?? result.typeDesc;
+  const evidenceChoices = result.evidenceChoices ?? [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -302,11 +305,42 @@ function ResultReport({
             Balance 100
           </p>
           <h1 className="mt-3 text-[34px] font-black leading-[1.12] tracking-[-0.05em] text-black">
-            {result.typeTitle}
+            {headline}
           </h1>
-          <p className="mt-4 break-keep text-[16px] font-medium leading-8 text-[#555]">
-            {result.typeDesc}
+          {headline !== result.typeTitle && (
+            <p className="mt-3 inline-flex rounded-full bg-[#F0FFF7] px-3 py-1 text-[12px] font-black text-[#20D879]">
+              {result.typeTitle}
+            </p>
+          )}
+          <p className="mt-4 break-keep text-[16px] font-bold leading-8 text-[#555]">
+            {reason}
           </p>
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-[#E9E9E9] bg-white p-6">
+        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">근거</p>
+        <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">왜 이렇게 나왔나</h2>
+        <p className="mt-2 break-keep text-[14px] leading-6 text-[#6B7280]">
+          실제로 고른 답 중 결과에 크게 반영된 선택입니다.
+        </p>
+        <div className="mt-4 flex flex-col gap-3">
+          {evidenceChoices.length > 0 ? (
+            evidenceChoices.slice(0, 4).map((choice) => (
+              <div key={choice.id} className="rounded-[24px] bg-[#F7F8F7] p-4">
+                <p className="text-[11px] font-black text-[#20D879]">{choice.label}</p>
+                <p className="mt-1 break-keep text-[17px] font-black leading-6 text-[#111827]">{choice.text}</p>
+                <p className="mt-2 break-keep text-[13px] font-semibold leading-6 text-[#6B7280]">{choice.reason}</p>
+              </div>
+            ))
+          ) : (
+            result.topChoices.slice(0, 4).map((choice) => (
+              <div key={choice.id} className="rounded-[24px] bg-[#F7F8F7] p-4">
+                <p className="text-[11px] font-black text-[#20D879]">선택 근거</p>
+                <p className="mt-1 break-keep text-[17px] font-black leading-6 text-[#111827]">{choice.text}</p>
+              </div>
+            ))
+          )}
         </div>
       </section>
 
@@ -321,22 +355,6 @@ function ResultReport({
         <div className="mt-5 flex flex-col gap-4">
           {SCORE_ORDER.map((dimension) => (
             <ScoreBar key={dimension} label={BALANCE_DIMENSION_LABELS[dimension]} value={result.scores[dimension]} />
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-[30px] border border-[#E9E9E9] bg-white p-6">
-        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">선택 리뷰</p>
-        <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">기준이 잘 드러난 선택</h2>
-        <p className="mt-2 text-[14px] leading-6 text-[#6B7280] break-keep">
-          100개 중 성향 차이가 크게 갈리는 질문에서 내가 고른 답입니다.
-        </p>
-        <div className="mt-4 flex flex-col gap-3">
-          {result.topChoices.map((choice, index) => (
-            <div key={choice.id} className="rounded-[24px] bg-[#F7F7F7] p-4">
-              <p className="text-[11px] font-black text-[#20D879]">#{index + 1}</p>
-              <p className="mt-1 text-[15px] font-bold leading-6 text-[#111827] break-keep">{choice.text}</p>
-            </div>
           ))}
         </div>
       </section>
@@ -393,7 +411,17 @@ export default function Balance100Page() {
   const progress = useMemo(() => getBalance100Progress(answers, questions), [answers, questions]);
   const isCompleted = progress.answered >= questions.length;
   const result = useMemo(
-    () => serverSession?.result ?? (isCompleted ? analyzeBalanceAnswers(answers, questions) : null),
+    () => {
+      if (serverSession?.result) {
+        return serverSession.result.evidenceChoices?.length
+          ? serverSession.result
+          : isCompleted
+            ? analyzeBalanceAnswers(answers, questions)
+            : serverSession.result;
+      }
+
+      return isCompleted ? analyzeBalanceAnswers(answers, questions) : null;
+    },
     [answers, isCompleted, questions, serverSession?.result],
   );
   const question = questions[currentIndex];
