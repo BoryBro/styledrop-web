@@ -239,7 +239,6 @@ function LabHistoryRow({
   href,
   title,
   accentColor,
-  personLabel,
   detail,
   statusLabel,
   notificationLabel,
@@ -249,7 +248,6 @@ function LabHistoryRow({
   href: string;
   title: string;
   accentColor: string;
-  personLabel?: string;
   detail: string;
   statusLabel: string;
   notificationLabel?: string;
@@ -357,11 +355,6 @@ function LabHistoryRow({
             >
               {title}
             </span>
-            {personLabel && (
-              <span className="min-w-0 truncate text-[13px] font-black text-[#111827]">
-                {personLabel}
-              </span>
-            )}
           </span>
           <span className="mt-1.5 flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-[#9CA3AF]">
             <span
@@ -402,7 +395,6 @@ function EmptyLabHistoryRow({
       href={href}
       title={title}
       accentColor={accentColor}
-      personLabel="새 카드"
       detail={detail}
       statusLabel="시작"
     />
@@ -833,8 +825,14 @@ export default function MyPage() {
         const unreadCount = visibleNaboHistory.reduce((sum, item) => (
           sum + getLabNotificationCount(seenLabNotifications, `nabo:${item.roomCode}`, item.responseCount)
         ), 0);
+        const levelLabel = Array.from(new Set(
+          visibleNaboHistory
+            .map((item) => Math.min(5, Math.max(1, item.responseCount)))
+            .sort((a, b) => a - b)
+            .map((level) => `Lv.${level}`),
+        )).join(", ");
 
-        return { primary, totalResponses, unreadCount };
+        return { primary, totalResponses, unreadCount, levelLabel };
       })()
     : null;
 
@@ -1186,7 +1184,6 @@ export default function MyPage() {
                               href="/balance-100"
                               title="밸런스 100"
                               accentColor={LAB_HISTORY_THEME.balance100}
-                              personLabel={`Lv.${item.level} · ${item.ownerName}님`}
                               detail={
                                 meta.completed
                                   ? `${meta.result?.typeTitle ?? "결과 완료"}`
@@ -1214,7 +1211,6 @@ export default function MyPage() {
                             href={`/audition/result?history_share=${item.share_id}`}
                             title="AI 오디션"
                             accentColor={LAB_HISTORY_THEME.audition}
-                            personLabel={item.assigned_role}
                             detail={`${item.avg_score}점`}
                             statusLabel="결과"
                             onDelete={() => setLabDeleteTarget({
@@ -1231,7 +1227,6 @@ export default function MyPage() {
                       ) : (
                         visibleNaboPredictHistory.map((item) => {
                           const itemId = `${item.role}:${item.sessionId}`;
-                          const titlePrefix = item.role === "owner" ? item.targetName : item.ownerName;
                           const notificationKey = `nabo-predict:${item.sessionId}`;
                           const responseCount = item.role === "owner" && item.status === "completed" ? 1 : 0;
                           return (
@@ -1240,7 +1235,6 @@ export default function MyPage() {
                               href={item.href || "/nabo-predict"}
                               title="너라면 그럴 줄 알았어"
                               accentColor={LAB_HISTORY_THEME.naboPredict}
-                              personLabel={`${titlePrefix}님`}
                               detail={item.status === "completed" ? "상대 답변 완료" : "상대 답변 대기"}
                               statusLabel={item.status === "completed" ? "결과" : "대기"}
                               notificationLabel={getLabNotificationLabel(getLabNotificationCount(seenLabNotifications, notificationKey, responseCount))}
@@ -1263,8 +1257,7 @@ export default function MyPage() {
                           href={naboSummary.primary.href || "/nabo"}
                           title="내가 보는 너"
                           accentColor={LAB_HISTORY_THEME.nabo}
-                          personLabel={`${naboSummary.primary.ownerName}님`}
-                          detail={`${naboSummary.totalResponses}명 응답`}
+                          detail={`${naboSummary.levelLabel} · ${naboSummary.totalResponses}명 응답`}
                           statusLabel={naboSummary.primary.canViewResults ? "결과" : "응답"}
                           notificationLabel={getLabNotificationLabel(naboSummary.unreadCount)}
                           onOpen={() => {
@@ -1286,7 +1279,6 @@ export default function MyPage() {
                               href={`/travel-together?room=${encodeURIComponent(item.roomId)}&token=${encodeURIComponent(item.participantToken)}&view=result`}
                               title="여행 같이 간다면"
                               accentColor={LAB_HISTORY_THEME.travelTogether}
-                              personLabel={`${item.partnerName}님`}
                               detail={TRAVEL_RELATION_LABELS[item.relation]}
                               statusLabel={item.unlocked ? "상세" : "결과"}
                               notificationLabel={getLabNotificationLabel(getLabNotificationCount(seenLabNotifications, notificationKey, 1))}
