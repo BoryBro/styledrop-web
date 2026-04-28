@@ -819,6 +819,25 @@ export default function MyPage() {
     return { questions, progress, completed, result };
   };
 
+  const visibleBalance100History = balance100History.filter((item) => getBalance100HistoryMeta(item).completed);
+  const visibleNaboPredictHistory = naboPredictHistory.filter((item) => item.status === "completed");
+  const visibleNaboHistory = naboHistory.filter((item) => item.responseCount > 0);
+  const naboSummary = visibleNaboHistory.length > 0
+    ? (() => {
+        const primary = [...visibleNaboHistory].sort((a, b) => {
+          if (a.canViewResults !== b.canViewResults) return a.canViewResults ? -1 : 1;
+          if (a.responseCount !== b.responseCount) return b.responseCount - a.responseCount;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        })[0];
+        const totalResponses = visibleNaboHistory.reduce((sum, item) => sum + item.responseCount, 0);
+        const unreadCount = visibleNaboHistory.reduce((sum, item) => (
+          sum + getLabNotificationCount(seenLabNotifications, `nabo:${item.roomCode}`, item.responseCount)
+        ), 0);
+
+        return { primary, totalResponses, unreadCount };
+      })()
+    : null;
+
   return (
     <div className="min-h-screen bg-[#F7F6F3] flex flex-col">
       {toast && (
@@ -1154,10 +1173,10 @@ export default function MyPage() {
                     </div>
                   ) : (
                     <>
-                      {balance100History.length === 0 ? (
+                      {visibleBalance100History.length === 0 ? (
                         <EmptyLabHistoryRow href="/balance-100" title="밸런스 100" detail="100문항 선택 매칭" accentColor={LAB_HISTORY_THEME.balance100} />
                       ) : (
-                        balance100History.map((item) => {
+                        visibleBalance100History.map((item) => {
                           const meta = getBalance100HistoryMeta(item);
                           const notificationKey = `balance-100:${item.sessionId}`;
                           const predictionCount = item.predictionCount ?? 0;
@@ -1207,10 +1226,10 @@ export default function MyPage() {
                         ))
                       )}
 
-                      {naboPredictHistory.length === 0 ? (
+                      {visibleNaboPredictHistory.length === 0 ? (
                         <EmptyLabHistoryRow href="/nabo-predict" title="너라면 그럴 줄 알았어" detail="상대 예측 테스트" accentColor={LAB_HISTORY_THEME.naboPredict} />
                       ) : (
-                        naboPredictHistory.map((item) => {
+                        visibleNaboPredictHistory.map((item) => {
                           const itemId = `${item.role}:${item.sessionId}`;
                           const titlePrefix = item.role === "owner" ? item.targetName : item.ownerName;
                           const notificationKey = `nabo-predict:${item.sessionId}`;
@@ -1236,30 +1255,24 @@ export default function MyPage() {
                         })
                       )}
 
-                      {naboHistory.length === 0 ? (
+                      {!naboSummary ? (
                         <EmptyLabHistoryRow href="/nabo" title="내가 보는 너" detail="익명 관계 분석" accentColor={LAB_HISTORY_THEME.nabo} />
                       ) : (
-                        naboHistory.map((item) => {
-                          const notificationKey = `nabo:${item.roomCode}`;
-                          return (
-                            <LabHistoryRow
-                              key={item.roomCode}
-                              href={item.href || "/nabo"}
-                              title="내가 보는 너"
-                              accentColor={LAB_HISTORY_THEME.nabo}
-                              personLabel={`${item.ownerName}님`}
-                              detail={item.responseCount > 0 ? `${item.responseCount}명 응답` : "아직 응답 없음"}
-                              statusLabel={item.canViewResults ? "결과" : "대기"}
-                              notificationLabel={getLabNotificationLabel(getLabNotificationCount(seenLabNotifications, notificationKey, item.responseCount))}
-                              onOpen={() => markLabNotificationSeen(notificationKey, item.responseCount)}
-                              onDelete={() => setLabDeleteTarget({
-                                type: "nabo",
-                                itemId: item.roomCode,
-                                label: `내가 보는 너 · ${item.ownerName}님`,
-                              })}
-                            />
-                          );
-                        })
+                        <LabHistoryRow
+                          key="nabo-summary"
+                          href={naboSummary.primary.href || "/nabo"}
+                          title="내가 보는 너"
+                          accentColor={LAB_HISTORY_THEME.nabo}
+                          personLabel={`${naboSummary.primary.ownerName}님`}
+                          detail={`${naboSummary.totalResponses}명 응답`}
+                          statusLabel={naboSummary.primary.canViewResults ? "결과" : "응답"}
+                          notificationLabel={getLabNotificationLabel(naboSummary.unreadCount)}
+                          onOpen={() => {
+                            visibleNaboHistory.forEach((item) => {
+                              markLabNotificationSeen(`nabo:${item.roomCode}`, item.responseCount);
+                            });
+                          }}
+                        />
                       )}
 
                       {travelHistory.length === 0 ? (

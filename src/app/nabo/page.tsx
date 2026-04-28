@@ -586,6 +586,30 @@ export default function NaboPage() {
     };
   }, [applyRoomView, ownerToken, roomCode, viewerRole]);
 
+  useEffect(() => {
+    if (!roomCode || viewerRole || !user) return;
+
+    let cancelled = false;
+
+    fetch(`/api/nabo/room/${encodeURIComponent(roomCode)}`)
+      .then(async response => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload?.error ?? "방 정보를 불러오지 못했습니다.");
+        return payload as { view?: NaboRoomViewPayload };
+      })
+      .then(payload => {
+        if (cancelled || !payload.view || payload.view.role !== "owner") return;
+        applyRoomView(payload.view, {
+          invitePath: payload.view.invitePath,
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyRoomView, roomCode, user, viewerRole]);
+
   // ── 응답 저장 ─────────────────────────────────────────────────
   useEffect(() => {
     if (responses.length > 0) {
@@ -606,7 +630,6 @@ export default function NaboPage() {
   const canSeeResults = hasBasicResult || (premiumAccess && serverResponseCount >= 1);
   const canStartNewRoom = !roomCode || timeLeft === 0;
   const canUnlockEarly = viewerRole === "owner" && serverResponseCount > 0 && serverResponseCount < BASIC_RESULT_COUNT && !premiumAccess;
-  const hasGeneratedOwnerRoom = viewerRole === "owner" && Boolean(roomCode);
   const inviteLink = invitePath ? `${shareOrigin}${invitePath}` : `${shareOrigin}/nabo`;
   const isSpaceTheme = step === "link" || step === "waiting";
 
@@ -622,6 +645,7 @@ export default function NaboPage() {
     const prev = h[h.length - 1] ?? "intro";
     setStepHistory(h);
     setStep(prev);
+    try { localStorage.setItem("nabo_step", prev); } catch {}
   };
 
   const handleReset = () => {
@@ -983,10 +1007,10 @@ export default function NaboPage() {
 
       {/* ── Header ── */}
       <header className={`sticky top-0 z-40 flex h-14 items-center justify-between border-b px-5 backdrop-blur ${isSpaceTheme ? "border-white/10 bg-[#071022]/80" : "border-gray-100 bg-white/90"}`}>
-        {step === "intro" || hasGeneratedOwnerRoom ? (
+        {step === "intro" ? (
           <Link href="/studio" className={`flex items-center gap-1.5 transition-colors ${isSpaceTheme ? "text-slate-300 hover:text-white" : "text-gray-400 hover:text-gray-900"}`}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 14l-5-5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            <span className="text-[14px] font-semibold">{step === "intro" ? "돌아가기" : "이전"}</span>
+            <span className="text-[14px] font-semibold">돌아가기</span>
           </Link>
         ) : (
           <button onClick={goBack} className={`flex items-center gap-1.5 transition-colors ${isSpaceTheme ? "text-slate-300 hover:text-white" : "text-gray-400 hover:text-gray-900"}`}>
@@ -1218,33 +1242,38 @@ export default function NaboPage() {
 
       {/* ════════════════════ WAITING ════════════════════ */}
       {step === "waiting" && (
-        <div className="relative isolate flex min-h-[calc(100vh-3.5rem)] flex-col items-center overflow-hidden px-7 pb-12 pt-12 text-center text-white">
+        <div className="relative isolate flex min-h-[calc(100vh-3.5rem)] flex-col items-center overflow-hidden px-5 pb-7 pt-7 text-center text-white">
           <PixelSpaceBackdrop />
 
           <div className="relative z-10 flex w-full max-w-[360px] flex-col items-center">
-            <div className="mb-6 inline-flex items-center gap-2 border border-cyan-300/25 bg-white/[0.06] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.28em] text-cyan-200">
+            <div className="mb-3 inline-flex items-center gap-2 border border-cyan-300/25 bg-white/[0.06] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.26em] text-cyan-200">
               <span className="h-1.5 w-1.5 bg-cyan-300" />
               {viewerRole === "respondent" ? "Signal Saved" : "Waiting Signal"}
             </div>
-            <h2 className="text-[40px] font-black leading-[1.02] tracking-[-0.015em] text-white">
+            <h2 className="text-[34px] font-black leading-[1.02] tracking-[-0.015em] text-white">
               {viewerRole === "respondent" ? "응답이 저장됐어요" : "응답을 기다리는 중"}
             </h2>
-            <p className="mt-4 text-[15px] leading-6 text-slate-300">
+            <p className="mt-2 text-[14px] leading-5 text-slate-300">
               {viewerRole === "respondent" ? `${myName || "친구"}님에게 익명으로 전달돼요` : "3명부터 기본 결과, 5명부터 전체 결과가 열려요"}
             </p>
           </div>
 
-          <div className="relative z-10 mt-12 flex w-full max-w-[360px] flex-col items-center">
-            <p className="font-mono text-[10px] font-black uppercase tracking-[0.26em] text-cyan-200">Response Pack</p>
-            <p className="mt-3 font-mono text-[72px] font-black leading-none text-cyan-200">
-              {responseCount}
-              <span className="ml-1 text-[28px] text-slate-500">/{FULL_RESULT_COUNT}</span>
-            </p>
-            <div className="mt-6 grid w-full grid-cols-5 gap-2">
+          <div className="relative z-10 mt-6 w-full max-w-[360px] border border-cyan-200/15 bg-white/[0.055] px-4 py-4 text-left shadow-[0_20px_60px_rgba(8,145,178,0.12)] backdrop-blur-xl">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="font-mono text-[9px] font-black uppercase tracking-[0.24em] text-cyan-200">Response Pack</p>
+                <p className="mt-1 text-[12px] font-bold text-slate-400">현재 응답 현황</p>
+              </div>
+              <p className="font-mono text-[48px] font-black leading-none text-cyan-200">
+                {responseCount}
+                <span className="ml-1 text-[22px] text-slate-500">/{FULL_RESULT_COUNT}</span>
+              </p>
+            </div>
+            <div className="mt-3 grid w-full grid-cols-5 gap-2">
               {Array.from({ length: FULL_RESULT_COUNT }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-2.5 transition-all duration-500"
+                  className="h-2 transition-all duration-500"
                   style={{
                     background: i < responseCount ? "rgba(34,211,238,0.82)" : "rgba(15,23,42,0.82)",
                     boxShadow: i < responseCount ? "0 0 18px rgba(34,211,238,0.24)" : undefined,
@@ -1252,7 +1281,7 @@ export default function NaboPage() {
                 />
               ))}
             </div>
-            <p className="mt-4 min-h-[20px] text-[13px] leading-5 text-slate-400">
+            <p className="mt-3 min-h-[18px] text-[12px] leading-5 text-slate-400">
               {responseCount === 0 && "아직 아무도 응답하지 않았어요"}
               {responseCount > 0 && responseCount < BASIC_RESULT_COUNT && `${responseCount}명이 응답했어요 · 기본 결과까지 ${BASIC_RESULT_COUNT - responseCount}명 남았어요`}
               {responseCount >= BASIC_RESULT_COUNT && responseCount < FULL_RESULT_COUNT && `기본 결과 조건 달성 · 전체 결과까지 ${FULL_RESULT_COUNT - responseCount}명 남았어요`}
@@ -1260,31 +1289,10 @@ export default function NaboPage() {
             </p>
           </div>
 
-          {viewerRole === "owner" && (
-            <div className="relative z-10 mt-12 flex w-full max-w-[360px] flex-col items-center">
-              <p className="font-mono text-[10px] font-black uppercase tracking-[0.26em] text-violet-200">Next Launch</p>
-              {timeLeft > 0 ? (
-                <>
-                  <p className="mt-3 font-mono text-[44px] font-black leading-none text-white tabular-nums">
-                    {fmtCountdown(timeLeft)}
-                  </p>
-                  <p className="mt-3 text-[13px] leading-5 text-slate-400">
-                    24시간 안에는 기존 링크의 응답을 계속 모아요.
-                  </p>
-                </>
-              ) : (
-                <div className="mt-3">
-                  <p className="text-[20px] font-black text-cyan-200">새로 시작할 수 있어요</p>
-                  <p className="mt-2 text-[13px] text-slate-400">기존 결과는 유지되고 새 링크를 만들 수 있어요.</p>
-                </div>
-              )}
-            </div>
-          )}
-
           {viewerRole === "owner" && canSeeResults && (
             <button
               onClick={() => void openResults()}
-              className="relative z-10 mt-10 w-full max-w-[360px] rounded-[22px] border border-cyan-200/20 bg-cyan-300 py-4 text-[17px] font-black text-[#06101f] shadow-[0_18px_55px_rgba(34,211,238,0.22)] transition-all active:scale-[0.97]"
+              className="relative z-10 mt-4 w-full max-w-[360px] rounded-[18px] border border-cyan-200/20 bg-cyan-300 py-3.5 text-[16px] font-black text-[#06101f] shadow-[0_18px_55px_rgba(34,211,238,0.22)] transition-all active:scale-[0.97]"
             >
               결과 확인하기
             </button>
@@ -1295,21 +1303,21 @@ export default function NaboPage() {
               type="button"
               onClick={() => void unlockEarlyResults()}
               disabled={isUnlockingEarly}
-              className="relative z-10 mt-4 w-full max-w-[360px] rounded-[22px] border border-violet-200/20 bg-violet-400 py-4 text-[17px] font-black text-[#090B16] shadow-[0_18px_55px_rgba(167,139,250,0.2)] transition-all active:scale-[0.97] disabled:opacity-60"
+              className="relative z-10 mt-3 w-full max-w-[360px] rounded-[18px] border border-violet-200/20 bg-violet-400 py-3.5 text-[16px] font-black text-[#090B16] shadow-[0_18px_55px_rgba(167,139,250,0.2)] transition-all active:scale-[0.97] disabled:opacity-60"
             >
               {isUnlockingEarly ? "여는 중..." : `1명 결과부터 보기 · ${EARLY_RESULT_CREDIT_COST}크레딧`}
             </button>
           )}
 
           {errorMessage && (
-            <div className="relative z-10 mt-5 w-full max-w-[360px] border border-red-300/25 bg-red-500/[0.12] px-4 py-3 text-[13px] font-bold text-red-100">
+            <div className="relative z-10 mt-3 w-full max-w-[360px] border border-red-300/25 bg-red-500/[0.12] px-4 py-3 text-[13px] font-bold text-red-100">
               {errorMessage}
             </div>
           )}
 
-          <div className="relative z-10 mt-12 w-full max-w-[320px]">
-            <p className="mb-2 text-[13px] font-black text-slate-200">왜 3명부터 열리나요?</p>
-            <p className="text-[12px] leading-relaxed text-slate-500">
+          <div className="relative z-10 mt-5 w-full max-w-[360px] border-t border-white/10 pt-4 text-left">
+            <p className="text-[12px] font-black text-slate-200">왜 3명부터 열리나요?</p>
+            <p className="mt-1 text-[11px] leading-5 text-slate-500">
               1명이나 2명 응답은 누가 썼는지 쉽게 추측될 수 있어요.
             </p>
           </div>
@@ -1318,7 +1326,7 @@ export default function NaboPage() {
             <button
               type="button"
               onClick={handleReset}
-              className="relative z-10 mt-8 w-full max-w-[360px] rounded-[22px] border border-white/[0.15] bg-white/[0.06] py-3.5 text-[15px] font-black text-slate-300 transition-all active:scale-[0.98]"
+              className="relative z-10 mt-4 w-full max-w-[360px] rounded-[18px] border border-white/[0.15] bg-white/[0.06] py-3 text-[15px] font-black text-slate-300 transition-all active:scale-[0.98]"
             >
               새로 시작하기
             </button>
@@ -1327,7 +1335,7 @@ export default function NaboPage() {
           {viewerRole === "respondent" && (
             <Link
               href="/nabo"
-              className="relative z-10 mt-10 flex w-full max-w-[360px] items-center justify-center rounded-[22px] border border-cyan-200/20 bg-white py-4 text-[17px] font-black text-[#071022]"
+              className="relative z-10 mt-4 flex w-full max-w-[360px] items-center justify-center rounded-[18px] border border-cyan-200/20 bg-white py-3.5 text-[16px] font-black text-[#071022]"
             >
               내 링크도 만들기
             </Link>
@@ -1678,16 +1686,26 @@ export default function NaboPage() {
               )}
 
               <div className="px-6 mb-4 flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => void handleKakaoShareLink()}
-                  disabled={isSharingKakao}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[15px] font-black text-[#191919] transition-all active:scale-[0.98] disabled:opacity-60"
-                  style={{ background: "#FEE500" }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/></svg>
-                  {isSharingKakao ? "카카오 여는 중..." : "카카오로 공유하기"}
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={copyLink}
+                    className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-2 text-[14px] font-black text-gray-800 transition-all active:scale-[0.98]"
+                  >
+                    <span className="text-[17px]">🔗</span>
+                    링크로 공유하기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleKakaoShareLink()}
+                    disabled={isSharingKakao}
+                    className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-2xl px-2 text-[14px] font-black text-[#191919] transition-all active:scale-[0.98] disabled:opacity-60"
+                    style={{ background: "#FEE500" }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/></svg>
+                    {isSharingKakao ? "카카오 여는 중..." : "카카오로 공유하기"}
+                  </button>
+                </div>
                 {copied && (
                   <p className="text-center text-[12px] font-bold" style={{ color: G.mid }}>
                     링크가 복사되었습니다.

@@ -80,7 +80,7 @@ export function useLabNotificationSummary(enabled: boolean) {
     }, 0);
 
     const naboUnread = naboHistory.reduce((sum, item) => {
-      if (!item.roomCode) return sum;
+      if (!item.roomCode || !item.responseCount) return sum;
       return sum + unreadCount(seen, `nabo:${item.roomCode}`, item.responseCount ?? 0);
     }, 0);
 
