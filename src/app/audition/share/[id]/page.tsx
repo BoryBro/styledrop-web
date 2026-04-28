@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { notFound, redirect } from "next/navigation";
 import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
+import { getLabHistoryCutoffIso } from "@/lib/lab-history-retention.server";
 
 async function hasShare(id: string) {
   const supabase = createClient(
@@ -12,6 +13,7 @@ async function hasShare(id: string) {
     .from("audition_shares")
     .select("id")
     .eq("id", id)
+    .gte("created_at", getLabHistoryCutoffIso())
     .maybeSingle();
 
   return Boolean(data?.id);

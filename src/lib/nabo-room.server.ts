@@ -196,6 +196,9 @@ export async function getNaboRoomBundleByCode(
 
   if (roomError) return { bundle: null, error: roomError.message };
   if (!room) return { bundle: null, error: "방을 찾을 수 없습니다." };
+  if (new Date((room as NaboRoomRow).expires_at).getTime() <= Date.now()) {
+    return { bundle: null, error: "30일이 지난 실험실 방입니다." };
+  }
 
   const { data: responses, error: responsesError } = await supabase
     .from("nabo_responses")

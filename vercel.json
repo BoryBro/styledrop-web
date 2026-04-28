@@ -3,6 +3,10 @@
     {
       "path": "/api/threads/cron",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/lab-history/cleanup",
+      "schedule": "20 3 * * *"
     }
   ]
 }

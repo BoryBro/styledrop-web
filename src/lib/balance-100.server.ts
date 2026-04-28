@@ -13,6 +13,7 @@ import {
   type BalanceResultSummary,
 } from "@/lib/balance-100";
 import type { AppSession } from "@/lib/auth-session";
+import { isWithinLabHistoryRetention } from "@/lib/lab-history-retention.server";
 
 const SESSION_EVENT_TYPE = "lab_balance_session_state";
 const PREDICTION_EVENT_TYPE = "lab_balance_prediction_state";
@@ -194,6 +195,7 @@ async function querySessionSnapshotsByUser(userId: string) {
     sessions: [...grouped.values()]
       .map(mergeSessionSnapshots)
       .filter((entry): entry is Balance100SessionState => Boolean(entry))
+      .filter((entry) => isWithinLabHistoryRetention(entry.updatedAt))
       .sort((a, b) => toTime(b.updatedAt) - toTime(a.updatedAt)),
     error: null,
   };
@@ -225,7 +227,11 @@ export async function getBalance100Session(sessionId: string) {
   const snapshots = (data ?? [])
     .map((entry) => normalizeSessionSnapshot(entry.metadata))
     .filter((entry): entry is Balance100SessionState => Boolean(entry));
-  return { session: mergeSessionSnapshots(snapshots), error: null };
+  const session = mergeSessionSnapshots(snapshots);
+  return {
+    session: session && isWithinLabHistoryRetention(session.updatedAt) ? session : null,
+    error: null,
+  };
 }
 
 export async function closeOpenBalance100Sessions(userId: string) {
@@ -377,7 +383,11 @@ export async function getBalance100SessionByPredictionToken(token: string) {
   const snapshots = (data ?? [])
     .map((entry) => normalizeSessionSnapshot(entry.metadata))
     .filter((entry): entry is Balance100SessionState => Boolean(entry));
-  return { session: mergeSessionSnapshots(snapshots), error: null };
+  const session = mergeSessionSnapshots(snapshots);
+  return {
+    session: session && isWithinLabHistoryRetention(session.updatedAt) ? session : null,
+    error: null,
+  };
 }
 
 function getPredictionTier(percent: number) {
@@ -532,7 +542,8 @@ export async function findBalance100Matches(input: {
       session.ownerUserId !== input.session.ownerUserId &&
       session.level === input.session.level &&
       session.status === "completed" &&
-      Boolean(session.result),
+      Boolean(session.result) &&
+      isWithinLabHistoryRetention(session.updatedAt),
     );
 
   const matches = completed

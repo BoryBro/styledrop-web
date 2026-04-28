@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { readSessionFromRequest } from "@/lib/auth-session";
 import { getLabHistoryKey, listHiddenLabHistoryKeys } from "@/lib/lab-history-hidden.server";
+import { getLabHistoryCutoffIso, isWithinLabHistoryRetention } from "@/lib/lab-history-retention.server";
 
 type NaboPredictHistoryItem = {
   sessionId: string;
@@ -58,11 +59,13 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = getSupabase();
+  const cutoffIso = getLabHistoryCutoffIso();
   const { data: ownEvents, error: ownError } = await supabase
     .from("user_events")
     .select("event_type, metadata, created_at")
     .eq("user_id", session.id)
     .in("event_type", ["lab_nabo_predict_link_created", "lab_nabo_predict_result_completed"])
+    .gte("created_at", cutoffIso)
     .order("created_at", { ascending: false })
     .limit(80);
 
@@ -81,6 +84,7 @@ export async function GET(request: NextRequest) {
     .from("user_events")
     .select("metadata, created_at")
     .eq("event_type", "lab_nabo_predict_result_completed")
+    .gte("created_at", cutoffIso)
     .order("created_at", { ascending: false })
     .limit(300);
 
@@ -140,6 +144,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     history: Array.from(items.values())
+      .filter((item) => isWithinLabHistoryRetention(item.completedAt ?? item.createdAt))
       .filter((item) => !hidden.keys.has(getLabHistoryKey("nabo-predict", `${item.role}:${item.sessionId}`)))
       .sort((a, b) => (b.completedAt ?? b.createdAt) - (a.completedAt ?? a.createdAt))
       .slice(0, 20),

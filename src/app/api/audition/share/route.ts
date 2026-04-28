@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
+import { getLabHistoryCutoffIso } from "@/lib/lab-history-retention.server";
 
 export async function GET(request: NextRequest) {
   const auditionControl = await loadAuditionFeatureControl();
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
     .from("audition_shares")
     .select("*")
     .eq("id", id)
+    .gte("created_at", getLabHistoryCutoffIso())
     .single();
 
   if (error || !data) return NextResponse.json({ error: "not found" }, { status: 404 });

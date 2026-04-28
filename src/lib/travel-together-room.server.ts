@@ -2,6 +2,7 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
+import { isWithinLabHistoryRetention } from "@/lib/lab-history-retention.server";
 
 export type TravelParticipantRole = "host" | "guest";
 export type TravelRelation = "friend" | "lover" | "family" | "coworker";
@@ -190,6 +191,9 @@ export async function getTravelRoom(roomId: string) {
   const room = mergeTravelRoomSnapshots(snapshots);
   if (!room) {
     return { room: null, error: "room not found" };
+  }
+  if (!isWithinLabHistoryRetention(room.updatedAt)) {
+    return { room: null, error: "room expired" };
   }
 
   return { room, error: null };
@@ -401,6 +405,13 @@ export async function listCompletedTravelRoomsForUser(userId: string) {
     .map((snapshots) => mergeTravelRoomSnapshots([...snapshots].reverse()))
     .filter((room): room is TravelRoomState => Boolean(room))
     .filter((room) => isTravelRoomCompleted(room))
+    .filter((room) => {
+      const completedAt =
+        toTime(room.host.submittedAt) >= toTime(room.guest.submittedAt)
+          ? room.host.submittedAt ?? room.updatedAt
+          : room.guest.submittedAt ?? room.updatedAt;
+      return isWithinLabHistoryRetention(completedAt);
+    })
     .filter((room) => room.host.userId === userId || room.guest.userId === userId)
     .sort((a, b) => toTime(b.updatedAt) - toTime(a.updatedAt))
     .map((room) => {

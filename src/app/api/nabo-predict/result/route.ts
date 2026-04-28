@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { readSessionFromRequest } from "@/lib/auth-session";
 import { loadNaboPredictFeatureControl } from "@/lib/style-controls.server";
+import { isWithinLabHistoryRetention } from "@/lib/lab-history-retention.server";
 
 function getSupabase() {
   return createClient(
@@ -42,6 +43,10 @@ export async function POST(request: NextRequest) {
   if (!sessionId) {
     return NextResponse.json({ error: "sessionId가 필요합니다." }, { status: 400 });
   }
+  const createdAt = Number(payload.createdAt ?? Date.now());
+  if (!isWithinLabHistoryRetention(createdAt)) {
+    return NextResponse.json({ error: "30일이 지난 실험실 링크입니다." }, { status: 410 });
+  }
 
   const metadata = {
     version: 1,
@@ -52,7 +57,7 @@ export async function POST(request: NextRequest) {
     questionIds: Array.isArray(payload.questionIds) ? payload.questionIds.filter((item) => typeof item === "string") : [],
     predictions: isPlainRecord(payload.predictions) ? payload.predictions : {},
     actualAnswers,
-    createdAt: Number(payload.createdAt ?? Date.now()),
+    createdAt,
     completedAt: Date.now(),
     resultPath: `/nabo-predict?result=${encodeURIComponent(sessionId)}`,
   };

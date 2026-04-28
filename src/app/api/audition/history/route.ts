@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { readSessionFromRequest } from "@/lib/auth-session";
 import { getLabHistoryKey, listHiddenLabHistoryKeys } from "@/lib/lab-history-hidden.server";
+import { getLabHistoryCutoffIso } from "@/lib/lab-history-retention.server";
 import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 
 function parseSession(request: NextRequest): { id: string } | null {
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     process.env.SUPABASE_SERVICE_KEY!
   );
 
-  const since = new Date(Date.now() - 24 * 3600000).toISOString();
+  const since = getLabHistoryCutoffIso();
   const { data, error } = await supabase
     .from("audition_history")
     .select("id, share_id, avg_score, assigned_role, still_image_url, created_at")

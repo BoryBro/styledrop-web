@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { readSessionFromRequest } from "@/lib/auth-session";
 import { loadNaboPredictFeatureControl } from "@/lib/style-controls.server";
+import { getLabHistoryCutoffIso, isWithinLabHistoryRetention } from "@/lib/lab-history-retention.server";
 
 function getSupabase() {
   return createClient(
@@ -30,11 +31,13 @@ export async function GET(
   }
 
   const supabase = getSupabase();
+  const cutoffIso = getLabHistoryCutoffIso();
   const { data, error } = await supabase
     .from("user_events")
     .select("user_id, metadata, created_at")
     .eq("event_type", "lab_nabo_predict_result_completed")
     .contains("metadata", { sessionId })
+    .gte("created_at", cutoffIso)
     .order("created_at", { ascending: false })
     .limit(1);
 
@@ -45,6 +48,10 @@ export async function GET(
   const metadata = data?.[0]?.metadata as Record<string, unknown> | undefined;
   if (!metadata) {
     return NextResponse.json({ error: "저장된 결과를 찾지 못했습니다." }, { status: 404 });
+  }
+  const completedAt = Number(metadata.completedAt ?? Date.parse(String(data?.[0]?.created_at ?? "")));
+  if (!isWithinLabHistoryRetention(completedAt)) {
+    return NextResponse.json({ error: "30일이 지난 실험실 결과입니다." }, { status: 410 });
   }
 
   const resultOwnerId = data?.[0]?.user_id;
@@ -57,6 +64,7 @@ export async function GET(
       .eq("user_id", session.id)
       .eq("event_type", "lab_nabo_predict_link_created")
       .contains("metadata", { sessionId })
+      .gte("created_at", cutoffIso)
       .limit(1);
 
     if (createdError) {

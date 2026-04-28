@@ -1,4 +1,4 @@
--- 로그인 유저 AI 오디션 히스토리 (24시간 보관)
+-- 로그인 유저 AI 오디션 히스토리 (30일 보관)
 CREATE TABLE IF NOT EXISTS audition_history (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -18,5 +18,5 @@ DROP POLICY IF EXISTS "service_only_audition_history" ON audition_history;
 CREATE POLICY "service_only_audition_history" ON audition_history
   USING (false) WITH CHECK (false);
 
--- 24시간 지난 히스토리 자동 삭제 (선택사항)
--- SELECT cron.schedule('cleanup-audition-history', '0 4 * * *', $$DELETE FROM audition_history WHERE created_at < NOW() - INTERVAL '1 day'$$);
+-- 30일 지난 히스토리 자동 삭제 (선택사항)
+-- SELECT cron.schedule('cleanup-audition-history', '0 4 * * *', $$DELETE FROM audition_history WHERE created_at < NOW() - INTERVAL '30 days'$$);
