@@ -35,7 +35,6 @@ import {
 } from "@/lib/how-to";
 import {
   BALANCE_100_LAB_ENABLED,
-  MAGAZINE_ENABLED,
   NABO_LAB_ENABLED,
   NABO_PREDICT_LAB_ENABLED,
   PERSONAL_COLOR_LAB_ENABLED,
@@ -43,7 +42,6 @@ import {
 } from "@/lib/feature-flags";
 import {
   BALANCE_100_CONTROL_ID,
-  MAGAZINE_CONTROL_ID,
   NABO_CONTROL_ID,
   NABO_PREDICT_CONTROL_ID,
   PERSONAL_COLOR_CONTROL_ID,
@@ -188,7 +186,6 @@ export default function Studio() {
   const [showNoCreditModal, setShowNoCreditModal] = useState(false);
   const [requiredCreditsModal, setRequiredCreditsModal] = useState<1 | 2>(2);
   const [showHowToModal, setShowHowToModal] = useState(false);
-  const [showStudioMenu, setShowStudioMenu] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [variantSelectStyle, setVariantSelectStyle] = useState<StyleCard | null>(null);
   const [showCameraGuide, setShowCameraGuide] = useState(false);
@@ -393,10 +390,6 @@ export default function Studio() {
     styleControls[BALANCE_100_CONTROL_ID],
     BALANCE_100_LAB_ENABLED
   );
-  const magazineControl = resolveFeatureControlState(
-    styleControls[MAGAZINE_CONTROL_ID],
-    MAGAZINE_ENABLED
-  );
   const showPersonalColorLab = personalColorControl.is_visible;
   const isPersonalColorEnabled = personalColorControl.is_enabled;
   const showNaboLab = naboControl.is_visible;
@@ -405,7 +398,6 @@ export default function Studio() {
   const showTravelTogetherLab = travelTogetherControl.is_visible;
   const showBalance100Lab = balance100Control.is_visible;
   const isBalance100Enabled = balance100Control.is_enabled;
-  const showMagazineLink = magazineControl.is_visible && magazineControl.is_enabled;
   const showLabSection = showAuditionLab || showPersonalColorLab || showNaboLab || showNaboPredictLab || showTravelTogetherLab || showBalance100Lab;
 
   const scrollToSection = useCallback((section: StudioSectionTab) => {
@@ -1374,9 +1366,8 @@ export default function Studio() {
                 )}
                 <button
                   type="button"
-                  aria-label="메뉴 열기"
-                  aria-expanded={showStudioMenu}
-                  onClick={() => setShowStudioMenu((current) => !current)}
+                  aria-label="마이페이지로 이동"
+                  onClick={() => router.push("/mypage")}
                   className="flex h-9 w-7 items-center justify-center text-[#C9571A] transition-opacity hover:opacity-75"
                 >
                   <span className="flex flex-col gap-1">
@@ -1385,42 +1376,6 @@ export default function Studio() {
                     <span className="block h-[2px] w-5 rounded-full bg-current" />
                   </span>
                 </button>
-                {showStudioMenu && (
-                  <div className="absolute right-0 top-[44px] z-50 w-[220px] overflow-hidden rounded-2xl border border-black/8 bg-white shadow-[0_14px_34px_rgba(0,0,0,0.16)]">
-                    <Link
-                      href="/mypage"
-                      onClick={() => setShowStudioMenu(false)}
-                      className="flex items-center gap-3 border-b border-[#F0F0F0] px-4 py-4 text-left transition-colors hover:bg-[#FAFAFA]"
-                    >
-                      {user.profileImage ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={user.profileImage} alt="" className="h-12 w-12 rounded-full object-cover" />
-                      ) : (
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F0F0F0] text-[17px] font-black text-[#C9571A]">
-                          {user.nickname.slice(0, 1)}
-                        </span>
-                      )}
-                      <span className="min-w-0">
-                        <span className="block truncate text-[17px] font-black tracking-[-0.03em] text-[#0A0A0A]">
-                          {user.nickname}
-                        </span>
-                        <span className="mt-0.5 block text-[12px] font-semibold text-[#777]">
-                          마이페이지
-                        </span>
-                      </span>
-                    </Link>
-                    {showMagazineLink && (
-                      <Link
-                        href="/magazine"
-                        onClick={() => setShowStudioMenu(false)}
-                        className="flex items-center justify-between px-4 py-3 text-[13px] font-bold text-[#0A0A0A] transition-colors hover:bg-[#FFF4EE] hover:text-[#C9571A]"
-                      >
-                        <span>매거진</span>
-                        <span aria-hidden="true">›</span>
-                      </Link>
-                    )}
-                  </div>
-                )}
               </div>
             ) : (
               <button
