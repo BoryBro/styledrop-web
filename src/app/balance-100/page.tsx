@@ -640,7 +640,7 @@ export default function Balance100Page() {
 
       sendDefault({
         objectType: "text",
-        text: `내가 밸런스 100에서 뭘 골랐을 것 같아?\n친구 입장에서 내 선택을 맞혀봐.`,
+        text: `나는 밸런스 100 끝냈어.\n너도 네 기준대로 골라보고 우리 선택이 얼마나 같은지 보자.`,
         link: {
           mobileWebUrl: shareUrl,
           webUrl: shareUrl,
@@ -660,7 +660,7 @@ export default function Balance100Page() {
     try {
       const shareUrl = await createPredictionShareUrl(sessionId);
       await navigator.clipboard.writeText(shareUrl);
-      setShareStatus(level ? `Lv.${level} 친구 맞히기 링크가 복사됐어요.` : "친구 맞히기 링크가 복사됐어요.");
+      setShareStatus(level ? `Lv.${level} 친구 비교 링크가 복사됐어요.` : "친구 비교 링크가 복사됐어요.");
       void trackClientEvent("lab_balance_share_link_copy", { level });
     } catch {
       setShareStatus("링크 복사에 실패했어요.");

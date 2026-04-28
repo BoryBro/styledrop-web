@@ -392,20 +392,20 @@ export async function getBalance100SessionByPredictionToken(token: string) {
 function getPredictionTier(percent: number) {
   if (percent >= 96) {
     return {
-      tierTitle: "거의 복사본",
-      tierDesc: "이 정도면 답을 훔쳐본 수준입니다. 서로의 기준을 꽤 정확하게 읽었어요.",
+      tierTitle: "거의 같은 사람",
+      tierDesc: "고른 선택이 거의 같습니다. 서로의 기준이 꽤 비슷하게 움직였어요.",
     };
   }
   if (percent >= 81) {
     return {
-      tierTitle: "상당히 잘 아는 사이",
-      tierDesc: "큰 방향은 거의 맞췄습니다. 몇 개의 취향 차이만 남아 있어요.",
+      tierTitle: "생각보다 잘 맞는 사이",
+      tierDesc: "큰 방향이 많이 비슷합니다. 몇 개의 취향 차이만 남아 있어요.",
     };
   }
   if (percent >= 61) {
     return {
-      tierTitle: "꽤 읽히는 사이",
-      tierDesc: "대충 안다고 말하기엔 근거가 있습니다. 다만 핵심 선택 몇 개에서 갈렸어요.",
+      tierTitle: "비슷한 구석이 많은 사이",
+      tierDesc: "완전히 같지는 않지만, 선택 기준이 겹치는 부분이 꽤 있습니다.",
     };
   }
   if (percent >= 41) {
@@ -415,8 +415,8 @@ function getPredictionTier(percent: number) {
     };
   }
   return {
-    tierTitle: "다른 행성 출신",
-    tierDesc: "서로를 안다고 생각했지만, 밸런스 기준은 거의 다른 방향으로 갑니다.",
+    tierTitle: "정반대 취향",
+    tierDesc: "같은 질문을 봐도 선택 기준이 꽤 다른 방향으로 움직입니다.",
   };
 }
 
@@ -448,13 +448,13 @@ export async function submitBalance100Prediction(input: {
 }) {
   const source = await getBalance100SessionByPredictionToken(input.token);
   if (source.error || !source.session) {
-    return { prediction: null, sourceSession: null, error: "예측 링크를 찾을 수 없습니다." };
+    return { prediction: null, sourceSession: null, error: "공유 링크를 찾을 수 없습니다." };
   }
   if (!source.session.result) {
     return { prediction: null, sourceSession: source.session, error: "아직 완료되지 않은 링크입니다." };
   }
   if (source.session.ownerUserId === input.user.id) {
-    return { prediction: null, sourceSession: source.session, error: "내 링크로는 예측할 수 없습니다." };
+    return { prediction: null, sourceSession: source.session, error: "내가 만든 링크는 친구에게 보내는 용도입니다." };
   }
 
   const answers = sanitizeAnswers(input.answers, source.session.level);
@@ -545,8 +545,14 @@ export async function findBalance100Matches(input: {
       Boolean(session.result) &&
       isWithinLabHistoryRetention(session.updatedAt),
     );
+  const latestByUser = new Map<string, Balance100SessionState>();
+  for (const session of completed.sort((a, b) => toTime(b.updatedAt) - toTime(a.updatedAt))) {
+    if (!latestByUser.has(session.ownerUserId)) {
+      latestByUser.set(session.ownerUserId, session);
+    }
+  }
 
-  const matches = completed
+  const matches = [...latestByUser.values()]
     .map((session) => {
       const compared = compareAnswers(input.session.answers, session.answers, input.session.level);
       return {

@@ -25,7 +25,7 @@ export async function GET(
   const { token } = await context.params;
   const source = await getBalance100SessionByPredictionToken(token);
   if (source.error || !source.session) {
-    return NextResponse.json({ error: "예측 링크를 찾을 수 없습니다." }, { status: 404 });
+    return NextResponse.json({ error: "공유 링크를 찾을 수 없습니다." }, { status: 404 });
   }
 
   return NextResponse.json({
@@ -62,7 +62,7 @@ export async function POST(
     });
 
     if (submitted.error || !submitted.prediction) {
-      return NextResponse.json({ error: submitted.error ?? "예측 결과 저장에 실패했습니다." }, { status: 500 });
+      return NextResponse.json({ error: submitted.error ?? "비교 결과 저장에 실패했습니다." }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -76,6 +76,6 @@ export async function POST(
         : null,
     });
   } catch {
-    return NextResponse.json({ error: "예측 결과 저장에 실패했습니다." }, { status: 500 });
+    return NextResponse.json({ error: "비교 결과 저장에 실패했습니다." }, { status: 500 });
   }
 }

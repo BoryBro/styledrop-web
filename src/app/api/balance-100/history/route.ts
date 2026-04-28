@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     .filter((item) => !hidden.keys.has(getLabHistoryKey("balance-100", item.sessionId)))
     .slice(0, 10);
   const sessionIds = new Set(visibleSessions.map((item) => item.sessionId));
-  const predictionStats = new Map<string, { count: number; latestPredictionAt: string | null }>();
+  const predictionStats = new Map<string, { participantIds: Set<string>; latestPredictionAt: string | null }>();
 
   if (sessionIds.size > 0) {
     const supabase = getSupabase();
@@ -60,9 +60,11 @@ export async function GET(request: NextRequest) {
       const metadata = readMetadata(row);
       const sourceSessionId = String(metadata.sourceSessionId ?? "");
       if (!sessionIds.has(sourceSessionId)) continue;
-      const current = predictionStats.get(sourceSessionId) ?? { count: 0, latestPredictionAt: null };
+      const current = predictionStats.get(sourceSessionId) ?? { participantIds: new Set<string>(), latestPredictionAt: null };
+      const participantId = String(metadata.predictorUserId ?? metadata.predictionId ?? row.created_at);
+      current.participantIds.add(participantId);
       predictionStats.set(sourceSessionId, {
-        count: current.count + 1,
+        participantIds: current.participantIds,
         latestPredictionAt: current.latestPredictionAt ?? row.created_at,
       });
     }
@@ -70,10 +72,10 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     history: visibleSessions.map((item) => {
-      const stats = predictionStats.get(item.sessionId) ?? { count: 0, latestPredictionAt: null };
+      const stats = predictionStats.get(item.sessionId) ?? { participantIds: new Set<string>(), latestPredictionAt: null };
       return {
         ...item,
-        predictionCount: stats.count,
+        predictionCount: stats.participantIds.size,
         latestPredictionAt: stats.latestPredictionAt,
       };
     }),

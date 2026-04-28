@@ -300,7 +300,7 @@ export default function Balance100SharePage() {
     fetch(`/api/balance-100/prediction/${encodeURIComponent(token)}`, { cache: "no-store" })
       .then((response) => response.json().then((data) => ({ ok: response.ok, data })))
       .then(({ ok, data }) => {
-        if (!ok) throw new Error(data?.error ?? "예측 링크를 열 수 없습니다.");
+        if (!ok) throw new Error(data?.error ?? "공유 링크를 열 수 없습니다.");
         setInvite({
           token: data.token,
           level: normalizeBalanceLevel(data.level),
@@ -309,7 +309,7 @@ export default function Balance100SharePage() {
           isOwner: Boolean(data.isOwner),
         });
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "예측 링크를 열 수 없습니다."));
+      .catch((err) => setError(err instanceof Error ? err.message : "공유 링크를 열 수 없습니다."));
   }, [token, user]);
 
   const level = invite?.level ?? 3;
@@ -384,8 +384,8 @@ export default function Balance100SharePage() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "이번엔 네가 내 답 맞혀봐",
-          text: "밸런스 100으로 내가 어떻게 골랐는지 맞혀봐.",
+          title: "이번엔 내 결과도 비교해봐",
+          text: "밸런스 100으로 우리 선택이 얼마나 같은지 비교해봐.",
           url,
         });
       } else {
@@ -420,11 +420,10 @@ export default function Balance100SharePage() {
           <h1 className="mt-4 break-keep text-[39px] font-black leading-[1.15] tracking-[-0.07em]">
             닉네임만 적고
             <br />
-            바로 맞혀보세요
+            바로 비교해보세요
           </h1>
           <p className="mt-5 break-keep text-[17px] font-medium leading-8 text-[#555]">
-            {invite.ownerName}님이 밸런스 100에서 뭘 골랐을지 예측해보는 링크예요.
-            결과 확인은 마지막에 카카오 로그인 후 열립니다.
+            {invite.ownerName}님은 이미 완료했어요. 나는 내 기준대로 고르고, 마지막에 얼마나 같은지 확인합니다.
           </p>
           <input
             value={guestName}
@@ -477,9 +476,9 @@ export default function Balance100SharePage() {
       <main className="min-h-screen bg-white px-6 py-6">
         <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center">
           <p className="text-[12px] font-black uppercase tracking-[0.22em] text-[#20D879]">Balance 100</p>
-          <h1 className="mt-4 text-[36px] font-black leading-[1.15] tracking-[-0.06em] text-black">내가 만든 예측 링크예요.</h1>
+          <h1 className="mt-4 text-[36px] font-black leading-[1.15] tracking-[-0.06em] text-black">내가 만든 비교 링크예요.</h1>
           <p className="mt-3 break-keep text-[16px] font-medium leading-7 text-[#555]">
-            이 링크는 친구에게 보내는 용도입니다. 친구가 로그인하고 들어오면 내 답을 예측하게 됩니다.
+            이 링크는 친구에게 보내는 용도입니다. 친구가 자기 기준대로 고르면 나와 얼마나 같은지 비교됩니다.
           </p>
           <Link href="/balance-100" className="mt-8 flex h-[66px] items-center justify-center rounded-[34px] text-[17px] font-black text-white" style={{ backgroundColor: GREEN }}>
             내 결과로 돌아가기
@@ -495,7 +494,7 @@ export default function Balance100SharePage() {
         <div className="mx-auto max-w-md">
           <TopProgress progressRatio={100} backHref="/balance-100" />
           <section className="rounded-[34px] border border-[#D9F7E5] bg-[#F0FFF7] p-6">
-            <p className="text-[12px] font-black uppercase tracking-[0.22em] text-[#20D879]">Prediction Result</p>
+            <p className="text-[12px] font-black uppercase tracking-[0.22em] text-[#20D879]">Match Result</p>
             <h1 className="mt-4 text-[40px] font-black leading-[1.08] tracking-[-0.08em] text-black">
               {predictionResult.tierTitle}
             </h1>
@@ -503,7 +502,7 @@ export default function Balance100SharePage() {
               {predictionResult.tierDesc}
             </p>
             <div className="mt-6 rounded-[26px] bg-white p-5">
-              <p className="text-[12px] font-bold text-[#777]">{invite.ownerName}님 답변 예측 성공률</p>
+              <p className="text-[12px] font-bold text-[#777]">{invite.ownerName}님과 선택 일치율</p>
               <p className="mt-1 text-[38px] font-black tracking-[-0.06em] text-black">
                 {predictionResult.matchedCount}/100
               </p>
@@ -514,7 +513,7 @@ export default function Balance100SharePage() {
           <div className="mt-5 grid gap-3">
             {predictionResult.reverseSharePath && (
               <PrimaryButton onClick={shareReverse}>
-                이번엔 친구에게 내 답 맞히게 하기
+                이번엔 내 결과도 공유하기
               </PrimaryButton>
             )}
             <Link
@@ -541,12 +540,12 @@ export default function Balance100SharePage() {
           {currentIndex + 1} / {questions.length}
         </p>
         <h1 className="mt-5 break-keep text-[34px] font-black leading-[1.23] tracking-[-0.06em] text-black">
-          {invite.ownerName}님이라면
+          나는
           <br />
           뭘 골랐을까?
         </h1>
         <p className="mt-4 break-keep text-[14px] font-bold leading-6 text-[#9A9A9A]">
-          친구의 답을 예측해서 골라봐요.
+          정답은 없어요. 내 기준대로 고르면 마지막에 친구와 비교됩니다.
         </p>
 
         <div className="mt-10 grid gap-4">
