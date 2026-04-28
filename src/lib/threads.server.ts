@@ -3,8 +3,9 @@ import { MAX_THREADS_IMAGE_COUNT, parseThreadsImageUrls } from "@/lib/threads-im
 const BASE = "https://graph.threads.net/v1.0";
 const USER_ID = process.env.THREADS_USER_ID!;
 const ACCESS_TOKEN = process.env.THREADS_ACCESS_TOKEN!;
-const CONTAINER_POLL_INTERVAL_MS = 2500;
+const CONTAINER_POLL_INTERVAL_MS = 5000;
 const CONTAINER_MAX_WAIT_MS = 60000;
+const CAROUSEL_PROPAGATION_DELAY_MS = 10000;
 
 export type ThreadsPostResult =
   | { ok: true; threadId: string }
@@ -51,7 +52,7 @@ async function createThreadsContainer(body: Record<string, string | boolean>) {
 
 async function getThreadsContainerStatus(containerId: string) {
   const params = new URLSearchParams({
-    fields: "status_code",
+    fields: "id,status,error_message",
     access_token: ACCESS_TOKEN,
   });
   const res = await fetch(`${BASE}/${containerId}?${params.toString()}`, { cache: "no-store" });
@@ -61,7 +62,9 @@ async function getThreadsContainerStatus(containerId: string) {
     throw new Error(formatThreadsError(data));
   }
 
-  return typeof data?.status_code === "string" ? data.status_code : null;
+  const status = typeof data?.status === "string" ? data.status : null;
+  const errorMessage = typeof data?.error_message === "string" ? data.error_message : null;
+  return { status, errorMessage };
 }
 
 async function waitForThreadsContainer(container: ThreadsContainer, label: string) {
@@ -69,15 +72,17 @@ async function waitForThreadsContainer(container: ThreadsContainer, label: strin
   let lastStatus = "UNKNOWN";
 
   while (Date.now() - startedAt <= CONTAINER_MAX_WAIT_MS) {
-    const status = await getThreadsContainerStatus(container.id).catch((error) => {
+    const result = await getThreadsContainerStatus(container.id).catch((error) => {
       lastStatus = String(error);
       return null;
     });
 
+    const status = result?.status ?? null;
     if (status) lastStatus = status;
     if (status === "FINISHED" || status === "PUBLISHED") return;
     if (status === "ERROR" || status === "EXPIRED") {
-      throw new Error(`${label} container ${container.id} is ${status}.`);
+      const detail = result?.errorMessage ? ` ${result.errorMessage}` : "";
+      throw new Error(`${label} container ${container.id} is ${status}.${detail}`);
     }
 
     await sleep(CONTAINER_POLL_INTERVAL_MS);
@@ -103,6 +108,41 @@ async function createCarouselContainerWithRetry(children: ThreadsContainer[], co
     await sleep(CONTAINER_POLL_INTERVAL_MS * 2);
     return createThreadsContainer(body);
   }
+}
+
+async function createReadyCarouselContainer(imageUrls: string[], content: string) {
+  const children = await Promise.all(
+    imageUrls.map((imageUrl) =>
+      createThreadsContainer({
+        media_type: "IMAGE",
+        image_url: imageUrl,
+        is_carousel_item: true,
+      })
+    )
+  );
+
+  await Promise.all(children.map((child, index) => waitForThreadsContainer(child, `carousel child ${index + 1}`)));
+  await sleep(CAROUSEL_PROPAGATION_DELAY_MS);
+
+  const carousel = await createCarouselContainerWithRetry(children, content);
+  await waitForThreadsContainer(carousel, "carousel");
+  await sleep(CAROUSEL_PROPAGATION_DELAY_MS);
+
+  return carousel;
+}
+
+async function publishThreadsContainer(creationId: string) {
+  const publishRes = await fetch(`${BASE}/${USER_ID}/threads_publish`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ creation_id: creationId, access_token: ACCESS_TOKEN }),
+  });
+  const publishData = await publishRes.json();
+  if (!publishRes.ok || !publishData.id) {
+    return { ok: false as const, error: formatThreadsError(publishData) };
+  }
+
+  return { ok: true as const, threadId: String(publishData.id) };
 }
 
 export async function publishToThreads(
@@ -132,35 +172,25 @@ export async function publishToThreads(
       await waitForThreadsContainer(container, "image");
       creationId = container.id;
     } else {
-      const children = await Promise.all(
-        imageUrls.map((imageUrl) =>
-          createThreadsContainer({
-            media_type: "IMAGE",
-            image_url: imageUrl,
-            is_carousel_item: true,
-          })
-        )
-      );
-
-      await Promise.all(children.map((child, index) => waitForThreadsContainer(child, `carousel child ${index + 1}`)));
-
-      const carousel = await createCarouselContainerWithRetry(children, content);
-      await waitForThreadsContainer(carousel, "carousel");
+      const carousel = await createReadyCarouselContainer(imageUrls, content);
       creationId = carousel.id;
     }
 
-    // Step 2: publish container
-    const publishRes = await fetch(`${BASE}/${USER_ID}/threads_publish`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ creation_id: creationId, access_token: ACCESS_TOKEN }),
-    });
-    const publishData = await publishRes.json();
-    if (!publishRes.ok || !publishData.id) {
-      return { ok: false, error: JSON.stringify(publishData) };
+    const publishResult = await publishThreadsContainer(creationId);
+    if (publishResult.ok) {
+      return { ok: true, threadId: publishResult.threadId };
     }
 
-    return { ok: true, threadId: publishData.id };
+    if (imageUrls.length > 1 && publishResult.error.includes("Invalid Carousel Children")) {
+      const retryCarousel = await createReadyCarouselContainer(imageUrls, content);
+      const retryResult = await publishThreadsContainer(retryCarousel.id);
+      if (retryResult.ok) {
+        return { ok: true, threadId: retryResult.threadId };
+      }
+      return { ok: false, error: retryResult.error };
+    }
+
+    return { ok: false, error: publishResult.error };
   } catch (e) {
     return { ok: false, error: String(e) };
   }
