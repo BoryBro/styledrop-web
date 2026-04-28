@@ -317,43 +317,43 @@ function getResultType(scores: BalanceScoreMap) {
 
   if (risk >= 72 && comfort <= 48) {
     return {
-      typeTitle: "도파민 생존형",
-      typeDesc: "안정보다 재미를 먼저 보는 타입. 선택이 빠르고, 재미없으면 오래 못 버팁니다.",
+      typeTitle: "재미 우선형",
+      typeDesc: "안정보다 재미와 자극을 먼저 봅니다. 선택이 빠르고, 재미없는 선택은 오래 붙잡지 않는 편입니다.",
     };
   }
   if (money >= 72 && pride >= 64) {
     return {
-      typeTitle: "현실 승부사",
-      typeDesc: "감정보다 결과와 손익을 먼저 계산합니다. 손해 보는 선택을 오래 참지 못합니다.",
+      typeTitle: "현실 계산형",
+      typeDesc: "감정보다 결과와 손익을 먼저 봅니다. 손해가 커 보이는 선택은 오래 참지 않는 편입니다.",
     };
   }
   if (love >= 72) {
     return {
-      typeTitle: "감정 과몰입러",
-      typeDesc: "관계와 감정의 밀도를 크게 봅니다. 좋아하는 것에는 생각보다 과감합니다.",
+      typeTitle: "감정 몰입형",
+      typeDesc: "관계의 온도와 감정의 밀도를 크게 봅니다. 마음이 움직이면 생각보다 과감해지는 편입니다.",
     };
   }
   if (social >= 72) {
     return {
-      typeTitle: "관계 레이더형",
-      typeDesc: "사람 사이의 분위기와 반응을 빨리 읽습니다. 혼자보다 연결에서 에너지가 납니다.",
+      typeTitle: "관계 감지형",
+      typeDesc: "사람 사이의 분위기와 반응을 빠르게 읽습니다. 선택할 때도 내 기준만큼 주변 흐름을 같이 봅니다.",
     };
   }
   if (comfort >= 72) {
     return {
-      typeTitle: "안락 우선주의자",
-      typeDesc: "새로움보다 컨디션과 편안함이 중요합니다. 무리하는 선택에는 쉽게 지칩니다.",
+      typeTitle: "안정 우선형",
+      typeDesc: "새로움보다 컨디션과 편안함을 중요하게 봅니다. 무리해서 얻는 선택에는 쉽게 지치는 편입니다.",
     };
   }
   if (topScore >= 68) {
     return {
-      typeTitle: `${DIMENSION_LABELS[topDimension]} 몰빵형`,
-      typeDesc: "선택 기준이 꽤 또렷합니다. 애매한 타협보다 내 기준에 맞는 쪽을 선호합니다.",
+      typeTitle: `${DIMENSION_LABELS[topDimension]} 기준형`,
+      typeDesc: "선택 기준이 비교적 또렷합니다. 애매한 타협보다 내 기준에 더 맞는 쪽을 고르는 편입니다.",
     };
   }
   return {
-    typeTitle: "균형형 선택자",
-    typeDesc: "극단으로 쉽게 치우치지 않습니다. 상황마다 다른 기준을 꺼내는 편입니다.",
+    typeTitle: "상황 판단형",
+    typeDesc: "한 가지 기준으로만 밀어붙이지 않습니다. 질문의 상황에 따라 현실, 감정, 관계 기준을 바꿔 쓰는 편입니다.",
   };
 }
 

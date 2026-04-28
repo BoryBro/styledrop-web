@@ -224,11 +224,13 @@ function ChoiceCard({
 }
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
+  const strength = value >= 68 ? "강함" : value >= 55 ? "자주 나옴" : "보통";
+
   return (
     <div>
       <div className="mb-2 flex items-center justify-between text-[13px] font-bold">
         <span className="text-[#111827]">{label}</span>
-        <span className="tabular-nums text-[#20D879]">{value}</span>
+        <span className="text-[#20D879]">{strength}</span>
       </div>
       <div className="h-2.5 overflow-hidden rounded-full bg-[#F1F1F4]">
         <div
@@ -244,21 +246,57 @@ function ResultReport({
   result,
   representativeImageUrl,
   matches,
+  historyImages,
+  onSelectRepresentativeImage,
 }: {
   result: BalanceResultSummary;
   representativeImageUrl?: string;
   matches: BalanceMatchItem[];
+  historyImages: HistoryImage[];
+  onSelectRepresentativeImage: (imageUrl: string) => void;
 }) {
   const sortedScores = [...SCORE_ORDER].sort((a, b) => result.scores[b] - result.scores[a]);
   const topDimension = sortedScores[0];
+  const secondDimension = sortedScores[1];
+  const bottomDimension = sortedScores[sortedScores.length - 1];
+  const topScore = result.scores[topDimension];
+  const secondScore = result.scores[secondDimension];
+  const scoreSpread = topScore - result.scores[bottomDimension];
+  const isBalanced = topScore - secondScore <= 4 && scoreSpread <= 12;
+  const signalTitle = isBalanced
+    ? "선택 기준이 고르게 나뉘었어요"
+    : `가장 자주 드러난 기준은 ${BALANCE_DIMENSION_LABELS[topDimension]}`;
+  const signalDescription = isBalanced
+    ? "한 가지 기준으로 몰리기보다 상황마다 판단 기준을 바꾼 편입니다."
+    : `${BALANCE_DIMENSION_LABELS[topDimension]} 쪽 점수가 가장 높게 나왔어요. 비슷한 선택지에서 이 기준을 더 자주 우선했습니다.`;
 
   return (
     <div className="flex flex-col gap-4">
       <section className="overflow-hidden rounded-[32px] border border-[#E9E9E9] bg-white shadow-[0_12px_34px_rgba(0,0,0,0.06)]">
         {representativeImageUrl && (
-          <div className="aspect-[4/3] w-full overflow-hidden bg-black">
+          <div className="relative aspect-square w-full overflow-hidden bg-[#F4F5F4]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={representativeImageUrl} alt="" className="h-full w-full object-cover" />
+            <img src={representativeImageUrl} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-2xl" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={representativeImageUrl} alt="" className="relative z-10 h-full w-full object-contain" />
+          </div>
+        )}
+        {historyImages.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto border-b border-[#F2F2F2] px-5 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {historyImages.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSelectRepresentativeImage(item.result_image_url)}
+                className={`h-12 w-12 shrink-0 overflow-hidden rounded-[16px] border-2 bg-[#F3F4F6] ${
+                  representativeImageUrl === item.result_image_url ? "border-[#20D879]" : "border-transparent"
+                }`}
+                aria-label="대표 이미지 선택"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={item.result_image_url} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
           </div>
         )}
         <div className="p-6">
@@ -271,26 +309,16 @@ function ResultReport({
           <p className="mt-4 break-keep text-[16px] font-medium leading-8 text-[#555]">
             {result.typeDesc}
           </p>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-[24px] bg-[#F5FFF9] p-4">
-              <p className="text-[12px] font-bold text-[#777]">답변 완료</p>
-              <p className="mt-1 text-[25px] font-black text-black">{result.answeredCount}/100</p>
-            </div>
-            <div className="rounded-[24px] bg-[#F5FFF9] p-4">
-              <p className="text-[12px] font-bold text-[#777]">선택 코드</p>
-              <p className="mt-1 text-[25px] font-black tracking-[-0.04em] text-black">{result.matchCode}</p>
-            </div>
-          </div>
         </div>
       </section>
 
       <section className="rounded-[30px] border border-[#E9E9E9] bg-white p-6">
-        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">Main Signal</p>
+        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">기준 요약</p>
         <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">
-          가장 강한 기준은 {BALANCE_DIMENSION_LABELS[topDimension]}
+          {signalTitle}
         </h2>
         <p className="mt-2 text-[14px] leading-6 text-[#6B7280] break-keep">
-          점수가 높은 영역일수록 선택에서 더 자주 튀어나온 기준입니다.
+          {signalDescription}
         </p>
         <div className="mt-5 flex flex-col gap-4">
           {SCORE_ORDER.map((dimension) => (
@@ -300,12 +328,15 @@ function ResultReport({
       </section>
 
       <section className="rounded-[30px] border border-[#E9E9E9] bg-white p-6">
-        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">Pick Review</p>
-        <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">흔들림 컸던 선택 TOP 5</h2>
+        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">선택 리뷰</p>
+        <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">기준이 잘 드러난 선택</h2>
+        <p className="mt-2 text-[14px] leading-6 text-[#6B7280] break-keep">
+          100개 중 성향 차이가 크게 갈리는 질문에서 내가 고른 답입니다.
+        </p>
         <div className="mt-4 flex flex-col gap-3">
           {result.topChoices.map((choice, index) => (
             <div key={choice.id} className="rounded-[24px] bg-[#F7F7F7] p-4">
-              <p className="text-[11px] font-black text-[#20D879]">#{index + 1} · {choice.picked}</p>
+              <p className="text-[11px] font-black text-[#20D879]">#{index + 1}</p>
               <p className="mt-1 text-[15px] font-bold leading-6 text-[#111827] break-keep">{choice.text}</p>
             </div>
           ))}
@@ -313,7 +344,7 @@ function ResultReport({
       </section>
 
       <section className="rounded-[30px] border border-[#CFF7DF] bg-[#F0FFF7] p-6">
-        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">Matching</p>
+        <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">비슷한 사람</p>
         <h2 className="mt-2 text-[24px] font-black tracking-[-0.05em] text-[#111827]">
           나와 비슷한 선택자
         </h2>
@@ -715,73 +746,48 @@ export default function Balance100Page() {
 
   if (mode === "result" && result) {
     return (
-      <main className="min-h-screen bg-white px-6 py-6">
+      <main className="min-h-screen bg-white px-6 pb-8">
         <div className="mx-auto max-w-md">
-          <div className="mb-8 flex items-center justify-between">
-            <Link href="/studio" className="text-[38px] font-light leading-none text-black">‹</Link>
-            <button type="button" onClick={resetQuiz} className="text-[14px] font-black text-[#20D879]">새로 시작</button>
+          <BalanceIntroHeader />
+
+          <div className="pt-8">
+            <ResultReport
+              result={result}
+              representativeImageUrl={representativeImageUrl}
+              matches={matches}
+              historyImages={historyImages}
+              onSelectRepresentativeImage={selectRepresentativeImage}
+            />
           </div>
 
-          <ResultReport result={result} representativeImageUrl={representativeImageUrl} matches={matches} />
-
-          <section className="mt-4 rounded-[30px] border border-[#E9E9E9] bg-white p-6">
-            <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">StyleDrop Image</p>
-            <h2 className="mt-2 text-[22px] font-black tracking-[-0.05em] text-[#111827]">대표 이미지 선택</h2>
-            <p className="mt-2 text-[13px] leading-6 text-[#6B7280] break-keep">
-              스타일드롭에서 만든 이미지 기록 중에서만 고릅니다.
-            </p>
-            {historyImages.length === 0 ? (
-              <Link href="/studio" className="mt-4 block rounded-[26px] px-4 py-4 text-center text-[15px] font-black text-white" style={{ backgroundColor: GREEN }}>
-                스타일드롭 이미지 만들러 가기
-              </Link>
-            ) : (
-              <div className="mt-4 grid grid-cols-4 gap-2">
-                {historyImages.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => selectRepresentativeImage(item.result_image_url)}
-                    className={`aspect-square overflow-hidden rounded-[22px] border-2 bg-[#F3F4F6] ${
-                      representativeImageUrl === item.result_image_url ? "border-[#20D879]" : "border-transparent"
-                    }`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.result_image_url} alt="" className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <div className="sticky bottom-0 -mx-6 mt-4 grid gap-2 bg-white/92 px-6 pb-5 pt-3 backdrop-blur">
+          <div className="mt-4 grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={handlePredictionShare}
               disabled={isSaving}
-              className="flex h-[62px] w-full items-center justify-center gap-2 rounded-[34px] bg-[#FEE500] text-[17px] font-black text-[#191919] disabled:opacity-50"
+              className="flex h-[54px] items-center justify-center gap-1.5 rounded-[20px] bg-[#FEE500] text-[13px] font-black text-[#191919] disabled:opacity-50"
             >
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#191919] text-[11px] font-black text-[#FEE500]">K</span>
-              친구에게 물어보기
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-[#191919] text-[10px] font-black text-[#FEE500]">K</span>
+              카카오
             </button>
             <button
               type="button"
               onClick={() => serverSession && void handleCopyPredictionLink(serverSession.sessionId, serverSession.level)}
               disabled={isSaving || !serverSession}
-              className="flex h-[56px] w-full items-center justify-center gap-2 rounded-[30px] border border-[#D9F7E5] bg-[#F0FFF7] text-[15px] font-black text-[#20D879] disabled:opacity-50"
+              className="flex h-[54px] items-center justify-center rounded-[20px] border border-[#D9F7E5] bg-[#F0FFF7] text-[13px] font-black text-[#20D879] disabled:opacity-50"
             >
-              <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#20D879]">🔗 Link</span>
-              친구에게 물어보기
+              🔗 Link
             </button>
             <button
               type="button"
               onClick={handleShare}
-              className="h-[62px] w-full rounded-[34px] text-[17px] font-black text-white shadow-[0_16px_30px_rgba(32,216,121,0.22)]"
+              className="h-[54px] rounded-[20px] text-[13px] font-black text-white shadow-[0_12px_22px_rgba(32,216,121,0.18)]"
               style={{ backgroundColor: GREEN }}
             >
-              결과만 공유하기
+              결과 공유
             </button>
-            {shareStatus && <p className="mt-1 text-center text-[12px] font-bold text-[#20D879]">{shareStatus}</p>}
           </div>
+          {shareStatus && <p className="mt-3 text-center text-[12px] font-bold text-[#20D879]">{shareStatus}</p>}
         </div>
       </main>
     );
