@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { publishToThreads } from "@/lib/threads.server";
 
+export const runtime = "nodejs";
+export const maxDuration = 180;
+
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

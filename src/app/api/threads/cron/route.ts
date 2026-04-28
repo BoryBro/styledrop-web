@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { publishToThreads } from "@/lib/threads.server";
 
+export const runtime = "nodejs";
+export const maxDuration = 180;
+
 // Vercel Cron 또는 외부 크론이 호출하는 엔드포인트
 // 승인됐고 scheduled_at이 지난 포스트를 자동 발행
 export async function GET(req: NextRequest) {
