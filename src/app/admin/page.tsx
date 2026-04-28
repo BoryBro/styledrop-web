@@ -34,6 +34,8 @@ type UserItem = {
   created_at: string | null;
   last_login_at: string | null;
   last_activity_at?: string | null;
+  withdrawn_at?: string | null;
+  account_status?: "active" | "withdrawn";
 };
 type PaymentItem = {
   id: string;
@@ -2665,6 +2667,11 @@ export default function AdminPage() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 min-w-0">
                           <p className="truncate text-[14px] font-black text-[#111827]">{user.nickname ?? "닉네임 없음"}</p>
+                          {user.account_status === "withdrawn" && (
+                            <span className="rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[10px] font-black text-[#DC2626]">
+                              탈퇴
+                            </span>
+                          )}
                           <button
                             type="button"
                             onClick={() => toggleUserIdVisibility(user.id)}
@@ -2691,7 +2698,9 @@ export default function AdminPage() {
                         )}
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-[11px] font-bold text-[#6B7280]">가입 {formatDateTime(user.created_at)}</p>
+                        <p className="text-[11px] font-bold text-[#6B7280]">
+                          {user.account_status === "withdrawn" ? `탈퇴 ${formatDateTime(user.withdrawn_at ?? user.last_activity_at ?? null)}` : `가입 ${formatDateTime(user.created_at)}`}
+                        </p>
                         <p className="mt-0.5 text-[11px] font-bold text-[#9CA3AF]">
                           최근 활동 {user.last_activity_at ? relativeTime(user.last_activity_at) : "—"}
                         </p>

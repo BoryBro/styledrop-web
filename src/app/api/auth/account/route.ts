@@ -30,8 +30,14 @@ export async function DELETE(request: NextRequest) {
   );
 
   const storagePaths = new Set<string>();
+  const deletedAt = new Date().toISOString();
 
-  const [{ data: historyRows }, { data: userEventRows }, { data: auditionHistoryRows }] = await Promise.all([
+  const [{ data: userRow }, { data: historyRows }, { data: userEventRows }, { data: auditionHistoryRows }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("id, nickname, created_at, last_login_at")
+      .eq("id", session.id)
+      .maybeSingle(),
     supabase
       .from("transform_history")
       .select("result_image_url")
@@ -99,6 +105,20 @@ export async function DELETE(request: NextRequest) {
   }
   await supabase.from("style_usage").update({ user_id: null }).eq("user_id", session.id);
   await supabase.from("users").delete().eq("id", session.id);
+  const { error: archiveError } = await supabase.from("user_events").insert({
+    user_id: null,
+    event_type: "account_deleted",
+    metadata: {
+      original_user_id: session.id,
+      nickname: userRow?.nickname ?? null,
+      created_at: userRow?.created_at ?? null,
+      last_login_at: userRow?.last_login_at ?? null,
+      deleted_at: deletedAt,
+    },
+  });
+  if (archiveError) {
+    console.error("[account delete] archive error:", archiveError);
+  }
 
   const response = NextResponse.json({ success: true });
   clearSessionCookie(response);

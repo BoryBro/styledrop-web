@@ -61,6 +61,27 @@ type AdminEventRow = {
   } | null;
 };
 
+type DeletedUserEventRow = {
+  created_at: string;
+  metadata: {
+    original_user_id?: string | null;
+    nickname?: string | null;
+    created_at?: string | null;
+    last_login_at?: string | null;
+    deleted_at?: string | null;
+  } | null;
+};
+
+type AdminUserListRow = {
+  id: string;
+  nickname: string | null;
+  created_at: string | null;
+  last_login_at: string | null;
+  last_activity_at: string | null;
+  withdrawn_at: string | null;
+  account_status: "active" | "withdrawn";
+};
+
 export async function POST(request: NextRequest) {
   const { password } = await request.json();
 
@@ -101,7 +122,7 @@ export async function POST(request: NextRequest) {
     ? usageWithVariant
     : await supabase.from("style_usage").select("style_id, style_name, user_id");
 
-  const [eventsRes, todayEventsRes, refundEventsRes, usersRes, todaySignupRes, todayUsageRes, todayUsageRowsRes, paymentsRes, todayPaymentsRes, userListRes,
+  const [eventsRes, todayEventsRes, refundEventsRes, usersRes, todaySignupRes, todayUsageRes, todayUsageRowsRes, paymentsRes, todayPaymentsRes, userListRes, deletedUsersRes,
     marUsageRes, aprUsageRes, marAuditionRes, aprAuditionRes, marAuditionStillRes, aprAuditionStillRes,
     marDuoRes, aprDuoRes,
     aprRefUsageRes, aprRefAuditionRes, aprRefAuditionStillRes,
@@ -131,6 +152,12 @@ export async function POST(request: NextRequest) {
       .from("users")
       .select("id, nickname, created_at, last_login_at")
       .order("last_login_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(500),
+    supabase
+      .from("user_events")
+      .select("created_at, metadata")
+      .eq("event_type", "account_deleted")
       .order("created_at", { ascending: false })
       .limit(500),
     // 월별 스타일 변환
@@ -655,6 +682,25 @@ export async function POST(request: NextRequest) {
   const aprSoldCredits = aprPayments.reduce((sum, payment) => sum + getNetPaidCredits(payment), 0);
 
   const userList = [...(userListRes.data ?? [])];
+  const withdrawnUsers = (deletedUsersRes.data ?? [])
+    .map((row) => {
+      const metadata = (row as DeletedUserEventRow).metadata;
+      const originalUserId = typeof metadata?.original_user_id === "string" ? metadata.original_user_id : null;
+      if (!originalUserId) return null;
+      const deletedAt = typeof metadata?.deleted_at === "string" && metadata.deleted_at.length > 0
+        ? metadata.deleted_at
+        : row.created_at;
+      return {
+        id: originalUserId,
+        nickname: typeof metadata?.nickname === "string" ? metadata.nickname : null,
+        created_at: typeof metadata?.created_at === "string" ? metadata.created_at : null,
+        last_login_at: typeof metadata?.last_login_at === "string" ? metadata.last_login_at : null,
+        last_activity_at: deletedAt,
+        withdrawn_at: deletedAt,
+        account_status: "withdrawn" as const,
+      };
+    })
+    .filter((user): user is NonNullable<typeof user> => user !== null);
 
   const userIds = userList.map((user) => user.id).filter((id): id is string => typeof id === "string" && id.length > 0);
   const activityMap = new Map<string, string>();
@@ -703,7 +749,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const userListWithActivity = userList
+  const activeUsers: AdminUserListRow[] = userList
     .map((user) => {
       const actualActivityAt = activityMap.get(user.id) ?? null;
       const lastSeenAt = [actualActivityAt, user.last_login_at, user.created_at]
@@ -713,8 +759,13 @@ export async function POST(request: NextRequest) {
       return {
         ...user,
         last_activity_at: lastSeenAt,
+        withdrawn_at: null,
+        account_status: "active" as const,
       };
-    })
+    });
+
+  const userListWithActivity: AdminUserListRow[] = activeUsers
+    .concat(withdrawnUsers.filter((withdrawnUser) => !userList.some((activeUser) => activeUser.id === withdrawnUser.id)))
     .sort((left, right) => {
       const leftActivity = left.last_activity_at ? new Date(left.last_activity_at).getTime() : 0;
       const rightActivity = right.last_activity_at ? new Date(right.last_activity_at).getTime() : 0;
