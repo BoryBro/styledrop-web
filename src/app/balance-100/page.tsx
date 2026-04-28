@@ -12,7 +12,6 @@ import {
   BALANCE_LEVELS,
   BALANCE_TOTAL_QUESTIONS,
   analyzeBalanceAnswers,
-  encodeBalanceSharePayload,
   getBalance100Progress,
   getBalanceQuestions,
   getFirstUnansweredIndex,
@@ -22,7 +21,6 @@ import {
   type BalanceDimension,
   type BalanceLevel,
   type BalanceResultSummary,
-  type BalanceSharePayload,
 } from "@/lib/balance-100";
 import { BALANCE_100_CONTROL_ID } from "@/lib/style-controls";
 
@@ -650,44 +648,6 @@ export default function Balance100Page() {
     }
   }, [createPredictionShareUrl]);
 
-  const handleShare = useCallback(async () => {
-    if (!result) return;
-    const payload: BalanceSharePayload = {
-      version: 1,
-      level: selectedLevel,
-      typeTitle: result.typeTitle,
-      typeDesc: result.typeDesc,
-      scores: result.scores,
-      matchCode: result.matchCode,
-      completedAt: serverSession?.completedAt ?? new Date().toISOString(),
-      representativeImageUrl,
-      topChoices: result.topChoices,
-    };
-    const encoded = encodeBalanceSharePayload(payload);
-    const shareUrl = `${window.location.origin}/balance-100/share?data=${encodeURIComponent(encoded)}`;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "밸런스 100 결과",
-          text: `나는 ${result.typeTitle}. 너는 몇 개나 같을까?`,
-          url: shareUrl,
-        });
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        setShareStatus("결과 링크가 복사됐어요.");
-      }
-      void trackClientEvent("lab_balance_share_link_copy", { match_code: result.matchCode });
-    } catch {
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        setShareStatus("결과 링크가 복사됐어요.");
-      } catch {
-        setShareStatus("링크 복사에 실패했어요.");
-      }
-    }
-  }, [representativeImageUrl, result, selectedLevel, serverSession?.completedAt]);
-
   const handlePredictionShare = useCallback(async () => {
     if (!serverSession) return;
     await handleKakaoPredictionShare(serverSession.sessionId, serverSession.level);
@@ -760,7 +720,7 @@ export default function Balance100Page() {
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="mt-4 grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={handlePredictionShare}
@@ -777,14 +737,6 @@ export default function Balance100Page() {
               className="flex h-[54px] items-center justify-center rounded-[20px] border border-[#D9F7E5] bg-[#F0FFF7] text-[13px] font-black text-[#20D879] disabled:opacity-50"
             >
               🔗 Link
-            </button>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="h-[54px] rounded-[20px] text-[13px] font-black text-white shadow-[0_12px_22px_rgba(32,216,121,0.18)]"
-              style={{ backgroundColor: GREEN }}
-            >
-              결과 공유
             </button>
           </div>
           {shareStatus && <p className="mt-3 text-center text-[12px] font-bold text-[#20D879]">{shareStatus}</p>}
