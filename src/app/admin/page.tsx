@@ -1512,7 +1512,7 @@ export default function AdminPage() {
     naboControl ? { title: "내가 보는 너", control: naboControl } : null,
     naboPredictControl ? { title: "너라면 그럴 줄 알았어", control: naboPredictControl } : null,
     travelTogetherControl ? { title: "여행을 같이 간다면", control: travelTogetherControl } : null,
-    balance100Control ? { title: "극악 밸런스 100", control: balance100Control } : null,
+    balance100Control ? { title: "밸런스 100", control: balance100Control } : null,
     magazineControl ? { title: "매거진", control: magazineControl } : null,
   ].filter((item): item is { title: string; control: StyleControlState } => Boolean(item));
   const specialFeatureControlIds = new Set(specialFeatureControls.map((item) => item.control.style_id));

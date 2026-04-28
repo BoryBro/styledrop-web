@@ -440,7 +440,7 @@ export async function POST(request: NextRequest) {
     },
     {
       key: "balance_100",
-      label: "극악 밸런스 100",
+      label: "밸런스 100",
       totalParticipants: eventCounts["lab_balance_started"] ?? eventCounts["lab_balance_completed"] ?? 0,
       todayParticipants: todayEventCounts["lab_balance_started"] ?? todayEventCounts["lab_balance_completed"] ?? 0,
       completedCount: eventCounts["lab_balance_completed"] ?? 0,

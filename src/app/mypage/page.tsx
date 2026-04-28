@@ -11,8 +11,10 @@ import {
   BALANCE_TOTAL_QUESTIONS,
   analyzeBalanceAnswers,
   getBalance100Progress,
-  getBalance100StorageKey,
-  type Balance100LocalState,
+  getBalanceQuestions,
+  type BalanceAnswers,
+  type BalanceLevel,
+  type BalanceResultSummary,
 } from "@/lib/balance-100";
 import { buildKakaoLoginUrlWithReferral, buildReferralShareUrl } from "@/lib/referral";
 import { MULTI_SOURCE_STYLE_IDS, STYLE_LABELS, VISIBLE_STYLE_IDS } from "@/lib/styles";
@@ -30,6 +32,13 @@ type HistoryItem = {
   result_image_url: string;
   before_image_url?: string | null;
   created_at: string;
+};
+
+type Balance100HistoryState = {
+  level: BalanceLevel;
+  answers: BalanceAnswers;
+  status: "in_progress" | "completed" | "closed";
+  result: BalanceResultSummary | null;
 };
 
 type AuditionHistoryItem = {
@@ -185,7 +194,7 @@ export default function MyPage() {
   const [auditionHistory, setAuditionHistory] = useState<AuditionHistoryItem[]>([]);
   const [travelHistory, setTravelHistory] = useState<TravelHistoryItem[]>([]);
   const [naboPredictHistory, setNaboPredictHistory] = useState<NaboPredictHistoryItem[]>([]);
-  const [balance100State, setBalance100State] = useState<Balance100LocalState | null>(null);
+  const [balance100State, setBalance100State] = useState<Balance100HistoryState | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -227,17 +236,11 @@ export default function MyPage() {
       setHistoryLoading(false);
       return;
     }
-    try {
-      const raw = window.localStorage.getItem(getBalance100StorageKey(user.id));
-      const parsed = raw ? JSON.parse(raw) as Balance100LocalState : null;
-      setBalance100State(parsed?.answers ? parsed : null);
-    } catch {
-      setBalance100State(null);
-    }
     const requests: Promise<void>[] = [
       fetch("/api/history").then(r => r.json()).then(d => setHistory(d.history ?? [])).catch(() => {}),
       fetch("/api/travel-together/history").then(r => r.json()).then(d => setTravelHistory(d.history ?? [])).catch(() => {}),
       fetch("/api/nabo-predict/history").then(r => r.json()).then(d => setNaboPredictHistory(d.history ?? [])).catch(() => {}),
+      fetch("/api/balance-100/history").then(r => r.json()).then(d => setBalance100State(d.history?.[0] ?? null)).catch(() => setBalance100State(null)),
     ];
     if (showAuditionHistory) {
       requests.push(
@@ -512,11 +515,12 @@ export default function MyPage() {
     }
   };
 
-  const balance100Progress = getBalance100Progress(balance100State?.answers);
+  const balance100Questions = getBalanceQuestions(balance100State?.level ?? 3);
+  const balance100Progress = getBalance100Progress(balance100State?.answers, balance100Questions);
   const balance100Completed = balance100Progress.answered >= BALANCE_TOTAL_QUESTIONS;
   const balance100Result =
     balance100State?.result ??
-    (balance100Completed && balance100State?.answers ? analyzeBalanceAnswers(balance100State.answers) : null);
+    (balance100Completed && balance100State?.answers ? analyzeBalanceAnswers(balance100State.answers, balance100Questions) : null);
 
   return (
     <div className="min-h-screen bg-[#F7F6F3] flex flex-col">
@@ -847,9 +851,9 @@ export default function MyPage() {
 
               {historyTab === "lab" && (
                 <div className="flex flex-col gap-5">
-                  {/* 극악 밸런스 100 */}
+                  {/* 밸런스 100 */}
                   <div>
-                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">극악 밸런스 100</p>
+                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">밸런스 100</p>
                     <Link href="/balance-100" className="flex items-center justify-between bg-white border border-[#E7E7E7] rounded-2xl px-4 py-4 hover:border-[#D1D5DB] transition-colors">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">

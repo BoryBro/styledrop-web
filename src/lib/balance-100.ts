@@ -1,9 +1,11 @@
 export type BalanceAnswerValue = "A" | "B";
 
 export type BalanceDimension = "money" | "love" | "social" | "pride" | "risk" | "comfort";
+export type BalanceLevel = 1 | 2 | 3 | 4 | 5;
 
 export type BalanceQuestion = {
   id: string;
+  level: BalanceLevel;
   dimension: BalanceDimension;
   left: string;
   right: string;
@@ -32,6 +34,7 @@ export type BalanceResultSummary = {
 };
 
 export type Balance100LocalState = {
+  level?: BalanceLevel;
   answers: BalanceAnswers;
   startedAt: string;
   updatedAt: string;
@@ -42,6 +45,7 @@ export type Balance100LocalState = {
 
 export type BalanceSharePayload = {
   version: 1;
+  level?: BalanceLevel;
   typeTitle: string;
   typeDesc: string;
   scores: BalanceScoreMap;
@@ -61,6 +65,44 @@ const DIMENSION_LABELS: Record<BalanceDimension, string> = {
   risk: "위험감수",
   comfort: "안정/휴식",
 };
+
+export const BALANCE_LEVELS: Array<{
+  level: BalanceLevel;
+  title: string;
+  description: string;
+  badge: string;
+}> = [
+  {
+    level: 1,
+    title: "가벼운 취향전",
+    description: "처음 하는 사람도 바로 고를 수 있는 일상 선택",
+    badge: "EASY",
+  },
+  {
+    level: 2,
+    title: "관계 온도전",
+    description: "친구, 연애, 사회생활 기준이 조금씩 드러나는 선택",
+    badge: "NORMAL",
+  },
+  {
+    level: 3,
+    title: "현실 밸런스전",
+    description: "돈, 감정, 자존심 사이에서 진짜 기준을 고르는 선택",
+    badge: "HARD",
+  },
+  {
+    level: 4,
+    title: "인생 압박전",
+    description: "한 번 고르면 오래 따라올 것 같은 무거운 선택",
+    badge: "VERY HARD",
+  },
+  {
+    level: 5,
+    title: "극악 심판전",
+    description: "친한 사람끼리도 갈릴 수 있는 가장 어려운 선택",
+    badge: "EXTREME",
+  },
+];
 
 const questionGroups: Record<BalanceDimension, Array<[string, string, number, number]>> = {
   money: [
@@ -177,20 +219,35 @@ const questionGroups: Record<BalanceDimension, Array<[string, string, number, nu
   ],
 };
 
-function makeQuestions() {
+function normalizeBalanceLevel(value: unknown): BalanceLevel {
+  const numeric = Number(value);
+  return numeric === 1 || numeric === 2 || numeric === 3 || numeric === 4 || numeric === 5 ? numeric : 3;
+}
+
+function getLevelHeatBonus(level: BalanceLevel) {
+  return (level - 1) * 5;
+}
+
+function tuneScore(score: number, level: BalanceLevel) {
+  const shift = (level - 3) * 4;
+  return Math.max(8, Math.min(96, score + shift));
+}
+
+function makeQuestions(level: BalanceLevel) {
   let offset = 0;
   return (Object.entries(questionGroups) as Array<[BalanceDimension, Array<[string, string, number, number]>]>)
     .flatMap(([dimension, pairs]) =>
       pairs.map(([left, right, leftScore, rightScore], index) => {
         const questionNumber = offset + index + 1;
         return {
-          id: `q${String(questionNumber).padStart(3, "0")}`,
+          id: `l${level}_q${String(questionNumber).padStart(3, "0")}`,
+          level,
           dimension,
           left,
           right,
-          leftScore,
-          rightScore,
-          heat: 56 + ((questionNumber * 7) % 38),
+          leftScore: tuneScore(leftScore, level),
+          rightScore: tuneScore(rightScore, level),
+          heat: 56 + getLevelHeatBonus(level) + ((questionNumber * 7) % 38),
         };
       }).map((question, index, arr) => {
         if (index === arr.length - 1) offset += arr.length;
@@ -199,24 +256,44 @@ function makeQuestions() {
     );
 }
 
-export const BALANCE_QUESTIONS: BalanceQuestion[] = makeQuestions();
+export { normalizeBalanceLevel };
+
+export const BALANCE_QUESTION_SETS: Record<BalanceLevel, BalanceQuestion[]> = {
+  1: makeQuestions(1),
+  2: makeQuestions(2),
+  3: makeQuestions(3),
+  4: makeQuestions(4),
+  5: makeQuestions(5),
+};
+
+export const BALANCE_QUESTIONS: BalanceQuestion[] = BALANCE_QUESTION_SETS[3];
 export const BALANCE_TOTAL_QUESTIONS = BALANCE_QUESTIONS.length;
 export const BALANCE_DIMENSION_LABELS = DIMENSION_LABELS;
+
+export function getBalanceQuestions(level: BalanceLevel = 3) {
+  return BALANCE_QUESTION_SETS[normalizeBalanceLevel(level)];
+}
 
 export function getBalance100StorageKey(userId: string) {
   return `${STORAGE_PREFIX}:${userId}`;
 }
 
-export function getBalance100Progress(answers: BalanceAnswers | null | undefined) {
+export function getBalance100Progress(
+  answers: BalanceAnswers | null | undefined,
+  questions: BalanceQuestion[] = BALANCE_QUESTIONS,
+) {
   return {
     answered: answers ? Object.keys(answers).length : 0,
-    total: BALANCE_TOTAL_QUESTIONS,
+    total: questions.length,
   };
 }
 
-export function getFirstUnansweredIndex(answers: BalanceAnswers) {
-  const index = BALANCE_QUESTIONS.findIndex((question) => !answers[question.id]);
-  return index === -1 ? BALANCE_TOTAL_QUESTIONS - 1 : index;
+export function getFirstUnansweredIndex(
+  answers: BalanceAnswers,
+  questions: BalanceQuestion[] = BALANCE_QUESTIONS,
+) {
+  const index = questions.findIndex((question) => !answers[question.id]);
+  return index === -1 ? questions.length - 1 : index;
 }
 
 function hashString(value: string) {
@@ -280,7 +357,13 @@ function getResultType(scores: BalanceScoreMap) {
   };
 }
 
-export function analyzeBalanceAnswers(answers: BalanceAnswers): BalanceResultSummary {
+export function analyzeBalanceAnswers(
+  answers: BalanceAnswers,
+  levelOrQuestions: BalanceLevel | BalanceQuestion[] = 3,
+): BalanceResultSummary {
+  const questions = Array.isArray(levelOrQuestions)
+    ? levelOrQuestions
+    : getBalanceQuestions(levelOrQuestions);
   const scoreState: Record<BalanceDimension, { sum: number; count: number }> = {
     money: { sum: 0, count: 0 },
     love: { sum: 0, count: 0 },
@@ -290,7 +373,7 @@ export function analyzeBalanceAnswers(answers: BalanceAnswers): BalanceResultSum
     comfort: { sum: 0, count: 0 },
   };
 
-  BALANCE_QUESTIONS.forEach((question) => {
+  questions.forEach((question) => {
     const picked = answers[question.id];
     if (!picked) return;
     const score = picked === "A" ? question.leftScore : question.rightScore;
@@ -303,10 +386,10 @@ export function analyzeBalanceAnswers(answers: BalanceAnswers): BalanceResultSum
       .map(([dimension, state]) => [dimension, state.count ? Math.round(state.sum / state.count) : 0])
   ) as BalanceScoreMap;
 
-  const pickedText = BALANCE_QUESTIONS.map((question) => answers[question.id] ?? "-").join("");
+  const pickedText = questions.map((question) => answers[question.id] ?? "-").join("");
   const { typeTitle, typeDesc } = getResultType(scores);
 
-  const topChoices = BALANCE_QUESTIONS
+  const topChoices = questions
     .filter((question) => answers[question.id])
     .sort((a, b) => b.heat - a.heat)
     .slice(0, 5)

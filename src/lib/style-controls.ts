@@ -32,7 +32,7 @@ export const NABO_PREDICT_CONTROL_NAME = "너라면 그럴 줄 알았어";
 export const TRAVEL_TOGETHER_CONTROL_ID = "travel_together";
 export const TRAVEL_TOGETHER_CONTROL_NAME = "여행을 같이 간다면";
 export const BALANCE_100_CONTROL_ID = "balance_100";
-export const BALANCE_100_CONTROL_NAME = "극악 밸런스 100";
+export const BALANCE_100_CONTROL_NAME = "밸런스 100";
 export const MAGAZINE_CONTROL_ID = "magazine";
 export const MAGAZINE_CONTROL_NAME = "매거진";
 

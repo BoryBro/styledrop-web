@@ -2195,7 +2195,7 @@ export default function Studio() {
                             letterSpacing: "-1px",
                           }}
                         >
-                          극악 밸런스 100
+                          밸런스 100
                         </span>
                       </div>
 
