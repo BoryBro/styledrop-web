@@ -299,7 +299,7 @@ export default function Balance100Page() {
   const [serverSession, setServerSession] = useState<BalanceServerSession | null>(null);
   const [completedSessions, setCompletedSessions] = useState<BalanceServerSession[]>([]);
   const [matches, setMatches] = useState<BalanceMatchItem[]>([]);
-  const [selectedLevel, setSelectedLevel] = useState<BalanceLevel>(3);
+  const [selectedLevel, setSelectedLevel] = useState<BalanceLevel>(1);
   const [answers, setAnswers] = useState<BalanceAnswers>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [historyImages, setHistoryImages] = useState<HistoryImage[]>([]);
@@ -808,7 +808,7 @@ export default function Balance100Page() {
     );
   }
 
-  const activeLevel = BALANCE_LEVELS.find((item) => item.level === selectedLevel) ?? BALANCE_LEVELS[2];
+  const activeLevel = BALANCE_LEVELS.find((item) => item.level === selectedLevel) ?? BALANCE_LEVELS[0];
 
   return (
     <main className="min-h-screen bg-white px-6 py-4">
@@ -817,21 +817,12 @@ export default function Balance100Page() {
 
         <section>
           <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">{activeLevel.badge}</p>
-          <h1 className="mt-5 text-[44px] font-black leading-[1.08] tracking-[-0.07em] text-black">
+          <h1 className="mt-4 text-[38px] font-black leading-[1.08] tracking-[-0.07em] text-black">
             밸런스 100
           </h1>
-          <p className="mt-5 break-keep text-[17px] font-medium leading-8 text-[#555]">
-            100개의 선택을 고르면 내 기준이 저장되고, 친구가 내 답을 얼마나 맞히는지도 확인할 수 있어요.
+          <p className="mt-4 break-keep text-[16px] font-bold leading-7 text-[#555]">
+            100개 선택으로 내 기준을 저장하고, 친구가 맞혀보게 해요.
           </p>
-          <div className="mt-6 rounded-[28px] border border-[#D9F7E5] bg-[#F0FFF7] p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-[14px] font-black text-black">{activeLevel.title}</span>
-              <span className="text-[18px] font-black tabular-nums text-black">{progress.answered} / 100</span>
-            </div>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
-              <div className="h-full rounded-full" style={{ width: `${progress.answered}%`, backgroundColor: GREEN }} />
-            </div>
-          </div>
         </section>
 
         {progress.answered === 0 && !serverSession && (
@@ -850,10 +841,13 @@ export default function Balance100Page() {
                   }`}
                 >
                   <div>
-                    <span className="text-[12px] font-black text-[#20D879]">{level.badge}</span>
-                    <p className="mt-3 break-keep text-[22px] font-black leading-[1.1] tracking-[-0.05em] text-[#111827]">
-                      Lv.{level.level}
-                      <br />
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[12px] font-black text-[#20D879]">{level.badge}</span>
+                      <span className="rounded-full bg-[#F0FFF7] px-2.5 py-1 text-[10px] font-black text-[#20D879]">
+                        Lv.{level.level}
+                      </span>
+                    </div>
+                    <p className="mt-4 break-keep text-[25px] font-black leading-[1.08] tracking-[-0.06em] text-[#111827]">
                       {level.title}
                     </p>
                   </div>

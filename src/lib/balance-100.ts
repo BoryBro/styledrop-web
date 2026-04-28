@@ -74,32 +74,32 @@ export const BALANCE_LEVELS: Array<{
 }> = [
   {
     level: 1,
-    title: "가벼운 취향전",
-    description: "처음 하는 사람도 바로 고를 수 있는 일상 선택",
+    title: "일상 선택",
+    description: "가볍게 시작하는 쉬운 질문",
     badge: "EASY",
   },
   {
     level: 2,
-    title: "관계 온도전",
-    description: "친구, 연애, 사회생활 기준이 조금씩 드러나는 선택",
+    title: "관계 선택",
+    description: "친구·연애 기준이 보이는 질문",
     badge: "NORMAL",
   },
   {
     level: 3,
-    title: "현실 밸런스전",
-    description: "돈, 감정, 자존심 사이에서 진짜 기준을 고르는 선택",
+    title: "현실 선택",
+    description: "돈·감정 기준이 갈리는 질문",
     badge: "HARD",
   },
   {
     level: 4,
-    title: "인생 압박전",
-    description: "한 번 고르면 오래 따라올 것 같은 무거운 선택",
+    title: "진지한 선택",
+    description: "쉽게 못 고르는 무거운 질문",
     badge: "VERY HARD",
   },
   {
     level: 5,
-    title: "극악 심판전",
-    description: "친한 사람끼리도 갈릴 수 있는 가장 어려운 선택",
+    title: "극한 선택",
+    description: "친한 사이도 갈리는 어려운 질문",
     badge: "EXTREME",
   },
 ];
