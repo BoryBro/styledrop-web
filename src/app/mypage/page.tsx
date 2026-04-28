@@ -214,7 +214,6 @@ function LabHistoryRow({
   personLabel,
   detail,
   statusLabel,
-  timeLabel,
   onDelete,
 }: {
   href: string;
@@ -223,7 +222,6 @@ function LabHistoryRow({
   personLabel?: string;
   detail: string;
   statusLabel: string;
-  timeLabel?: string;
   onDelete?: () => void;
 }) {
   const [dragX, setDragX] = useState(0);
@@ -317,7 +315,6 @@ function LabHistoryRow({
           touchAction: onDelete ? "pan-y" : undefined,
         }}
       >
-        <span className="h-10 w-1 flex-shrink-0 rounded-full" style={{ backgroundColor: accentColor }} aria-hidden="true" />
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-baseline gap-2">
             <span
@@ -340,7 +337,6 @@ function LabHistoryRow({
               {statusLabel}
             </span>
             <span className="truncate">{detail}</span>
-            {timeLabel && <span className="flex-shrink-0">· {timeLabel}</span>}
           </span>
         </span>
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-[#D1D5DB]" aria-hidden="true">
@@ -1091,7 +1087,6 @@ export default function MyPage() {
                               : `${balance100Progress.answered}/${balance100Questions.length}문항 완료`
                           }
                           statusLabel={balance100Completed ? "결과" : "진행 중"}
-                          timeLabel={relativeTime(balance100State.completedAt ?? balance100State.updatedAt)}
                           onDelete={() => setLabDeleteTarget({
                             type: "balance-100",
                             itemId: balance100State.sessionId,
@@ -1114,7 +1109,6 @@ export default function MyPage() {
                             personLabel={item.assigned_role}
                             detail={`${item.avg_score}점`}
                             statusLabel="결과"
-                            timeLabel={relativeTime(item.created_at)}
                             onDelete={() => setLabDeleteTarget({
                               type: "audition",
                               itemId: item.id,
@@ -1139,7 +1133,6 @@ export default function MyPage() {
                               personLabel={`${titlePrefix}님`}
                               detail={item.status === "completed" ? "상대 답변 완료" : "상대 답변 대기"}
                               statusLabel={item.status === "completed" ? "결과" : "대기"}
-                              timeLabel={relativeTime(new Date(item.completedAt ?? item.createdAt).toISOString())}
                               onDelete={() => setLabDeleteTarget({
                                 type: "nabo-predict",
                                 itemId,
@@ -1164,7 +1157,6 @@ export default function MyPage() {
                             personLabel={`${item.partnerName}님`}
                             detail={TRAVEL_RELATION_LABELS[item.relation]}
                             statusLabel={item.unlocked ? "상세" : "결과"}
-                            timeLabel={relativeTime(item.completedAt)}
                             onDelete={() => setLabDeleteTarget({
                               type: "travel-together",
                               itemId: item.roomId,
