@@ -126,11 +126,64 @@ function PrimaryButton({
   );
 }
 
-function formatShortDate(iso?: string | null) {
-  if (!iso) return "완료";
-  const date = new Date(iso);
-  if (!Number.isFinite(date.getTime())) return "완료";
-  return `${date.getMonth() + 1}.${date.getDate()} 완료`;
+function BalanceIntroHeader() {
+  return (
+    <header className="sticky top-0 z-40 -mx-6 flex h-14 items-center justify-between border-b border-gray-100 bg-white/90 px-5 backdrop-blur">
+      <Link href="/studio" className="flex items-center gap-1.5 text-gray-400 transition-colors hover:text-gray-900">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M11 14l-5-5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span className="text-[14px] font-semibold">돌아가기</span>
+      </Link>
+      <div className="flex items-center gap-1.5 rounded-full border border-[#B9F7CD] bg-[#F0FFF7] px-3 py-1">
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#12863C]">밸런스 100</span>
+        <span className="h-1.5 w-1.5 rounded-full bg-[#20D879]" />
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Beta</span>
+      </div>
+      <div className="w-[60px]" />
+    </header>
+  );
+}
+
+function BalanceIntroHero() {
+  const orbitItems = ["A", "B", "🤔", "⚖️", "💬"];
+
+  return (
+    <section className="flex flex-col items-center px-1 pb-8 pt-14 text-center">
+      <div className="relative mb-10 flex items-center justify-center" style={{ height: 104 }}>
+        {orbitItems.map((item, index) => {
+          const angle = (index / orbitItems.length) * 2 * Math.PI - Math.PI / 2;
+          const radius = 40;
+          return (
+            <div
+              key={item}
+              className="absolute flex h-12 w-12 items-center justify-center rounded-full border border-[#B9F7CD] bg-[#F0FFF7] text-[17px] font-black text-[#12863C] shadow-sm"
+              style={{ transform: `translate(${Math.cos(angle) * radius}px, ${Math.sin(angle) * radius}px)` }}
+            >
+              {item}
+            </div>
+          );
+        })}
+        <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-[#20D879] text-[20px] font-black text-white shadow-md">
+          100
+        </div>
+      </div>
+      <p className="mb-4 text-[11px] font-black uppercase tracking-[0.3em] text-[#20D879]">선택 기준 분석</p>
+      <h1 className="text-[34px] font-black leading-[1.12] tracking-[-0.06em] text-gray-900">밸런스 100</h1>
+      <p className="mt-5 break-keep text-[16px] font-bold leading-7 text-gray-500">
+        100개 선택으로 내 기준을 저장하고
+        <br />
+        <span className="text-[#12863C]">친구가 내 답을 맞혀보게 해요</span>
+      </p>
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
+        {["난이도 5단계", "결과 저장", "친구 맞히기"].map((tag) => (
+          <span key={tag} className="rounded-full border border-[#B9F7CD] bg-[#F0FFF7] px-3 py-1 text-[12px] font-bold text-[#12863C]">
+            {tag}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 function ChoiceCard({
@@ -808,25 +861,14 @@ export default function Balance100Page() {
     );
   }
 
-  const activeLevel = BALANCE_LEVELS.find((item) => item.level === selectedLevel) ?? BALANCE_LEVELS[0];
-
   return (
-    <main className="min-h-screen bg-white px-6 py-4">
+    <main className="min-h-screen bg-white px-6 pb-4">
       <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-md flex-col">
-        <TopProgress progressRatio={Math.round((progress.answered / 100) * 100)} backHref="/studio" />
-
-        <section>
-          <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">{activeLevel.badge}</p>
-          <h1 className="mt-4 text-[38px] font-black leading-[1.08] tracking-[-0.07em] text-black">
-            밸런스 100
-          </h1>
-          <p className="mt-4 break-keep text-[16px] font-bold leading-7 text-[#555]">
-            100개 선택으로 내 기준을 저장하고, 친구가 맞혀보게 해요.
-          </p>
-        </section>
+        <BalanceIntroHeader />
+        <BalanceIntroHero />
 
         {progress.answered === 0 && !serverSession && (
-          <section className="mt-5">
+          <section className="border-t border-gray-50 pt-7">
             <p className="px-1 text-[13px] font-black text-[#111827]">난이도 선택</p>
             <div className="-mx-6 mt-3 flex gap-3 overflow-x-auto px-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {BALANCE_LEVELS.map((level) => (
