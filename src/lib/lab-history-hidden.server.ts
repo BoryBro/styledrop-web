@@ -4,11 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 
 export const LAB_HISTORY_HIDDEN_EVENT_TYPE = "lab_history_hidden";
 
-export type LabHistoryType = "audition" | "balance-100" | "nabo-predict" | "travel-together";
+export type LabHistoryType = "audition" | "balance-100" | "nabo" | "nabo-predict" | "travel-together";
 
 const LAB_HISTORY_TYPES = new Set<LabHistoryType>([
   "audition",
   "balance-100",
+  "nabo",
   "nabo-predict",
   "travel-together",
 ]);

@@ -42,6 +42,8 @@ type Balance100HistoryState = {
   result: BalanceResultSummary | null;
   updatedAt: string;
   completedAt: string | null;
+  predictionCount?: number;
+  latestPredictionAt?: string | null;
 };
 
 type AuditionHistoryItem = {
@@ -61,6 +63,19 @@ type TravelHistoryItem = {
   participantToken: string;
   completedAt: string;
   unlocked: boolean;
+};
+
+type NaboHistoryItem = {
+  roomCode: string;
+  ownerName: string;
+  responseCount: number;
+  responseTarget: number;
+  latestResponseAt: string | null;
+  resultAvailableAfter: string;
+  canViewResults: boolean;
+  premiumAccess: boolean;
+  createdAt: string;
+  href: string;
 };
 
 type NaboPredictHistoryItem = {
@@ -92,7 +107,7 @@ type ReferralSummary = {
   referredPaymentBonusCredits: number;
 };
 
-type LabHistoryType = "audition" | "balance-100" | "nabo-predict" | "travel-together";
+type LabHistoryType = "audition" | "balance-100" | "nabo" | "nabo-predict" | "travel-together";
 
 type LabDeleteTarget = {
   type: LabHistoryType;
@@ -198,6 +213,7 @@ function categoryExpiry(items: { created_at: string }[]): { label: string; class
 }
 
 const LAB_DELETE_REVEAL_WIDTH = 86;
+const LAB_NOTIFICATION_STORAGE_PREFIX = "styledrop:lab-notification-seen:";
 
 const LAB_HISTORY_THEME = {
   audition: "#C9571A",
@@ -207,6 +223,18 @@ const LAB_HISTORY_THEME = {
   travelTogether: "#3B82F6",
 } as const;
 
+function getLabNotificationCount(
+  seen: Record<string, number>,
+  key: string,
+  totalCount: number,
+) {
+  return Math.max(0, totalCount - (seen[key] ?? 0));
+}
+
+function getLabNotificationLabel(count: number) {
+  return count > 0 ? `새 응답 ${count}` : undefined;
+}
+
 function LabHistoryRow({
   href,
   title,
@@ -214,6 +242,8 @@ function LabHistoryRow({
   personLabel,
   detail,
   statusLabel,
+  notificationLabel,
+  onOpen,
   onDelete,
 }: {
   href: string;
@@ -222,6 +252,8 @@ function LabHistoryRow({
   personLabel?: string;
   detail: string;
   statusLabel: string;
+  notificationLabel?: string;
+  onOpen?: () => void;
   onDelete?: () => void;
 }) {
   const [dragX, setDragX] = useState(0);
@@ -284,7 +316,9 @@ function LabHistoryRow({
     if (hasDraggedRef.current || isDeleteReady) {
       event.preventDefault();
       closeDelete();
+      return;
     }
+    onOpen?.();
   };
 
   return (
@@ -336,6 +370,11 @@ function LabHistoryRow({
             >
               {statusLabel}
             </span>
+            {notificationLabel && (
+              <span className="flex-shrink-0 rounded-full bg-[#EF4444] px-2 py-0.5 text-[10px] font-black text-white">
+                {notificationLabel}
+              </span>
+            )}
             <span className="truncate">{detail}</span>
           </span>
         </span>
@@ -376,6 +415,7 @@ export default function MyPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [guestHistory, setGuestHistory] = useState<GuestHistoryItem[]>([]);
   const [auditionHistory, setAuditionHistory] = useState<AuditionHistoryItem[]>([]);
+  const [naboHistory, setNaboHistory] = useState<NaboHistoryItem[]>([]);
   const [travelHistory, setTravelHistory] = useState<TravelHistoryItem[]>([]);
   const [naboPredictHistory, setNaboPredictHistory] = useState<NaboPredictHistoryItem[]>([]);
   const [balance100History, setBalance100History] = useState<Balance100HistoryState[]>([]);
@@ -402,6 +442,7 @@ export default function MyPage() {
   const [isStandalone, setIsStandalone] = useState(false);
   const [showcaseState, setShowcaseState] = useState<ShowcaseState>(null);
   const [referralSummary, setReferralSummary] = useState<ReferralSummary | null>(null);
+  const [seenLabNotifications, setSeenLabNotifications] = useState<Record<string, number>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const showAuditionHistory = isAuditionVisible && isAuditionEnabled;
@@ -411,10 +452,36 @@ export default function MyPage() {
     setTimeout(() => setToast(null), 3000);
   }, []);
 
+  const markLabNotificationSeen = useCallback((key: string, totalCount: number) => {
+    if (!key || totalCount <= 0) return;
+    setSeenLabNotifications((prev) => ({
+      ...prev,
+      [key]: Math.max(prev[key] ?? 0, totalCount),
+    }));
+    try {
+      localStorage.setItem(`${LAB_NOTIFICATION_STORAGE_PREFIX}${key}`, String(totalCount));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      const next: Record<string, number> = {};
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const storageKey = localStorage.key(i);
+        if (!storageKey?.startsWith(LAB_NOTIFICATION_STORAGE_PREFIX)) continue;
+        const key = storageKey.slice(LAB_NOTIFICATION_STORAGE_PREFIX.length);
+        const count = Number(localStorage.getItem(storageKey) ?? 0);
+        if (key && Number.isFinite(count)) next[key] = count;
+      }
+      setSeenLabNotifications(next);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (loading) return;
     if (!user) {
       setGuestHistory(getGuestHistory());
+      setNaboHistory([]);
       setTravelHistory([]);
       setNaboPredictHistory([]);
       setBalance100History([]);
@@ -423,6 +490,7 @@ export default function MyPage() {
     }
     const requests: Promise<void>[] = [
       fetch("/api/history").then(r => r.json()).then(d => setHistory(d.history ?? [])).catch(() => {}),
+      fetch("/api/nabo/history").then(r => r.json()).then(d => setNaboHistory(d.history ?? [])).catch(() => setNaboHistory([])),
       fetch("/api/travel-together/history").then(r => r.json()).then(d => setTravelHistory(d.history ?? [])).catch(() => {}),
       fetch("/api/nabo-predict/history").then(r => r.json()).then(d => setNaboPredictHistory(d.history ?? [])).catch(() => {}),
       fetch("/api/balance-100/history").then(r => r.json()).then(d => setBalance100History(d.history ?? [])).catch(() => setBalance100History([])),
@@ -713,6 +781,9 @@ export default function MyPage() {
 
       if (labDeleteTarget.type === "audition") {
         setAuditionHistory((prev) => prev.filter((item) => item.id !== labDeleteTarget.itemId));
+      }
+      if (labDeleteTarget.type === "nabo") {
+        setNaboHistory((prev) => prev.filter((item) => item.roomCode !== labDeleteTarget.itemId));
       }
       if (labDeleteTarget.type === "nabo-predict") {
         setNaboPredictHistory((prev) => prev.filter((item) => `${item.role}:${item.sessionId}` !== labDeleteTarget.itemId));
@@ -1081,6 +1152,8 @@ export default function MyPage() {
                       ) : (
                         balance100History.map((item) => {
                           const meta = getBalance100HistoryMeta(item);
+                          const notificationKey = `balance-100:${item.sessionId}`;
+                          const predictionCount = item.predictionCount ?? 0;
                           return (
                             <LabHistoryRow
                               key={item.sessionId}
@@ -1094,6 +1167,8 @@ export default function MyPage() {
                                   : `${meta.progress.answered}/${meta.questions.length}문항 완료`
                               }
                               statusLabel={meta.completed ? "결과" : "진행 중"}
+                              notificationLabel={getLabNotificationLabel(getLabNotificationCount(seenLabNotifications, notificationKey, predictionCount))}
+                              onOpen={() => markLabNotificationSeen(notificationKey, predictionCount)}
                               onDelete={() => setLabDeleteTarget({
                                 type: "balance-100",
                                 itemId: item.sessionId,
@@ -1131,6 +1206,8 @@ export default function MyPage() {
                         naboPredictHistory.map((item) => {
                           const itemId = `${item.role}:${item.sessionId}`;
                           const titlePrefix = item.role === "owner" ? item.targetName : item.ownerName;
+                          const notificationKey = `nabo-predict:${item.sessionId}`;
+                          const responseCount = item.role === "owner" && item.status === "completed" ? 1 : 0;
                           return (
                             <LabHistoryRow
                               key={itemId}
@@ -1140,6 +1217,8 @@ export default function MyPage() {
                               personLabel={`${titlePrefix}님`}
                               detail={item.status === "completed" ? "상대 답변 완료" : "상대 답변 대기"}
                               statusLabel={item.status === "completed" ? "결과" : "대기"}
+                              notificationLabel={getLabNotificationLabel(getLabNotificationCount(seenLabNotifications, notificationKey, responseCount))}
+                              onOpen={() => markLabNotificationSeen(notificationKey, responseCount)}
                               onDelete={() => setLabDeleteTarget({
                                 type: "nabo-predict",
                                 itemId,
@@ -1150,27 +1229,56 @@ export default function MyPage() {
                         })
                       )}
 
-                      <EmptyLabHistoryRow href="/nabo" title="내가 보는 너" detail="익명 관계 분석" accentColor={LAB_HISTORY_THEME.nabo} />
+                      {naboHistory.length === 0 ? (
+                        <EmptyLabHistoryRow href="/nabo" title="내가 보는 너" detail="익명 관계 분석" accentColor={LAB_HISTORY_THEME.nabo} />
+                      ) : (
+                        naboHistory.map((item) => {
+                          const notificationKey = `nabo:${item.roomCode}`;
+                          return (
+                            <LabHistoryRow
+                              key={item.roomCode}
+                              href={item.href || "/nabo"}
+                              title="내가 보는 너"
+                              accentColor={LAB_HISTORY_THEME.nabo}
+                              personLabel={`${item.ownerName}님`}
+                              detail={item.responseCount > 0 ? `${item.responseCount}명 응답` : "아직 응답 없음"}
+                              statusLabel={item.canViewResults ? "결과" : "대기"}
+                              notificationLabel={getLabNotificationLabel(getLabNotificationCount(seenLabNotifications, notificationKey, item.responseCount))}
+                              onOpen={() => markLabNotificationSeen(notificationKey, item.responseCount)}
+                              onDelete={() => setLabDeleteTarget({
+                                type: "nabo",
+                                itemId: item.roomCode,
+                                label: `내가 보는 너 · ${item.ownerName}님`,
+                              })}
+                            />
+                          );
+                        })
+                      )}
 
                       {travelHistory.length === 0 ? (
                         <EmptyLabHistoryRow href="/travel-together" title="여행 같이 간다면" detail="친구/연인/가족 궁합" accentColor={LAB_HISTORY_THEME.travelTogether} />
                       ) : (
-                        travelHistory.map((item) => (
-                          <LabHistoryRow
-                            key={item.roomId}
-                            href={`/travel-together?room=${encodeURIComponent(item.roomId)}&token=${encodeURIComponent(item.participantToken)}&view=result`}
-                            title="여행 같이 간다면"
-                            accentColor={LAB_HISTORY_THEME.travelTogether}
-                            personLabel={`${item.partnerName}님`}
-                            detail={TRAVEL_RELATION_LABELS[item.relation]}
-                            statusLabel={item.unlocked ? "상세" : "결과"}
-                            onDelete={() => setLabDeleteTarget({
-                              type: "travel-together",
-                              itemId: item.roomId,
-                              label: `여행 같이 간다면 · ${item.partnerName}와 궁합`,
-                            })}
-                          />
-                        ))
+                        travelHistory.map((item) => {
+                          const notificationKey = `travel-together:${item.roomId}`;
+                          return (
+                            <LabHistoryRow
+                              key={item.roomId}
+                              href={`/travel-together?room=${encodeURIComponent(item.roomId)}&token=${encodeURIComponent(item.participantToken)}&view=result`}
+                              title="여행 같이 간다면"
+                              accentColor={LAB_HISTORY_THEME.travelTogether}
+                              personLabel={`${item.partnerName}님`}
+                              detail={TRAVEL_RELATION_LABELS[item.relation]}
+                              statusLabel={item.unlocked ? "상세" : "결과"}
+                              notificationLabel={getLabNotificationLabel(getLabNotificationCount(seenLabNotifications, notificationKey, 1))}
+                              onOpen={() => markLabNotificationSeen(notificationKey, 1)}
+                              onDelete={() => setLabDeleteTarget({
+                                type: "travel-together",
+                                itemId: item.roomId,
+                                label: `여행 같이 간다면 · ${item.partnerName}와 궁합`,
+                              })}
+                            />
+                          );
+                        })
                       )}
                     </>
                   )}
