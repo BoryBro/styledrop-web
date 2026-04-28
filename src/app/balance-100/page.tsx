@@ -705,17 +705,19 @@ export default function Balance100Page() {
               type="button"
               onClick={handlePredictionShare}
               disabled={isSaving}
-              className="h-[62px] w-full rounded-[34px] bg-black text-[17px] font-black text-white disabled:opacity-50"
+              className="flex h-[62px] w-full items-center justify-center gap-2 rounded-[34px] bg-[#FEE500] text-[17px] font-black text-[#191919] disabled:opacity-50"
             >
-              친구에게 카카오로 물어보기
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-[#191919] text-[11px] font-black text-[#FEE500]">K</span>
+              친구에게 물어보기
             </button>
             <button
               type="button"
               onClick={() => serverSession && void handleCopyPredictionLink(serverSession.sessionId, serverSession.level)}
               disabled={isSaving || !serverSession}
-              className="h-[56px] w-full rounded-[30px] border border-[#D9F7E5] bg-[#F0FFF7] text-[15px] font-black text-[#20D879] disabled:opacity-50"
+              className="flex h-[56px] w-full items-center justify-center gap-2 rounded-[30px] border border-[#D9F7E5] bg-[#F0FFF7] text-[15px] font-black text-[#20D879] disabled:opacity-50"
             >
-              친구 맞히기 링크 복사
+              <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#20D879]">🔗 Link</span>
+              친구에게 물어보기
             </button>
             <button
               type="button"
@@ -899,9 +901,11 @@ export default function Balance100Page() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[24px] font-black tracking-[-0.05em] text-black">Lv.{session.level} 완료</p>
-                      <p className="mt-2 truncate text-[14px] font-bold text-[#6B7280]">
-                        {session.result?.typeTitle ?? "결과 완료"} · {formatShortDate(session.completedAt ?? session.updatedAt)}
+                      <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-black">
+                        <span className="text-[24px] font-black tracking-[-0.05em]">Lv.{session.level} 완료</span>
+                        <span className="text-[12px] font-black text-[#6B7280]">
+                          {formatShortDate(session.completedAt ?? session.updatedAt)} 완료
+                        </span>
                       </p>
                     </div>
                     <span className="rounded-full bg-white px-3 py-1.5 text-[12px] font-black text-[#20D879]">
@@ -912,7 +916,7 @@ export default function Balance100Page() {
                     <button
                       type="button"
                       onClick={() => openCompletedResult(session)}
-                      className="h-[50px] rounded-[26px] bg-white text-[14px] font-black text-[#111827]"
+                      className="h-[56px] rounded-[28px] bg-[#111827] text-[15px] font-black text-white shadow-[0_14px_24px_rgba(17,24,39,0.14)]"
                     >
                       결과 보기
                     </button>
@@ -921,18 +925,19 @@ export default function Balance100Page() {
                         type="button"
                         onClick={() => void handleKakaoPredictionShare(session.sessionId, session.level)}
                         disabled={isSaving}
-                        className="h-[50px] rounded-[26px] text-[14px] font-black text-white disabled:opacity-50"
-                        style={{ backgroundColor: GREEN }}
+                        className="flex h-[50px] items-center justify-center gap-1.5 rounded-[26px] bg-[#FEE500] text-[13px] font-black text-[#191919] disabled:opacity-50"
                       >
-                        친구에게 카카오로 물어보기
+                        <span className="grid h-5 w-5 place-items-center rounded-full bg-[#191919] text-[10px] font-black text-[#FEE500]">K</span>
+                        친구에게 물어보기
                       </button>
                       <button
                         type="button"
                         onClick={() => void handleCopyPredictionLink(session.sessionId, session.level)}
                         disabled={isSaving}
-                        className="h-[50px] rounded-[26px] border border-[#CFF7DF] bg-white text-[14px] font-black text-[#20D879] disabled:opacity-50"
+                        className="flex h-[50px] items-center justify-center gap-1.5 rounded-[26px] border border-[#CFF7DF] bg-white text-[13px] font-black text-[#20D879] disabled:opacity-50"
                       >
-                        친구 맞히기 링크 복사
+                        <span className="rounded-full bg-[#F0FFF7] px-2 py-1 text-[10px] font-black text-[#20D879]">🔗 Link</span>
+                        친구에게 물어보기
                       </button>
                     </div>
                   </div>
