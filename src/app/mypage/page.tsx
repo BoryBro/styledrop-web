@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,7 +8,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
 import { getGuestHistory, type GuestHistoryItem } from "@/lib/guest-history";
 import {
-  BALANCE_TOTAL_QUESTIONS,
   analyzeBalanceAnswers,
   getBalance100Progress,
   getBalanceQuestions,
@@ -35,10 +34,14 @@ type HistoryItem = {
 };
 
 type Balance100HistoryState = {
+  sessionId: string;
+  ownerName: string;
   level: BalanceLevel;
   answers: BalanceAnswers;
   status: "in_progress" | "completed" | "closed";
   result: BalanceResultSummary | null;
+  updatedAt: string;
+  completedAt: string | null;
 };
 
 type AuditionHistoryItem = {
@@ -87,6 +90,14 @@ type ReferralSummary = {
   generationRewardCredits: number;
   paymentRewardCredits: number;
   referredPaymentBonusCredits: number;
+};
+
+type LabHistoryType = "audition" | "balance-100" | "nabo-predict" | "travel-together";
+
+type LabDeleteTarget = {
+  type: LabHistoryType;
+  itemId: string;
+  label: string;
 };
 
 const MULTI_SOURCE_STYLE_ID_SET = new Set<string>(MULTI_SOURCE_STYLE_IDS);
@@ -186,6 +197,183 @@ function categoryExpiry(items: { created_at: string }[]): { label: string; class
   return expiryBadge(oldest.created_at);
 }
 
+const LAB_DELETE_REVEAL_WIDTH = 86;
+
+const LAB_HISTORY_THEME = {
+  audition: "#C9571A",
+  balance100: "#FB7185",
+  nabo: "#22C55E",
+  naboPredict: "#F97316",
+  travelTogether: "#3B82F6",
+} as const;
+
+function LabHistoryRow({
+  href,
+  title,
+  accentColor,
+  personLabel,
+  detail,
+  statusLabel,
+  timeLabel,
+  onDelete,
+}: {
+  href: string;
+  title: string;
+  accentColor: string;
+  personLabel?: string;
+  detail: string;
+  statusLabel: string;
+  timeLabel?: string;
+  onDelete?: () => void;
+}) {
+  const [dragX, setDragX] = useState(0);
+  const [isDeleteReady, setIsDeleteReady] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const startXRef = useRef(0);
+  const startYRef = useRef(0);
+  const startOffsetRef = useRef(0);
+  const currentDragRef = useRef(0);
+  const hasDraggedRef = useRef(false);
+
+  const closeDelete = () => {
+    setIsDeleteReady(false);
+    setDragX(0);
+    currentDragRef.current = 0;
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLAnchorElement>) => {
+    if (!onDelete) return;
+    startXRef.current = event.clientX;
+    startYRef.current = event.clientY;
+    startOffsetRef.current = isDeleteReady ? -LAB_DELETE_REVEAL_WIDTH : 0;
+    currentDragRef.current = startOffsetRef.current;
+    hasDraggedRef.current = false;
+    setDragX(startOffsetRef.current);
+    setIsDeleteReady(false);
+    setIsDragging(true);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLAnchorElement>) => {
+    if (!onDelete || !isDragging) return;
+    const deltaX = event.clientX - startXRef.current;
+    const deltaY = event.clientY - startYRef.current;
+    if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) return;
+    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) return;
+
+    hasDraggedRef.current = true;
+    const nextX = Math.max(-LAB_DELETE_REVEAL_WIDTH, Math.min(0, startOffsetRef.current + deltaX));
+    currentDragRef.current = nextX;
+    setDragX(nextX);
+  };
+
+  const handlePointerEnd = () => {
+    if (!onDelete) return;
+    setIsDragging(false);
+    const shouldOpen = currentDragRef.current <= -LAB_DELETE_REVEAL_WIDTH * 0.45;
+    if (shouldOpen) {
+      setIsDeleteReady(true);
+      setDragX(-LAB_DELETE_REVEAL_WIDTH);
+      currentDragRef.current = -LAB_DELETE_REVEAL_WIDTH;
+    } else {
+      closeDelete();
+    }
+    window.setTimeout(() => {
+      hasDraggedRef.current = false;
+    }, 80);
+  };
+
+  const handleLinkClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    if (hasDraggedRef.current || isDeleteReady) {
+      event.preventDefault();
+      closeDelete();
+    }
+  };
+
+  return (
+    <div className="relative min-w-0 overflow-hidden rounded-2xl border border-[#E7E7E7] bg-[#EF4444] shadow-[0_1px_0_rgba(17,24,39,0.03)]">
+      {onDelete && (
+        <div className="absolute inset-y-0 right-0 flex w-[86px] items-center justify-center">
+          <button
+            type="button"
+            onClick={onDelete}
+            className="flex h-full w-full items-center justify-center text-[13px] font-black text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            aria-label={`${title} 기록 삭제`}
+          >
+            삭제
+          </button>
+        </div>
+      )}
+      <Link
+        href={href}
+        onClick={handleLinkClick}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+        className="relative z-10 flex min-w-0 items-center gap-3 bg-white px-4 py-3.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9571A]/40"
+        style={{
+          transform: onDelete ? `translateX(${isDeleteReady ? -LAB_DELETE_REVEAL_WIDTH : dragX}px)` : undefined,
+          transition: isDragging ? "none" : "transform 180ms ease",
+          touchAction: onDelete ? "pan-y" : undefined,
+        }}
+      >
+        <span className="h-10 w-1 flex-shrink-0 rounded-full" style={{ backgroundColor: accentColor }} aria-hidden="true" />
+        <span className="min-w-0 flex-1">
+          <span className="flex min-w-0 items-baseline gap-2">
+            <span
+              className="truncate text-[22px] leading-none"
+              style={{ color: accentColor, fontFamily: '"BMKkubulim", sans-serif' }}
+            >
+              {title}
+            </span>
+            {personLabel && (
+              <span className="min-w-0 truncate text-[13px] font-black text-[#111827]">
+                {personLabel}
+              </span>
+            )}
+          </span>
+          <span className="mt-1.5 flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-[#9CA3AF]">
+            <span
+              className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black"
+              style={{ backgroundColor: `${accentColor}14`, color: accentColor }}
+            >
+              {statusLabel}
+            </span>
+            <span className="truncate">{detail}</span>
+            {timeLabel && <span className="flex-shrink-0">· {timeLabel}</span>}
+          </span>
+        </span>
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="flex-shrink-0 text-[#D1D5DB]" aria-hidden="true">
+          <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </Link>
+    </div>
+  );
+}
+
+function EmptyLabHistoryRow({
+  href,
+  title,
+  detail,
+  accentColor,
+}: {
+  href: string;
+  title: string;
+  detail: string;
+  accentColor: string;
+}) {
+  return (
+    <LabHistoryRow
+      href={href}
+      title={title}
+      accentColor={accentColor}
+      personLabel="새 카드"
+      detail={detail}
+      statusLabel="시작"
+    />
+  );
+}
+
 export default function MyPage() {
   const { user, loading, logout } = useAuth();
   const { isVisible: isAuditionVisible, isEnabled: isAuditionEnabled } = useAuditionAvailability();
@@ -199,6 +387,7 @@ export default function MyPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [historyDeleteTarget, setHistoryDeleteTarget] = useState<HistoryItem | null>(null);
+  const [labDeleteTarget, setLabDeleteTarget] = useState<LabDeleteTarget | null>(null);
   const [credits, setCredits] = useState<number | null>(null);
   const [giftInput, setGiftInput] = useState("");
   const [giftStatus, setGiftStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -515,9 +704,42 @@ export default function MyPage() {
     }
   };
 
+  const handleDeleteLabHistoryItem = async () => {
+    if (!labDeleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/lab-history", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: labDeleteTarget.type, itemId: labDeleteTarget.itemId }),
+      });
+      if (!res.ok) throw new Error("delete failed");
+
+      if (labDeleteTarget.type === "audition") {
+        setAuditionHistory((prev) => prev.filter((item) => item.id !== labDeleteTarget.itemId));
+      }
+      if (labDeleteTarget.type === "nabo-predict") {
+        setNaboPredictHistory((prev) => prev.filter((item) => `${item.role}:${item.sessionId}` !== labDeleteTarget.itemId));
+      }
+      if (labDeleteTarget.type === "travel-together") {
+        setTravelHistory((prev) => prev.filter((item) => item.roomId !== labDeleteTarget.itemId));
+      }
+      if (labDeleteTarget.type === "balance-100") {
+        setBalance100State(null);
+      }
+
+      setLabDeleteTarget(null);
+      showToast("실험실 기록을 삭제했어요.");
+    } catch {
+      showToast("삭제에 실패했어요.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const balance100Questions = getBalanceQuestions(balance100State?.level ?? 3);
   const balance100Progress = getBalance100Progress(balance100State?.answers, balance100Questions);
-  const balance100Completed = balance100Progress.answered >= BALANCE_TOTAL_QUESTIONS;
+  const balance100Completed = balance100Progress.answered >= balance100Questions.length;
   const balance100Result =
     balance100State?.result ??
     (balance100Completed && balance100State?.answers ? analyzeBalanceAnswers(balance100State.answers, balance100Questions) : null);
@@ -850,213 +1072,109 @@ export default function MyPage() {
               )}
 
               {historyTab === "lab" && (
-                <div className="flex flex-col gap-5">
-                  {/* 밸런스 100 */}
-                  <div>
-                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">밸런스 100</p>
-                    <Link href="/balance-100" className="flex items-center justify-between bg-white border border-[#E7E7E7] rounded-2xl px-4 py-4 hover:border-[#D1D5DB] transition-colors">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-[14px] font-bold text-[#111827]">100문항 선택 매칭</p>
-                          <span className="rounded-full bg-[#FFF1F2] px-2 py-0.5 text-[10px] font-black text-[#E11D48]">
-                            무료
-                          </span>
-                        </div>
-                        <p className="text-[12px] text-[#9CA3AF] font-normal mt-0.5">
-                          {balance100Completed
-                            ? `${balance100Result?.typeTitle ?? "결과 완료"} · 결과 다시 보기`
-                            : balance100Progress.answered > 0
-                              ? `${balance100Progress.answered} / ${BALANCE_TOTAL_QUESTIONS} 진행 중 · 이어하기`
-                              : "아직 기록이 없어요 · 시작하기"}
-                        </p>
-                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#F1F1F4]">
-                          <div
-                            className="h-full rounded-full bg-[#E11D48]"
-                            style={{ width: `${Math.round((balance100Progress.answered / BALANCE_TOTAL_QUESTIONS) * 100)}%` }}
+                <div className="flex flex-col gap-2">
+                  {historyLoading ? (
+                    <div className="flex items-center justify-center rounded-2xl border border-[#E7E7E7] bg-white py-8">
+                      <div className="h-5 w-5 rounded-full border-2 border-[#E8E8E8] border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
+                    </div>
+                  ) : (
+                    <>
+                      {balance100State ? (
+                        <LabHistoryRow
+                          href="/balance-100"
+                          title="밸런스 100"
+                          accentColor={LAB_HISTORY_THEME.balance100}
+                          personLabel={`${balance100State.ownerName}님`}
+                          detail={
+                            balance100Completed
+                              ? `${balance100Result?.typeTitle ?? "결과 완료"}`
+                              : `${balance100Progress.answered}/${balance100Questions.length}문항 완료`
+                          }
+                          statusLabel={balance100Completed ? "결과" : "진행 중"}
+                          timeLabel={relativeTime(balance100State.completedAt ?? balance100State.updatedAt)}
+                          onDelete={() => setLabDeleteTarget({
+                            type: "balance-100",
+                            itemId: balance100State.sessionId,
+                            label: "100문항 선택 매칭",
+                          })}
+                        />
+                      ) : (
+                        <EmptyLabHistoryRow href="/balance-100" title="밸런스 100" detail="100문항 선택 매칭" accentColor={LAB_HISTORY_THEME.balance100} />
+                      )}
+
+                      {auditionHistory.length === 0 ? (
+                        <EmptyLabHistoryRow href="/audition/intro" title="AI 오디션" detail="사진 3장 캐스팅 결과" accentColor={LAB_HISTORY_THEME.audition} />
+                      ) : (
+                        auditionHistory.map((item) => (
+                          <LabHistoryRow
+                            key={item.id}
+                            href={`/audition/result?history_share=${item.share_id}`}
+                            title="AI 오디션"
+                            accentColor={LAB_HISTORY_THEME.audition}
+                            personLabel={item.assigned_role}
+                            detail={`${item.avg_score}점`}
+                            statusLabel="결과"
+                            timeLabel={relativeTime(item.created_at)}
+                            onDelete={() => setLabDeleteTarget({
+                              type: "audition",
+                              itemId: item.id,
+                              label: `AI 오디션 · ${item.assigned_role}`,
+                            })}
                           />
-                        </div>
-                      </div>
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="ml-3 text-[#D1D5DB] flex-shrink-0">
-                        <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </Link>
-                  </div>
+                        ))
+                      )}
 
-                  {/* AI 오디션 기록 */}
-                  <div>
-                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">AI 오디션</p>
-                    {historyLoading ? (
-                      <div className="flex justify-center py-6">
-                        <div className="w-5 h-5 rounded-full border-2 border-[#E8E8E8] border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
-                      </div>
-                    ) : auditionHistory.length === 0 ? (
-                      <Link href="/audition/intro" className="flex items-center justify-between bg-white border border-[#E7E7E7] rounded-2xl px-4 py-4 hover:border-[#D1D5DB] transition-colors">
-                        <div>
-                          <p className="text-[14px] font-bold text-[#111827]">AI 오디션</p>
-                          <p className="text-[12px] text-[#9CA3AF] font-normal mt-0.5">아직 기록이 없어요 · 시작하기</p>
-                        </div>
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#D1D5DB] flex-shrink-0">
-                          <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </Link>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-3">
-                        {auditionHistory.map(item => {
-                          const expiry = expiryBadge(item.created_at);
-                          const scoreColor = item.avg_score >= 70 ? "#4ade80" : item.avg_score >= 45 ? "#f97316" : "#ef4444";
+                      {naboPredictHistory.length === 0 ? (
+                        <EmptyLabHistoryRow href="/nabo-predict" title="너라면 그럴 줄 알았어" detail="상대 예측 테스트" accentColor={LAB_HISTORY_THEME.naboPredict} />
+                      ) : (
+                        naboPredictHistory.map((item) => {
+                          const itemId = `${item.role}:${item.sessionId}`;
+                          const titlePrefix = item.role === "owner" ? item.targetName : item.ownerName;
                           return (
-                            <Link
-                              key={item.id}
-                              href={`/audition/result?history_share=${item.share_id}`}
-                              className="flex flex-col bg-white border border-[#E7E7E7] p-3 rounded-2xl hover:border-[#D1D5DB] transition-colors min-w-0"
-                            >
-                              <div className="w-full aspect-square rounded-[14px] overflow-hidden flex-shrink-0 bg-[#F0F0F0]">
-                                {item.still_image_url ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={item.still_image_url} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-[#333] text-[22px]">🎬</div>
-                                )}
-                              </div>
-                              <div className="min-w-0 mt-2.5">
-                                <div className="flex items-center justify-between gap-2 mb-1">
-                                  <span className="text-[10px] font-bold text-[#C9571A] uppercase tracking-widest">AI 오디션</span>
-                                  <span className="text-[14px] font-extrabold tabular-nums" style={{ color: scoreColor }}>{item.avg_score}점</span>
-                                </div>
-                                <p className="text-[#0A0A0A]/80 text-[13px] font-bold leading-snug break-keep">{item.assigned_role}</p>
-                                <div className="flex items-end justify-between gap-1 mt-2">
-                                  <span className="text-[11px] text-[#6B7280]">{relativeTime(item.created_at)}</span>
-                                  <span className={`text-[10px] font-normal px-1.5 py-0.5 rounded-full border ${expiry.className}`}>{expiry.label}</span>
-                                </div>
-                              </div>
-                            </Link>
+                            <LabHistoryRow
+                              key={itemId}
+                              href={item.href || "/nabo-predict"}
+                              title="너라면 그럴 줄 알았어"
+                              accentColor={LAB_HISTORY_THEME.naboPredict}
+                              personLabel={`${titlePrefix}님`}
+                              detail={item.status === "completed" ? "상대 답변 완료" : "상대 답변 대기"}
+                              statusLabel={item.status === "completed" ? "결과" : "대기"}
+                              timeLabel={relativeTime(new Date(item.completedAt ?? item.createdAt).toISOString())}
+                              onDelete={() => setLabDeleteTarget({
+                                type: "nabo-predict",
+                                itemId,
+                                label: `너라면 그럴 줄 알았어 · ${item.ownerName}님이 본 ${item.targetName}님`,
+                              })}
+                            />
                           );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                        })
+                      )}
 
-                  {/* 너라면 그럴 줄 알았어 기록 */}
-                  <div>
-                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">너라면 그럴 줄 알았어</p>
-                    {historyLoading ? (
-                      <div className="flex justify-center py-6">
-                        <div className="w-5 h-5 rounded-full border-2 border-[#E8E8E8] border-t-[#F97316]" style={{ animation: "spin 1s linear infinite" }} />
-                      </div>
-                    ) : naboPredictHistory.length === 0 ? (
-                      <Link href="/nabo-predict" className="flex items-center justify-between bg-white border border-[#E7E7E7] rounded-2xl px-4 py-4 hover:border-[#D1D5DB] transition-colors">
-                        <div>
-                          <p className="text-[14px] font-bold text-[#111827]">너라면 그럴 줄 알았어</p>
-                          <p className="text-[12px] text-[#9CA3AF] font-normal mt-0.5">아직 기록이 없어요 · 시작하기</p>
-                        </div>
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#D1D5DB] flex-shrink-0">
-                          <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </Link>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-3">
-                        {naboPredictHistory.map((item) => (
-                          <Link
-                            key={`${item.role}-${item.sessionId}`}
-                            href={item.href || "/nabo-predict"}
-                            className="flex flex-col border border-[#E7E7E7] bg-white p-3 rounded-2xl transition-colors hover:border-[#D1D5DB] min-w-0"
-                          >
-                            <div className="flex aspect-square items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#FFF7ED,#FED7AA_48%,#FB7185)]">
-                              <div className="text-center text-[#9A3412]">
-                                <p className="text-[11px] font-black tracking-[0.18em] uppercase">Predict</p>
-                                <p className="mt-2 text-[24px]">🎯</p>
-                              </div>
-                            </div>
-                            <div className="min-w-0 mt-2.5">
-                              <div className="mb-1 flex items-center justify-between gap-2">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97316]">
-                                  {item.role === "owner" ? "내 예측" : "내 답변"}
-                                </span>
-                                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${item.status === "completed" ? "bg-[#FFF7ED] text-[#EA580C]" : "bg-[#F4F4F4] text-[#777]"}`}>
-                                  {item.status === "completed" ? "결과 열림" : "답변 대기"}
-                                </span>
-                              </div>
-                              <p className="text-[14px] font-bold leading-snug text-[#111827] break-keep">
-                                {item.ownerName}님이 본 {item.targetName}님
-                              </p>
-                              <p className="mt-0.5 text-[12px] text-[#777]">
-                                {item.status === "completed" ? "결과 다시 보기" : "공유 링크 다시 열기"}
-                              </p>
-                              <div className="mt-2 flex items-end justify-between gap-2">
-                                <span className="text-[11px] text-[#6B7280]">{relativeTime(new Date(item.completedAt ?? item.createdAt).toISOString())}</span>
-                                <span className="text-[10px] font-normal text-[#9CA3AF]">마이페이지 저장</span>
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                      <EmptyLabHistoryRow href="/nabo" title="내가 보는 너" detail="익명 관계 분석" accentColor={LAB_HISTORY_THEME.nabo} />
 
-                  {/* 내가 보는 너 (나보) */}
-                  <div>
-                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">내가 보는 너</p>
-                    <Link href="/nabo" className="flex items-center justify-between bg-white border border-[#E7E7E7] rounded-2xl px-4 py-4 hover:border-[#D1D5DB] transition-colors">
-                      <div>
-                        <p className="text-[14px] font-bold text-[#111827]">내가 보는 너</p>
-                        <p className="text-[12px] text-[#9CA3AF] font-normal mt-0.5">익명 관계 분석 · 바로가기</p>
-                      </div>
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#D1D5DB] flex-shrink-0">
-                        <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </Link>
-                  </div>
-
-                  {/* 여행 같이 간다면 기록 */}
-                  <div>
-                    <p className="text-[13px] font-bold text-[#111827] mb-2 px-1">여행 같이 간다면</p>
-                    {historyLoading ? (
-                      <div className="flex justify-center py-6">
-                        <div className="w-5 h-5 rounded-full border-2 border-[#E8E8E8] border-t-[#60A5FA]" style={{ animation: "spin 1s linear infinite" }} />
-                      </div>
-                    ) : travelHistory.length === 0 ? (
-                      <Link href="/travel-together" className="flex items-center justify-between bg-white border border-[#E7E7E7] rounded-2xl px-4 py-4 hover:border-[#D1D5DB] transition-colors">
-                        <div>
-                          <p className="text-[14px] font-bold text-[#111827]">여행 같이 간다면</p>
-                          <p className="text-[12px] text-[#9CA3AF] font-normal mt-0.5">아직 기록이 없어요 · 시작하기</p>
-                        </div>
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-[#D1D5DB] flex-shrink-0">
-                          <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </Link>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-3">
-                        {travelHistory.map((item) => (
-                          <Link
+                      {travelHistory.length === 0 ? (
+                        <EmptyLabHistoryRow href="/travel-together" title="여행 같이 간다면" detail="친구/연인/가족 궁합" accentColor={LAB_HISTORY_THEME.travelTogether} />
+                      ) : (
+                        travelHistory.map((item) => (
+                          <LabHistoryRow
                             key={item.roomId}
                             href={`/travel-together?room=${encodeURIComponent(item.roomId)}&token=${encodeURIComponent(item.participantToken)}&view=result`}
-                            className="flex flex-col border border-[#E7E7E7] bg-white p-3 rounded-2xl transition-colors hover:border-[#D1D5DB] min-w-0"
-                          >
-                            <div className="flex aspect-square items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#DBEAFE,#BFDBFE_48%,#60A5FA)]">
-                              <div className="text-center text-[#1E3A8A]">
-                                <p className="text-[12px] font-black tracking-[0.22em] uppercase">Travel</p>
-                                <p className="mt-2 text-[24px]">✈️</p>
-                              </div>
-                            </div>
-                            <div className="min-w-0 mt-2.5">
-                              <div className="mb-1 flex items-center justify-between gap-2">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#60A5FA]">여행 테스트</span>
-                                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${item.unlocked ? "bg-[#EFF6FF] text-[#2563EB]" : "bg-[#F4F4F4] text-[#777]"}`}>
-                                  {item.unlocked ? "상세 열림" : "기본 결과"}
-                                </span>
-                              </div>
-                              <p className="text-[14px] font-bold leading-snug text-[#111827] break-keep">{item.partnerName}와 여행 궁합</p>
-                              <p className="mt-0.5 text-[12px] text-[#777]">{TRAVEL_RELATION_LABELS[item.relation]}</p>
-                              <div className="mt-2 flex items-end justify-between gap-2">
-                                <span className="text-[11px] text-[#6B7280]">{relativeTime(item.completedAt)}</span>
-                                <span className="text-[10px] font-normal text-[#9CA3AF]">완료된 테스트만 보관</span>
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                            title="여행 같이 간다면"
+                            accentColor={LAB_HISTORY_THEME.travelTogether}
+                            personLabel={`${item.partnerName}님`}
+                            detail={TRAVEL_RELATION_LABELS[item.relation]}
+                            statusLabel={item.unlocked ? "상세" : "결과"}
+                            timeLabel={relativeTime(item.completedAt)}
+                            onDelete={() => setLabDeleteTarget({
+                              type: "travel-together",
+                              itemId: item.roomId,
+                              label: `여행 같이 간다면 · ${item.partnerName}와 궁합`,
+                            })}
+                          />
+                        ))
+                      )}
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -1395,6 +1513,35 @@ export default function MyPage() {
                 className="bg-[#ff4444] text-white rounded-xl py-3 flex-1 font-bold disabled:opacity-50"
               >
                 {deleting ? "삭제 중..." : "확인"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {labDeleteTarget && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => !deleting && setLabDeleteTarget(null)}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm mx-4 border border-[#E5E7EB] w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <p className="text-[16px] font-bold text-[#111827]">실험실 기록을 삭제할까요?</p>
+            <p className="mt-2 text-[14px] leading-relaxed text-[#6B7280]">
+              {labDeleteTarget.label} 기록이 마이페이지에서 보이지 않게 됩니다.
+            </p>
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setLabDeleteTarget(null)}
+                disabled={deleting}
+                className="border border-[#D1D5DB] bg-white text-[#111827] rounded-xl py-3 flex-1 font-medium disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteLabHistoryItem}
+                disabled={deleting}
+                className="bg-[#EF4444] text-white rounded-xl py-3 flex-1 font-bold disabled:opacity-50"
+              >
+                {deleting ? "삭제 중..." : "삭제"}
               </button>
             </div>
           </div>

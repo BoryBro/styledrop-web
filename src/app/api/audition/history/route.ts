@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { readSessionFromRequest } from "@/lib/auth-session";
+import { getLabHistoryKey, listHiddenLabHistoryKeys } from "@/lib/lab-history-hidden.server";
 import { loadAuditionFeatureControl } from "@/lib/style-controls.server";
 
 function parseSession(request: NextRequest): { id: string } | null {
@@ -31,7 +32,12 @@ export async function GET(request: NextRequest) {
     .limit(20);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ history: data ?? [] });
+  const hidden = await listHiddenLabHistoryKeys(session.id);
+  if (hidden.error) return NextResponse.json({ error: hidden.error }, { status: 500 });
+
+  return NextResponse.json({
+    history: (data ?? []).filter((item) => !hidden.keys.has(getLabHistoryKey("audition", String(item.id)))),
+  });
 }
 
 export async function POST(request: NextRequest) {

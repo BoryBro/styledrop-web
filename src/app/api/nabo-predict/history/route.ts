@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { readSessionFromRequest } from "@/lib/auth-session";
+import { getLabHistoryKey, listHiddenLabHistoryKeys } from "@/lib/lab-history-hidden.server";
 
 type NaboPredictHistoryItem = {
   sessionId: string;
@@ -132,8 +133,14 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const hidden = await listHiddenLabHistoryKeys(session.id);
+  if (hidden.error) {
+    return NextResponse.json({ error: hidden.error }, { status: 500 });
+  }
+
   return NextResponse.json({
     history: Array.from(items.values())
+      .filter((item) => !hidden.keys.has(getLabHistoryKey("nabo-predict", `${item.role}:${item.sessionId}`)))
       .sort((a, b) => (b.completedAt ?? b.createdAt) - (a.completedAt ?? a.createdAt))
       .slice(0, 20),
   });
