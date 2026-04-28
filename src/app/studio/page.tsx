@@ -1979,7 +1979,7 @@ export default function Studio() {
                           className="font-unbounded font-medium text-[#F97316] tracking-[0.18em]"
                           style={{ fontSize: "clamp(9px, 2.4vw, 11px)" }}
                         >
-                          예측 실험실
+                          PREDICTION LAB
                         </span>
                         <span
                           className="text-[10px] font-bold text-white/30 border border-white/15 rounded-full px-2.5 py-0.5 tracking-widest"
@@ -1995,7 +1995,7 @@ export default function Studio() {
                           className="font-unbounded font-bold text-white/40 tracking-[0.06em] mb-1"
                           style={{ fontSize: "clamp(10px, 2.6vw, 13px)" }}
                         >
-                          행동 예측
+                          PREDICT THEIR MOVE
                         </span>
                         <span
                           className="text-white leading-[0.9]"
