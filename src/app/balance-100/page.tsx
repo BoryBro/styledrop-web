@@ -899,18 +899,10 @@ export default function Balance100Page() {
                   key={session.sessionId}
                   className="rounded-[30px] border border-[#CFF7DF] bg-[#F0FFF7] p-4"
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
                     <div className="min-w-0">
-                      <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-black">
-                        <span className="text-[24px] font-black tracking-[-0.05em]">Lv.{session.level} 완료</span>
-                        <span className="text-[12px] font-black text-[#6B7280]">
-                          {formatShortDate(session.completedAt ?? session.updatedAt)} 완료
-                        </span>
-                      </p>
+                      <p className="text-[24px] font-black tracking-[-0.05em] text-black">Lv.{session.level} 완료</p>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1.5 text-[12px] font-black text-[#20D879]">
-                      저장됨
-                    </span>
                   </div>
                   <div className="mt-5 grid gap-2">
                     <button
