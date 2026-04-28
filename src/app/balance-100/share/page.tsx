@@ -109,12 +109,20 @@ function ChoiceCard({
 
 function SharedResultView({ payload }: { payload: BalanceSharePayload }) {
   const story = getBalanceResultStory(payload);
+  const payloadQuestions = getBalanceQuestions(normalizeBalanceLevel(payload.level));
+  const visibleChoices = payload.topChoices
+    .map((choice, index) => ({
+      choice,
+      index,
+      question: payloadQuestions.find((question) => question.id === choice.id),
+    }))
+    .filter((item) => item.question);
 
   return (
     <main className="min-h-screen bg-white px-6 py-4">
       <div className="mx-auto max-w-md">
         <TopProgress progressRatio={100} backHref="/balance-100" />
-        <section className="overflow-hidden rounded-[32px] border border-[#E9E9E9] bg-white shadow-[0_12px_34px_rgba(0,0,0,0.06)]">
+        <section className="border-b border-[#E5E7EB] pb-7">
           {payload.representativeImageUrl && (
             <div className="relative aspect-square w-full overflow-hidden bg-[#F4F5F4]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -123,12 +131,12 @@ function SharedResultView({ payload }: { payload: BalanceSharePayload }) {
               <img src={payload.representativeImageUrl} alt="" className="relative z-10 h-full w-full object-contain" />
             </div>
           )}
-          <div className="p-6">
-            <p className="text-[12px] font-black uppercase tracking-[0.22em] text-[#20D879]">
-              첫 판정
+          <div className="pt-6">
+            <p className="break-keep text-[19px] font-black leading-7 tracking-[-0.04em] text-[#111827]">
+              친구님의 성향은 다음과 같아요!
             </p>
-            <h1 className="mt-3 text-[34px] font-black leading-[1.12] tracking-[-0.05em] text-black">
-              {story.verdictTitle}
+            <h1 className="mt-3 break-keep text-[32px] font-black leading-[1.14] tracking-[-0.06em] text-black">
+              {story.verdictTitle} 같은 성향을 가지고 있어요!
             </h1>
             <p className="mt-4 break-keep text-[16px] font-bold leading-8 text-[#555]">
               {story.verdictSubtitle}
@@ -136,53 +144,48 @@ function SharedResultView({ payload }: { payload: BalanceSharePayload }) {
           </div>
         </section>
 
-        <section className="mt-4 rounded-[30px] border border-[#E9E9E9] bg-white p-6">
-          <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">선택 패턴</p>
-          <h2 className="mt-2 text-[25px] font-black tracking-[-0.05em] text-[#111827]">자주 고른 선택</h2>
-          <p className="mt-2 break-keep text-[14px] font-bold leading-6 text-[#6B7280]">{story.patternIntro}</p>
-          <div className="mt-5 flex flex-col gap-2.5">
-            {story.patterns.map((pattern) => (
-              <div key={pattern} className="rounded-[22px] bg-[#F7F8F7] px-4 py-3 text-[16px] font-black leading-6 text-[#111827]">
-                {pattern}
-              </div>
-            ))}
+        <section className="mt-7">
+          <div className="mb-4 flex items-end justify-between">
+            <h2 className="text-[25px] font-black tracking-[-0.05em] text-[#111827]">밸런스 Q&A</h2>
           </div>
-        </section>
+          <div className="-mx-6 overflow-x-auto px-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex snap-x snap-mandatory gap-3">
+              {visibleChoices.map(({ choice, question, index }) => {
+                if (!question) return null;
+                const questionNumber = Number(question.id.split("_q")[1]) || index + 1;
 
-        <section className="mt-4 rounded-[30px] border border-[#E9E9E9] bg-white p-6">
-          <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">관계 해석</p>
-          <h2 className="mt-2 break-keep text-[25px] font-black tracking-[-0.05em] text-[#111827]">{story.relationTitle}</h2>
-          <div className="mt-4 flex flex-col gap-2">
-            {story.relationLines.map((line) => (
-              <p key={line} className="break-keep text-[16px] font-bold leading-8 text-[#555]">
-                {line}
-              </p>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-4 rounded-[30px] border border-[#E9E9E9] bg-white p-6">
-          <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">흔드는 버튼</p>
-          <h2 className="mt-2 text-[25px] font-black tracking-[-0.05em] text-[#111827]">흔들리는 포인트</h2>
-          <div className="mt-5 grid gap-3">
-            {story.triggers.map((trigger) => (
-              <div key={trigger.title} className="rounded-[24px] border border-[#D9F7E5] bg-[#F0FFF7] p-4">
-                <p className="text-[17px] font-black text-[#111827]">{trigger.title}</p>
-                <p className="mt-2 break-keep text-[13px] font-bold leading-6 text-[#667085]">{trigger.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-4 rounded-[30px] bg-[#111827] p-6 text-white shadow-[0_18px_40px_rgba(17,24,39,0.18)]">
-          <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">공유 요약</p>
-          <h2 className="mt-2 text-[26px] font-black tracking-[-0.05em]">{story.shareTitle}</h2>
-          <div className="mt-5 flex flex-col gap-2">
-            {story.shareLines.map((line) => (
-              <p key={line} className="break-keep text-[15px] font-bold leading-7 text-white/86">
-                {line}
-              </p>
-            ))}
+                return (
+                  <article key={choice.id} className="min-h-[168px] min-w-[72%] snap-start border border-[#E5E7EB] bg-white p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#20D879]">
+                        Q{String(questionNumber).padStart(2, "0")}
+                      </p>
+                      <p className="text-[12px] font-black text-[#111827]">선택 {choice.picked}</p>
+                    </div>
+                    <div className="mt-5 grid gap-3 text-[14px] font-bold leading-6 text-[#9CA3AF]">
+                      <div className={`flex min-h-9 items-center justify-between gap-3 ${choice.picked === "A" ? "text-[#111827]" : ""}`}>
+                        <span className="min-w-0 break-keep">A. {question.left}</span>
+                        {choice.picked === "A" && payload.representativeImageUrl && (
+                          <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[#E5E7EB] bg-[#F3F4F6]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={payload.representativeImageUrl} alt="" className="h-full w-full object-cover" />
+                          </span>
+                        )}
+                      </div>
+                      <div className={`flex min-h-9 items-center justify-between gap-3 ${choice.picked === "B" ? "text-[#111827]" : ""}`}>
+                        <span className="min-w-0 break-keep">B. {question.right}</span>
+                        {choice.picked === "B" && payload.representativeImageUrl && (
+                          <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[#E5E7EB] bg-[#F3F4F6]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={payload.representativeImageUrl} alt="" className="h-full w-full object-cover" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           </div>
         </section>
 
