@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readSessionFromRequest } from "@/lib/auth-session";
-import { normalizeBalanceLevel } from "@/lib/balance-100";
+import { BALANCE_TOTAL_QUESTIONS, normalizeBalanceLevel, type BalanceLevel } from "@/lib/balance-100";
 import {
   createBalance100Session,
   findBalance100Matches,
   getCurrentBalance100Session,
+  listBalance100SessionsForUser,
 } from "@/lib/balance-100.server";
 import { loadBalance100FeatureControl } from "@/lib/style-controls.server";
 
@@ -27,6 +28,18 @@ export async function GET(request: NextRequest) {
   if (current.error) {
     return NextResponse.json({ error: current.error }, { status: 500 });
   }
+  const history = await listBalance100SessionsForUser(session.id);
+  if (history.error) {
+    return NextResponse.json({ error: history.error }, { status: 500 });
+  }
+
+  const completedByLevel = new Map<BalanceLevel, NonNullable<typeof history.sessions>[number]>();
+  for (const item of history.sessions) {
+    if (!item.result || Object.keys(item.answers).length < BALANCE_TOTAL_QUESTIONS) continue;
+    if (!completedByLevel.has(item.level)) {
+      completedByLevel.set(item.level, item);
+    }
+  }
 
   const matches = current.session?.status === "completed"
     ? await findBalance100Matches({ session: current.session, limit: 5 })
@@ -36,6 +49,7 @@ export async function GET(request: NextRequest) {
     ok: true,
     session: current.session,
     matches: matches.matches,
+    completedSessions: [...completedByLevel.values()].sort((a, b) => a.level - b.level),
   });
 }
 

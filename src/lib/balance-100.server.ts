@@ -208,7 +208,7 @@ export async function listBalance100SessionsForUser(userId: string) {
 export async function getCurrentBalance100Session(userId: string) {
   const { sessions, error } = await querySessionSnapshotsByUser(userId);
   if (error) return { session: null, error };
-  const current = sessions.find((session) => session.status !== "closed") ?? null;
+  const current = sessions.find((session) => session.status === "in_progress") ?? null;
   return { session: current, error: null };
 }
 
@@ -238,7 +238,7 @@ export async function closeOpenBalance100Sessions(userId: string) {
   const { sessions, error } = await querySessionSnapshotsByUser(userId);
   if (error) return { ok: false, error };
 
-  const openSessions = sessions.filter((session) => session.status !== "closed");
+  const openSessions = sessions.filter((session) => session.status === "in_progress");
   for (const session of openSessions) {
     await saveBalance100Session({
       ...session,
@@ -338,26 +338,16 @@ export async function createBalance100PredictionLink(input: {
   if (current.session.ownerUserId !== input.user.id) {
     return { session: null, path: null, error: "권한이 없습니다." };
   }
-  if (current.session.status !== "completed" || !current.session.result) {
+  if (!current.session.result) {
     return { session: null, path: null, error: "100문항을 완료한 뒤 만들 수 있습니다." };
   }
 
   const token = current.session.predictionToken ?? randomId(12);
-  const updated = await updateBalance100Session({
-    sessionId: input.sessionId,
-    user: input.user,
-    answers: current.session.answers,
-  });
-
-  if (updated.error || !updated.session) {
-    return { session: null, path: null, error: updated.error ?? "링크 생성 실패" };
-  }
-
   const nextSession: Balance100SessionState = {
-    ...updated.session,
+    ...current.session,
     predictionToken: token,
     updatedAt: new Date().toISOString(),
-    version: updated.session.version + 1,
+    version: current.session.version + 1,
   };
   const saved = await saveBalance100Session(nextSession);
   if (!saved.ok) return { session: null, path: null, error: saved.error };
@@ -450,7 +440,7 @@ export async function submitBalance100Prediction(input: {
   if (source.error || !source.session) {
     return { prediction: null, sourceSession: null, error: "예측 링크를 찾을 수 없습니다." };
   }
-  if (source.session.status !== "completed") {
+  if (!source.session.result) {
     return { prediction: null, sourceSession: source.session, error: "아직 완료되지 않은 링크입니다." };
   }
   if (source.session.ownerUserId === input.user.id) {
@@ -513,7 +503,7 @@ export async function findBalance100Matches(input: {
   session: Balance100SessionState;
   limit?: number;
 }) {
-  if (input.session.status !== "completed") return { matches: [] as Balance100MatchItem[], error: null };
+  if (!input.session.result) return { matches: [] as Balance100MatchItem[], error: null };
 
   const supabase = getSupabase();
   const { data, error } = await supabase
@@ -541,7 +531,6 @@ export async function findBalance100Matches(input: {
       session.sessionId !== input.session.sessionId &&
       session.ownerUserId !== input.session.ownerUserId &&
       session.level === input.session.level &&
-      session.status === "completed" &&
       Boolean(session.result) &&
       isWithinLabHistoryRetention(session.updatedAt),
     );

@@ -378,7 +378,7 @@ export default function MyPage() {
   const [auditionHistory, setAuditionHistory] = useState<AuditionHistoryItem[]>([]);
   const [travelHistory, setTravelHistory] = useState<TravelHistoryItem[]>([]);
   const [naboPredictHistory, setNaboPredictHistory] = useState<NaboPredictHistoryItem[]>([]);
-  const [balance100State, setBalance100State] = useState<Balance100HistoryState | null>(null);
+  const [balance100History, setBalance100History] = useState<Balance100HistoryState[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -417,7 +417,7 @@ export default function MyPage() {
       setGuestHistory(getGuestHistory());
       setTravelHistory([]);
       setNaboPredictHistory([]);
-      setBalance100State(null);
+      setBalance100History([]);
       setHistoryLoading(false);
       return;
     }
@@ -425,7 +425,7 @@ export default function MyPage() {
       fetch("/api/history").then(r => r.json()).then(d => setHistory(d.history ?? [])).catch(() => {}),
       fetch("/api/travel-together/history").then(r => r.json()).then(d => setTravelHistory(d.history ?? [])).catch(() => {}),
       fetch("/api/nabo-predict/history").then(r => r.json()).then(d => setNaboPredictHistory(d.history ?? [])).catch(() => {}),
-      fetch("/api/balance-100/history").then(r => r.json()).then(d => setBalance100State(d.history?.[0] ?? null)).catch(() => setBalance100State(null)),
+      fetch("/api/balance-100/history").then(r => r.json()).then(d => setBalance100History(d.history ?? [])).catch(() => setBalance100History([])),
     ];
     if (showAuditionHistory) {
       requests.push(
@@ -721,7 +721,7 @@ export default function MyPage() {
         setTravelHistory((prev) => prev.filter((item) => item.roomId !== labDeleteTarget.itemId));
       }
       if (labDeleteTarget.type === "balance-100") {
-        setBalance100State(null);
+        setBalance100History((prev) => prev.filter((item) => item.sessionId !== labDeleteTarget.itemId));
       }
 
       setLabDeleteTarget(null);
@@ -733,12 +733,13 @@ export default function MyPage() {
     }
   };
 
-  const balance100Questions = getBalanceQuestions(balance100State?.level ?? 3);
-  const balance100Progress = getBalance100Progress(balance100State?.answers, balance100Questions);
-  const balance100Completed = balance100Progress.answered >= balance100Questions.length;
-  const balance100Result =
-    balance100State?.result ??
-    (balance100Completed && balance100State?.answers ? analyzeBalanceAnswers(balance100State.answers, balance100Questions) : null);
+  const getBalance100HistoryMeta = (item: Balance100HistoryState) => {
+    const questions = getBalanceQuestions(item.level);
+    const progress = getBalance100Progress(item.answers, questions);
+    const completed = progress.answered >= questions.length;
+    const result = item.result ?? (completed ? analyzeBalanceAnswers(item.answers, questions) : null);
+    return { questions, progress, completed, result };
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F6F3] flex flex-col">
@@ -1075,26 +1076,32 @@ export default function MyPage() {
                     </div>
                   ) : (
                     <>
-                      {balance100State ? (
-                        <LabHistoryRow
-                          href="/balance-100"
-                          title="밸런스 100"
-                          accentColor={LAB_HISTORY_THEME.balance100}
-                          personLabel={`${balance100State.ownerName}님`}
-                          detail={
-                            balance100Completed
-                              ? `${balance100Result?.typeTitle ?? "결과 완료"}`
-                              : `${balance100Progress.answered}/${balance100Questions.length}문항 완료`
-                          }
-                          statusLabel={balance100Completed ? "결과" : "진행 중"}
-                          onDelete={() => setLabDeleteTarget({
-                            type: "balance-100",
-                            itemId: balance100State.sessionId,
-                            label: "100문항 선택 매칭",
-                          })}
-                        />
-                      ) : (
+                      {balance100History.length === 0 ? (
                         <EmptyLabHistoryRow href="/balance-100" title="밸런스 100" detail="100문항 선택 매칭" accentColor={LAB_HISTORY_THEME.balance100} />
+                      ) : (
+                        balance100History.map((item) => {
+                          const meta = getBalance100HistoryMeta(item);
+                          return (
+                            <LabHistoryRow
+                              key={item.sessionId}
+                              href="/balance-100"
+                              title="밸런스 100"
+                              accentColor={LAB_HISTORY_THEME.balance100}
+                              personLabel={`Lv.${item.level} · ${item.ownerName}님`}
+                              detail={
+                                meta.completed
+                                  ? `${meta.result?.typeTitle ?? "결과 완료"}`
+                                  : `${meta.progress.answered}/${meta.questions.length}문항 완료`
+                              }
+                              statusLabel={meta.completed ? "결과" : "진행 중"}
+                              onDelete={() => setLabDeleteTarget({
+                                type: "balance-100",
+                                itemId: item.sessionId,
+                                label: `밸런스 100 Lv.${item.level}`,
+                              })}
+                            />
+                          );
+                        })
                       )}
 
                       {auditionHistory.length === 0 ? (

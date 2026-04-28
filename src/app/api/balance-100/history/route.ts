@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     history: sessions
-      .filter((item) => item.status !== "closed")
+      .filter((item) => item.status !== "closed" || Boolean(item.result))
       .filter((item) => !hidden.keys.has(getLabHistoryKey("balance-100", item.sessionId)))
       .slice(0, 10),
   });

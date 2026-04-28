@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useLabFeatureAvailability } from "@/hooks/useLabFeatureAvailability";
 import { trackClientEvent } from "@/lib/client-events";
@@ -37,6 +38,8 @@ type BalanceServerSession = {
   status: SessionStatus;
   result: BalanceResultSummary | null;
   representativeImageUrl?: string;
+  predictionToken?: string;
+  updatedAt?: string;
   completedAt: string | null;
 };
 
@@ -106,6 +109,13 @@ function PrimaryButton({
       {children}
     </button>
   );
+}
+
+function formatShortDate(iso?: string | null) {
+  if (!iso) return "완료";
+  const date = new Date(iso);
+  if (!Number.isFinite(date.getTime())) return "완료";
+  return `${date.getMonth() + 1}.${date.getDate()} 완료`;
 }
 
 function ChoiceCard({
@@ -263,6 +273,7 @@ function ResultReport({
 }
 
 export default function Balance100Page() {
+  const router = useRouter();
   const { user, loading, login } = useAuth();
   const {
     isLoading: isAvailabilityLoading,
@@ -271,6 +282,7 @@ export default function Balance100Page() {
   } = useLabFeatureAvailability(BALANCE_100_CONTROL_ID, BALANCE_100_LAB_ENABLED);
   const [mode, setMode] = useState<Mode>("intro");
   const [serverSession, setServerSession] = useState<BalanceServerSession | null>(null);
+  const [completedSessions, setCompletedSessions] = useState<BalanceServerSession[]>([]);
   const [matches, setMatches] = useState<BalanceMatchItem[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<BalanceLevel>(3);
   const [answers, setAnswers] = useState<BalanceAnswers>({});
@@ -307,7 +319,18 @@ export default function Balance100Page() {
     setAnswers(sessionAnswers);
     setRepresentativeImageUrl(nextSession.representativeImageUrl);
     setCurrentIndex(getFirstUnansweredIndex(sessionAnswers, sessionQuestions));
-    setMode(nextSession.status === "completed" ? "result" : "intro");
+    setMode("intro");
+  }, []);
+
+  const upsertCompletedSession = useCallback((session: BalanceServerSession | null) => {
+    if (!session?.result) return;
+    setCompletedSessions((prev) => {
+      const next = [
+        session,
+        ...prev.filter((item) => item.level !== session.level && item.sessionId !== session.sessionId),
+      ];
+      return next.sort((a, b) => a.level - b.level);
+    });
   }, []);
 
   useEffect(() => {
@@ -316,7 +339,10 @@ export default function Balance100Page() {
     fetch("/api/balance-100/session", { cache: "no-store" })
       .then((response) => response.json())
       .then((data) => {
-        if (data?.ok) applySession(data.session ?? null, data.matches ?? []);
+        if (data?.ok) {
+          setCompletedSessions(Array.isArray(data.completedSessions) ? data.completedSessions : []);
+          applySession(data.session ?? null, data.matches ?? []);
+        }
       })
       .catch(() => undefined);
 
@@ -407,29 +433,104 @@ export default function Balance100Page() {
     if (!question || !serverSession || isSaving) return;
     const nextAnswers = { ...answers, [question.id]: value };
     setAnswers(nextAnswers);
+    setShareStatus("");
+  }, [answers, isSaving, question, serverSession]);
 
-    const completed = Object.keys(nextAnswers).length >= questions.length;
+  const handleSaveAndExit = useCallback(async () => {
+    if (!serverSession) {
+      router.push("/studio");
+      return;
+    }
+
     setIsSaving(true);
+    setShareStatus("");
+    try {
+      const saved = await saveSession(serverSession.sessionId, answers, representativeImageUrl);
+      if (saved.status === "completed") {
+        upsertCompletedSession(saved);
+        void trackClientEvent("lab_balance_completed", { level: saved.level });
+      }
+      router.push("/studio");
+    } catch {
+      setShareStatus("저장에 실패했어요. 다시 시도해주세요.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [answers, representativeImageUrl, router, saveSession, serverSession, upsertCompletedSession]);
 
-    saveSession(serverSession.sessionId, nextAnswers, representativeImageUrl)
-      .then((saved) => {
-        if (saved.status === "completed") {
-          setMode("result");
-          void trackClientEvent("lab_balance_completed", { level: saved.level });
-        }
-      })
-      .catch(() => setShareStatus("답변 저장에 실패했어요. 다시 눌러주세요."))
-      .finally(() => setIsSaving(false));
-  }, [answers, isSaving, question, questions.length, representativeImageUrl, saveSession, serverSession]);
+  const handleFinishQuiz = useCallback(async () => {
+    if (!serverSession || !isCompleted) return;
+
+    setIsSaving(true);
+    setShareStatus("");
+    try {
+      const saved = await saveSession(serverSession.sessionId, answers, representativeImageUrl);
+      if (saved.status === "completed") {
+        upsertCompletedSession(saved);
+        void trackClientEvent("lab_balance_completed", { level: saved.level });
+      }
+      setMode("result");
+    } catch {
+      setShareStatus("결과 저장에 실패했어요. 다시 시도해주세요.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [answers, isCompleted, representativeImageUrl, saveSession, serverSession, upsertCompletedSession]);
 
   const selectRepresentativeImage = useCallback((imageUrl: string) => {
     setRepresentativeImageUrl(imageUrl);
     if (!serverSession) return;
     setIsSaving(true);
     saveSession(serverSession.sessionId, answers, imageUrl)
+      .then((saved) => upsertCompletedSession(saved))
       .catch(() => setShareStatus("대표 이미지 저장에 실패했어요."))
       .finally(() => setIsSaving(false));
-  }, [answers, saveSession, serverSession]);
+  }, [answers, saveSession, serverSession, upsertCompletedSession]);
+
+  const openCompletedResult = useCallback((session: BalanceServerSession) => {
+    setServerSession(session);
+    setSelectedLevel(normalizeBalanceLevel(session.level));
+    setAnswers(session.answers ?? {});
+    setRepresentativeImageUrl(session.representativeImageUrl);
+    setCurrentIndex(getFirstUnansweredIndex(session.answers ?? {}, getBalanceQuestions(session.level)));
+    setMatches([]);
+    setMode("result");
+  }, []);
+
+  const sharePredictionForSession = useCallback(async (sessionId: string, level?: BalanceLevel) => {
+    setIsSaving(true);
+    setShareStatus("");
+    try {
+      const response = await fetch(`/api/balance-100/session/${encodeURIComponent(sessionId)}/prediction-link`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.path) throw new Error(data?.error ?? "failed");
+      if (data.session) upsertCompletedSession(data.session as BalanceServerSession);
+      const shareUrl = `${window.location.origin}${data.path}`;
+
+      if (navigator.share) {
+        await navigator.share({
+          title: "밸런스 100 예측하기",
+          text: "내가 어떻게 골랐을 것 같아? 100문항으로 맞혀봐.",
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareStatus(level ? `Lv.${level} 예측 링크가 복사됐어요.` : "예측 링크가 복사됐어요.");
+      }
+    } catch {
+      try {
+        const fallback = `${window.location.origin}/balance-100`;
+        await navigator.clipboard.writeText(fallback);
+      } catch {
+        // ignore clipboard fallback failure
+      }
+      setShareStatus("링크 생성에 실패했어요.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [upsertCompletedSession]);
 
   const handleShare = useCallback(async () => {
     if (!result) return;
@@ -471,39 +572,8 @@ export default function Balance100Page() {
 
   const handlePredictionShare = useCallback(async () => {
     if (!serverSession) return;
-    setIsSaving(true);
-    try {
-      const response = await fetch(`/api/balance-100/session/${encodeURIComponent(serverSession.sessionId)}/prediction-link`, {
-        method: "POST",
-      });
-      const data = await response.json();
-      if (!response.ok || !data?.path) throw new Error(data?.error ?? "failed");
-      const shareUrl = `${window.location.origin}${data.path}`;
-
-      if (navigator.share) {
-        await navigator.share({
-          title: "밸런스 100 예측하기",
-          text: "내가 어떻게 골랐을 것 같아? 100문항으로 맞혀봐.",
-          url: shareUrl,
-        });
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        setShareStatus("예측 링크가 복사됐어요.");
-      }
-    } catch {
-      try {
-        if (serverSession) {
-          const fallback = `${window.location.origin}/balance-100`;
-          await navigator.clipboard.writeText(fallback);
-        }
-        setShareStatus("링크 생성에 실패했어요.");
-      } catch {
-        setShareStatus("링크 생성에 실패했어요.");
-      }
-    } finally {
-      setIsSaving(false);
-    }
-  }, [serverSession]);
+    await sharePredictionForSession(serverSession.sessionId, serverSession.level);
+  }, [serverSession, sharePredictionForSession]);
 
   if (loading || isAvailabilityLoading) {
     return (
@@ -627,7 +697,7 @@ export default function Balance100Page() {
     return (
       <main className="min-h-screen bg-white px-6 py-4 text-black">
         <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-md flex-col">
-          <TopProgress progressRatio={progressRatio} onBack={() => setMode("intro")} />
+          <TopProgress progressRatio={progressRatio} onBack={() => void handleSaveAndExit()} />
 
           <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">
             {currentIndex + 1} / {questions.length} · Level {selectedLevel}
@@ -638,7 +708,7 @@ export default function Balance100Page() {
             골라봐요 :)
           </h1>
           <p className="mt-4 break-keep text-[14px] font-bold leading-6 text-[#9A9A9A]">
-            선택하면 바로 저장되고, 다음 버튼으로 넘길 수 있어요.
+            선택은 화면에만 바로 반영돼요. 나갈 때 현재 단계까지만 저장합니다.
           </p>
 
           <div className="mt-10 grid gap-4">
@@ -663,14 +733,22 @@ export default function Balance100Page() {
               disabled={isSaving || !answeredValue}
               onClick={() => {
                 if (currentIndex >= questions.length - 1) {
-                  if (isCompleted) setMode("result");
+                  if (isCompleted) void handleFinishQuiz();
                   return;
                 }
                 setCurrentIndex((prev) => Math.min(questions.length - 1, prev + 1));
               }}
             >
-              {currentIndex >= questions.length - 1 ? "결과 보기" : "다음"}
+              {isSaving ? "저장 중..." : currentIndex >= questions.length - 1 ? "결과 보기" : "다음"}
             </PrimaryButton>
+            <button
+              type="button"
+              onClick={() => void handleSaveAndExit()}
+              disabled={isSaving}
+              className="h-[54px] rounded-[28px] border border-[#D9F7E5] bg-[#F0FFF7] text-[15px] font-black text-[#20D879] disabled:opacity-50"
+            >
+              {isSaving ? "저장 중..." : "저장하고 나가기"}
+            </button>
             {currentIndex > 0 && (
               <button
                 type="button"
@@ -733,6 +811,50 @@ export default function Balance100Page() {
                   </div>
                   <p className="mt-1 text-[12px] font-bold leading-5 text-[#6B7280] break-keep">{level.description}</p>
                 </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {completedSessions.length > 0 && (
+          <section className="mt-5">
+            <p className="px-1 text-[13px] font-black text-[#111827]">완료한 레벨</p>
+            <div className="mt-3 grid gap-3">
+              {completedSessions.map((session) => (
+                <div
+                  key={session.sessionId}
+                  className="rounded-[26px] border border-[#D9F7E5] bg-[#F0FFF7] p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[15px] font-black text-black">Lv.{session.level} 완료</p>
+                      <p className="mt-1 truncate text-[12px] font-bold text-[#6B7280]">
+                        {session.result?.typeTitle ?? "결과 완료"} · {formatShortDate(session.completedAt ?? session.updatedAt)}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black text-[#20D879]">
+                      저장됨
+                    </span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openCompletedResult(session)}
+                      className="h-[46px] rounded-[24px] bg-white text-[13px] font-black text-[#111827]"
+                    >
+                      결과 보기
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void sharePredictionForSession(session.sessionId, session.level)}
+                      disabled={isSaving}
+                      className="h-[46px] rounded-[24px] text-[13px] font-black text-white disabled:opacity-50"
+                      style={{ backgroundColor: GREEN }}
+                    >
+                      내가 보는 너 공유
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           </section>
