@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import HowToFlow from "@/components/how-to/HowToFlow";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuditionAvailability } from "@/hooks/useAuditionAvailability";
+import { useLabNotificationSummary } from "@/hooks/useLabNotifications";
 import { useRecentPhotos } from "@/hooks/useRecentPhotos";
 import {
   readHowToHiddenPreference,
@@ -170,6 +171,7 @@ export default function Studio() {
   const likingShowcaseUserIdsRef = useRef<Set<string>>(new Set());
   const router = useRouter();
   const { user, loading, login } = useAuth();
+  const { unreadTotal: labUnreadTotal } = useLabNotificationSummary(Boolean(user));
   const { isLoading: isAuditionLoading, isVisible: isAuditionVisible, isEnabled: isAuditionEnabled } = useAuditionAvailability();
   const {
     recentPhotos,
@@ -1335,6 +1337,8 @@ export default function Studio() {
       <ToastContainer toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
       <style>{`
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes labNoticeIn { from { opacity: 0; transform: translateX(8px) scale(0.96); } to { opacity: 1; transform: translateX(0) scale(1); } }
+        @keyframes labNoticePulse { 0%, 100% { box-shadow: 0 0 0 rgba(201, 87, 26, 0); } 50% { box-shadow: 0 0 18px rgba(201, 87, 26, 0.28); } }
       `}</style>
       <div className="min-h-screen bg-[#F5F5F5] flex flex-col">
 
@@ -1354,6 +1358,20 @@ export default function Studio() {
                   </svg>
                   <span className="text-[11px] text-[#C9571A] font-bold">{credits !== null ? `${credits}크레딧` : "충전"}</span>
                 </Link>
+                {labUnreadTotal > 0 && (
+                  <Link
+                    href="/mypage?tab=lab"
+                    aria-label={`실험실 새 응답 ${labUnreadTotal}개 보기`}
+                    className="flex h-8 items-center gap-1.5 rounded-full border border-[#C9571A]/15 bg-white px-2.5 text-[10px] font-black tracking-[-0.03em] text-[#C9571A] shadow-[0_8px_24px_rgba(201,87,26,0.12)]"
+                    style={{ animation: "labNoticeIn 220ms ease-out, labNoticePulse 2.4s ease-in-out infinite" }}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#C9571A]" />
+                    <span>새 응답</span>
+                    <span className="rounded-full bg-[#C9571A] px-1.5 py-0.5 text-[9px] leading-none text-white">
+                      {labUnreadTotal > 99 ? "99+" : labUnreadTotal}
+                    </span>
+                  </Link>
+                )}
                 <button
                   type="button"
                   aria-label="메뉴 열기"

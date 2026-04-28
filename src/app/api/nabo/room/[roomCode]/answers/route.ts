@@ -10,7 +10,7 @@ import { readSessionFromRequest } from "@/lib/auth-session";
 import { loadNaboFeatureControl } from "@/lib/style-controls.server";
 
 type RouteContext = { params: Promise<{ roomCode: string }> };
-const TEXT_QUESTION_IDS = new Set(["q2", "q4", "q8"]);
+const TEXT_QUESTION_IDS = new Set(["q14"]);
 
 function toBasicAnswers(answers: NaboAnswerMap) {
   return Object.fromEntries(

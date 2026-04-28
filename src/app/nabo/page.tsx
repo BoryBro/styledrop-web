@@ -39,7 +39,6 @@ type KakaoShareSDK = {
   };
 };
 
-const EXTRA = "기타 (직접 입력) ✏️";
 const LOCK_MS = 24 * 60 * 60 * 1000;
 const BASIC_RESULT_COUNT = 3;
 const FULL_RESULT_COUNT = 5;
@@ -60,25 +59,58 @@ const SPACE_STARS = [
   ["94%", "48%", 2, "rgba(196,181,253,0.75)"],
 ] as const;
 
-// ── 12문항 정의 ───────────────────────────────────────────────────
+// ── 15문항 정의 ───────────────────────────────────────────────────
 const QS = [
   {
     id: "q0", emoji: "👀", short: "첫인상",
     text: (n: string) => `${n}의 첫인상은?`,
     type: "choice" as const,
-    options: ["따뜻하고 포근해 ☀️", "시크하고 쿨해 ❄️", "밝고 에너지 넘쳐 ⚡", "조용하고 신비로워 🌙", "웃기고 유쾌해 😂", "카리스마 있어 🔥"],
+    options: [
+      "따뜻하고 편해 보여",
+      "밝고 에너지 있어 보여",
+      "조용하고 신비로워 보여",
+      "시크하고 거리감 있어 보여",
+      "까칠하고 예민해 보여",
+      "싸가지 없어 보이는데 끌려",
+      "웃기고 가벼워 보여",
+      "똑똑하고 눈치 빨라 보여",
+      "자기 세계가 강해 보여",
+      "은근 만만치 않아 보여",
+    ],
   },
   {
     id: "q1", emoji: "💎", short: "핵심 매력",
     text: (n: string) => `${n}의 가장 강한 매력은?`,
     type: "choice" as const,
-    options: ["외모 / 스타일", "말솜씨 / 유머감각", "배려심 / 따뜻함", "능력 / 실력", "자신감 / 존재감", "순수함 / 솔직함"],
+    options: [
+      "외모 / 스타일",
+      "말솜씨 / 유머감각",
+      "배려심 / 따뜻함",
+      "능력 / 실력",
+      "자신감 / 존재감",
+      "순수함 / 솔직함",
+      "재력 / 여유",
+      "센스 / 눈치",
+      "분위기 / 아우라",
+      "성실함 / 책임감",
+    ],
   },
   {
     id: "q2", emoji: "😅", short: "아쉬운 점",
     text: (n: string) => `솔직히 ${n}의 은근 거슬리는 점은?`,
-    type: "text" as const,
-    placeholder: "솔직하게 써줘 👀 (너무 심한 말 제외)",
+    type: "choice" as const,
+    options: [
+      "말투가 가끔 날카로워",
+      "감정 표현이 적어서 헷갈려",
+      "자기 기준이 너무 강해",
+      "답장이 느린 편이야",
+      "장난이 가끔 선을 넘어",
+      "생각보다 고집이 세",
+      "괜찮다면서 티가 나",
+      "관심 없는 척을 많이 해",
+      "급할 때 주변을 못 봐",
+      "딱히 크게 거슬리는 건 없어",
+    ],
   },
   {
     id: "q3", emoji: "🎯", short: "케미 점수",
@@ -89,20 +121,53 @@ const QS = [
   {
     id: "q4", emoji: "🌟", short: "의외의 매력",
     text: (n: string) => `${n}이 모르는 자신의 의외의 매력은?`,
-    type: "text" as const,
-    placeholder: "직접 말하기 어려웠던 것을 여기서 전해줘",
+    type: "choice" as const,
+    options: [
+      "생각보다 다정한 순간이 있어",
+      "말없이 챙기는 게 보여",
+      "진지할 때 분위기가 달라져",
+      "은근 허당인 점이 귀여워",
+      "혼자 있을 때 멋있어 보여",
+      "상대 기분을 잘 읽어",
+      "자기 일에 집중할 때 매력 있어",
+      "웃을 때 분위기가 풀려",
+      "기대보다 훨씬 솔직해",
+      "작은 디테일을 기억해",
+    ],
   },
   {
     id: "q5", emoji: "😤", short: "화낼 때",
     text: (n: string) => `${n}이 화가 났을 때 어떨 것 같아?`,
     type: "choice" as const,
-    options: ["혼자 조용히 삭히는 타입", "바로 직접 말하는 타입", "냉랭하게 거리 두는 타입", "표정만으로 다 티나는 타입", "한참 후에 한 번에 터지는 타입"],
+    options: [
+      "혼자 조용히 삭히는 타입",
+      "바로 직접 말하는 타입",
+      "냉랭하게 거리 두는 타입",
+      "표정만으로 다 티나는 타입",
+      "한참 후에 한 번에 터지는 타입",
+      "말수부터 확 줄어드는 타입",
+      "농담처럼 돌려 말하는 타입",
+      "상대가 사과할 때까지 기다리는 타입",
+      "금방 풀리지만 티는 내는 타입",
+      "논리로 끝까지 따지는 타입",
+    ],
   },
   {
     id: "q6", emoji: "💘", short: "연애 스타일",
     text: (n: string) => `${n}의 연애 스타일은?`,
     type: "choice" as const,
-    options: ["다정다감한 표현형 💌", "묵묵히 챙겨주는 행동형 🤲", "자유롭고 쿨한 독립형 🕊️", "올인하는 열정형 🔥", "아직 잘 모르겠어"],
+    options: [
+      "다정다감한 표현형",
+      "묵묵히 챙겨주는 행동형",
+      "자유롭고 쿨한 독립형",
+      "올인하는 열정형",
+      "친구처럼 편한 연애형",
+      "밀당에 은근 강한 타입",
+      "표현은 적지만 깊은 타입",
+      "상대에게 맞춰주는 타입",
+      "자존심 때문에 늦게 다가가는 타입",
+      "아직 잘 모르겠어",
+    ],
   },
   {
     id: "q7", emoji: "😂", short: "재미 지수",
@@ -111,22 +176,50 @@ const QS = [
     labels: ["개노잼", "개꿀잼"] as [string, string],
   },
   {
-    id: "q8", emoji: "✉️", short: "익명 한마디",
-    text: (n: string) => `${n}께 익명으로 하고 싶은 말은?`,
-    type: "text" as const,
-    placeholder: "용기 내서 한마디만 남겨줘 (욕설 제외)",
+    id: "q8", emoji: "🧭", short: "관계 포지션",
+    text: (n: string) => `${n}은 사람들 사이에서 어떤 포지션이야?`,
+    type: "choice" as const,
+    options: [
+      "분위기를 살리는 사람",
+      "조용히 중심을 잡는 사람",
+      "은근 모두를 챙기는 사람",
+      "필요할 때 딱 나타나는 사람",
+      "장난으로 긴장을 푸는 사람",
+      "한마디가 꽤 센 사람",
+      "기억에 오래 남는 사람",
+      "알수록 편해지는 사람",
+      "쉽게 다가가기 어려운 사람",
+      "없으면 허전한 사람",
+    ],
   },
   {
     id: "q9", emoji: "🐾", short: "동물 유형",
     text: (n: string) => `${n}을 동물에 비유하면?`,
     type: "choice" as const,
-    options: ["강아지 🐶 (충성·애교)", "고양이 🐱 (도도·독립적)", "토끼 🐰 (순수·귀여움)", "사자 🦁 (카리스마·리더십)", "판다 🐼 (희귀·유니크)", "여우 🦊 (영리·매력적)"],
+    options: [
+      "강아지", "고양이", "토끼", "여우", "사자",
+      "호랑이", "곰", "늑대", "사슴", "말",
+      "펭귄", "고래", "돌고래", "판다", "코알라",
+      "부엉이", "독수리", "햄스터", "수달", "고슴도치",
+      "알파카", "양", "치타", "기린", "다람쥐",
+    ],
   },
   {
     id: "q10", emoji: "🎭", short: "드라마 캐릭터",
     text: (n: string) => `드라마 속 ${n}은 어떤 유형이야?`,
     type: "choice" as const,
-    options: ["주인공형 (항상 중심에 있어)", "서브 주인공형 (조연인데 더 매력적)", "빌런형 (매력 있는 반전)", "힐링형 (보기만 해도 편안해)", "미스터리형 (뭔가 더 있어 보여)"],
+    options: [
+      "주인공형",
+      "서브 주인공형",
+      "빌런인데 인기 많은 형",
+      "힐링 담당형",
+      "미스터리형",
+      "겉차속따형",
+      "성장 서사형",
+      "분위기 메이커형",
+      "천재 조력자형",
+      "마지막에 반전 주는 형",
+    ],
   },
   {
     id: "q11", emoji: "💫", short: "친밀도",
@@ -134,20 +227,56 @@ const QS = [
     type: "slider" as const,
     labels: ["거의 모르는 사이", "평생 찐친"] as [string, string],
   },
+  {
+    id: "q12", emoji: "💕", short: "연애 가능성",
+    text: (n: string) => `${n}이 이성이었다면, 사귈 수 있어?`,
+    type: "slider" as const,
+    labels: ["절대 아님", "바로 가능"] as [string, string],
+    step: 25,
+    marks: ["절대 아님", "아마 어려워", "모르겠어", "꽤 가능", "바로 가능"],
+  },
+  {
+    id: "q13", emoji: "🪞", short: "기억 방식",
+    text: (n: string) => `사람들은 ${n}을 어떤 사람으로 기억할까?`,
+    type: "choice" as const,
+    options: [
+      "계속 생각나는 사람",
+      "편해서 다시 찾는 사람",
+      "말보다 행동이 남는 사람",
+      "첫인상보다 오래 괜찮은 사람",
+      "가끔 문득 궁금한 사람",
+      "친해질수록 다른 사람",
+      "분위기 자체가 선명한 사람",
+      "속을 알기 어려운 사람",
+      "자기 색이 확실한 사람",
+      "한 번쯤 더 보고 싶은 사람",
+    ],
+  },
+  {
+    id: "q14", emoji: "💬", short: "10글자 한마디",
+    text: (n: string) => `10글자로 ${n}에게 한마디한다면?`,
+    type: "text" as const,
+    placeholder: "10글자 안으로만",
+    maxLength: 10,
+  },
 ];
 
 // ── 시뮬레이션 응답 5개 ───────────────────────────────────────────
 const MOCK: AnsMap[] = [
-  { q0: "밝고 에너지 넘쳐 ⚡", q1: "말솜씨 / 유머감각", q2: "가끔 텐션이 좀 높음", q3: 82, q4: "웃을 때 눈이 진짜 예뻐", q5: "혼자 조용히 삭히는 타입", q6: "묵묵히 챙겨주는 행동형 🤲", q7: 88, q8: "있어줘서 고마워", q9: "강아지 🐶 (충성·애교)", q10: "주인공형 (항상 중심에 있어)", q11: 78 },
-  { q0: "따뜻하고 포근해 ☀️",  q1: "배려심 / 따뜻함",   q2: "너무 많이 배려해서 오히려 미안함", q3: 91, q4: "조용히 먼저 챙겨주는 거", q5: "표정만으로 다 티나는 타입", q6: "다정다감한 표현형 💌",    q7: 74, q8: "네 옆에 있으면 편해",   q9: "판다 🐼 (희귀·유니크)",     q10: "힐링형 (보기만 해도 편안해)", q11: 88 },
-  { q0: "밝고 에너지 넘쳐 ⚡", q1: "말솜씨 / 유머감각", q2: "약속 시간 가끔 늦음",         q3: 76, q4: "진지할 때 완전 다른 사람 같음", q5: "바로 직접 말하는 타입",      q6: "자유롭고 쿨한 독립형 🕊️", q7: 95, q8: "같이 있으면 시간 빨리 감", q9: "강아지 🐶 (충성·애교)",     q10: "주인공형 (항상 중심에 있어)", q11: 82 },
-  { q0: "조용하고 신비로워 🌙", q1: "순수함 / 솔직함",   q2: "처음에 다가가기 좀 어려웠음",  q3: 68, q4: "알고 보면 진짜 재밌음",         q5: "냉랭하게 거리 두는 타입",    q6: "묵묵히 챙겨주는 행동형 🤲", q7: 72, q8: "더 친해지고 싶다",      q9: "고양이 🐱 (도도·독립적)",   q10: "서브 주인공형 (조연인데 더 매력적)", q11: 65 },
-  { q0: "시크하고 쿨해 ❄️",    q1: "자신감 / 존재감",   q2: "완벽주의 성향이 가끔 부담됨",  q3: 74, q4: "뒤에서 말없이 도와주는 거",       q5: "혼자 조용히 삭히는 타입",    q6: "올인하는 열정형 🔥",        q7: 80, q8: "겉이랑 속이 많이 달라서 놀람", q9: "여우 🦊 (영리·매력적)", q10: "미스터리형 (뭔가 더 있어 보여)", q11: 70 },
+  { q0: "밝고 에너지 있어 보여", q1: "말솜씨 / 유머감각", q2: "장난이 가끔 선을 넘어", q3: 82, q4: "웃을 때 분위기가 풀려", q5: "혼자 조용히 삭히는 타입", q6: "묵묵히 챙겨주는 행동형", q7: 88, q8: "분위기를 살리는 사람", q9: "강아지", q10: "주인공형", q11: 78, q12: 75, q13: "계속 생각나는 사람", q14: "늘응원해" },
+  { q0: "따뜻하고 편해 보여", q1: "배려심 / 따뜻함", q2: "괜찮다면서 티가 나", q3: 91, q4: "말없이 챙기는 게 보여", q5: "표정만으로 다 티나는 타입", q6: "다정다감한 표현형", q7: 74, q8: "은근 모두를 챙기는 사람", q9: "판다", q10: "힐링 담당형", q11: 88, q12: 50, q13: "편해서 다시 찾는 사람", q14: "편해서좋아" },
+  { q0: "은근 만만치 않아 보여", q1: "센스 / 눈치", q2: "생각보다 고집이 세", q3: 76, q4: "진지할 때 분위기가 달라져", q5: "바로 직접 말하는 타입", q6: "자유롭고 쿨한 독립형", q7: 95, q8: "한마디가 꽤 센 사람", q9: "여우", q10: "빌런인데 인기 많은 형", q11: 82, q12: 25, q13: "자기 색이 확실한 사람", q14: "계속웃자" },
+  { q0: "조용하고 신비로워 보여", q1: "순수함 / 솔직함", q2: "감정 표현이 적어서 헷갈려", q3: 68, q4: "기대보다 훨씬 솔직해", q5: "냉랭하게 거리 두는 타입", q6: "표현은 적지만 깊은 타입", q7: 72, q8: "알수록 편해지는 사람", q9: "고양이", q10: "미스터리형", q11: 65, q12: 50, q13: "친해질수록 다른 사람", q14: "더친해지자" },
+  { q0: "시크하고 거리감 있어 보여", q1: "자신감 / 존재감", q2: "자기 기준이 너무 강해", q3: 74, q4: "자기 일에 집중할 때 매력 있어", q5: "논리로 끝까지 따지는 타입", q6: "올인하는 열정형", q7: 80, q8: "기억에 오래 남는 사람", q9: "늑대", q10: "마지막에 반전 주는 형", q11: 70, q12: 75, q13: "분위기 자체가 선명한 사람", q14: "고마운사람" },
 ];
 
 // ── 집계 ─────────────────────────────────────────────────────────
 const avg = (key: string, rs: AnsMap[]) => {
-  const ns = rs.map(r => Number(r[key])).filter(n => !isNaN(n) && n > 0);
+  const ns = rs
+    .map(r => r[key])
+    .filter(v => typeof v !== "undefined" && v !== "")
+    .map(v => Number(v))
+    .filter(n => !isNaN(n));
   return ns.length ? Math.round(ns.reduce((a, b) => a + b, 0) / ns.length) : 0;
 };
 const top = (key: string, rs: AnsMap[]) => {
@@ -270,7 +399,6 @@ export default function NaboPage() {
   const [responses, setResponses]     = useState<AnsMap[]>([]);
   const [qIdx, setQIdx]               = useState(0);
   const [curAns, setCurAns]           = useState<string | number>("");
-  const [customAns, setCustomAns]     = useState("");
   const [slider, setSlider]           = useState(50);
   const [curResp, setCurResp]         = useState<AnsMap>({});
   const [now, setNow]                 = useState(Date.now());
@@ -513,7 +641,6 @@ export default function NaboPage() {
     setCopied(false);
     setQIdx(0);
     setCurAns("");
-    setCustomAns("");
     setSlider(50);
     setCurResp({});
     setRoomCode("");
@@ -695,12 +822,49 @@ export default function NaboPage() {
     }
   };
 
+  // ── 질문 표시 helper ─────────────────────────────────────────
+  const getOptions = (q: typeof QS[0]) => {
+    if (q.type !== "choice") return [];
+    return (q as { options?: string[] }).options ?? [];
+  };
+
+  const getPlaceholder = (q: typeof QS[0]) =>
+    q.type === "text" ? ((q as { placeholder?: string }).placeholder ?? "") : "";
+
+  const getTextMaxLength = (q: typeof QS[0]) =>
+    q.type === "text" ? ((q as { maxLength?: number }).maxLength ?? undefined) : undefined;
+
+  const getSliderStep = (q: typeof QS[0]) =>
+    q.type === "slider" ? ((q as { step?: number }).step ?? 1) : 1;
+
+  const getSliderMarks = (q: typeof QS[0]) =>
+    q.type === "slider" ? ((q as { marks?: string[] }).marks ?? null) : null;
+
+  const getSliderMarkLabel = (q: typeof QS[0], value: number) => {
+    const marks = getSliderMarks(q);
+    if (!marks?.length) return "";
+
+    const stepSize = 100 / (marks.length - 1);
+    const index = Math.min(marks.length - 1, Math.max(0, Math.round(value / stepSize)));
+    return marks[index] ?? "";
+  };
+
+  const formatAnswerValue = (question: typeof QS[0], value: string | number) => {
+    if (question.type !== "slider") return String(value);
+
+    const numeric = Number(value);
+    if (Number.isNaN(numeric)) return String(value);
+
+    const mark = getSliderMarkLabel(question, numeric);
+    return mark ? `${mark} · ${numeric} / 100` : `${numeric} / 100`;
+  };
+
   // ── 질문 진행 ─────────────────────────────────────────────────
   const Q = QS[qIdx];
   const isSlider  = Q?.type === "slider";
-  const isExtra   = curAns === EXTRA;
-  const effectiveAns = isSlider ? slider : isExtra ? customAns : curAns;
-  const canNext = !isSubmittingResponse && (isSlider ? true : isExtra ? customAns.trim().length > 0 : String(curAns).trim().length > 0);
+  const textMaxLength = Q ? getTextMaxLength(Q) : undefined;
+  const effectiveAns = isSlider ? slider : curAns;
+  const canNext = !isSubmittingResponse && (isSlider ? true : String(curAns).trim().length > 0);
 
   const submitResponseToServer = async (answers: AnsMap) => {
     if (!roomCode || !respondentToken || viewerRole !== "respondent") return false;
@@ -747,31 +911,23 @@ export default function NaboPage() {
   };
 
   const advance = async () => {
-    const stored = isExtra ? (customAns.trim() || "기타") : effectiveAns;
+    const rawStored = effectiveAns;
+    const stored = Q.type === "text" && textMaxLength ? String(rawStored).slice(0, textMaxLength) : rawStored;
     const updated = { ...curResp, [Q.id]: stored };
     setCurResp(updated);
     if (qIdx < QS.length - 1) {
       setQIdx(i => i + 1);
-      setCurAns(""); setCustomAns(""); setSlider(50);
+      setCurAns(""); setSlider(50);
     } else {
       const savedToServer = await submitResponseToServer(updated);
       if (viewerRole === "respondent" && !savedToServer) return;
 
       setResponses(rs => [...rs, updated]);
-      setCurResp({}); setQIdx(0); setCurAns(""); setCustomAns(""); setSlider(50);
+      setCurResp({}); setQIdx(0); setCurAns(""); setSlider(50);
       void trackClientEvent("lab_nabo_response_completed");
       goTo("waiting");
     }
   };
-
-  // ── getOptions helper ─────────────────────────────────────────
-  const getOptions = (q: typeof QS[0]) => {
-    if (q.type !== "choice") return [];
-    return [...((q as { options?: string[] }).options ?? []), EXTRA];
-  };
-
-  const getPlaceholder = (q: typeof QS[0]) =>
-    q.type === "text" ? ((q as { placeholder?: string }).placeholder ?? "") : "";
 
   // ── 결과 진입 시 서버 answers 자동 fetch ──────────────────────
   useEffect(() => {
@@ -784,22 +940,26 @@ export default function NaboPage() {
   // 우선순위: 서버 answers → 로컬 responses → MOCK(잠금 상태 미리보기용)
   const actualAnswers = serverAnswers.length > 0 ? serverAnswers : responses;
   const R = actualAnswers.length > 0 ? actualAnswers : canSeeResults ? [] : MOCK;
-  const reportCount = serverAnswers.length > 0 ? serverAnswers.length : serverResponseCount;
+  const reportCount = Math.max(serverResponseCount, actualAnswers.length);
+  const fullResultRemaining = Math.max(0, FULL_RESULT_COUNT - reportCount);
   const selectedAnswer = actualAnswers[selectedAnswerIndex] ?? null;
   const selectedRespondentName = getRespondentName(selectedAnswer, selectedAnswerIndex);
   const chemAvg     = avg("q3", R);
   const funAvg      = avg("q7", R);
   const intimAvg    = avg("q11", R);
+  const romanceAvg  = avg("q12", R);
   const overallScore = Math.round((chemAvg + funAvg + intimAvg) / 3);
   const topDrama    = top("q10", R)[0]?.[0] ?? "";
   const imprDist    = top("q0", R);
   const charmDist   = top("q1", R);
+  const annoyanceDist = top("q2", R);
+  const surpriseDist  = top("q4", R);
   const topAnimal   = top("q9", R)[0]?.[0] ?? "";
   const topAnger    = top("q5", R)[0]?.[0] ?? "";
   const topDating   = top("q6", R)[0]?.[0] ?? "";
-  const messages    = texts("q8", R);
-  const charms      = texts("q4", R);
-  const annoyances  = texts("q2", R);
+  const topPosition = top("q8", R)[0]?.[0] ?? "";
+  const topMemory   = top("q13", R)[0]?.[0] ?? "";
+  const oneLiners   = texts("q14", R);
 
   // ─────────────────────────────────────────────────────────────
   if (authLoading) {
@@ -870,7 +1030,7 @@ export default function NaboPage() {
             <h1 className="text-[34px] font-black text-gray-900 leading-[1.12] mb-5">나는 친구들 눈에<br />어떻게 보일까?</h1>
             <p className="text-[16px] text-gray-500 leading-relaxed max-w-[280px]">
               3명이 답하면 기본 결과가 열리고<br />
-              <span className="text-[14px]" style={{ color: G.text }}>5명이 답하면 익명 한마디까지 보여요</span>
+              <span className="text-[14px]" style={{ color: G.text }}>5명이 답하면 10글자 한마디까지 보여요</span>
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               {["3명 기본 공개", "5명 전체 공개", "24시간 후 공개"].map(tag => (
@@ -885,7 +1045,7 @@ export default function NaboPage() {
             {[
               { num: "01", en: "CREATE",   ko: "링크를 만들어요",        desc: "닉네임을 설정하고\n익명 초대 링크를 생성해요." },
               { num: "02", en: "SHARE",    ko: "친구에게 보내요",          desc: "친구, 동료, 지인 누구에게나 공유해요.\n3명 이상 모이면 익명성이 더 안전해져요." },
-              { num: "03", en: "ANSWER",   ko: "12가지 질문에 답해요",   desc: "첫인상·매력·단점·연애 스타일까지\n솔직하게 답해요." },
+              { num: "03", en: "ANSWER",   ko: "15가지 질문에 답해요",   desc: "첫인상·매력·단점·연애 스타일까지\n솔직하게 답해요." },
               { num: "04", en: "WAIT 24H", ko: "24시간 후 결과 공개",    desc: "3명부터 기본 결과,\n5명부터 전체 익명 리포트가 열려요." },
             ].map(f => (
               <div key={f.num} className="flex gap-4 items-start">
@@ -1022,7 +1182,7 @@ export default function NaboPage() {
               <div className="flex flex-col gap-3">
                 {[
                   { code: "01", text: "3명이 답하면 기본 결과가 열려요" },
-                  { code: "02", text: "5명이 답하면 익명 한마디까지 보여요" },
+                  { code: "02", text: "5명이 답하면 10글자 한마디까지 보여요" },
                   { code: "03", text: "새 링크는 24시간 후 다시 만들 수 있어요" },
                   { code: "04", text: "응답이 적을 땐 추측 방지를 위해 일부를 숨겨요" },
                 ].map(({ code, text }) => (
@@ -1257,49 +1417,65 @@ export default function NaboPage() {
             </div>
 
             {Q.type === "choice" && (
-              <div className="flex flex-col gap-2">
-                {getOptions(Q).map(opt => (
-                  <button key={opt} onClick={() => { setCurAns(opt); if (opt !== EXTRA) setCustomAns(""); }}
-                    className="w-full rounded-2xl border px-4 py-3.5 text-left font-semibold text-[15px] transition-all"
-                    style={{
-                      borderColor: curAns === opt ? G.mid : "#E5E7EB",
-                      background: curAns === opt ? G.bg : "white",
-                      color: curAns === opt ? G.text : "#374151",
-                      fontStyle: opt === EXTRA ? "italic" : "normal",
-                    }}>
-                    {opt}
-                  </button>
-                ))}
-                {isExtra && (
-                  <input autoFocus
-                    value={customAns} onChange={e => setCustomAns(e.target.value)}
-                    placeholder="직접 입력해줘..."
-                    className="w-full rounded-2xl border px-4 py-3.5 text-[15px] font-semibold text-gray-900 bg-white outline-none"
-                    style={{ borderColor: customAns ? G.mid : "#E5E7EB" }}
-                  />
-                )}
-              </div>
+              (() => {
+                const isAnimalQuestion = Q.id === "q9";
+                return (
+                  <div className={isAnimalQuestion ? "grid grid-cols-5 gap-2" : "flex flex-col gap-2"}>
+                    {getOptions(Q).map(opt => (
+                      <button
+                        key={opt}
+                        onClick={() => setCurAns(opt)}
+                        className={
+                          isAnimalQuestion
+                            ? "min-h-[52px] w-full rounded-xl border px-1.5 py-2.5 text-center text-[12px] font-black leading-tight break-keep transition-all"
+                            : "w-full rounded-2xl border px-4 py-3.5 text-left text-[15px] font-semibold transition-all"
+                        }
+                        style={{
+                          borderColor: curAns === opt ? G.mid : "#E5E7EB",
+                          background: curAns === opt ? G.bg : "white",
+                          color: curAns === opt ? G.text : "#374151",
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()
             )}
 
             {Q.type === "text" && (
-              <textarea
-                value={String(curAns)} onChange={e => setCurAns(e.target.value)}
-                placeholder={getPlaceholder(Q)} rows={3}
-                className="w-full rounded-2xl border px-4 py-4 text-[15px] font-semibold text-gray-900 bg-white outline-none resize-none"
-                style={{ borderColor: curAns ? G.mid : "#E5E7EB" }}
-              />
+              <div className="flex flex-col gap-2">
+                <textarea
+                  value={String(curAns)}
+                  onChange={e => setCurAns(textMaxLength ? e.target.value.slice(0, textMaxLength) : e.target.value)}
+                  placeholder={getPlaceholder(Q)}
+                  rows={2}
+                  maxLength={textMaxLength}
+                  className="w-full rounded-2xl border px-4 py-4 text-[15px] font-semibold text-gray-900 bg-white outline-none resize-none"
+                  style={{ borderColor: curAns ? G.mid : "#E5E7EB" }}
+                />
+                {textMaxLength && (
+                  <p className="text-right text-[12px] font-bold text-gray-400">
+                    {String(curAns).length}/{textMaxLength}
+                  </p>
+                )}
+              </div>
             )}
 
             {Q.type === "slider" && (
               <div className="flex flex-col gap-5">
                 <style>{`.nabo-sl::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:${G.mid};cursor:pointer;box-shadow:0 2px 8px rgba(34,197,94,0.45)}.nabo-sl::-webkit-slider-runnable-track{height:7px;border-radius:4px;background:linear-gradient(to right,${G.mid} var(--v,50%),#E5E7EB var(--v,50%))}.nabo-sl{-webkit-appearance:none;appearance:none;outline:none}`}</style>
-                <input type="range" min={0} max={100} value={slider} onChange={e => setSlider(Number(e.target.value))}
+                <input type="range" min={0} max={100} step={getSliderStep(Q)} value={slider} onChange={e => setSlider(Number(e.target.value))}
                   className="w-full nabo-sl" style={{ "--v": `${slider}%` } as React.CSSProperties} />
                 <div className="flex justify-between text-[12px] font-bold text-gray-400">
                   <span>{Q.labels![0]}</span><span>{Q.labels![1]}</span>
                 </div>
                 <div className="flex items-center justify-center">
                   <div className="px-8 py-3 rounded-2xl text-center" style={{ background: G.bg, border: `1px solid ${G.border}` }}>
+                    {getSliderMarkLabel(Q, slider) && (
+                      <p className="mb-1 text-[13px] font-black" style={{ color: G.text }}>{getSliderMarkLabel(Q, slider)}</p>
+                    )}
                     <span className="text-[40px] font-black leading-none" style={{ color: G.mid }}>{slider}</span>
                     <span className="text-[14px] text-gray-400 ml-1">/ 100</span>
                   </div>
@@ -1346,7 +1522,7 @@ export default function NaboPage() {
           <section className="px-6 pt-10 pb-6 text-center">
             <p className="text-[11px] font-black tracking-[0.3em] uppercase mb-3" style={{ color: G.mid }}>관계 분석 완료</p>
             <h2 className="text-[28px] font-black text-gray-900 leading-tight mb-1">{reportCount}명이 본 {myName}</h2>
-            <p className="text-[13px] text-gray-400">익명 응답자 {reportCount}명 기준 · {new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}</p>
+            <p className="text-[13px] text-gray-400">익명 응답자 {reportCount}명의 결과 · {new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}</p>
           </section>
 
           {actualAnswers.length > 0 && (
@@ -1382,8 +1558,8 @@ export default function NaboPage() {
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 mt-5">
-              {[["케미", chemAvg], ["재미", funAvg], ["친밀도", intimAvg]].map(([k, v]) => (
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              {[["케미", chemAvg], ["재미", funAvg], ["친밀도", intimAvg], ["연애 가능성", romanceAvg]].map(([k, v]) => (
                 <div key={k} className="bg-white rounded-2xl py-3 text-center">
                   <p className="text-[10px] font-bold text-gray-400">{k}</p>
                   <p className="text-[22px] font-black" style={{ color: G.mid }}>{v}</p>
@@ -1427,13 +1603,15 @@ export default function NaboPage() {
                 </div>
               </section>
 
-              {/* 유형 카드 4종 */}
+              {/* 유형 카드 */}
               <section className="mx-6 grid grid-cols-2 gap-3 mb-4">
                 {[
-                  { title: "동물 유형",   val: topAnimal.split(" (")[0],                                           emoji: "🐾" },
-                  { title: "화낼 때",     val: topAnger,                                                            emoji: "😤" },
-                  { title: "연애 스타일", val: topDating.replace(/ 🕊️|💌|🤲|🔥/g, "").split(" (")[0].trim(), emoji: "💘" },
-                  { title: "드라마 유형", val: topDrama.split(" (")[0],                                            emoji: "🎭" },
+                  { title: "동물 유형",   val: topAnimal,   emoji: "🐾" },
+                  { title: "화낼 때",     val: topAnger,    emoji: "😤" },
+                  { title: "연애 스타일", val: topDating,   emoji: "💘" },
+                  { title: "드라마 유형", val: topDrama,    emoji: "🎭" },
+                  { title: "관계 포지션", val: topPosition, emoji: "🧭" },
+                  { title: "기억 방식",   val: topMemory,   emoji: "🪞" },
                 ].map(({ title, val, emoji }) => (
                   <div key={title} className="rounded-2xl border border-gray-100 bg-white px-4 py-4">
                     <p className="text-[10px] font-bold text-gray-400 mb-1">{emoji} {title}</p>
@@ -1446,29 +1624,25 @@ export default function NaboPage() {
                 <>
                   {/* 의외의 매력 */}
                   <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">🌟 발견된 의외의 매력</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-4">🌟 의외의 매력 분포</p>
                     <div className="flex flex-col gap-3">
-                      {charms.map((c, i) => (
-                        <div key={i} className="rounded-xl px-4 py-3 text-[14px] text-gray-700 leading-relaxed" style={{ background: G.bg }}>&ldquo;{c}&rdquo;</div>
-                      ))}
+                      {surpriseDist.map(([label, cnt]) => <BarRow key={label} label={label} count={cnt} total={R.length} />)}
                     </div>
                   </section>
 
                   {/* 아쉬운 점 */}
                   <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">😅 아쉬운 점</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-4">😅 은근 거슬리는 점</p>
                     <div className="flex flex-col gap-3">
-                      {annoyances.map((a, i) => (
-                        <div key={i} className="rounded-xl px-4 py-3 text-[14px] text-gray-700 leading-relaxed border border-gray-100">{a}</div>
-                      ))}
+                      {annoyanceDist.map(([label, cnt]) => <BarRow key={label} label={label} count={cnt} total={R.length} />)}
                     </div>
                   </section>
 
-                  {/* 익명 한마디 */}
+                  {/* 10글자 한마디 */}
                   <section className="mx-6 rounded-2xl border border-gray-100 bg-white px-5 py-5 mb-4">
-                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">✉️ 익명의 한마디</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-3">✉️ 10글자 한마디</p>
                     <div className="flex flex-col gap-2">
-                      {messages.map((msg, i) => (
+                      {oneLiners.map((msg, i) => (
                         <div key={i} className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
                           <p className="text-[14px] text-gray-800 leading-relaxed italic">&ldquo;{msg}&rdquo;</p>
                           <p className="text-[11px] text-gray-400 mt-1">— 익명</p>
@@ -1485,9 +1659,9 @@ export default function NaboPage() {
                     </div>
                     <div>
                       <p className="text-[11px] font-black tracking-[0.25em] uppercase mb-2" style={{ color: G.mid }}>익명 보호 중</p>
-                      <p className="text-[22px] font-black text-white leading-tight mb-2">전체 결과는 5명부터</p>
+                      <p className="text-[22px] font-black text-white leading-tight mb-2">현재 {reportCount}명 / {FULL_RESULT_COUNT}명</p>
                       <p className="text-[13px] leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
-                        의외의 매력 · 아쉬운 점 · 익명 한마디는<br />
+                        의외의 매력 · 아쉬운 점 · 10글자 한마디는<br />
                         누가 썼는지 추측될 수 있어 아직 숨겨둘게요.
                       </p>
                     </div>
@@ -1498,25 +1672,27 @@ export default function NaboPage() {
                     >
                       친구 더 초대하기
                     </button>
-                    <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>{Math.max(0, FULL_RESULT_COUNT - responseCount)}명만 더 답하면 전체 결과가 열려요</p>
+                    <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>{fullResultRemaining}명만 더 답하면 전체 결과가 열려요</p>
                   </div>
                 </section>
               )}
 
-              <div className="px-6 mb-4">
+              <div className="px-6 mb-4 flex flex-col gap-2">
                 <button
-                  onClick={() => {
-                    const text = `나는 ${reportCount}명의 눈에 이렇게 보였어요! 익명 관계 분석 →`;
-                    if (navigator.share) {
-                      navigator.share({ title: `${myName}의 관계 분석 결과`, text, url: `${shareOrigin}/nabo` }).catch(() => {});
-                    } else {
-                      navigator.clipboard.writeText(`${shareOrigin}/nabo`).catch(() => {});
-                    }
-                  }}
-                  className="w-full py-3.5 rounded-2xl border border-gray-200 font-bold text-[15px] text-gray-600 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11 5.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM5 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM11 15.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.25 8.23l1.52 1.52M8.77 4.23l-1.52 1.52" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  결과 공유하기
+                  type="button"
+                  onClick={() => void handleKakaoShareLink()}
+                  disabled={isSharingKakao}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[15px] font-black text-[#191919] transition-all active:scale-[0.98] disabled:opacity-60"
+                  style={{ background: "#FEE500" }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/></svg>
+                  {isSharingKakao ? "카카오 여는 중..." : "카카오로 공유하기"}
                 </button>
+                {copied && (
+                  <p className="text-center text-[12px] font-bold" style={{ color: G.mid }}>
+                    링크가 복사되었습니다.
+                  </p>
+                )}
               </div>
 
               {canStartNewRoom && (
@@ -1560,13 +1736,6 @@ export default function NaboPage() {
             </section>
           ) : (
             <>
-              <section className="mx-6 mb-4 rounded-3xl p-5" style={{ background: G.bg, border: `1px solid ${G.border}` }}>
-                <p className="text-[13px] font-black text-gray-900">한 사람의 시선</p>
-                <p className="mt-2 break-keep text-[15px] leading-7 text-gray-600">
-                  응답이 추가되면 이 화면에서 사람별 결과를 계속 확인할 수 있어요.
-                </p>
-              </section>
-
               <section className="mx-6 flex flex-col gap-3">
                 {QS.map((question) => {
                   const value = selectedAnswer[question.id];
@@ -1575,7 +1744,7 @@ export default function NaboPage() {
                     <article key={question.id} className="rounded-2xl border border-gray-100 bg-white px-5 py-4">
                       <p className="text-[12px] font-black text-gray-400">{question.emoji} {question.short}</p>
                       <p className="mt-2 break-keep text-[16px] font-black leading-7 text-gray-900">
-                        {question.type === "slider" ? `${value} / 100` : String(value)}
+                        {formatAnswerValue(question, value)}
                       </p>
                     </article>
                   );

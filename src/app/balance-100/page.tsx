@@ -394,6 +394,11 @@ export default function Balance100Page() {
   const progress = useMemo(() => getBalance100Progress(answers, questions), [answers, questions]);
   const isCompleted = progress.answered >= questions.length;
   const trimmedOwnerName = ownerName.trim();
+  const isEmptyInProgressSession = Boolean(
+    serverSession &&
+    serverSession.status === "in_progress" &&
+    progress.answered === 0,
+  );
   const result = useMemo(
     () => {
       if (serverSession?.result) {
@@ -470,7 +475,11 @@ export default function Balance100Page() {
 
   const startQuiz = useCallback(async () => {
     setShareStatus("");
-    if (serverSession) {
+    if (serverSession && isCompleted) {
+      setMode("result");
+      return;
+    }
+    if (serverSession && !(isEmptyInProgressSession && selectedLevel !== serverSession.level)) {
       setCurrentIndex(getFirstUnansweredIndex(answers, questions));
       setMode("quiz");
       return;
@@ -486,7 +495,11 @@ export default function Balance100Page() {
       const response = await fetch("/api/balance-100/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ level: selectedLevel, ownerName: trimmedOwnerName }),
+        body: JSON.stringify({
+          level: selectedLevel,
+          ownerName: trimmedOwnerName,
+          restart: Boolean(serverSession),
+        }),
       });
       const data = await response.json();
       if (!response.ok || !data?.session) throw new Error(data?.error ?? "failed");
@@ -498,7 +511,7 @@ export default function Balance100Page() {
     } finally {
       setIsSaving(false);
     }
-  }, [answers, applySession, questions, selectedLevel, serverSession, trimmedOwnerName]);
+  }, [answers, applySession, isCompleted, isEmptyInProgressSession, questions, selectedLevel, serverSession, trimmedOwnerName]);
 
   const resetQuiz = useCallback(async () => {
     const ok = window.confirm("기존 진행 상태를 닫고 처음부터 다시 시작할까요?");
@@ -536,6 +549,7 @@ export default function Balance100Page() {
       body: JSON.stringify({
         answers: nextAnswers,
         representativeImageUrl: nextImageUrl,
+        ownerName: trimmedOwnerName,
       }),
     });
     const data = await response.json();
@@ -546,6 +560,19 @@ export default function Balance100Page() {
     setSelectedLevel(normalizeBalanceLevel(savedSession.level));
     setRepresentativeImageUrl(savedSession.representativeImageUrl);
     return data.session as BalanceServerSession;
+  }, [trimmedOwnerName]);
+
+  const discardSession = useCallback(async (sessionId: string) => {
+    const response = await fetch(`/api/balance-100/session/${encodeURIComponent(sessionId)}`, {
+      method: "DELETE",
+    });
+    const data = await response.json();
+    if (!response.ok || !data?.ok) throw new Error(data?.error ?? "failed");
+    setServerSession(null);
+    setAnswers({});
+    setMatches([]);
+    setRepresentativeImageUrl(undefined);
+    setCurrentIndex(0);
   }, []);
 
   const pickAnswer = useCallback((value: BalanceAnswerValue) => {
@@ -564,6 +591,11 @@ export default function Balance100Page() {
     setIsSaving(true);
     setShareStatus("");
     try {
+      if (progress.answered === 0) {
+        await discardSession(serverSession.sessionId);
+        router.push("/studio");
+        return;
+      }
       const saved = await saveSession(serverSession.sessionId, answers, representativeImageUrl);
       if (saved.status === "completed") {
         upsertCompletedSession(saved);
@@ -575,7 +607,7 @@ export default function Balance100Page() {
     } finally {
       setIsSaving(false);
     }
-  }, [answers, representativeImageUrl, router, saveSession, serverSession, upsertCompletedSession]);
+  }, [answers, discardSession, progress.answered, representativeImageUrl, router, saveSession, serverSession, upsertCompletedSession]);
 
   const handleFinishQuiz = useCallback(async () => {
     if (!serverSession || !isCompleted) return;
@@ -616,14 +648,17 @@ export default function Balance100Page() {
   }, []);
 
   const createPredictionShareUrl = useCallback(async (sessionId: string) => {
+    const shareOwnerName = (displayOwnerName || ownerName || serverSession?.ownerName || user?.nickname || "").trim();
     const response = await fetch(`/api/balance-100/session/${encodeURIComponent(sessionId)}/prediction-link`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ownerName: shareOwnerName }),
     });
     const data = await response.json();
     if (!response.ok || !data?.path) throw new Error(data?.error ?? "failed");
     if (data.session) upsertCompletedSession(data.session as BalanceServerSession);
     return `${window.location.origin}${data.path}`;
-  }, [upsertCompletedSession]);
+  }, [displayOwnerName, ownerName, serverSession?.ownerName, upsertCompletedSession, user?.nickname]);
 
   const handleKakaoPredictionShare = useCallback(async (sessionId: string, level?: BalanceLevel) => {
     setIsSaving(true);
@@ -847,7 +882,7 @@ export default function Balance100Page() {
         <BalanceIntroHeader />
         <BalanceIntroHero />
 
-        {progress.answered === 0 && !serverSession && (
+        {progress.answered === 0 && (!serverSession || isEmptyInProgressSession) && (
           <section className="border-t border-gray-50 pt-7">
             <div className="px-1">
               <label htmlFor="balance-owner-name" className="text-[13px] font-black text-[#111827]">
@@ -888,7 +923,7 @@ export default function Balance100Page() {
           </section>
         )}
 
-        {progress.answered === 0 && !serverSession && (
+        {progress.answered === 0 && (!serverSession || isEmptyInProgressSession) && (
           <section className="pt-7">
             <p className="px-1 text-[13px] font-black text-[#111827]">난이도 선택</p>
             <div className="-mx-6 mt-3 flex gap-3 overflow-x-auto px-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -923,7 +958,13 @@ export default function Balance100Page() {
 
         <div className="mt-5 grid gap-3">
           <PrimaryButton onClick={startQuiz} disabled={isSaving || (!serverSession && !trimmedOwnerName)}>
-            {isSaving ? "저장 중..." : progress.answered > 0 ? "이어하기" : "시작하기"}
+            {isSaving
+              ? "저장 중..."
+              : isCompleted
+                ? "결과 보기"
+                : progress.answered > 0
+                  ? `Lv.${serverSession?.level ?? selectedLevel} 이어하기`
+                  : `Lv.${selectedLevel} 시작하기`}
           </PrimaryButton>
           {progress.answered > 0 && (
             <button
@@ -992,7 +1033,7 @@ export default function Balance100Page() {
         )}
 
         <div className="mt-auto pt-8 text-[12px] leading-5 text-[#9CA3AF] break-keep">
-          진행 중이면 자동으로 이어서 열립니다. 새 문제 세트는 새로 시작하기를 눌렀을 때만 만들어집니다.
+          아무것도 고르지 않고 나가면 진행 상태를 남기지 않습니다. 다른 레벨은 난이도 선택에서 바로 시작할 수 있어요.
         </div>
       </div>
     </main>

@@ -18,7 +18,9 @@ export async function POST(
   }
 
   const { sessionId } = await context.params;
-  const created = await createBalance100PredictionLink({ sessionId, user: session });
+  const body = await request.json().catch(() => ({}));
+  const ownerName = typeof body?.ownerName === "string" ? body.ownerName : undefined;
+  const created = await createBalance100PredictionLink({ sessionId, user: session, ownerName });
 
   if (created.error || !created.path) {
     return NextResponse.json({ error: created.error ?? "링크를 만들지 못했습니다." }, { status: 500 });

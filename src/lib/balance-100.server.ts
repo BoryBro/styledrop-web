@@ -302,6 +302,7 @@ export async function updateBalance100Session(input: {
   user: AppSession;
   answers?: BalanceAnswers;
   representativeImageUrl?: string;
+  ownerName?: string;
 }) {
   const current = await getBalance100Session(input.sessionId);
   if (current.error || !current.session) {
@@ -321,6 +322,10 @@ export async function updateBalance100Session(input: {
   const now = new Date().toISOString();
   const nextSession: Balance100SessionState = {
     ...current.session,
+    ownerName:
+      typeof input.ownerName === "string"
+        ? sanitizeOwnerName(input.ownerName, current.session.ownerName || input.user.nickname)
+        : current.session.ownerName,
     answers,
     result,
     status: result ? "completed" : "in_progress",
@@ -336,9 +341,35 @@ export async function updateBalance100Session(input: {
   return { session: nextSession, error: null };
 }
 
+export async function discardBalance100Session(input: {
+  sessionId: string;
+  user: AppSession;
+}) {
+  const current = await getBalance100Session(input.sessionId);
+  if (current.error || !current.session) {
+    return { ok: false, error: current.error ?? "session not found" };
+  }
+  if (current.session.ownerUserId !== input.user.id) {
+    return { ok: false, error: "권한이 없습니다." };
+  }
+  if (current.session.status === "closed") {
+    return { ok: true, error: null };
+  }
+
+  const saved = await saveBalance100Session({
+    ...current.session,
+    status: "closed",
+    updatedAt: new Date().toISOString(),
+    version: current.session.version + 1,
+  });
+
+  return { ok: saved.ok, error: saved.error };
+}
+
 export async function createBalance100PredictionLink(input: {
   sessionId: string;
   user: AppSession;
+  ownerName?: string;
 }) {
   const current = await getBalance100Session(input.sessionId);
   if (current.error || !current.session) {
@@ -354,6 +385,10 @@ export async function createBalance100PredictionLink(input: {
   const token = current.session.predictionToken ?? randomId(12);
   const nextSession: Balance100SessionState = {
     ...current.session,
+    ownerName:
+      typeof input.ownerName === "string"
+        ? sanitizeOwnerName(input.ownerName, current.session.ownerName || input.user.nickname)
+        : current.session.ownerName,
     predictionToken: token,
     updatedAt: new Date().toISOString(),
     version: current.session.version + 1,

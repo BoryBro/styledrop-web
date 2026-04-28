@@ -478,6 +478,13 @@ export default function MyPage() {
   }, []);
 
   useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "lab") setHistoryTab("lab");
+    } catch {}
+  }, []);
+
+  useEffect(() => {
     if (loading) return;
     if (!user) {
       setGuestHistory(getGuestHistory());
