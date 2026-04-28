@@ -67,10 +67,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const level = normalizeBalanceLevel(body?.level);
     const restart = Boolean(body?.restart);
+    const ownerName = typeof body?.ownerName === "string" ? body.ownerName : undefined;
     const created = await createBalance100Session({
       user: session,
       level,
       restart,
+      ownerName,
     });
 
     if (created.error || !created.session) {

@@ -107,6 +107,11 @@ function sanitizeAnswers(answers: unknown, level: BalanceLevel): BalanceAnswers 
   ) as BalanceAnswers;
 }
 
+function sanitizeOwnerName(value: unknown, fallback: string) {
+  const name = typeof value === "string" ? value.trim() : "";
+  return (name || fallback || "익명").slice(0, 16);
+}
+
 function buildResult(level: BalanceLevel, answers: BalanceAnswers) {
   const questions = getBalanceQuestions(level);
   const completed = Object.keys(answers).length >= questions.length;
@@ -260,6 +265,7 @@ export async function createBalance100Session(input: {
   restart?: boolean;
   source?: Balance100SessionSource;
   answers?: BalanceAnswers;
+  ownerName?: string;
 }) {
   if (input.restart) {
     await closeOpenBalance100Sessions(input.user.id);
@@ -274,7 +280,7 @@ export async function createBalance100Session(input: {
   const session: Balance100SessionState = {
     sessionId: randomId(8),
     ownerUserId: input.user.id,
-    ownerName: input.user.nickname || "익명",
+    ownerName: sanitizeOwnerName(input.ownerName, input.user.nickname),
     level: input.level,
     answers,
     status: result ? "completed" : "in_progress",
@@ -438,6 +444,7 @@ export async function submitBalance100Prediction(input: {
   token: string;
   user: AppSession;
   answers: BalanceAnswers;
+  predictorName?: string;
 }) {
   const source = await getBalance100SessionByPredictionToken(input.token);
   if (source.error || !source.session) {
@@ -463,6 +470,7 @@ export async function submitBalance100Prediction(input: {
     restart: true,
     source: "prediction",
     answers,
+    ownerName: input.predictorName,
   });
 
   let reverseSharePath: string | null = null;
@@ -482,7 +490,7 @@ export async function submitBalance100Prediction(input: {
     sourceOwnerUserId: source.session.ownerUserId,
     sourceOwnerName: source.session.ownerName,
     predictorUserId: input.user.id,
-    predictorName: input.user.nickname || "익명",
+    predictorName: sanitizeOwnerName(input.predictorName, input.user.nickname),
     level: source.session.level,
     answers,
     matchedCount,

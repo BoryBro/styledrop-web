@@ -17,6 +17,7 @@ import {
 } from "@/lib/balance-100";
 
 const GREEN = "#20D879";
+const PENDING_PREDICTION_PREFIX = "styledrop_balance_100_pending_prediction:";
 
 type PredictionInvite = {
   token: string;
@@ -33,6 +34,52 @@ type PredictionResult = {
   tierDesc: string;
   reverseSharePath: string | null;
 };
+
+type PendingPrediction = {
+  answers: BalanceAnswers;
+  guestName: string;
+};
+
+function getPendingPredictionKey(token: string) {
+  return `${PENDING_PREDICTION_PREFIX}${token}`;
+}
+
+function readPendingPrediction(token: string): PendingPrediction | null {
+  try {
+    const raw = sessionStorage.getItem(getPendingPredictionKey(token));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PendingPrediction>;
+    if (!parsed.answers || typeof parsed.guestName !== "string") return null;
+    return {
+      answers: parsed.answers as BalanceAnswers,
+      guestName: parsed.guestName.trim().slice(0, 16),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writePendingPrediction(token: string, answers: BalanceAnswers, guestName: string) {
+  try {
+    sessionStorage.setItem(
+      getPendingPredictionKey(token),
+      JSON.stringify({
+        answers,
+        guestName: guestName.trim().slice(0, 16),
+      }),
+    );
+  } catch {
+    // 브라우저 저장소가 막혀도 서버 저장은 로그인 이후에만 시도합니다.
+  }
+}
+
+function clearPendingPrediction(token: string) {
+  try {
+    sessionStorage.removeItem(getPendingPredictionKey(token));
+  } catch {
+    // ignore
+  }
+}
 
 function TopProgress({
   progressRatio = 0,
@@ -233,6 +280,8 @@ export default function Balance100SharePage() {
   const [invite, setInvite] = useState<PredictionInvite | null>(null);
   const [answers, setAnswers] = useState<BalanceAnswers>({});
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [guestName, setGuestName] = useState("");
+  const [guestStarted, setGuestStarted] = useState(false);
   const [predictionResult, setPredictionResult] = useState<PredictionResult | null>(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -247,7 +296,7 @@ export default function Balance100SharePage() {
   }, []);
 
   useEffect(() => {
-    if (!token || !user) return;
+    if (!token) return;
     fetch(`/api/balance-100/prediction/${encodeURIComponent(token)}`, { cache: "no-store" })
       .then((response) => response.json().then((data) => ({ ok: response.ok, data })))
       .then(({ ok, data }) => {
@@ -268,7 +317,7 @@ export default function Balance100SharePage() {
   const question = questions[currentIndex];
   const progress = useMemo(() => getBalance100Progress(answers, questions), [answers, questions]);
 
-  const submitPrediction = useCallback(async (nextAnswers: BalanceAnswers) => {
+  const submitPrediction = useCallback(async (nextAnswers: BalanceAnswers, nextGuestName = guestName) => {
     if (!token) return;
     setIsSubmitting(true);
     setError("");
@@ -276,17 +325,32 @@ export default function Balance100SharePage() {
       const response = await fetch(`/api/balance-100/prediction/${encodeURIComponent(token)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers: nextAnswers }),
+        body: JSON.stringify({
+          answers: nextAnswers,
+          predictorName: nextGuestName.trim().slice(0, 16),
+        }),
       });
       const data = await response.json();
       if (!response.ok || !data?.prediction) throw new Error(data?.error ?? "저장에 실패했습니다.");
       setPredictionResult(data.prediction);
+      clearPendingPrediction(token);
     } catch (err) {
       setError(err instanceof Error ? err.message : "저장에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [token]);
+  }, [guestName, token]);
+
+  useEffect(() => {
+    if (!token || !user || !invite || predictionResult || isSubmitting) return;
+    const pending = readPendingPrediction(token);
+    if (!pending) return;
+    setGuestName(pending.guestName);
+    setAnswers(pending.answers);
+    if (Object.keys(pending.answers).length >= questions.length) {
+      void submitPrediction(pending.answers, pending.guestName);
+    }
+  }, [invite, isSubmitting, predictionResult, questions.length, submitPrediction, token, user]);
 
   const pickAnswer = useCallback((value: BalanceAnswerValue) => {
     if (!question || isSubmitting || predictionResult) return;
@@ -294,13 +358,25 @@ export default function Balance100SharePage() {
     setAnswers(nextAnswers);
 
     if (Object.keys(nextAnswers).length >= questions.length) {
+      if (!user && token) {
+        writePendingPrediction(token, nextAnswers, guestName);
+        setCurrentIndex(questions.length - 1);
+        return;
+      }
       void submitPrediction(nextAnswers);
       return;
     }
 
     const nextIndex = questions.findIndex((item, index) => index > currentIndex && !nextAnswers[item.id]);
     setCurrentIndex(nextIndex >= 0 ? nextIndex : getFirstUnansweredIndex(nextAnswers, questions));
-  }, [answers, currentIndex, isSubmitting, predictionResult, question, questions, submitPrediction]);
+  }, [answers, currentIndex, guestName, isSubmitting, predictionResult, question, questions, submitPrediction, token, user]);
+
+  const loginForPredictionResult = useCallback(() => {
+    if (token) {
+      writePendingPrediction(token, answers, guestName);
+      login(`/balance-100/share?token=${encodeURIComponent(token)}`);
+    }
+  }, [answers, guestName, login, token]);
 
   const shareReverse = useCallback(async () => {
     if (!predictionResult?.reverseSharePath) return;
@@ -332,32 +408,69 @@ export default function Balance100SharePage() {
 
   if (!token) return <ErrorView message="공유 링크가 잘렸거나 만료된 형식입니다." />;
 
-  if (!user) {
+  if (error) return <ErrorView message={error} />;
+  if (!invite) return <LoadingView />;
+
+  if (!user && !guestStarted && progress.answered === 0) {
     return (
       <main className="min-h-screen bg-white px-6 py-6 text-black">
         <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center">
           <Link href="/studio" className="mb-8 text-[38px] font-light leading-none text-black">‹</Link>
           <p className="text-[12px] font-black uppercase tracking-[0.22em] text-[#20D879]">Balance 100</p>
           <h1 className="mt-4 break-keep text-[39px] font-black leading-[1.15] tracking-[-0.07em]">
-            친구가 보낸 밸런스 예측 링크예요
+            닉네임만 적고
+            <br />
+            바로 맞혀보세요
           </h1>
           <p className="mt-5 break-keep text-[17px] font-medium leading-8 text-[#555]">
-            실험실 카드는 로그인 후 참여할 수 있습니다. 카카오 안에서 열려도 로그인하면 이어서 진행됩니다.
+            {invite.ownerName}님이 밸런스 100에서 뭘 골랐을지 예측해보는 링크예요.
+            결과 확인은 마지막에 카카오 로그인 후 열립니다.
           </p>
+          <input
+            value={guestName}
+            onChange={(event) => setGuestName(event.target.value.slice(0, 16))}
+            placeholder="내 닉네임"
+            maxLength={16}
+            className="mt-8 h-[58px] w-full rounded-[24px] border border-[#E5E7EB] bg-white px-5 text-[17px] font-black text-[#111827] outline-none transition placeholder:text-[#B7BCC5] focus:border-[#20D879] focus:bg-[#F0FFF7]"
+          />
           <button
             type="button"
-            onClick={() => login(`/balance-100/share?token=${encodeURIComponent(token)}`)}
-            className="mt-8 h-[64px] rounded-[34px] bg-[#FEE500] text-[18px] font-black text-[#191919]"
+            onClick={() => setGuestStarted(true)}
+            disabled={!guestName.trim()}
+            className="mt-4 h-[64px] rounded-[34px] text-[18px] font-black text-white disabled:opacity-40"
+            style={{ backgroundColor: GREEN }}
           >
-            카카오로 참여하기
+            시작하기
           </button>
         </div>
       </main>
     );
   }
 
-  if (error) return <ErrorView message={error} />;
-  if (!invite) return <LoadingView />;
+  if (!user && progress.answered >= questions.length) {
+    return (
+      <main className="min-h-screen bg-white px-6 py-6 text-black">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center">
+          <p className="text-[12px] font-black uppercase tracking-[0.22em] text-[#20D879]">100 / 100 완료</p>
+          <h1 className="mt-4 break-keep text-[39px] font-black leading-[1.15] tracking-[-0.07em]">
+            결과 확인은
+            <br />
+            카카오 로그인 후 열려요
+          </h1>
+          <p className="mt-5 break-keep text-[17px] font-medium leading-8 text-[#555]">
+            지금까지 고른 답은 이 화면에서만 보관 중입니다. 로그인하면 바로 결과를 계산해 보여드릴게요.
+          </p>
+          <button
+            type="button"
+            onClick={loginForPredictionResult}
+            className="mt-8 h-[64px] rounded-[34px] bg-[#FEE500] text-[18px] font-black text-[#191919]"
+          >
+            카카오로 결과 확인하기
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   if (invite.isOwner) {
     return (

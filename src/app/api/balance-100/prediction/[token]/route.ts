@@ -21,9 +21,6 @@ export async function GET(
   }
 
   const session = readSessionFromRequest(request);
-  if (!session) {
-    return NextResponse.json({ error: "카카오 로그인 후 참여할 수 있습니다." }, { status: 401 });
-  }
 
   const { token } = await context.params;
   const source = await getBalance100SessionByPredictionToken(token);
@@ -37,7 +34,7 @@ export async function GET(
     level: source.session.level,
     ownerName: source.session.ownerName,
     total: BALANCE_TOTAL_QUESTIONS,
-    isOwner: source.session.ownerUserId === session.id,
+    isOwner: Boolean(session && source.session.ownerUserId === session.id),
   });
 }
 
@@ -61,6 +58,7 @@ export async function POST(
       token,
       user: session,
       answers: body?.answers,
+      predictorName: typeof body?.predictorName === "string" ? body.predictorName : undefined,
     });
 
     if (submitted.error || !submitted.prediction) {

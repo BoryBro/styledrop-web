@@ -49,13 +49,6 @@ type BalanceMatchItem = {
   typeTitle: string;
 };
 
-type HistoryImage = {
-  id: string;
-  style_id: string;
-  result_image_url: string;
-  created_at: string;
-};
-
 type KakaoShareSDK = {
   init?: (key: string | undefined) => void;
   isInitialized?: () => boolean;
@@ -72,6 +65,27 @@ type KakaoShareSDK = {
 };
 
 const GREEN = "#20D879";
+const BALANCE_OWNER_NAME_STORAGE_KEY = "styledrop_balance_100_owner_name";
+
+function readStoredBalanceOwnerName() {
+  if (typeof window === "undefined") return "";
+  try {
+    return (window.localStorage.getItem(BALANCE_OWNER_NAME_STORAGE_KEY) ?? "").trim().slice(0, 16);
+  } catch {
+    return "";
+  }
+}
+
+function writeStoredBalanceOwnerName(name: string) {
+  if (typeof window === "undefined") return;
+  const safeName = name.trim().slice(0, 16);
+  if (!safeName) return;
+  try {
+    window.localStorage.setItem(BALANCE_OWNER_NAME_STORAGE_KEY, safeName);
+  } catch {
+    // 저장소 접근이 막혀도 세션 생성 시 서버에는 저장됩니다.
+  }
+}
 
 function TopProgress({
   progressRatio = 0,
@@ -123,15 +137,41 @@ function PrimaryButton({
   );
 }
 
-function BalanceIntroHeader() {
+function KakaoBubbleIcon() {
+  return (
+    <span className="grid h-5 w-5 place-items-center rounded-full bg-[#191919]" aria-hidden="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 4.5c-5 0-9 3.15-9 7.04 0 2.48 1.64 4.66 4.12 5.91l-.66 2.42c-.1.37.32.67.64.45l3.05-2.03c.6.09 1.22.14 1.85.14 5 0 9-3.15 9-7.04S17 4.5 12 4.5Z"
+          fill="#FEE500"
+        />
+      </svg>
+    </span>
+  );
+}
+
+function BalanceIntroHeader({ onBack }: { onBack?: () => void }) {
+  const backClass = "flex items-center gap-1.5 text-gray-400 transition-colors hover:text-gray-900";
+  const backContent = (
+    <>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+        <path d="M11 14l-5-5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span className="text-[14px] font-semibold">돌아가기</span>
+    </>
+  );
+
   return (
     <header className="sticky top-0 z-40 -mx-6 flex h-14 items-center justify-between border-b border-gray-100 bg-white/90 px-5 backdrop-blur">
-      <Link href="/studio" className="flex items-center gap-1.5 text-gray-400 transition-colors hover:text-gray-900">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-          <path d="M11 14l-5-5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <span className="text-[14px] font-semibold">돌아가기</span>
-      </Link>
+      {onBack ? (
+        <button type="button" onClick={onBack} className={backClass}>
+          {backContent}
+        </button>
+      ) : (
+        <Link href="/studio" className={backClass}>
+          {backContent}
+        </Link>
+      )}
       <div className="flex items-center gap-1.5 rounded-full border border-[#B9F7CD] bg-[#F0FFF7] px-3 py-1">
         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#12863C]">밸런스 100</span>
         <span className="h-1.5 w-1.5 rounded-full bg-[#20D879]" />
@@ -165,15 +205,15 @@ function BalanceIntroHero() {
           100
         </div>
       </div>
-      <p className="mb-4 text-[11px] font-black uppercase tracking-[0.3em] text-[#20D879]">선택 기준 분석</p>
+      <p className="mb-4 text-[11px] font-black uppercase tracking-[0.3em] text-[#20D879]">친구 일치율 테스트</p>
       <h1 className="text-[34px] font-black leading-[1.12] tracking-[-0.06em] text-gray-900">밸런스 100</h1>
       <p className="mt-5 break-keep text-[16px] font-bold leading-7 text-gray-500">
-        100개 선택으로 내 기준을 저장하고
+        나와 친구가 100개의 선택을 하면
         <br />
-        <span className="text-[#12863C]">친구가 내 답을 맞혀보게 해요</span>
+        <span className="text-[#12863C]">얼마나 같은지 바로 비교해요</span>
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-2">
-        {["난이도 5단계", "결과 저장", "친구 맞히기"].map((tag) => (
+        {["100문항", "일치율 확인", "친구 공유"].map((tag) => (
           <span key={tag} className="rounded-full border border-[#B9F7CD] bg-[#F0FFF7] px-3 py-1 text-[12px] font-bold text-[#12863C]">
             {tag}
           </span>
@@ -223,22 +263,22 @@ function ChoiceCard({
 function ResultReport({
   result,
   userName,
+  matches,
   answers,
   questions,
   representativeImageUrl,
-  historyImages,
-  onSelectRepresentativeImage,
 }: {
   result: BalanceResultSummary;
   userName: string;
+  matches: BalanceMatchItem[];
   answers: BalanceAnswers;
   questions: BalanceQuestion[];
   representativeImageUrl?: string;
-  historyImages: HistoryImage[];
-  onSelectRepresentativeImage: (imageUrl: string) => void;
 }) {
-  const story = getBalanceResultStory(result);
   const displayName = userName.trim() || "사용자";
+  const sameResultMatches = matches
+    .filter((match) => match.typeTitle === result.typeTitle)
+    .slice(0, 5);
   const answeredQuestions = questions
     .map((question, index) => ({
       question,
@@ -249,43 +289,37 @@ function ResultReport({
 
   return (
     <div className="flex flex-col gap-7">
+      <h1 className="text-[34px] font-black leading-none tracking-[-0.06em] text-[#111827]">결과</h1>
       <section className="border-b border-[#E5E7EB] pb-7">
-        {representativeImageUrl && (
-          <div className="relative aspect-square w-full overflow-hidden bg-[#F4F5F4]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={representativeImageUrl} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-2xl" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={representativeImageUrl} alt="" className="relative z-10 h-full w-full object-contain" />
-          </div>
-        )}
-        {historyImages.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto border-b border-[#F2F2F2] px-5 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {historyImages.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onSelectRepresentativeImage(item.result_image_url)}
-                className={`h-12 w-12 shrink-0 overflow-hidden rounded-[16px] border-2 bg-[#F3F4F6] ${
-                  representativeImageUrl === item.result_image_url ? "border-[#20D879]" : "border-transparent"
-                }`}
-                aria-label="대표 이미지 선택"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.result_image_url} alt="" className="h-full w-full object-cover" />
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="pt-6">
-          <p className="break-keep text-[19px] font-black leading-7 tracking-[-0.04em] text-[#111827]">
-            {displayName}님의 성향은 다음과 같아요!
-          </p>
-          <h1 className="mt-3 break-keep text-[32px] font-black leading-[1.14] tracking-[-0.06em] text-black">
-            {story.verdictTitle} 같은 성향을 가지고 있어요!
+        <div>
+          <h1 className="break-keep text-[31px] font-black leading-[1.14] tracking-[-0.06em] text-black">
+            {displayName}님과
+            <br />
+            결과가 같은 친구는?!
           </h1>
-          <p className="mt-4 break-keep text-[16px] font-bold leading-8 text-[#555]">
-            {story.verdictSubtitle}
-          </p>
+          <p className="mt-3 text-[13px] font-black text-[#20D879]">{result.typeTitle}</p>
+          {sameResultMatches.length > 0 ? (
+            <div className="mt-5 divide-y divide-[#E5E7EB] border-y border-[#E5E7EB]">
+              {sameResultMatches.map((match) => (
+                <div key={match.sessionId} className="flex items-center justify-between gap-4 py-4">
+                  <div className="min-w-0">
+                    <p className="truncate text-[18px] font-black tracking-[-0.04em] text-[#111827]">{match.ownerName}님</p>
+                    <p className="mt-1 text-[12px] font-bold text-[#9CA3AF]">같은 결과 · {match.matchedCount}/100 일치</p>
+                  </div>
+                  <p className="shrink-0 text-[24px] font-black tracking-[-0.06em] text-[#20D879]">{match.percent}%</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-5 border-y border-[#E5E7EB] py-5">
+              <p className="break-keep text-[18px] font-black leading-7 text-[#111827]">
+                아직 같은 결과가 나온 친구가 없어요.
+              </p>
+              <p className="mt-2 break-keep text-[14px] font-bold leading-6 text-[#6B7280]">
+                친구가 같은 레벨을 완료하면 여기서 바로 비교됩니다.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -345,11 +379,13 @@ export default function Balance100Page() {
   const [mode, setMode] = useState<Mode>("intro");
   const [serverSession, setServerSession] = useState<BalanceServerSession | null>(null);
   const [completedSessions, setCompletedSessions] = useState<BalanceServerSession[]>([]);
-  const [, setMatches] = useState<BalanceMatchItem[]>([]);
+  const [matches, setMatches] = useState<BalanceMatchItem[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<BalanceLevel>(1);
+  const [ownerName, setOwnerName] = useState("");
+  const [displayOwnerName, setDisplayOwnerName] = useState("");
+  const [isOwnerNameSaved, setIsOwnerNameSaved] = useState(false);
   const [answers, setAnswers] = useState<BalanceAnswers>({});
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [historyImages, setHistoryImages] = useState<HistoryImage[]>([]);
   const [representativeImageUrl, setRepresentativeImageUrl] = useState<string | undefined>();
   const [shareStatus, setShareStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -357,6 +393,7 @@ export default function Balance100Page() {
   const questions = useMemo(() => getBalanceQuestions(selectedLevel), [selectedLevel]);
   const progress = useMemo(() => getBalance100Progress(answers, questions), [answers, questions]);
   const isCompleted = progress.answered >= questions.length;
+  const trimmedOwnerName = ownerName.trim();
   const result = useMemo(
     () => {
       if (serverSession?.result) {
@@ -379,6 +416,9 @@ export default function Balance100Page() {
     if (!nextSession) {
       setAnswers({});
       setRepresentativeImageUrl(undefined);
+      const storedName = readStoredBalanceOwnerName();
+      setOwnerName((prev) => prev || storedName);
+      setDisplayOwnerName((prev) => prev || storedName);
       setCurrentIndex(0);
       setMode("intro");
       return;
@@ -389,6 +429,9 @@ export default function Balance100Page() {
     const sessionQuestions = getBalanceQuestions(level);
     setSelectedLevel(level);
     setAnswers(sessionAnswers);
+    const storedName = readStoredBalanceOwnerName();
+    setOwnerName((prev) => prev || storedName || nextSession.ownerName || "");
+    setDisplayOwnerName((prev) => prev || storedName || nextSession.ownerName || "");
     setRepresentativeImageUrl(nextSession.representativeImageUrl);
     setCurrentIndex(getFirstUnansweredIndex(sessionAnswers, sessionQuestions));
     setMode("intro");
@@ -407,6 +450,12 @@ export default function Balance100Page() {
 
   useEffect(() => {
     if (!user) return;
+    const storedName = readStoredBalanceOwnerName();
+    if (storedName) {
+      setOwnerName(storedName);
+      setDisplayOwnerName(storedName);
+      setIsOwnerNameSaved(true);
+    }
 
     fetch("/api/balance-100/session", { cache: "no-store" })
       .then((response) => response.json())
@@ -417,14 +466,6 @@ export default function Balance100Page() {
         }
       })
       .catch(() => undefined);
-
-    fetch("/api/history")
-      .then((response) => response.json())
-      .then((data) => {
-        const history = Array.isArray(data?.history) ? data.history as HistoryImage[] : [];
-        setHistoryImages(history.filter((item) => item.result_image_url).slice(0, 12));
-      })
-      .catch(() => setHistoryImages([]));
   }, [applySession, user]);
 
   const startQuiz = useCallback(async () => {
@@ -434,13 +475,18 @@ export default function Balance100Page() {
       setMode("quiz");
       return;
     }
+    if (!trimmedOwnerName) {
+      setShareStatus("친구에게 보일 닉네임을 입력해주세요.");
+      return;
+    }
 
     setIsSaving(true);
     try {
+      writeStoredBalanceOwnerName(trimmedOwnerName);
       const response = await fetch("/api/balance-100/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ level: selectedLevel }),
+        body: JSON.stringify({ level: selectedLevel, ownerName: trimmedOwnerName }),
       });
       const data = await response.json();
       if (!response.ok || !data?.session) throw new Error(data?.error ?? "failed");
@@ -452,7 +498,7 @@ export default function Balance100Page() {
     } finally {
       setIsSaving(false);
     }
-  }, [answers, applySession, questions, selectedLevel, serverSession]);
+  }, [answers, applySession, questions, selectedLevel, serverSession, trimmedOwnerName]);
 
   const resetQuiz = useCallback(async () => {
     const ok = window.confirm("기존 진행 상태를 닫고 처음부터 다시 시작할까요?");
@@ -461,10 +507,11 @@ export default function Balance100Page() {
     setIsSaving(true);
     setShareStatus("");
     try {
+      if (trimmedOwnerName) writeStoredBalanceOwnerName(trimmedOwnerName);
       const response = await fetch("/api/balance-100/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ level: selectedLevel, restart: true }),
+        body: JSON.stringify({ level: selectedLevel, restart: true, ownerName: trimmedOwnerName }),
       });
       const data = await response.json();
       if (!response.ok || !data?.session) throw new Error(data?.error ?? "failed");
@@ -476,7 +523,7 @@ export default function Balance100Page() {
     } finally {
       setIsSaving(false);
     }
-  }, [applySession, selectedLevel]);
+  }, [applySession, selectedLevel, trimmedOwnerName]);
 
   const saveSession = useCallback(async (
     sessionId: string,
@@ -549,24 +596,23 @@ export default function Balance100Page() {
     }
   }, [answers, isCompleted, representativeImageUrl, saveSession, serverSession, upsertCompletedSession]);
 
-  const selectRepresentativeImage = useCallback((imageUrl: string) => {
-    setRepresentativeImageUrl(imageUrl);
-    if (!serverSession) return;
-    setIsSaving(true);
-    saveSession(serverSession.sessionId, answers, imageUrl)
-      .then((saved) => upsertCompletedSession(saved))
-      .catch(() => setShareStatus("대표 이미지 저장에 실패했어요."))
-      .finally(() => setIsSaving(false));
-  }, [answers, saveSession, serverSession, upsertCompletedSession]);
-
   const openCompletedResult = useCallback((session: BalanceServerSession) => {
     setServerSession(session);
     setSelectedLevel(normalizeBalanceLevel(session.level));
     setAnswers(session.answers ?? {});
+    const storedName = readStoredBalanceOwnerName();
+    setOwnerName((prev) => prev || storedName || session.ownerName || "");
+    setDisplayOwnerName((prev) => prev || storedName || session.ownerName || "");
     setRepresentativeImageUrl(session.representativeImageUrl);
     setCurrentIndex(getFirstUnansweredIndex(session.answers ?? {}, getBalanceQuestions(session.level)));
     setMatches([]);
     setMode("result");
+    fetch(`/api/balance-100/session/${encodeURIComponent(session.sessionId)}`, { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data?.ok) setMatches(Array.isArray(data.matches) ? data.matches : []);
+      })
+      .catch(() => undefined);
   }, []);
 
   const createPredictionShareUrl = useCallback(async (sessionId: string) => {
@@ -683,17 +729,16 @@ export default function Balance100Page() {
     return (
       <main className="min-h-screen bg-white px-6 pb-8">
         <div className="mx-auto max-w-md">
-          <BalanceIntroHeader />
+          <BalanceIntroHeader onBack={() => router.back()} />
 
           <div className="pt-8">
             <ResultReport
               result={result}
-              userName={user?.nickname ?? "사용자"}
+              userName={displayOwnerName || ownerName || serverSession?.ownerName || user?.nickname || "사용자"}
+              matches={matches}
               answers={answers}
               questions={questions}
               representativeImageUrl={representativeImageUrl}
-              historyImages={historyImages}
-              onSelectRepresentativeImage={selectRepresentativeImage}
             />
           </div>
 
@@ -704,7 +749,7 @@ export default function Balance100Page() {
               disabled={isSaving}
               className="flex h-[54px] items-center justify-center gap-1.5 rounded-[20px] bg-[#FEE500] text-[13px] font-black text-[#191919] disabled:opacity-50"
             >
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-[#191919] text-[10px] font-black text-[#FEE500]">K</span>
+              <KakaoBubbleIcon />
               카카오
             </button>
             <button
@@ -804,6 +849,47 @@ export default function Balance100Page() {
 
         {progress.answered === 0 && !serverSession && (
           <section className="border-t border-gray-50 pt-7">
+            <div className="px-1">
+              <label htmlFor="balance-owner-name" className="text-[13px] font-black text-[#111827]">
+                내 닉네임
+              </label>
+              <div className="mt-3 flex gap-2">
+                <input
+                  id="balance-owner-name"
+                  value={ownerName}
+                  onChange={(event) => {
+                    setOwnerName(event.target.value.slice(0, 16));
+                    setIsOwnerNameSaved(false);
+                  }}
+                  placeholder="친구에게 보일 이름"
+                  maxLength={16}
+                  className="h-[58px] min-w-0 flex-1 rounded-[24px] border border-[#E5E7EB] bg-white px-5 text-[17px] font-black text-[#111827] outline-none transition placeholder:text-[#B7BCC5] focus:border-[#20D879] focus:bg-[#F0FFF7]"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!trimmedOwnerName) return;
+                    setOwnerName(trimmedOwnerName);
+                    setDisplayOwnerName(trimmedOwnerName);
+                    writeStoredBalanceOwnerName(trimmedOwnerName);
+                    setIsOwnerNameSaved(true);
+                    setShareStatus("닉네임이 저장됐어요.");
+                  }}
+                  disabled={!trimmedOwnerName}
+                  className="h-[58px] shrink-0 rounded-[24px] bg-[#111827] px-5 text-[15px] font-black text-white disabled:bg-[#D1D5DB]"
+                >
+                  저장
+                </button>
+              </div>
+              {isOwnerNameSaved && (
+                <p className="mt-2 px-1 text-[12px] font-bold text-[#20D879]">저장됨</p>
+              )}
+            </div>
+          </section>
+        )}
+
+        {progress.answered === 0 && !serverSession && (
+          <section className="pt-7">
             <p className="px-1 text-[13px] font-black text-[#111827]">난이도 선택</p>
             <div className="-mx-6 mt-3 flex gap-3 overflow-x-auto px-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {BALANCE_LEVELS.map((level) => (
@@ -836,7 +922,7 @@ export default function Balance100Page() {
         )}
 
         <div className="mt-5 grid gap-3">
-          <PrimaryButton onClick={startQuiz} disabled={isSaving}>
+          <PrimaryButton onClick={startQuiz} disabled={isSaving || (!serverSession && !trimmedOwnerName)}>
             {isSaving ? "저장 중..." : progress.answered > 0 ? "이어하기" : "시작하기"}
           </PrimaryButton>
           {progress.answered > 0 && (
@@ -887,7 +973,7 @@ export default function Balance100Page() {
                       disabled={isSaving}
                       className="flex h-[48px] items-center justify-center gap-1.5 rounded-xl bg-[#FEE500] text-[13px] font-black text-[#191919] disabled:opacity-50"
                     >
-                      <span className="grid h-5 w-5 place-items-center rounded-full bg-[#191919] text-[10px] font-black text-[#FEE500]">K</span>
+                      <KakaoBubbleIcon />
                       카카오 공유
                     </button>
                     <button
