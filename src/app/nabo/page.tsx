@@ -576,18 +576,6 @@ export default function NaboPage() {
     }
   }, [roomCode, ownerToken, isFetchingAnswers]);
 
-  const handleNativeShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: `${myName || "나"}에 대해 익명으로 답해줘`,
-        text: `${myName || "친구"}님이 익명 관계 분석 링크를 보냈어요. 솔직하게 답해주세요!`,
-        url: inviteLink,
-      }).catch(() => copyLink());
-    } else {
-      copyLink();
-    }
-  };
-
   const openResults = async () => {
     if (!canSeeResults || viewerRole !== "owner") return;
     if (!user) {
@@ -931,10 +919,6 @@ export default function NaboPage() {
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/></svg>
               {isSharingKakao ? "카카오 여는 중..." : "카카오톡으로 보내기"}
-            </button>
-            <button onClick={handleNativeShare} className="w-full py-3.5 rounded-2xl font-bold text-[15px] border border-gray-200 text-gray-700 flex items-center justify-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11 5.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM5 9.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM11 15.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.25 8.23l1.52 1.52M8.77 4.23l-1.52 1.52" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              다른 방법으로 공유
             </button>
 
             <div className="rounded-2xl border border-gray-100 bg-gray-50 px-5 py-4">
