@@ -423,6 +423,7 @@ export default function NaboPage() {
   const canSeeResults = hasBasicResult || (premiumAccess && serverResponseCount >= 1);
   const canStartNewRoom = !roomCode || timeLeft === 0;
   const canUnlockEarly = viewerRole === "owner" && serverResponseCount > 0 && serverResponseCount < BASIC_RESULT_COUNT && !premiumAccess;
+  const hasGeneratedOwnerRoom = viewerRole === "owner" && Boolean(roomCode && ownerToken);
   const inviteLink = invitePath ? `${shareOrigin}${invitePath}` : `${shareOrigin}/nabo`;
 
   const goTo = useCallback((s: Step) => {
@@ -759,10 +760,10 @@ export default function NaboPage() {
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-100 flex items-center justify-between px-5 h-14">
-        {step === "intro" ? (
+        {step === "intro" || hasGeneratedOwnerRoom ? (
           <Link href="/studio" className="flex items-center gap-1.5 text-gray-400 hover:text-gray-900 transition-colors">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 14l-5-5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            <span className="text-[14px] font-semibold">돌아가기</span>
+            <span className="text-[14px] font-semibold">{step === "intro" ? "돌아가기" : "이전"}</span>
           </Link>
         ) : (
           <button onClick={goBack} className="flex items-center gap-1.5 text-gray-400 hover:text-gray-900 transition-colors">
