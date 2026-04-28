@@ -7,6 +7,7 @@ import { trackClientEvent } from "@/lib/client-events";
 
 // ── 팔레트 ────────────────────────────────────────────────────────
 const G = { bg: "#F0FDF4", border: "#BBF7D0", light: "#DCFCE7", mid: "#22C55E", dark: "#16A34A", text: "#15803D", deep: "#166534" } as const;
+const LAB_HISTORY_HREF = "/mypage?tab=lab";
 
 // ── 타입 ─────────────────────────────────────────────────────────
 type Step = "intro" | "setup" | "link" | "waiting" | "respondent-name" | "questions" | "results" | "single-result";
@@ -44,20 +45,6 @@ const BASIC_RESULT_COUNT = 3;
 const FULL_RESULT_COUNT = 5;
 const EARLY_RESULT_CREDIT_COST = 2;
 const RESPONDENT_NAME_KEY = "_respondentName";
-const SPACE_STARS = [
-  ["7%", "9%", 2, "rgba(186,230,253,0.85)"],
-  ["18%", "24%", 3, "rgba(125,211,252,0.7)"],
-  ["29%", "13%", 2, "rgba(255,255,255,0.75)"],
-  ["41%", "31%", 2, "rgba(196,181,253,0.8)"],
-  ["58%", "11%", 3, "rgba(165,243,252,0.75)"],
-  ["72%", "27%", 2, "rgba(255,255,255,0.7)"],
-  ["88%", "8%", 2, "rgba(147,197,253,0.8)"],
-  ["12%", "53%", 2, "rgba(216,180,254,0.75)"],
-  ["33%", "68%", 3, "rgba(186,230,253,0.75)"],
-  ["63%", "60%", 2, "rgba(255,255,255,0.7)"],
-  ["83%", "77%", 3, "rgba(125,211,252,0.7)"],
-  ["94%", "48%", 2, "rgba(196,181,253,0.75)"],
-] as const;
 
 // ── 15문항 정의 ───────────────────────────────────────────────────
 const QS = [
@@ -286,14 +273,6 @@ const top = (key: string, rs: AnsMap[]) => {
 };
 const texts = (key: string, rs: AnsMap[]) => rs.map(r => String(r[key] || "")).filter(Boolean);
 
-// ── 시간 포맷 ─────────────────────────────────────────────────────
-const fmtCountdown = (ms: number) => {
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-};
-
 const getNaboClientFingerprint = () => {
   if (typeof window === "undefined") return "";
 
@@ -370,15 +349,6 @@ function PixelSpaceBackdrop() {
             "linear-gradient(180deg, rgba(37,99,235,0.34) 0%, rgba(15,23,42,0.12) 54%, transparent 100%)",
         }}
       />
-      {SPACE_STARS.map(([left, top, size, color], index) => (
-        <span
-          key={`${left}-${top}-${index}`}
-          className="absolute block"
-          style={{ left, top, width: size, height: size, background: color, boxShadow: `0 0 ${size * 5}px ${color}` }}
-        />
-      ))}
-      <div className="absolute -right-16 top-24 h-52 w-52 border border-cyan-300/10" />
-      <div className="absolute left-8 top-28 h-10 w-10 border border-violet-300/20" />
       <div className="absolute bottom-10 left-1/2 h-px w-2/3 -translate-x-1/2 bg-gradient-to-r from-transparent via-cyan-200/25 to-transparent" />
     </div>
   );
@@ -446,13 +416,16 @@ export default function NaboPage() {
       localStorage.setItem("nabo_name", view.ownerName);
       localStorage.setItem("nabo_result_available_after", view.resultAvailableAfter);
       if (tokens && "ownerToken" in tokens) {
-        tokens.ownerToken ? localStorage.setItem("nabo_owner_token", tokens.ownerToken) : localStorage.removeItem("nabo_owner_token");
+        if (tokens.ownerToken) localStorage.setItem("nabo_owner_token", tokens.ownerToken);
+        else localStorage.removeItem("nabo_owner_token");
       }
       if (tokens && "respondentToken" in tokens) {
-        tokens.respondentToken ? localStorage.setItem("nabo_respondent_token", tokens.respondentToken) : localStorage.removeItem("nabo_respondent_token");
+        if (tokens.respondentToken) localStorage.setItem("nabo_respondent_token", tokens.respondentToken);
+        else localStorage.removeItem("nabo_respondent_token");
       }
       if (tokens && "invitePath" in tokens) {
-        tokens.invitePath ? localStorage.setItem("nabo_invite_path", tokens.invitePath) : localStorage.removeItem("nabo_invite_path");
+        if (tokens.invitePath) localStorage.setItem("nabo_invite_path", tokens.invitePath);
+        else localStorage.removeItem("nabo_invite_path");
       }
     } catch {}
   }, []);
@@ -642,10 +615,17 @@ export default function NaboPage() {
   const goBack = () => {
     const h = [...stepHistory];
     h.pop();
-    const prev = h[h.length - 1] ?? "intro";
+    const prev = h[h.length - 1];
+
+    if ((!prev || prev === "intro") && viewerRole === "owner" && roomCode && step !== "intro") {
+      window.location.href = LAB_HISTORY_HREF;
+      return;
+    }
+
+    const nextStep = prev ?? "intro";
     setStepHistory(h);
-    setStep(prev);
-    try { localStorage.setItem("nabo_step", prev); } catch {}
+    setStep(nextStep);
+    try { localStorage.setItem("nabo_step", nextStep); } catch {}
   };
 
   const handleReset = () => {
@@ -1242,57 +1222,73 @@ export default function NaboPage() {
 
       {/* ════════════════════ WAITING ════════════════════ */}
       {step === "waiting" && (
-        <div className="relative isolate flex min-h-[calc(100vh-3.5rem)] flex-col items-center overflow-hidden px-5 pb-7 pt-7 text-center text-white">
-          <PixelSpaceBackdrop />
+        <div
+          className="relative isolate flex min-h-[calc(100vh-3.5rem)] flex-col items-center overflow-hidden px-6 pb-7 pt-7 text-left text-white"
+          style={{
+            background:
+              "radial-gradient(circle at 52% 18%, rgba(34,211,238,0.28) 0%, rgba(37,99,235,0.28) 28%, transparent 54%), linear-gradient(180deg, #0B3D78 0%, #082B59 35%, #061327 74%, #030712 100%)",
+          }}
+        >
+          <div className="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-cyan-300/18 via-blue-500/10 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/45 to-transparent" />
 
-          <div className="relative z-10 flex w-full max-w-[360px] flex-col items-center">
-            <div className="mb-3 inline-flex items-center gap-2 border border-cyan-300/25 bg-white/[0.06] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.26em] text-cyan-200">
-              <span className="h-1.5 w-1.5 bg-cyan-300" />
-              {viewerRole === "respondent" ? "Signal Saved" : "Waiting Signal"}
+          <div className="relative z-10 w-full max-w-[360px]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.24em] text-cyan-100 shadow-[0_14px_38px_rgba(0,0,0,0.18)] backdrop-blur-xl">
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
+              {viewerRole === "respondent" ? "Signal Saved" : "Response Status"}
             </div>
-            <h2 className="text-[34px] font-black leading-[1.02] tracking-[-0.015em] text-white">
-              {viewerRole === "respondent" ? "응답이 저장됐어요" : "응답을 기다리는 중"}
+
+            <h2 className="mt-4 break-keep text-[38px] font-black leading-[1.16] tracking-[-0.02em] text-white drop-shadow-[0_18px_32px_rgba(0,0,0,0.28)]">
+              {viewerRole === "respondent" ? (
+                <>
+                  답안이
+                  <br />
+                  저장됐어요!
+                </>
+              ) : (
+                <>
+                  {FULL_RESULT_COUNT}명 중 {responseCount}명이
+                  <br />
+                  답안을 남겼어요!
+                </>
+              )}
             </h2>
-            <p className="mt-2 text-[14px] leading-5 text-slate-300">
-              {viewerRole === "respondent" ? `${myName || "친구"}님에게 익명으로 전달돼요` : "3명부터 기본 결과, 5명부터 전체 결과가 열려요"}
+            <p className="mt-3 break-keep text-[13px] font-semibold leading-6 text-cyan-50/75">
+              {viewerRole === "respondent" ? `${myName || "친구"}님에게 익명으로 전달돼요` : "전체 결과까지 조금만 더 모으면 돼요."}
             </p>
           </div>
 
-          <div className="relative z-10 mt-6 w-full max-w-[360px] border border-cyan-200/15 bg-white/[0.055] px-4 py-4 text-left shadow-[0_20px_60px_rgba(8,145,178,0.12)] backdrop-blur-xl">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="font-mono text-[9px] font-black uppercase tracking-[0.24em] text-cyan-200">Response Pack</p>
-                <p className="mt-1 text-[12px] font-bold text-slate-400">현재 응답 현황</p>
-              </div>
-              <p className="font-mono text-[48px] font-black leading-none text-cyan-200">
+          <div className="relative z-10 mt-10 w-full max-w-[360px]">
+            <div className="flex items-end justify-between">
+              <p className="font-mono text-[10px] font-black uppercase tracking-[0.24em] text-cyan-100/80">Progress</p>
+              <p className="font-mono text-[28px] font-black leading-none text-cyan-100">
                 {responseCount}
-                <span className="ml-1 text-[22px] text-slate-500">/{FULL_RESULT_COUNT}</span>
+                <span className="ml-1 text-[16px] text-white/45">/{FULL_RESULT_COUNT}</span>
               </p>
             </div>
             <div className="mt-3 grid w-full grid-cols-5 gap-2">
               {Array.from({ length: FULL_RESULT_COUNT }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-2 transition-all duration-500"
+                  className="h-2.5 rounded-full transition-all duration-500"
                   style={{
-                    background: i < responseCount ? "rgba(34,211,238,0.82)" : "rgba(15,23,42,0.82)",
-                    boxShadow: i < responseCount ? "0 0 18px rgba(34,211,238,0.24)" : undefined,
+                    background: i < responseCount ? "rgba(103,232,249,0.92)" : "rgba(255,255,255,0.14)",
+                    boxShadow: i < responseCount ? "0 0 18px rgba(103,232,249,0.24)" : undefined,
                   }}
                 />
               ))}
             </div>
-            <p className="mt-3 min-h-[18px] text-[12px] leading-5 text-slate-400">
-              {responseCount === 0 && "아직 아무도 응답하지 않았어요"}
-              {responseCount > 0 && responseCount < BASIC_RESULT_COUNT && `${responseCount}명이 응답했어요 · 기본 결과까지 ${BASIC_RESULT_COUNT - responseCount}명 남았어요`}
-              {responseCount >= BASIC_RESULT_COUNT && responseCount < FULL_RESULT_COUNT && `기본 결과 조건 달성 · 전체 결과까지 ${FULL_RESULT_COUNT - responseCount}명 남았어요`}
-              {responseCount >= FULL_RESULT_COUNT && "전체 결과 조건 달성!"}
+            <p className="mt-3 min-h-[18px] text-[12px] font-semibold leading-5 text-cyan-50/60">
+              {responseCount === 0 && "아직 아무도 답안을 남기지 않았어요."}
+              {responseCount > 0 && responseCount < FULL_RESULT_COUNT && `전체 결과까지 ${FULL_RESULT_COUNT - responseCount}명 남았어요.`}
+              {responseCount >= FULL_RESULT_COUNT && "전체 결과 조건을 달성했어요."}
             </p>
           </div>
 
           {viewerRole === "owner" && canSeeResults && (
             <button
               onClick={() => void openResults()}
-              className="relative z-10 mt-4 w-full max-w-[360px] rounded-[18px] border border-cyan-200/20 bg-cyan-300 py-3.5 text-[16px] font-black text-[#06101f] shadow-[0_18px_55px_rgba(34,211,238,0.22)] transition-all active:scale-[0.97]"
+              className="relative z-10 mt-5 w-full max-w-[360px] rounded-[28px] bg-cyan-300 py-4 text-center text-[17px] font-black text-[#06101f] shadow-[0_22px_58px_rgba(34,211,238,0.24)] transition-all active:scale-[0.97]"
             >
               결과 확인하기
             </button>
@@ -1303,7 +1299,7 @@ export default function NaboPage() {
               type="button"
               onClick={() => void unlockEarlyResults()}
               disabled={isUnlockingEarly}
-              className="relative z-10 mt-3 w-full max-w-[360px] rounded-[18px] border border-violet-200/20 bg-violet-400 py-3.5 text-[16px] font-black text-[#090B16] shadow-[0_18px_55px_rgba(167,139,250,0.2)] transition-all active:scale-[0.97] disabled:opacity-60"
+              className="relative z-10 mt-3 w-full max-w-[360px] rounded-[28px] border border-violet-200/20 bg-violet-400 py-3.5 text-center text-[16px] font-black text-[#090B16] shadow-[0_18px_55px_rgba(167,139,250,0.2)] transition-all active:scale-[0.97] disabled:opacity-60"
             >
               {isUnlockingEarly ? "여는 중..." : `1명 결과부터 보기 · ${EARLY_RESULT_CREDIT_COST}크레딧`}
             </button>
@@ -1315,18 +1311,11 @@ export default function NaboPage() {
             </div>
           )}
 
-          <div className="relative z-10 mt-5 w-full max-w-[360px] border-t border-white/10 pt-4 text-left">
-            <p className="text-[12px] font-black text-slate-200">왜 3명부터 열리나요?</p>
-            <p className="mt-1 text-[11px] leading-5 text-slate-500">
-              1명이나 2명 응답은 누가 썼는지 쉽게 추측될 수 있어요.
-            </p>
-          </div>
-
           {viewerRole === "owner" && canStartNewRoom && (
             <button
               type="button"
               onClick={handleReset}
-              className="relative z-10 mt-4 w-full max-w-[360px] rounded-[18px] border border-white/[0.15] bg-white/[0.06] py-3 text-[15px] font-black text-slate-300 transition-all active:scale-[0.98]"
+              className="relative z-10 mt-3 w-full max-w-[360px] rounded-[28px] border border-white/[0.16] bg-white/[0.07] py-3 text-center text-[15px] font-black text-white/75 transition-all active:scale-[0.98]"
             >
               새로 시작하기
             </button>
@@ -1335,7 +1324,7 @@ export default function NaboPage() {
           {viewerRole === "respondent" && (
             <Link
               href="/nabo"
-              className="relative z-10 mt-4 flex w-full max-w-[360px] items-center justify-center rounded-[18px] border border-cyan-200/20 bg-white py-3.5 text-[16px] font-black text-[#071022]"
+              className="relative z-10 mt-5 flex w-full max-w-[360px] items-center justify-center rounded-[28px] border border-cyan-200/20 bg-white py-4 text-[16px] font-black text-[#071022]"
             >
               내 링크도 만들기
             </Link>
