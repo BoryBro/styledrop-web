@@ -379,28 +379,6 @@ function LabHistoryRow({
   );
 }
 
-function EmptyLabHistoryRow({
-  href,
-  title,
-  detail,
-  accentColor,
-}: {
-  href: string;
-  title: string;
-  detail: string;
-  accentColor: string;
-}) {
-  return (
-    <LabHistoryRow
-      href={href}
-      title={title}
-      accentColor={accentColor}
-      detail={detail}
-      statusLabel="시작"
-    />
-  );
-}
-
 export default function MyPage() {
   const { user, loading, logout } = useAuth();
   const { isVisible: isAuditionVisible, isEnabled: isAuditionEnabled } = useAuditionAvailability();
@@ -835,6 +813,12 @@ export default function MyPage() {
         return { primary, totalResponses, unreadCount, levelLabel };
       })()
     : null;
+  const hasVisibleLabHistory =
+    visibleBalance100History.length > 0 ||
+    auditionHistory.length > 0 ||
+    visibleNaboPredictHistory.length > 0 ||
+    Boolean(naboSummary) ||
+    travelHistory.length > 0;
 
   return (
     <div className="min-h-screen bg-[#F7F6F3] flex flex-col">
@@ -1169,11 +1153,14 @@ export default function MyPage() {
                     <div className="flex items-center justify-center rounded-2xl border border-[#E7E7E7] bg-white py-8">
                       <div className="h-5 w-5 rounded-full border-2 border-[#E8E8E8] border-t-[#C9571A]" style={{ animation: "spin 1s linear infinite" }} />
                     </div>
+                  ) : !hasVisibleLabHistory ? (
+                    <div className="rounded-[24px] bg-white px-8 py-10 text-center shadow-[0_1px_2px_rgba(17,24,39,0.05)]">
+                      <p className="text-[17px] font-black tracking-[-0.03em] text-[#111827]">아직 실험실 기록이 없어요</p>
+                      <p className="mt-2 text-[14px] font-semibold text-[#9CA3AF]">결과나 응답이 생기면 여기에 표시돼요.</p>
+                    </div>
                   ) : (
                     <>
-                      {visibleBalance100History.length === 0 ? (
-                        <EmptyLabHistoryRow href="/balance-100" title="밸런스 100" detail="100문항 선택 매칭" accentColor={LAB_HISTORY_THEME.balance100} />
-                      ) : (
+                      {visibleBalance100History.length > 0 &&
                         visibleBalance100History.map((item) => {
                           const meta = getBalance100HistoryMeta(item);
                           const notificationKey = `balance-100:${item.sessionId}`;
@@ -1199,12 +1186,9 @@ export default function MyPage() {
                               })}
                             />
                           );
-                        })
-                      )}
+                        })}
 
-                      {auditionHistory.length === 0 ? (
-                        <EmptyLabHistoryRow href="/audition/intro" title="AI 오디션" detail="사진 3장 캐스팅 결과" accentColor={LAB_HISTORY_THEME.audition} />
-                      ) : (
+                      {auditionHistory.length > 0 &&
                         auditionHistory.map((item) => (
                           <LabHistoryRow
                             key={item.id}
@@ -1219,12 +1203,9 @@ export default function MyPage() {
                               label: `AI 오디션 · ${item.assigned_role}`,
                             })}
                           />
-                        ))
-                      )}
+                        ))}
 
-                      {visibleNaboPredictHistory.length === 0 ? (
-                        <EmptyLabHistoryRow href="/nabo-predict" title="너라면 그럴 줄 알았어" detail="상대 예측 테스트" accentColor={LAB_HISTORY_THEME.naboPredict} />
-                      ) : (
+                      {visibleNaboPredictHistory.length > 0 &&
                         visibleNaboPredictHistory.map((item) => {
                           const itemId = `${item.role}:${item.sessionId}`;
                           const notificationKey = `nabo-predict:${item.sessionId}`;
@@ -1246,12 +1227,9 @@ export default function MyPage() {
                               })}
                             />
                           );
-                        })
-                      )}
+                        })}
 
-                      {!naboSummary ? (
-                        <EmptyLabHistoryRow href="/nabo" title="내가 보는 너" detail="익명 관계 분석" accentColor={LAB_HISTORY_THEME.nabo} />
-                      ) : (
+                      {naboSummary && (
                         <LabHistoryRow
                           key="nabo-summary"
                           href={naboSummary.primary.href || "/nabo"}
@@ -1268,9 +1246,7 @@ export default function MyPage() {
                         />
                       )}
 
-                      {travelHistory.length === 0 ? (
-                        <EmptyLabHistoryRow href="/travel-together" title="여행 같이 간다면" detail="친구/연인/가족 궁합" accentColor={LAB_HISTORY_THEME.travelTogether} />
-                      ) : (
+                      {travelHistory.length > 0 &&
                         travelHistory.map((item) => {
                           const notificationKey = `travel-together:${item.roomId}`;
                           return (
@@ -1290,8 +1266,7 @@ export default function MyPage() {
                               })}
                             />
                           );
-                        })
-                      )}
+                        })}
                     </>
                   )}
                 </div>
