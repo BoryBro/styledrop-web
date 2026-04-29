@@ -9,10 +9,12 @@ import {
   getBalanceQuestions,
   getBalanceResultStory,
   getFirstUnansweredIndex,
+  normalizeBalanceQuestionCount,
   normalizeBalanceLevel,
   type BalanceAnswerValue,
   type BalanceAnswers,
   type BalanceLevel,
+  type BalanceQuestionCount,
   type BalanceSharePayload,
 } from "@/lib/balance-100";
 
@@ -22,6 +24,7 @@ const PENDING_PREDICTION_PREFIX = "styledrop_balance_100_pending_prediction:";
 type PredictionInvite = {
   token: string;
   level: BalanceLevel;
+  questionCount: BalanceQuestionCount;
   ownerName: string;
   total: number;
   isOwner: boolean;
@@ -156,7 +159,10 @@ function ChoiceCard({
 
 function SharedResultView({ payload }: { payload: BalanceSharePayload }) {
   const story = getBalanceResultStory(payload);
-  const payloadQuestions = getBalanceQuestions(normalizeBalanceLevel(payload.level));
+  const payloadQuestions = getBalanceQuestions(
+    normalizeBalanceLevel(payload.level),
+    normalizeBalanceQuestionCount(payload.questionCount),
+  );
   const visibleChoices = payload.topChoices
     .map((choice, index) => ({
       choice,
@@ -304,6 +310,7 @@ export default function Balance100SharePage() {
         setInvite({
           token: data.token,
           level: normalizeBalanceLevel(data.level),
+          questionCount: normalizeBalanceQuestionCount(data.questionCount),
           ownerName: String(data.ownerName ?? "친구"),
           total: Number(data.total ?? 100),
           isOwner: Boolean(data.isOwner),
@@ -313,7 +320,8 @@ export default function Balance100SharePage() {
   }, [token, user]);
 
   const level = invite?.level ?? 3;
-  const questions = useMemo(() => getBalanceQuestions(level), [level]);
+  const questionCount = invite?.questionCount ?? 100;
+  const questions = useMemo(() => getBalanceQuestions(level, questionCount), [level, questionCount]);
   const question = questions[currentIndex];
   const progress = useMemo(() => getBalance100Progress(answers, questions), [answers, questions]);
 
@@ -450,7 +458,7 @@ export default function Balance100SharePage() {
     return (
       <main className="min-h-screen bg-white px-6 py-6 text-black">
         <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center">
-          <p className="text-[12px] font-black uppercase tracking-[0.22em] text-[#20D879]">100 / 100 완료</p>
+          <p className="text-[12px] font-black uppercase tracking-[0.22em] text-[#20D879]">{questions.length} / {questions.length} 완료</p>
           <h1 className="mt-4 break-keep text-[39px] font-black leading-[1.15] tracking-[-0.07em]">
             결과 확인은
             <br />
@@ -504,7 +512,7 @@ export default function Balance100SharePage() {
             <div className="mt-6 rounded-[26px] bg-white p-5">
               <p className="text-[12px] font-bold text-[#777]">{invite.ownerName}님과 선택 일치율</p>
               <p className="mt-1 text-[38px] font-black tracking-[-0.06em] text-black">
-                {predictionResult.matchedCount}/100
+                {predictionResult.matchedCount}/{questions.length}
               </p>
               <p className="text-[13px] font-bold text-[#20D879]">{predictionResult.percent}% 일치</p>
             </div>

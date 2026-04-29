@@ -474,7 +474,7 @@ export async function POST(request: NextRequest) {
       todayCompletedCount: todayEventCounts["lab_balance_completed"] ?? 0,
       unlockCount: eventCounts["lab_balance_share_link_copy"] ?? 0,
       todayUnlockCount: todayEventCounts["lab_balance_share_link_copy"] ?? 0,
-      completedLabel: "100문항 완료",
+      completedLabel: "문항 완료",
       unlockLabel: "공유",
       paidParticipants: countPaidUsersWithEvent(["lab_balance_started", "lab_balance_completed"]),
     },
@@ -635,7 +635,7 @@ export async function POST(request: NextRequest) {
     {
       key: "balance_100",
       label: "밸런스 100",
-      note: "100문항 완료",
+      note: "30/50/100문항 완료",
       count: balanceRows.length,
       uniqueUsers: collectUniqueUsers(balanceRows).size,
     },

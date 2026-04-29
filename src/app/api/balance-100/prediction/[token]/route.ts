@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { BALANCE_TOTAL_QUESTIONS } from "@/lib/balance-100";
 import { readSessionFromRequest } from "@/lib/auth-session";
 import {
   getBalance100SessionByPredictionToken,
@@ -32,8 +31,9 @@ export async function GET(
     ok: true,
     token,
     level: source.session.level,
+    questionCount: source.session.questionCount,
     ownerName: source.session.ownerName,
-    total: BALANCE_TOTAL_QUESTIONS,
+    total: source.session.questionCount,
     isOwner: Boolean(session && source.session.ownerUserId === session.id),
   });
 }
@@ -72,6 +72,7 @@ export async function POST(
         ? {
             ownerName: submitted.sourceSession.ownerName,
             level: submitted.sourceSession.level,
+            questionCount: submitted.sourceSession.questionCount,
           }
         : null,
     });

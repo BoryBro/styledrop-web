@@ -3,13 +3,14 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import {
-  BALANCE_TOTAL_QUESTIONS,
   analyzeBalanceAnswers,
   getBalanceQuestions,
+  normalizeBalanceQuestionCount,
   normalizeBalanceLevel,
   type BalanceAnswerValue,
   type BalanceAnswers,
   type BalanceLevel,
+  type BalanceQuestionCount,
   type BalanceResultSummary,
 } from "@/lib/balance-100";
 import type { AppSession } from "@/lib/auth-session";
@@ -26,6 +27,7 @@ export type Balance100SessionState = {
   ownerUserId: string;
   ownerName: string;
   level: BalanceLevel;
+  questionCount: BalanceQuestionCount;
   answers: BalanceAnswers;
   status: Balance100SessionStatus;
   result: BalanceResultSummary | null;
@@ -42,6 +44,7 @@ export type Balance100MatchItem = {
   sessionId: string;
   ownerName: string;
   level: BalanceLevel;
+  questionCount: BalanceQuestionCount;
   matchedCount: number;
   percent: number;
   typeTitle: string;
@@ -57,6 +60,7 @@ export type Balance100PredictionState = {
   predictorUserId: string;
   predictorName: string;
   level: BalanceLevel;
+  questionCount: BalanceQuestionCount;
   answers: BalanceAnswers;
   matchedCount: number;
   percent: number;
@@ -96,8 +100,8 @@ function isAnswerValue(value: unknown): value is BalanceAnswerValue {
   return value === "A" || value === "B";
 }
 
-function sanitizeAnswers(answers: unknown, level: BalanceLevel): BalanceAnswers {
-  const questions = getBalanceQuestions(level);
+function sanitizeAnswers(answers: unknown, level: BalanceLevel, questionCount: BalanceQuestionCount = 100): BalanceAnswers {
+  const questions = getBalanceQuestions(level, questionCount);
   const allowedIds = new Set(questions.map((question) => question.id));
   const source = answers && typeof answers === "object" ? answers as Record<string, unknown> : {};
 
@@ -112,8 +116,8 @@ function sanitizeOwnerName(value: unknown, fallback: string) {
   return (name || fallback || "익명").slice(0, 16);
 }
 
-function buildResult(level: BalanceLevel, answers: BalanceAnswers) {
-  const questions = getBalanceQuestions(level);
+function buildResult(level: BalanceLevel, questionCount: BalanceQuestionCount, answers: BalanceAnswers) {
+  const questions = getBalanceQuestions(level, questionCount);
   const completed = Object.keys(answers).length >= questions.length;
   return completed ? analyzeBalanceAnswers(answers, questions) : null;
 }
@@ -122,9 +126,10 @@ function normalizeSessionSnapshot(value: unknown): Balance100SessionState | null
   const snapshot = value as Partial<Balance100SessionState> | null;
   if (!snapshot?.sessionId || !snapshot.ownerUserId) return null;
   const level = normalizeBalanceLevel(snapshot.level);
-  const answers = sanitizeAnswers(snapshot.answers, level);
+  const questionCount = normalizeBalanceQuestionCount(snapshot.questionCount);
+  const answers = sanitizeAnswers(snapshot.answers, level, questionCount);
   const now = new Date().toISOString();
-  const rebuiltResult = buildResult(level, answers);
+  const rebuiltResult = buildResult(level, questionCount, answers);
   const result = snapshot.result?.resultStory
     ? snapshot.result
     : rebuiltResult ?? snapshot.result ?? null;
@@ -134,6 +139,7 @@ function normalizeSessionSnapshot(value: unknown): Balance100SessionState | null
     ownerUserId: String(snapshot.ownerUserId),
     ownerName: String(snapshot.ownerName ?? "익명"),
     level,
+    questionCount,
     answers,
     status:
       snapshot.status === "completed" || snapshot.status === "closed"
@@ -262,6 +268,7 @@ export async function closeOpenBalance100Sessions(userId: string) {
 export async function createBalance100Session(input: {
   user: AppSession;
   level: BalanceLevel;
+  questionCount?: BalanceQuestionCount;
   restart?: boolean;
   source?: Balance100SessionSource;
   answers?: BalanceAnswers;
@@ -275,13 +282,15 @@ export async function createBalance100Session(input: {
   }
 
   const now = new Date().toISOString();
-  const answers = sanitizeAnswers(input.answers ?? {}, input.level);
-  const result = buildResult(input.level, answers);
+  const questionCount = normalizeBalanceQuestionCount(input.questionCount);
+  const answers = sanitizeAnswers(input.answers ?? {}, input.level, questionCount);
+  const result = buildResult(input.level, questionCount, answers);
   const session: Balance100SessionState = {
     sessionId: randomId(8),
     ownerUserId: input.user.id,
     ownerName: sanitizeOwnerName(input.ownerName, input.user.nickname),
     level: input.level,
+    questionCount,
     answers,
     status: result ? "completed" : "in_progress",
     result,
@@ -316,9 +325,9 @@ export async function updateBalance100Session(input: {
   }
 
   const answers = input.answers
-    ? sanitizeAnswers(input.answers, current.session.level)
+    ? sanitizeAnswers(input.answers, current.session.level, current.session.questionCount)
     : current.session.answers;
-  const result = buildResult(current.session.level, answers);
+  const result = buildResult(current.session.level, current.session.questionCount, answers);
   const now = new Date().toISOString();
   const nextSession: Balance100SessionState = {
     ...current.session,
@@ -379,7 +388,7 @@ export async function createBalance100PredictionLink(input: {
     return { session: null, path: null, error: "권한이 없습니다." };
   }
   if (!current.session.result) {
-    return { session: null, path: null, error: "100문항을 완료한 뒤 만들 수 있습니다." };
+    return { session: null, path: null, error: "문항을 모두 완료한 뒤 만들 수 있습니다." };
   }
 
   const token = current.session.predictionToken ?? randomId(12);
@@ -455,8 +464,8 @@ function getPredictionTier(percent: number) {
   };
 }
 
-function compareAnswers(source: BalanceAnswers, guess: BalanceAnswers, level: BalanceLevel) {
-  const questions = getBalanceQuestions(level);
+function compareAnswers(source: BalanceAnswers, guess: BalanceAnswers, level: BalanceLevel, questionCount: BalanceQuestionCount) {
+  const questions = getBalanceQuestions(level, questionCount);
   const matchedCount = questions.reduce((count, question) => (
     source[question.id] && source[question.id] === guess[question.id] ? count + 1 : count
   ), 0);
@@ -492,16 +501,17 @@ export async function submitBalance100Prediction(input: {
     return { prediction: null, sourceSession: source.session, error: "내가 만든 링크는 친구에게 보내는 용도입니다." };
   }
 
-  const answers = sanitizeAnswers(input.answers, source.session.level);
-  if (Object.keys(answers).length < BALANCE_TOTAL_QUESTIONS) {
-    return { prediction: null, sourceSession: source.session, error: "100문항을 모두 답해야 합니다." };
+  const answers = sanitizeAnswers(input.answers, source.session.level, source.session.questionCount);
+  if (Object.keys(answers).length < source.session.questionCount) {
+    return { prediction: null, sourceSession: source.session, error: `${source.session.questionCount}문항을 모두 답해야 합니다.` };
   }
 
-  const { matchedCount, percent } = compareAnswers(source.session.answers, answers, source.session.level);
+  const { matchedCount, percent } = compareAnswers(source.session.answers, answers, source.session.level, source.session.questionCount);
   const tier = getPredictionTier(percent);
   const completedSession = await createBalance100Session({
     user: input.user,
     level: source.session.level,
+    questionCount: source.session.questionCount,
     restart: true,
     source: "prediction",
     answers,
@@ -527,6 +537,7 @@ export async function submitBalance100Prediction(input: {
     predictorUserId: input.user.id,
     predictorName: sanitizeOwnerName(input.predictorName, input.user.nickname),
     level: source.session.level,
+    questionCount: source.session.questionCount,
     answers,
     matchedCount,
     percent,
@@ -577,6 +588,7 @@ export async function findBalance100Matches(input: {
       session.sessionId !== input.session.sessionId &&
       session.ownerUserId !== input.session.ownerUserId &&
       session.level === input.session.level &&
+      session.questionCount === input.session.questionCount &&
       Boolean(session.result) &&
       isWithinLabHistoryRetention(session.updatedAt),
     );
@@ -589,11 +601,12 @@ export async function findBalance100Matches(input: {
 
   const matches = [...latestByUser.values()]
     .map((session) => {
-      const compared = compareAnswers(input.session.answers, session.answers, input.session.level);
+      const compared = compareAnswers(input.session.answers, session.answers, input.session.level, input.session.questionCount);
       return {
         sessionId: session.sessionId,
         ownerName: session.ownerName,
         level: session.level,
+        questionCount: session.questionCount,
         matchedCount: compared.matchedCount,
         percent: compared.percent,
         typeTitle: session.result?.typeTitle ?? "결과 완료",

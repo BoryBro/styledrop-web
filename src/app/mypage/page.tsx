@@ -11,8 +11,10 @@ import {
   analyzeBalanceAnswers,
   getBalance100Progress,
   getBalanceQuestions,
+  normalizeBalanceQuestionCount,
   type BalanceAnswers,
   type BalanceLevel,
+  type BalanceQuestionCount,
   type BalanceResultSummary,
 } from "@/lib/balance-100";
 import { buildKakaoLoginUrlWithReferral, buildReferralShareUrl } from "@/lib/referral";
@@ -37,6 +39,7 @@ type Balance100HistoryState = {
   sessionId: string;
   ownerName: string;
   level: BalanceLevel;
+  questionCount?: BalanceQuestionCount;
   answers: BalanceAnswers;
   status: "in_progress" | "completed" | "closed";
   result: BalanceResultSummary | null;
@@ -782,11 +785,12 @@ export default function MyPage() {
   };
 
   const getBalance100HistoryMeta = (item: Balance100HistoryState) => {
-    const questions = getBalanceQuestions(item.level);
+    const questionCount = normalizeBalanceQuestionCount(item.questionCount);
+    const questions = getBalanceQuestions(item.level, questionCount);
     const progress = getBalance100Progress(item.answers, questions);
     const completed = progress.answered >= questions.length;
     const result = item.result ?? (completed ? analyzeBalanceAnswers(item.answers, questions) : null);
-    return { questions, progress, completed, result };
+    return { questions, progress, completed, result, questionCount };
   };
 
   const visibleBalance100History = balance100History.filter((item) => getBalance100HistoryMeta(item).completed);
@@ -1168,12 +1172,12 @@ export default function MyPage() {
                           return (
                             <LabHistoryRow
                               key={item.sessionId}
-                              href="/balance-100"
+                              href={`/balance-100?sessionId=${encodeURIComponent(item.sessionId)}`}
                               title="밸런스 100"
                               accentColor={LAB_HISTORY_THEME.balance100}
                               detail={
                                 meta.completed
-                                  ? `${meta.result?.typeTitle ?? "결과 완료"}`
+                                  ? `Lv.${item.level} · ${meta.questionCount}문항 · ${meta.result?.typeTitle ?? "결과 완료"}`
                                   : `${meta.progress.answered}/${meta.questions.length}문항 완료`
                               }
                               statusLabel={meta.completed ? "결과" : "진행 중"}
@@ -1182,7 +1186,7 @@ export default function MyPage() {
                               onDelete={() => setLabDeleteTarget({
                                 type: "balance-100",
                                 itemId: item.sessionId,
-                                label: `밸런스 100 Lv.${item.level}`,
+                                label: `밸런스 100 Lv.${item.level} · ${meta.questionCount}문항`,
                               })}
                             />
                           );

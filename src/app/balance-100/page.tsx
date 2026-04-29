@@ -9,16 +9,17 @@ import { trackClientEvent } from "@/lib/client-events";
 import { BALANCE_100_LAB_ENABLED } from "@/lib/feature-flags";
 import {
   BALANCE_LEVELS,
-  BALANCE_TOTAL_QUESTIONS,
+  BALANCE_QUESTION_COUNTS,
   analyzeBalanceAnswers,
   getBalance100Progress,
   getBalanceQuestions,
-  getBalanceResultStory,
   getFirstUnansweredIndex,
+  normalizeBalanceQuestionCount,
   normalizeBalanceLevel,
   type BalanceAnswerValue,
   type BalanceAnswers,
   type BalanceLevel,
+  type BalanceQuestionCount,
   type BalanceQuestion,
   type BalanceResultSummary,
 } from "@/lib/balance-100";
@@ -32,6 +33,7 @@ type BalanceServerSession = {
   ownerUserId: string;
   ownerName: string;
   level: BalanceLevel;
+  questionCount: BalanceQuestionCount;
   answers: BalanceAnswers;
   status: SessionStatus;
   result: BalanceResultSummary | null;
@@ -44,6 +46,7 @@ type BalanceServerSession = {
 type BalanceMatchItem = {
   sessionId: string;
   ownerName: string;
+  questionCount: BalanceQuestionCount;
   matchedCount: number;
   percent: number;
   typeTitle: string;
@@ -208,12 +211,12 @@ function BalanceIntroHero() {
       <p className="mb-4 text-[11px] font-black uppercase tracking-[0.3em] text-[#20D879]">친구 일치율 테스트</p>
       <h1 className="text-[34px] font-black leading-[1.12] tracking-[-0.06em] text-gray-900">밸런스 100</h1>
       <p className="mt-5 break-keep text-[16px] font-bold leading-7 text-gray-500">
-        나와 친구가 100개의 선택을 하면
+        나와 친구가 같은 문항을 고르면
         <br />
         <span className="text-[#12863C]">얼마나 같은지 바로 비교해요</span>
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-2">
-        {["100문항", "일치율 확인", "친구 공유"].map((tag) => (
+        {["30/50/100문항", "일치율 확인", "친구 공유"].map((tag) => (
           <span key={tag} className="rounded-full border border-[#B9F7CD] bg-[#F0FFF7] px-3 py-1 text-[12px] font-bold text-[#12863C]">
             {tag}
           </span>
@@ -304,7 +307,7 @@ function ResultReport({
                 <div key={match.sessionId} className="flex items-center justify-between gap-4 py-4">
                   <div className="min-w-0">
                     <p className="truncate text-[18px] font-black tracking-[-0.04em] text-[#111827]">{match.ownerName}님</p>
-                    <p className="mt-1 text-[12px] font-bold text-[#9CA3AF]">같은 결과 · {match.matchedCount}/100 일치</p>
+                    <p className="mt-1 text-[12px] font-bold text-[#9CA3AF]">같은 결과 · {match.matchedCount}/{questions.length} 일치</p>
                   </div>
                   <p className="shrink-0 text-[24px] font-black tracking-[-0.06em] text-[#20D879]">{match.percent}%</p>
                 </div>
@@ -316,7 +319,7 @@ function ResultReport({
                 아직 같은 결과가 나온 친구가 없어요.
               </p>
               <p className="mt-2 break-keep text-[14px] font-bold leading-6 text-[#6B7280]">
-                친구가 같은 레벨을 완료하면 여기서 바로 비교됩니다.
+                친구가 같은 레벨과 문항 수를 완료하면 여기서 바로 비교됩니다.
               </p>
             </div>
           )}
@@ -381,6 +384,9 @@ export default function Balance100Page() {
   const [completedSessions, setCompletedSessions] = useState<BalanceServerSession[]>([]);
   const [matches, setMatches] = useState<BalanceMatchItem[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<BalanceLevel>(1);
+  const [selectedQuestionCount, setSelectedQuestionCount] = useState<BalanceQuestionCount>(100);
+  const [requestedSessionId, setRequestedSessionId] = useState<string | null | undefined>(undefined);
+  const [requestedSessionLoaded, setRequestedSessionLoaded] = useState(false);
   const [ownerName, setOwnerName] = useState("");
   const [displayOwnerName, setDisplayOwnerName] = useState("");
   const [isOwnerNameSaved, setIsOwnerNameSaved] = useState(false);
@@ -390,7 +396,7 @@ export default function Balance100Page() {
   const [shareStatus, setShareStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  const questions = useMemo(() => getBalanceQuestions(selectedLevel), [selectedLevel]);
+  const questions = useMemo(() => getBalanceQuestions(selectedLevel, selectedQuestionCount), [selectedLevel, selectedQuestionCount]);
   const progress = useMemo(() => getBalance100Progress(answers, questions), [answers, questions]);
   const isCompleted = progress.answered >= questions.length;
   const trimmedOwnerName = ownerName.trim();
@@ -415,6 +421,10 @@ export default function Balance100Page() {
   );
   const question = questions[currentIndex];
 
+  useEffect(() => {
+    setRequestedSessionId(new URLSearchParams(window.location.search).get("sessionId"));
+  }, []);
+
   const applySession = useCallback((nextSession: BalanceServerSession | null, nextMatches: BalanceMatchItem[] = []) => {
     setServerSession(nextSession);
     setMatches(nextMatches);
@@ -430,9 +440,11 @@ export default function Balance100Page() {
     }
 
     const level = normalizeBalanceLevel(nextSession.level);
+    const questionCount = normalizeBalanceQuestionCount(nextSession.questionCount);
     const sessionAnswers = nextSession.answers ?? {};
-    const sessionQuestions = getBalanceQuestions(level);
+    const sessionQuestions = getBalanceQuestions(level, questionCount);
     setSelectedLevel(level);
+    setSelectedQuestionCount(questionCount);
     setAnswers(sessionAnswers);
     const storedName = readStoredBalanceOwnerName();
     setOwnerName((prev) => prev || storedName || nextSession.ownerName || "");
@@ -447,14 +459,17 @@ export default function Balance100Page() {
     setCompletedSessions((prev) => {
       const next = [
         session,
-        ...prev.filter((item) => item.level !== session.level && item.sessionId !== session.sessionId),
+        ...prev.filter((item) => (
+          item.sessionId !== session.sessionId &&
+          !(item.level === session.level && normalizeBalanceQuestionCount(item.questionCount) === normalizeBalanceQuestionCount(session.questionCount))
+        )),
       ];
-      return next.sort((a, b) => a.level - b.level);
+      return next.sort((a, b) => a.level - b.level || a.questionCount - b.questionCount);
     });
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || requestedSessionId === undefined) return;
     const storedName = readStoredBalanceOwnerName();
     if (storedName) {
       setOwnerName(storedName);
@@ -467,11 +482,11 @@ export default function Balance100Page() {
       .then((data) => {
         if (data?.ok) {
           setCompletedSessions(Array.isArray(data.completedSessions) ? data.completedSessions : []);
-          applySession(data.session ?? null, data.matches ?? []);
+          if (!requestedSessionId) applySession(data.session ?? null, data.matches ?? []);
         }
       })
       .catch(() => undefined);
-  }, [applySession, user]);
+  }, [applySession, requestedSessionId, user]);
 
   const startQuiz = useCallback(async () => {
     setShareStatus("");
@@ -479,7 +494,7 @@ export default function Balance100Page() {
       setMode("result");
       return;
     }
-    if (serverSession && !(isEmptyInProgressSession && selectedLevel !== serverSession.level)) {
+    if (serverSession && !(isEmptyInProgressSession && (selectedLevel !== serverSession.level || selectedQuestionCount !== serverSession.questionCount))) {
       setCurrentIndex(getFirstUnansweredIndex(answers, questions));
       setMode("quiz");
       return;
@@ -497,6 +512,7 @@ export default function Balance100Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           level: selectedLevel,
+          questionCount: selectedQuestionCount,
           ownerName: trimmedOwnerName,
           restart: Boolean(serverSession),
         }),
@@ -505,13 +521,13 @@ export default function Balance100Page() {
       if (!response.ok || !data?.session) throw new Error(data?.error ?? "failed");
       applySession(data.session, data.matches ?? []);
       setMode("quiz");
-      void trackClientEvent("lab_balance_started", { level: selectedLevel });
+      void trackClientEvent("lab_balance_started", { level: selectedLevel, questionCount: selectedQuestionCount });
     } catch {
       setShareStatus("시작에 실패했어요. 잠시 후 다시 시도해주세요.");
     } finally {
       setIsSaving(false);
     }
-  }, [answers, applySession, isCompleted, isEmptyInProgressSession, questions, selectedLevel, serverSession, trimmedOwnerName]);
+  }, [answers, applySession, isCompleted, isEmptyInProgressSession, questions, selectedLevel, selectedQuestionCount, serverSession, trimmedOwnerName]);
 
   const resetQuiz = useCallback(async () => {
     const ok = window.confirm("기존 진행 상태를 닫고 처음부터 다시 시작할까요?");
@@ -524,19 +540,19 @@ export default function Balance100Page() {
       const response = await fetch("/api/balance-100/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ level: selectedLevel, restart: true, ownerName: trimmedOwnerName }),
+        body: JSON.stringify({ level: selectedLevel, questionCount: selectedQuestionCount, restart: true, ownerName: trimmedOwnerName }),
       });
       const data = await response.json();
       if (!response.ok || !data?.session) throw new Error(data?.error ?? "failed");
       applySession(data.session, []);
       setMode("quiz");
-      void trackClientEvent("lab_balance_started", { level: selectedLevel, restart: true });
+      void trackClientEvent("lab_balance_started", { level: selectedLevel, questionCount: selectedQuestionCount, restart: true });
     } catch {
       setShareStatus("새로 시작하지 못했어요.");
     } finally {
       setIsSaving(false);
     }
-  }, [applySession, selectedLevel, trimmedOwnerName]);
+  }, [applySession, selectedLevel, selectedQuestionCount, trimmedOwnerName]);
 
   const saveSession = useCallback(async (
     sessionId: string,
@@ -558,6 +574,7 @@ export default function Balance100Page() {
     setServerSession(savedSession);
     setMatches(data.matches ?? []);
     setSelectedLevel(normalizeBalanceLevel(savedSession.level));
+    setSelectedQuestionCount(normalizeBalanceQuestionCount(savedSession.questionCount));
     setRepresentativeImageUrl(savedSession.representativeImageUrl);
     return data.session as BalanceServerSession;
   }, [trimmedOwnerName]);
@@ -599,7 +616,7 @@ export default function Balance100Page() {
       const saved = await saveSession(serverSession.sessionId, answers, representativeImageUrl);
       if (saved.status === "completed") {
         upsertCompletedSession(saved);
-        void trackClientEvent("lab_balance_completed", { level: saved.level });
+        void trackClientEvent("lab_balance_completed", { level: saved.level, questionCount: saved.questionCount });
       }
       router.push("/studio");
     } catch {
@@ -618,7 +635,7 @@ export default function Balance100Page() {
       const saved = await saveSession(serverSession.sessionId, answers, representativeImageUrl);
       if (saved.status === "completed") {
         upsertCompletedSession(saved);
-        void trackClientEvent("lab_balance_completed", { level: saved.level });
+        void trackClientEvent("lab_balance_completed", { level: saved.level, questionCount: saved.questionCount });
       }
       setMode("result");
     } catch {
@@ -628,17 +645,20 @@ export default function Balance100Page() {
     }
   }, [answers, isCompleted, representativeImageUrl, saveSession, serverSession, upsertCompletedSession]);
 
-  const openCompletedResult = useCallback((session: BalanceServerSession) => {
+  const openCompletedResult = useCallback((session: BalanceServerSession, initialMatches?: BalanceMatchItem[]) => {
     setServerSession(session);
     setSelectedLevel(normalizeBalanceLevel(session.level));
+    const questionCount = normalizeBalanceQuestionCount(session.questionCount);
+    setSelectedQuestionCount(questionCount);
     setAnswers(session.answers ?? {});
     const storedName = readStoredBalanceOwnerName();
     setOwnerName((prev) => prev || storedName || session.ownerName || "");
     setDisplayOwnerName((prev) => prev || storedName || session.ownerName || "");
     setRepresentativeImageUrl(session.representativeImageUrl);
-    setCurrentIndex(getFirstUnansweredIndex(session.answers ?? {}, getBalanceQuestions(session.level)));
-    setMatches([]);
+    setCurrentIndex(getFirstUnansweredIndex(session.answers ?? {}, getBalanceQuestions(session.level, questionCount)));
+    setMatches(initialMatches ?? []);
     setMode("result");
+    if (initialMatches) return;
     fetch(`/api/balance-100/session/${encodeURIComponent(session.sessionId)}`, { cache: "no-store" })
       .then((response) => response.json())
       .then((data) => {
@@ -646,6 +666,20 @@ export default function Balance100Page() {
       })
       .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (!user || requestedSessionId === undefined || !requestedSessionId || requestedSessionLoaded) return;
+    setRequestedSessionLoaded(true);
+    fetch(`/api/balance-100/session/${encodeURIComponent(requestedSessionId)}`, { cache: "no-store" })
+      .then((response) => response.json().then((data) => ({ ok: response.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok || !data?.session) throw new Error("failed");
+        const target = data.session as BalanceServerSession;
+        upsertCompletedSession(target);
+        openCompletedResult(target, Array.isArray(data.matches) ? data.matches : []);
+      })
+      .catch(() => setShareStatus("기록을 불러오지 못했어요."));
+  }, [openCompletedResult, requestedSessionId, requestedSessionLoaded, upsertCompletedSession, user]);
 
   const createPredictionShareUrl = useCallback(async (sessionId: string) => {
     const shareOwnerName = (displayOwnerName || ownerName || serverSession?.ownerName || user?.nickname || "").trim();
@@ -660,7 +694,7 @@ export default function Balance100Page() {
     return `${window.location.origin}${data.path}`;
   }, [displayOwnerName, ownerName, serverSession?.ownerName, upsertCompletedSession, user?.nickname]);
 
-  const handleKakaoPredictionShare = useCallback(async (sessionId: string, level?: BalanceLevel) => {
+  const handleKakaoPredictionShare = useCallback(async (sessionId: string, level?: BalanceLevel, questionCount?: BalanceQuestionCount) => {
     setIsSaving(true);
     setShareStatus("");
     try {
@@ -681,7 +715,7 @@ export default function Balance100Page() {
           webUrl: shareUrl,
         },
       });
-      setShareStatus(level ? `Lv.${level} 카카오 공유창을 열었어요.` : "카카오 공유창을 열었어요.");
+      setShareStatus(level ? `Lv.${level} · ${questionCount ?? 100}문항 카카오 공유창을 열었어요.` : "카카오 공유창을 열었어요.");
     } catch {
       setShareStatus("카카오 공유에 실패했어요. 링크 복사를 이용해주세요.");
     } finally {
@@ -689,14 +723,14 @@ export default function Balance100Page() {
     }
   }, [createPredictionShareUrl]);
 
-  const handleCopyPredictionLink = useCallback(async (sessionId: string, level?: BalanceLevel) => {
+  const handleCopyPredictionLink = useCallback(async (sessionId: string, level?: BalanceLevel, questionCount?: BalanceQuestionCount) => {
     setIsSaving(true);
     setShareStatus("");
     try {
       const shareUrl = await createPredictionShareUrl(sessionId);
       await navigator.clipboard.writeText(shareUrl);
-      setShareStatus(level ? `Lv.${level} 친구 비교 링크가 복사됐어요.` : "친구 비교 링크가 복사됐어요.");
-      void trackClientEvent("lab_balance_share_link_copy", { level });
+      setShareStatus(level ? `Lv.${level} · ${questionCount ?? 100}문항 친구 비교 링크가 복사됐어요.` : "친구 비교 링크가 복사됐어요.");
+      void trackClientEvent("lab_balance_share_link_copy", { level, questionCount });
     } catch {
       setShareStatus("링크 복사에 실패했어요.");
     } finally {
@@ -706,7 +740,7 @@ export default function Balance100Page() {
 
   const handlePredictionShare = useCallback(async () => {
     if (!serverSession) return;
-    await handleKakaoPredictionShare(serverSession.sessionId, serverSession.level);
+    await handleKakaoPredictionShare(serverSession.sessionId, serverSession.level, serverSession.questionCount);
   }, [handleKakaoPredictionShare, serverSession]);
 
   if (loading || isAvailabilityLoading) {
@@ -746,7 +780,7 @@ export default function Balance100Page() {
             밸런스 100
           </h1>
           <p className="mt-5 break-keep text-[17px] font-medium leading-8 text-[#555]">
-            100개의 선택을 저장하고, 나와 비슷한 사람을 찾는 실험실 카드입니다. 로그인 후 이용할 수 있어요.
+            선택을 저장하고, 나와 비슷한 사람을 찾는 실험실 카드입니다. 로그인 후 이용할 수 있어요.
           </p>
           <button
             type="button"
@@ -789,7 +823,7 @@ export default function Balance100Page() {
             </button>
             <button
               type="button"
-              onClick={() => serverSession && void handleCopyPredictionLink(serverSession.sessionId, serverSession.level)}
+              onClick={() => serverSession && void handleCopyPredictionLink(serverSession.sessionId, serverSession.level, serverSession.questionCount)}
               disabled={isSaving || !serverSession}
               className="flex h-[54px] items-center justify-center rounded-[20px] border border-[#D9F7E5] bg-[#F0FFF7] text-[13px] font-black text-[#20D879] disabled:opacity-50"
             >
@@ -812,7 +846,7 @@ export default function Balance100Page() {
           <TopProgress progressRatio={progressRatio} onBack={() => void handleSaveAndExit()} />
 
           <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#20D879]">
-            {currentIndex + 1} / {questions.length} · Level {selectedLevel}
+            {currentIndex + 1} / {questions.length} · Level {selectedLevel} · {selectedQuestionCount}문항
           </p>
           <h1 className="mt-5 break-keep text-[34px] font-black leading-[1.23] tracking-[-0.06em] text-black">
             둘 중 하나만
@@ -956,6 +990,28 @@ export default function Balance100Page() {
           </section>
         )}
 
+        {progress.answered === 0 && (!serverSession || isEmptyInProgressSession) && (
+          <section className="pt-6">
+            <p className="px-1 text-[13px] font-black text-[#111827]">문항 수 선택</p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {BALANCE_QUESTION_COUNTS.map((count) => (
+                <button
+                  key={count}
+                  type="button"
+                  onClick={() => setSelectedQuestionCount(count)}
+                  className={`h-[58px] rounded-[22px] border text-[17px] font-black transition ${
+                    selectedQuestionCount === count
+                      ? "border-[#20D879] bg-[#F0FFF7] text-[#12863C]"
+                      : "border-[#E5E7EB] bg-white text-[#6B7280]"
+                  }`}
+                >
+                  {count}문항
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
         <div className="mt-5 grid gap-3">
           <PrimaryButton onClick={startQuiz} disabled={isSaving || (!serverSession && !trimmedOwnerName)}>
             {isSaving
@@ -963,8 +1019,8 @@ export default function Balance100Page() {
               : isCompleted
                 ? "결과 보기"
                 : progress.answered > 0
-                  ? `Lv.${serverSession?.level ?? selectedLevel} 이어하기`
-                  : `Lv.${selectedLevel} 시작하기`}
+                  ? `Lv.${serverSession?.level ?? selectedLevel} · ${serverSession?.questionCount ?? selectedQuestionCount}문항 이어하기`
+                  : `Lv.${selectedLevel} · ${selectedQuestionCount}문항 시작하기`}
           </PrimaryButton>
           {progress.answered > 0 && (
             <button
@@ -998,7 +1054,7 @@ export default function Balance100Page() {
                   className="py-4"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-[22px] font-black tracking-[-0.05em] text-black">Lv.{session.level} 완료</p>
+                    <p className="text-[22px] font-black tracking-[-0.05em] text-black">Lv.{session.level} · {session.questionCount}문항 완료</p>
                     <button
                       type="button"
                       onClick={() => openCompletedResult(session)}
@@ -1010,7 +1066,7 @@ export default function Balance100Page() {
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => void handleKakaoPredictionShare(session.sessionId, session.level)}
+                      onClick={() => void handleKakaoPredictionShare(session.sessionId, session.level, session.questionCount)}
                       disabled={isSaving}
                       className="flex h-[48px] items-center justify-center gap-1.5 rounded-xl bg-[#FEE500] text-[13px] font-black text-[#191919] disabled:opacity-50"
                     >
@@ -1019,7 +1075,7 @@ export default function Balance100Page() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => void handleCopyPredictionLink(session.sessionId, session.level)}
+                      onClick={() => void handleCopyPredictionLink(session.sessionId, session.level, session.questionCount)}
                       disabled={isSaving}
                       className="flex h-[48px] items-center justify-center gap-1.5 rounded-xl border border-[#E5E7EB] bg-white text-[13px] font-black text-[#20D879] disabled:opacity-50"
                     >

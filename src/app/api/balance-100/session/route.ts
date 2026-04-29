@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readSessionFromRequest } from "@/lib/auth-session";
-import { BALANCE_TOTAL_QUESTIONS, normalizeBalanceLevel, type BalanceLevel } from "@/lib/balance-100";
+import { getBalanceQuestions, normalizeBalanceLevel, normalizeBalanceQuestionCount } from "@/lib/balance-100";
 import {
   createBalance100Session,
   findBalance100Matches,
@@ -33,11 +33,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: history.error }, { status: 500 });
   }
 
-  const completedByLevel = new Map<BalanceLevel, NonNullable<typeof history.sessions>[number]>();
+  const completedByKey = new Map<string, NonNullable<typeof history.sessions>[number]>();
   for (const item of history.sessions) {
-    if (!item.result || Object.keys(item.answers).length < BALANCE_TOTAL_QUESTIONS) continue;
-    if (!completedByLevel.has(item.level)) {
-      completedByLevel.set(item.level, item);
+    const questionCount = normalizeBalanceQuestionCount(item.questionCount);
+    if (!item.result || Object.keys(item.answers).length < getBalanceQuestions(item.level, questionCount).length) continue;
+    const key = `${item.level}:${questionCount}`;
+    if (!completedByKey.has(key)) {
+      completedByKey.set(key, item);
     }
   }
 
@@ -49,7 +51,7 @@ export async function GET(request: NextRequest) {
     ok: true,
     session: current.session,
     matches: matches.matches,
-    completedSessions: [...completedByLevel.values()].sort((a, b) => a.level - b.level),
+    completedSessions: [...completedByKey.values()].sort((a, b) => a.level - b.level || a.questionCount - b.questionCount),
   });
 }
 
@@ -66,11 +68,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const level = normalizeBalanceLevel(body?.level);
+    const questionCount = normalizeBalanceQuestionCount(body?.questionCount);
     const restart = Boolean(body?.restart);
     const ownerName = typeof body?.ownerName === "string" ? body.ownerName : undefined;
     const created = await createBalance100Session({
       user: session,
       level,
+      questionCount,
       restart,
       ownerName,
     });
