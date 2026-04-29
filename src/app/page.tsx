@@ -17,6 +17,21 @@ const PUBLIC_GUIDES = [
   { href: "/how-to", label: "사용방법" },
 ];
 
+const HERO_BUBBLES = [
+  { src: "/thumbnails/Dreamy_wildflower-after.jpg", className: "left-[30%] top-[78px] h-[142px] w-[142px] z-30", floatClass: "hero-bubble-float-a" },
+  { src: "/thumbnails/holographic-after.jpg", className: "left-[6%] top-[92px] h-[104px] w-[104px] z-20", floatClass: "hero-bubble-float-b" },
+  { src: "/thumbnails/Rainy_crosswalk-after.jpg", className: "right-[5%] top-[88px] h-[108px] w-[108px] z-20", floatClass: "hero-bubble-float-c" },
+  { src: "/thumbnails/visual-kei-after.jpg", className: "left-[48%] top-[38px] h-[92px] w-[92px] z-10", floatClass: "hero-bubble-float-d" },
+  { src: "/thumbnails/rugby-after.jpg", className: "right-[21%] top-[128px] h-[84px] w-[84px] z-40", floatClass: "hero-bubble-float-b" },
+  { src: "/thumbnails/idol-photocard-after.jpg", className: "left-[20%] top-[34px] h-[78px] w-[78px] z-10", floatClass: "hero-bubble-float-c" },
+  { src: "/thumbnails/maid-cafe-heart-after.jpg", className: "right-[30%] top-[22px] h-[74px] w-[74px] z-0", floatClass: "hero-bubble-float-a" },
+  { src: "/thumbnails/angel-after.jpg", className: "left-[-8px] top-[150px] h-[72px] w-[72px] z-30", floatClass: "hero-bubble-float-d" },
+  { src: "/thumbnails/joseon-after.jpg", className: "right-[-10px] top-[150px] h-[74px] w-[74px] z-30", floatClass: "hero-bubble-float-a" },
+  { src: "/thumbnails/skydiving-after.jpg", className: "left-[42%] top-[142px] h-[78px] w-[78px] z-40", floatClass: "hero-bubble-float-c" },
+  { src: "/thumbnails/club-flash-after.jpg", className: "left-[14%] top-[156px] h-[68px] w-[68px] z-40", floatClass: "hero-bubble-float-b" },
+  { src: "/thumbnails/gyaru-after.jpg", className: "right-[10%] top-[44px] h-[66px] w-[66px] z-10", floatClass: "hero-bubble-float-d" },
+];
+
 export default function Home() {
   const [isAgreed, setIsAgreed] = useState(false);
   const [shaking, setShaking] = useState(false);
@@ -58,70 +73,82 @@ export default function Home() {
   };
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center bg-[#0A0A0A] px-6" suppressHydrationWarning>
-      <video
-        className="absolute inset-0 h-full w-full object-cover"
-        autoPlay
-        muted
-        loop
-        playsInline
-      >
-        <source src="/intro-bg.mp4" type="video/mp4" />
-      </video>
-      <div className="absolute inset-0 bg-black/45" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(201,87,26,0.18),transparent_42%)]" />
+    <main
+      className="relative flex min-h-screen flex-col items-center overflow-hidden bg-[#F4FBF6] px-5 text-[#0B0B0B]"
+      style={{ fontFamily: "var(--font-outfit), var(--font-sans), sans-serif" }}
+      suppressHydrationWarning
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#FFFFFF_0%,#F7FFF9_24%,#DDF8E6_56%,#FFFFFF_100%)]" />
+      <div className="pointer-events-none absolute -left-28 top-20 h-[390px] w-[390px] rounded-full bg-[#86E8AD]/45 blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 top-2 h-[360px] w-[360px] rounded-full bg-[#EFFFF4]/90 blur-3xl" />
+      <div className="pointer-events-none absolute left-1/2 top-[250px] h-[360px] w-[560px] -translate-x-1/2 rounded-full bg-[#A8F0C4]/32 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(255,255,255,0.78),rgba(255,255,255,0)_44%)]" />
 
-      <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center py-24">
-        <div className="flex w-full max-w-xs flex-col items-center gap-8">
-
-          {/* Logo */}
-          <div className="relative flex items-center select-none px-2" style={{ padding: "0.2em 0.5em" }} aria-label="StyleDrop">
-            <span
-              className="logo-gradient-text"
-              style={{
-                position: "relative",
-                zIndex: 1,
-                fontFamily: "var(--font-boldonse)",
-                fontWeight: 400,
-                fontSize: "2.2rem",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                lineHeight: 1.3,
-                display: "block",
-                overflow: "visible",
-              }}
-            >
-              StyleDrop
-            </span>
+      <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center pb-14 pt-10">
+        <div className="flex w-full max-w-[430px] flex-col items-center">
+          <div className="mb-8 grid grid-cols-3 gap-1.5 opacity-35" aria-hidden="true">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <span key={index} className="h-3 w-3 rounded-full bg-[#BFC0C0]" />
+            ))}
           </div>
 
-          {/* Subcopy */}
-          <p className="text-[18px] text-white/80 tracking-[-0.02em]">사진 한 장, 감성은 AI가</p>
+          <div className="relative h-[250px] w-[calc(100%+4rem)] max-w-[560px]" aria-label="StyleDrop AI style examples">
+            <div className="absolute inset-x-0 top-[160px] h-24 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.14),rgba(0,0,0,0)_68%)] blur-2xl" />
+            {HERO_BUBBLES.map((bubble) => (
+              <div
+                key={bubble.src}
+                className={`absolute overflow-hidden rounded-full border border-white/80 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.18)] ${bubble.floatClass} ${bubble.className}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={bubble.src} alt="" className="h-full w-full object-cover" />
+                <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.72),rgba(255,255,255,0)_38%)]" />
+              </div>
+            ))}
+            <div className="hero-glass-plus absolute left-1/2 top-[174px] z-50 flex h-[76px] w-[76px] -translate-x-1/2 items-center justify-center rounded-full border border-white/70 bg-white/34 text-[34px] font-light text-[#141414] shadow-[0_18px_42px_rgba(15,23,42,0.18)] backdrop-blur-2xl">
+              <span>+</span>
+            </div>
+          </div>
+
+          <div className="mt-4 text-center">
+            <p className="text-[13px] font-black uppercase tracking-[0.34em] text-[#C9571A]">StyleDrop</p>
+            <h1 className="mt-4 text-[36px] font-normal leading-[1.22] tracking-[-0.04em] text-black">
+              Meet StyleDrop.
+              <br />
+              One photo,
+              <br />
+              endless AI styles.
+            </h1>
+            <p className="mx-auto mt-5 max-w-[310px] text-[16px] font-semibold leading-7 text-[#68746B]" style={{ fontFamily: "\"SUIT Variable\", var(--font-sans), sans-serif" }}>
+              사진 한 장을 올리고,
+              <br />
+              원하는 분위기를 고르면 끝.
+            </p>
+          </div>
 
           {/* 로그인 상태 */}
           {user === undefined ? null : user ? (
-            <div className="flex flex-col items-center gap-3 w-full">
-              <div className="flex items-center gap-2.5 bg-black/35 border border-white/10 backdrop-blur-md rounded-2xl px-4 py-2.5 w-full justify-center">
+            <div className="mt-9 flex w-full flex-col items-center gap-3">
+              <div className="flex w-full items-center justify-center gap-3 rounded-[28px] border border-black/5 bg-white/90 px-4 py-3 shadow-[0_14px_36px_rgba(15,23,42,0.08)] backdrop-blur">
                 {user.profileImage && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  <img src={user.profileImage} alt="" className="h-9 w-9 rounded-full object-cover" />
                 )}
-                <span className="text-white/80 text-sm font-medium">{user.nickname ?? "사용자"}</span>
-                <button onClick={handleLogout} className="ml-auto text-[11px] text-[#555] hover:text-white/40 transition-colors">로그아웃</button>
+                <span className="text-[15px] font-bold text-[#2B2926]">{user.nickname ?? "사용자"}</span>
+                <button onClick={handleLogout} className="ml-auto text-[12px] font-semibold text-[#B6B0A9] transition-colors hover:text-black">로그아웃</button>
               </div>
               <button
                 onClick={() => router.push("/studio")}
-                className="w-full h-[52px] bg-[#C9571A] hover:bg-[#B34A12] text-white font-bold text-[16px] rounded-full transition-colors shadow-lg shadow-[#C9571A]/20"
+                className="h-[60px] w-full rounded-full bg-[#D25416] text-[18px] font-black text-white shadow-[0_20px_48px_rgba(210,84,22,0.24)] transition-transform active:scale-[0.98]"
               >
                 시작하기 →
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-4 w-full">
+            <div className="mt-9 flex w-full flex-col items-center gap-3">
               {/* 카카오 로그인 버튼 */}
               <button
                 onClick={handleKakaoLogin}
-                className="w-full h-[52px] bg-[#FEE500] hover:bg-[#F0D900] text-[#191919] font-bold text-[15px] rounded-full transition-colors flex items-center justify-center gap-2 shadow-lg shadow-black/25"
+                className="flex h-[58px] w-full items-center justify-center gap-2 rounded-full bg-[#FEE500] text-[16px] font-black text-[#191919] shadow-[0_16px_42px_rgba(15,23,42,0.12)] transition-transform active:scale-[0.98]"
               >
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#191919"/>
@@ -132,7 +159,7 @@ export default function Home() {
               {/* 로그인 없이 시작 */}
               <button
                 onClick={handleStart}
-                className="w-full h-[52px] bg-black/35 hover:bg-black/50 border border-white/10 backdrop-blur-md text-white/80 hover:text-white font-bold text-[15px] rounded-full transition-colors"
+                className="h-[58px] w-full rounded-full border border-black/8 bg-white text-[16px] font-black text-[#171717] shadow-[0_16px_42px_rgba(15,23,42,0.08)] transition-transform active:scale-[0.98]"
               >
                 로그인 없이 시작하기
               </button>
@@ -141,35 +168,35 @@ export default function Home() {
 
           {/* Checkbox + privacy notice */}
           <label
-            className="flex items-start gap-2.5 cursor-pointer max-w-[280px]"
+            className="mt-7 flex max-w-[340px] cursor-pointer items-start gap-3 rounded-[24px] bg-white/60 px-4 py-3"
             style={shaking ? { animation: "shake 0.5s ease-in-out" } : undefined}
           >
-            <div className="relative flex items-center justify-center mt-0.5">
+            <div className="relative mt-0.5 flex items-center justify-center">
               <input
                 type="checkbox"
                 checked={isAgreed}
                 onChange={(e) => setIsAgreed(e.target.checked)}
-                className={`peer appearance-none shrink-0 w-4 h-4 rounded border-2 transition-colors cursor-pointer ${
-                  shaking && !isAgreed ? "border-red-500" : "border-white/20"
+                className={`peer h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-md border-2 transition-colors ${
+                  shaking && !isAgreed ? "border-red-500" : "border-[#D6D0C8]"
                 } checked:border-[#C9571A] checked:bg-[#C9571A]`}
               />
               <svg
-                className="absolute w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none"
+                className="pointer-events-none absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100"
                 viewBox="0 0 14 10" fill="none"
               >
                 <path d="M1 5L4.5 8.5L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <span className="text-[12px] text-white/65 leading-relaxed">
-              <Link href="/terms" className="text-white/80 underline underline-offset-2">이용약관</Link> 및 <Link href="/privacy" className="text-white/80 underline underline-offset-2">개인정보처리방침</Link>에 동의하며, 업로드한 사진과 생성 결과는 서비스 제공·저장·공유 기능 범위에서 처리됩니다.
+            <span className="text-[12px] font-semibold leading-6 text-[#817B73]">
+              <Link href="/terms" className="text-[#171717] underline underline-offset-2">이용약관</Link> 및 <Link href="/privacy" className="text-[#171717] underline underline-offset-2">개인정보처리방침</Link>에 동의하며, 업로드한 사진과 생성 결과는 서비스 제공·저장·공유 기능 범위에서 처리됩니다.
             </span>
           </label>
 
           {/* Links */}
-          <div className="flex gap-5">
-            <Link href="/faq" className="text-[12px] text-white/55 hover:text-white transition-colors">FAQ</Link>
-            <Link href="/terms" className="text-[12px] text-white/55 hover:text-white transition-colors">이용약관</Link>
-            <Link href="/privacy" className="text-[12px] text-white/55 hover:text-white transition-colors">개인정보처리방침</Link>
+          <div className="mt-5 flex gap-5">
+            <Link href="/faq" className="text-[12px] font-semibold text-[#9A938B] transition-colors hover:text-black">FAQ</Link>
+            <Link href="/terms" className="text-[12px] font-semibold text-[#9A938B] transition-colors hover:text-black">이용약관</Link>
+            <Link href="/privacy" className="text-[12px] font-semibold text-[#9A938B] transition-colors hover:text-black">개인정보처리방침</Link>
           </div>
 
         </div>
@@ -177,7 +204,7 @@ export default function Home() {
         <div className="mt-8 w-full max-w-md">
           <GoogleAd
             slot={ADSENSE_PAGE_SLOTS.home}
-            className="border-white/12 bg-black/35"
+            className="border-black/10 bg-white/70"
             minHeight={110}
           />
         </div>
@@ -203,30 +230,30 @@ export default function Home() {
       )}
 
       {/* Footer */}
-      <footer className="relative z-10 w-[calc(100%+3rem)] -mx-6 pb-0">
-        <div className="w-full border-t border-white/10 px-5 py-4">
+      <footer className="relative z-10 w-[calc(100%+2.5rem)] -mx-5 pb-0">
+        <div className="w-full border-t border-black/8 bg-white/45 px-5 py-4">
           <div className="grid w-full gap-5 text-left">
             <div>
-              <p className="text-[18px] font-bold tracking-[-0.03em] text-white">StyleDrop</p>
-              <p className="mt-2 max-w-none text-[11px] leading-5 text-white/72 sm:whitespace-nowrap">
+              <p className="text-[18px] font-black tracking-[-0.03em] text-black">StyleDrop</p>
+              <p className="mt-2 max-w-none text-[11px] font-semibold leading-5 text-[#7D776F] sm:whitespace-nowrap">
                 사진 한 장으로 감성 카드, 프로필 컷, 퍼스널컬러, AI 오디션 결과까지 이어지는 AI 이미지 서비스.
               </p>
             </div>
 
             <div>
               <div className="text-left">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#B7AFA6]">
                   Contact
                 </p>
-                <div className="mt-2 flex flex-col gap-1 text-[10px] leading-4 text-white/42">
+                <div className="mt-2 flex flex-col gap-1 text-[10px] font-semibold leading-4 text-[#908981]">
                   <p className="flex flex-wrap gap-x-5 gap-y-1">
                     <span className="font-medium">상호: 핑거</span>
                     <span className="font-medium">사업자: 707-79-00261</span>
-                    <span className="font-semibold text-white/55">0505-007-3670</span>
+                    <span className="font-semibold text-[#5F5953]">0505-007-3670</span>
                   </p>
                   <p className="flex flex-wrap gap-x-5 gap-y-1">
                     <span className="font-medium">서울특별시 송파구 오금로 551, 1동 2층 201호 257</span>
-                    <a href="mailto:support@styledrop.cloud" className="font-semibold text-white/55 transition-colors hover:text-white/80">
+                    <a href="mailto:support@styledrop.cloud" className="font-semibold text-[#5F5953] transition-colors hover:text-black">
                       support@styledrop.cloud
                     </a>
                   </p>
@@ -235,16 +262,16 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-4 flex w-full flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/10 pt-3 text-[10px] text-white/70">
+          <div className="mt-4 flex w-full flex-wrap items-center gap-x-3 gap-y-1 border-t border-black/8 pt-3 text-[10px] font-semibold text-[#77716A]">
             <span>© 2026 StyleDrop</span>
-            <Link href="/faq" className="transition-colors hover:text-white">FAQ</Link>
-            <Link href="/terms" className="transition-colors hover:text-white">이용약관</Link>
-            <Link href="/privacy" className="transition-colors hover:text-white">개인정보처리방침</Link>
-            <a href="mailto:support@styledrop.cloud" className="transition-colors hover:text-white">문의</a>
+            <Link href="/faq" className="transition-colors hover:text-black">FAQ</Link>
+            <Link href="/terms" className="transition-colors hover:text-black">이용약관</Link>
+            <Link href="/privacy" className="transition-colors hover:text-black">개인정보처리방침</Link>
+            <a href="mailto:support@styledrop.cloud" className="transition-colors hover:text-black">문의</a>
           </div>
         </div>
 
-        <div className="w-full border-t border-white/8 px-5 py-3">
+        <div className="w-full border-t border-black/8 bg-white/35 px-5 py-3">
           <button
             type="button"
             onClick={() => setIsExploreOpen((prev) => !prev)}
@@ -252,11 +279,11 @@ export default function Home() {
             aria-expanded={isExploreOpen}
             aria-controls="footer-explore-panel"
           >
-            <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-white/72">
+            <span className="text-[11px] font-black uppercase tracking-[0.24em] text-[#77716A]">
               Explore
             </span>
             <span
-              className={`text-[12px] text-white/54 transition-transform ${isExploreOpen ? "rotate-180" : ""}`}
+              className={`text-[12px] text-[#99928A] transition-transform ${isExploreOpen ? "rotate-180" : ""}`}
               aria-hidden="true"
             >
               ▾
@@ -266,13 +293,13 @@ export default function Home() {
           {isExploreOpen && (
             <div
               id="footer-explore-panel"
-              className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[11px] leading-5 text-white/76"
+              className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[11px] font-semibold leading-5 text-[#716B64]"
             >
               {PUBLIC_GUIDES.map((guide) => (
                 <Link
                   key={guide.href}
                   href={guide.href}
-                  className="transition-colors hover:text-white"
+                  className="transition-colors hover:text-black"
                 >
                   {guide.label}
                 </Link>
