@@ -47,6 +47,7 @@ type BalanceMatchItem = {
   sessionId: string;
   ownerName: string;
   questionCount: BalanceQuestionCount;
+  answers: BalanceAnswers;
   matchedCount: number;
   percent: number;
   typeTitle: string;
@@ -327,9 +328,12 @@ function ResultReport({
   representativeImageUrl?: string;
 }) {
   const displayName = userName.trim() || "사용자";
-  const sameResultMatches = matches
-    .filter((match) => match.typeTitle === result.typeTitle)
-    .slice(0, 5);
+  const comparableMatches = useMemo(() => matches.slice(0, 10), [matches]);
+  const [selectedMatchId, setSelectedMatchId] = useState("");
+  const activeSelectedMatchId = comparableMatches.some((match) => match.sessionId === selectedMatchId)
+    ? selectedMatchId
+    : comparableMatches[0]?.sessionId ?? "";
+  const selectedMatch = comparableMatches.find((match) => match.sessionId === activeSelectedMatchId) ?? null;
   const answeredQuestions = questions
     .map((question, index) => ({
       question,
@@ -346,28 +350,35 @@ function ResultReport({
           <h1 className="break-keep text-[31px] font-black leading-[1.14] tracking-[-0.06em] text-black">
             {displayName}님과
             <br />
-            결과가 같은 친구는?!
+            비교한 친구들
           </h1>
           <p className="mt-3 text-[13px] font-black text-[#20D879]">{result.typeTitle}</p>
-          {sameResultMatches.length > 0 ? (
+          {comparableMatches.length > 0 ? (
             <div className="mt-5 divide-y divide-[#E5E7EB] border-y border-[#E5E7EB]">
-              {sameResultMatches.map((match) => (
-                <div key={match.sessionId} className="flex items-center justify-between gap-4 py-4">
+              {comparableMatches.map((match) => (
+                <button
+                  key={match.sessionId}
+                  type="button"
+                  onClick={() => setSelectedMatchId(match.sessionId)}
+                  className={`flex w-full items-center justify-between gap-4 py-4 text-left transition ${
+                    selectedMatch?.sessionId === match.sessionId ? "bg-[#F0FFF7]" : "bg-white"
+                  }`}
+                >
                   <div className="min-w-0">
                     <p className="truncate text-[18px] font-black tracking-[-0.04em] text-[#111827]">{match.ownerName}님</p>
-                    <p className="mt-1 text-[12px] font-bold text-[#9CA3AF]">같은 결과 · {match.matchedCount}/{questions.length} 일치</p>
+                    <p className="mt-1 text-[12px] font-bold text-[#9CA3AF]">{match.typeTitle} · {match.matchedCount}/{questions.length} 일치</p>
                   </div>
                   <p className="shrink-0 text-[24px] font-black tracking-[-0.06em] text-[#20D879]">{match.percent}%</p>
-                </div>
+                </button>
               ))}
             </div>
           ) : (
             <div className="mt-5 border-y border-[#E5E7EB] py-5">
               <p className="break-keep text-[18px] font-black leading-7 text-[#111827]">
-                아직 같은 결과가 나온 친구가 없어요.
+                아직 응답한 친구가 없어요.
               </p>
               <p className="mt-2 break-keep text-[14px] font-bold leading-6 text-[#6B7280]">
-                친구가 같은 레벨과 문항 수를 완료하면 여기서 바로 비교됩니다.
+                친구가 링크로 답을 완료하면 여기서 바로 비교됩니다.
               </p>
             </div>
           )}
@@ -377,21 +388,51 @@ function ResultReport({
       <section>
         <div className="mb-4 flex items-end justify-between">
           <h2 className="text-[25px] font-black tracking-[-0.05em] text-[#111827]">밸런스 Q&A</h2>
+          {selectedMatch && (
+            <p className="text-[12px] font-black text-[#20D879]">{selectedMatch.ownerName}님과 비교</p>
+          )}
         </div>
         <div className="-mx-6 overflow-x-auto px-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex snap-x snap-mandatory gap-2.5">
             {answeredQuestions.map(({ question, index, picked }) => {
+              const friendPicked = selectedMatch?.answers?.[question.id];
+              const isSame = Boolean(friendPicked && friendPicked === picked);
+              const getOptionClassName = (option: BalanceAnswerValue) => {
+                const isMine = picked === option;
+                const isFriend = friendPicked === option;
+                if (isMine && isFriend) return "border-[#20D879] bg-[#F0FFF7] text-[#111827]";
+                if (isMine) return "border-[#FFEDD5] bg-[#FFF7ED] text-[#111827]";
+                if (isFriend) return "border-[#DBEAFE] bg-[#EFF6FF] text-[#111827]";
+                return "border-transparent bg-transparent text-[#9CA3AF]";
+              };
+
               return (
-                <article key={question.id} className="min-h-[168px] min-w-[72%] snap-start border border-[#E5E7EB] bg-white p-4">
+                <article key={question.id} className="min-h-[210px] min-w-[86%] snap-start border border-[#E5E7EB] bg-white p-4">
                   <div className="flex items-center justify-between">
                     <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#20D879]">
                       Q{String(index + 1).padStart(2, "0")}
                     </p>
-                    <p className="text-[12px] font-black text-[#111827]">선택 {picked}</p>
+                    <p className={`text-[12px] font-black ${isSame ? "text-[#20D879]" : "text-[#F97316]"}`}>
+                      {selectedMatch ? (isSame ? "같은 선택" : "다른 선택") : `내 선택 ${picked}`}
+                    </p>
                   </div>
-                  <div className="mt-5 grid gap-3 text-[14px] font-bold leading-6 text-[#9CA3AF]">
-                    <div className={`flex min-h-9 items-center justify-between gap-3 ${picked === "A" ? "text-[#111827]" : ""}`}>
-                      <span className="min-w-0 break-keep">A. {question.left}</span>
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    <span className="rounded-full bg-[#FFF7ED] px-2.5 py-1 text-[11px] font-black text-[#F97316]">나 {picked}</span>
+                    {selectedMatch && friendPicked && (
+                      <span className="rounded-full bg-[#EFF6FF] px-2.5 py-1 text-[11px] font-black text-[#2563EB]">
+                        {selectedMatch.ownerName} {friendPicked}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-4 grid gap-2 text-[14px] font-bold leading-6">
+                    <div className={`rounded-2xl border px-3 py-3 ${getOptionClassName("A")}`}>
+                      <div className="flex min-h-9 items-start justify-between gap-3">
+                        <span className="min-w-0 break-keep">A. {question.left}</span>
+                        <span className="flex shrink-0 gap-1">
+                          {picked === "A" && <span className="rounded-full bg-[#FFF7ED] px-2 py-0.5 text-[10px] font-black text-[#F97316]">나</span>}
+                          {friendPicked === "A" && selectedMatch && <span className="rounded-full bg-[#EFF6FF] px-2 py-0.5 text-[10px] font-black text-[#2563EB]">친구</span>}
+                        </span>
+                      </div>
                       {picked === "A" && representativeImageUrl && (
                         <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[#E5E7EB] bg-[#F3F4F6]">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -399,8 +440,14 @@ function ResultReport({
                         </span>
                       )}
                     </div>
-                    <div className={`flex min-h-9 items-center justify-between gap-3 ${picked === "B" ? "text-[#111827]" : ""}`}>
-                      <span className="min-w-0 break-keep">B. {question.right}</span>
+                    <div className={`rounded-2xl border px-3 py-3 ${getOptionClassName("B")}`}>
+                      <div className="flex min-h-9 items-start justify-between gap-3">
+                        <span className="min-w-0 break-keep">B. {question.right}</span>
+                        <span className="flex shrink-0 gap-1">
+                          {picked === "B" && <span className="rounded-full bg-[#FFF7ED] px-2 py-0.5 text-[10px] font-black text-[#F97316]">나</span>}
+                          {friendPicked === "B" && selectedMatch && <span className="rounded-full bg-[#EFF6FF] px-2 py-0.5 text-[10px] font-black text-[#2563EB]">친구</span>}
+                        </span>
+                      </div>
                       {picked === "B" && representativeImageUrl && (
                         <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[#E5E7EB] bg-[#F3F4F6]">
                           {/* eslint-disable-next-line @next/next/no-img-element */}

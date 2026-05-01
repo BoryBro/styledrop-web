@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   }
 
   const matches = current.session?.status === "completed"
-    ? await findBalance100Matches({ session: current.session, limit: 5 })
+    ? await findBalance100Matches({ session: current.session, limit: 10 })
     : { matches: [], error: null };
 
   return NextResponse.json({

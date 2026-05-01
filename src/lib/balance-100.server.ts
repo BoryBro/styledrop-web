@@ -45,6 +45,7 @@ export type Balance100MatchItem = {
   ownerName: string;
   level: BalanceLevel;
   questionCount: BalanceQuestionCount;
+  answers: BalanceAnswers;
   matchedCount: number;
   percent: number;
   typeTitle: string;
@@ -607,6 +608,7 @@ export async function findBalance100Matches(input: {
         ownerName: session.ownerName,
         level: session.level,
         questionCount: session.questionCount,
+        answers: session.answers,
         matchedCount: compared.matchedCount,
         percent: compared.percent,
         typeTitle: session.result?.typeTitle ?? "결과 완료",

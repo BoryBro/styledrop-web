@@ -79,7 +79,7 @@ export async function PATCH(
     }
 
     const matches = updated.session.status === "completed"
-      ? await findBalance100Matches({ session: updated.session, limit: 5 })
+      ? await findBalance100Matches({ session: updated.session, limit: 10 })
       : { matches: [], error: null };
 
     return NextResponse.json({
