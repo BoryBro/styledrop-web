@@ -90,6 +90,38 @@ function writeStoredBalanceOwnerName(name: string) {
   }
 }
 
+async function copyTextToClipboard(text: string) {
+  if (typeof window === "undefined") throw new Error("browser only");
+
+  if (window.isSecureContext && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch {
+      // 모바일 인앱 브라우저에서 Clipboard API가 막히는 경우가 있어 아래 방식으로 재시도합니다.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+
+  try {
+    textarea.focus({ preventScroll: true });
+    textarea.select();
+    textarea.setSelectionRange(0, text.length);
+    const copied = document.execCommand("copy");
+    if (!copied) throw new Error("copy failed");
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
 function TopProgress({
   progressRatio = 0,
   onBack,
@@ -709,7 +741,7 @@ export default function Balance100Page() {
 
       sendDefault({
         objectType: "text",
-        text: `나는 밸런스 100 끝냈어.\n너도 네 기준대로 골라보고 우리 선택이 얼마나 같은지 보자.`,
+        text: `밸런스 100 결과가 도착했어요.\n100개의 선택을 완료하고, 우리 선택이 얼마나 비슷한지 확인해보세요.`,
         link: {
           mobileWebUrl: shareUrl,
           webUrl: shareUrl,
@@ -728,7 +760,7 @@ export default function Balance100Page() {
     setShareStatus("");
     try {
       const shareUrl = await createPredictionShareUrl(sessionId);
-      await navigator.clipboard.writeText(shareUrl);
+      await copyTextToClipboard(shareUrl);
       setShareStatus(level ? `Lv.${level} · ${questionCount ?? 100}문항 친구 비교 링크가 복사됐어요.` : "친구 비교 링크가 복사됐어요.");
       void trackClientEvent("lab_balance_share_link_copy", { level, questionCount });
     } catch {
