@@ -70,21 +70,37 @@ type KakaoShareSDK = {
 const GREEN = "#20D879";
 const BALANCE_OWNER_NAME_STORAGE_KEY = "styledrop_balance_100_owner_name";
 
-function readStoredBalanceOwnerName() {
+function getBalanceOwnerNameStorageKey(level: BalanceLevel, questionCount: BalanceQuestionCount) {
+  return `${BALANCE_OWNER_NAME_STORAGE_KEY}:${level}:${questionCount}`;
+}
+
+function readStoredBalanceOwnerName(
+  level?: BalanceLevel,
+  questionCount?: BalanceQuestionCount,
+  options: { includeLegacyFallback?: boolean } = {},
+) {
   if (typeof window === "undefined") return "";
   try {
+    if (level && questionCount) {
+      const storedName = window.localStorage.getItem(getBalanceOwnerNameStorageKey(level, questionCount));
+      if (storedName) return storedName.trim().slice(0, 16);
+    }
+
+    if (!options.includeLegacyFallback) return "";
+
+    // 기존 사용자의 공통 닉네임은 첫 진입 fallback으로만 사용합니다.
     return (window.localStorage.getItem(BALANCE_OWNER_NAME_STORAGE_KEY) ?? "").trim().slice(0, 16);
   } catch {
     return "";
   }
 }
 
-function writeStoredBalanceOwnerName(name: string) {
+function writeStoredBalanceOwnerName(name: string, level: BalanceLevel, questionCount: BalanceQuestionCount) {
   if (typeof window === "undefined") return;
   const safeName = name.trim().slice(0, 16);
   if (!safeName) return;
   try {
-    window.localStorage.setItem(BALANCE_OWNER_NAME_STORAGE_KEY, safeName);
+    window.localStorage.setItem(getBalanceOwnerNameStorageKey(level, questionCount), safeName);
   } catch {
     // 저장소 접근이 막혀도 세션 생성 시 서버에는 저장됩니다.
   }
@@ -463,9 +479,10 @@ export default function Balance100Page() {
     if (!nextSession) {
       setAnswers({});
       setRepresentativeImageUrl(undefined);
-      const storedName = readStoredBalanceOwnerName();
-      setOwnerName((prev) => prev || storedName);
-      setDisplayOwnerName((prev) => prev || storedName);
+      const storedName = readStoredBalanceOwnerName(1, 100, { includeLegacyFallback: true });
+      setOwnerName(storedName);
+      setDisplayOwnerName(storedName);
+      setIsOwnerNameSaved(Boolean(storedName));
       setCurrentIndex(0);
       setMode("intro");
       return;
@@ -478,9 +495,10 @@ export default function Balance100Page() {
     setSelectedLevel(level);
     setSelectedQuestionCount(questionCount);
     setAnswers(sessionAnswers);
-    const storedName = readStoredBalanceOwnerName();
-    setOwnerName((prev) => prev || storedName || nextSession.ownerName || "");
-    setDisplayOwnerName((prev) => prev || storedName || nextSession.ownerName || "");
+    const sessionOwnerName = (nextSession.ownerName || readStoredBalanceOwnerName(level, questionCount)).trim().slice(0, 16);
+    setOwnerName(sessionOwnerName);
+    setDisplayOwnerName(sessionOwnerName);
+    setIsOwnerNameSaved(Boolean(sessionOwnerName));
     setRepresentativeImageUrl(nextSession.representativeImageUrl);
     setCurrentIndex(getFirstUnansweredIndex(sessionAnswers, sessionQuestions));
     setMode("intro");
@@ -502,12 +520,6 @@ export default function Balance100Page() {
 
   useEffect(() => {
     if (!user || requestedSessionId === undefined) return;
-    const storedName = readStoredBalanceOwnerName();
-    if (storedName) {
-      setOwnerName(storedName);
-      setDisplayOwnerName(storedName);
-      setIsOwnerNameSaved(true);
-    }
 
     fetch("/api/balance-100/session", { cache: "no-store" })
       .then((response) => response.json())
@@ -519,6 +531,17 @@ export default function Balance100Page() {
       })
       .catch(() => undefined);
   }, [applySession, requestedSessionId, user]);
+
+  useEffect(() => {
+    if (mode !== "intro") return;
+    if (serverSession && !isEmptyInProgressSession) return;
+    if (progress.answered > 0) return;
+
+    const storedName = readStoredBalanceOwnerName(selectedLevel, selectedQuestionCount);
+    setOwnerName(storedName);
+    setDisplayOwnerName(storedName);
+    setIsOwnerNameSaved(Boolean(storedName));
+  }, [isEmptyInProgressSession, mode, progress.answered, selectedLevel, selectedQuestionCount, serverSession]);
 
   const startQuiz = useCallback(async () => {
     setShareStatus("");
@@ -538,7 +561,7 @@ export default function Balance100Page() {
 
     setIsSaving(true);
     try {
-      writeStoredBalanceOwnerName(trimmedOwnerName);
+      writeStoredBalanceOwnerName(trimmedOwnerName, selectedLevel, selectedQuestionCount);
       const response = await fetch("/api/balance-100/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -568,7 +591,7 @@ export default function Balance100Page() {
     setIsSaving(true);
     setShareStatus("");
     try {
-      if (trimmedOwnerName) writeStoredBalanceOwnerName(trimmedOwnerName);
+      if (trimmedOwnerName) writeStoredBalanceOwnerName(trimmedOwnerName, selectedLevel, selectedQuestionCount);
       const response = await fetch("/api/balance-100/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -683,11 +706,13 @@ export default function Balance100Page() {
     const questionCount = normalizeBalanceQuestionCount(session.questionCount);
     setSelectedQuestionCount(questionCount);
     setAnswers(session.answers ?? {});
-    const storedName = readStoredBalanceOwnerName();
-    setOwnerName((prev) => prev || storedName || session.ownerName || "");
-    setDisplayOwnerName((prev) => prev || storedName || session.ownerName || "");
+    const level = normalizeBalanceLevel(session.level);
+    const sessionOwnerName = (session.ownerName || readStoredBalanceOwnerName(level, questionCount)).trim().slice(0, 16);
+    setOwnerName(sessionOwnerName);
+    setDisplayOwnerName(sessionOwnerName);
+    setIsOwnerNameSaved(Boolean(sessionOwnerName));
     setRepresentativeImageUrl(session.representativeImageUrl);
-    setCurrentIndex(getFirstUnansweredIndex(session.answers ?? {}, getBalanceQuestions(session.level, questionCount)));
+    setCurrentIndex(getFirstUnansweredIndex(session.answers ?? {}, getBalanceQuestions(level, questionCount)));
     setMatches(initialMatches ?? []);
     setMode("result");
     if (initialMatches) return;
@@ -972,7 +997,7 @@ export default function Balance100Page() {
                     if (!trimmedOwnerName) return;
                     setOwnerName(trimmedOwnerName);
                     setDisplayOwnerName(trimmedOwnerName);
-                    writeStoredBalanceOwnerName(trimmedOwnerName);
+                    writeStoredBalanceOwnerName(trimmedOwnerName, selectedLevel, selectedQuestionCount);
                     setIsOwnerNameSaved(true);
                     setShareStatus("닉네임이 저장됐어요.");
                   }}
