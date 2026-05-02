@@ -62,11 +62,6 @@ import {
 import { buildKakaoLoginUrlWithReferral, storeReferralCodeFromCurrentUrl } from "@/lib/referral";
 import { STYLE_VARIANTS } from "@/lib/variants";
 
-function formatCount(n: number): string {
-  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-  return String(n);
-}
-
 function formatStoryTime(value: string): string {
   const diffMs = Date.now() - new Date(value).getTime();
   const diffMin = Math.max(1, Math.floor(diffMs / 60000));
@@ -187,6 +182,7 @@ export default function Studio() {
   const [requiredCreditsModal, setRequiredCreditsModal] = useState<1 | 2>(2);
   const [showHowToModal, setShowHowToModal] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [variantSelectStyle, setVariantSelectStyle] = useState<StyleCard | null>(null);
   const [showCameraGuide, setShowCameraGuide] = useState(false);
   const [showPhotoSourceSheet, setShowPhotoSourceSheet] = useState(false);
@@ -1337,7 +1333,7 @@ export default function Studio() {
         {/* Header */}
         <header className="h-[52px] bg-[#F5F5F5] border-b border-[#E0E0E0] flex items-center justify-between px-4 sticky top-0 z-40">
           <div className="flex items-center gap-2">
-            <Link href="/" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
+            <Link href="/studio" className="font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]">StyleDrop</Link>
           </div>
           {!loading && (
             user ? (
@@ -1378,14 +1374,36 @@ export default function Studio() {
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => { setLoginLoading(true); login(); }}
-                disabled={loginLoading}
-                className="bg-[#FEE500] text-[#3C1E1E] text-[13px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 disabled:opacity-70"
-              >
-                {loginLoading && <span className="w-3.5 h-3.5 rounded-full border-2 border-[#3C1E1E]/30 border-t-[#3C1E1E] inline-block" style={{ animation: "spin 0.7s linear infinite" }} />}
-                {loginLoading ? "연결 중..." : "카카오 로그인"}
-              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  aria-label="메뉴 열기"
+                  onClick={() => setShowHeaderMenu((prev) => !prev)}
+                  className="flex h-9 w-8 items-center justify-center text-[#C9571A] transition-opacity hover:opacity-75"
+                >
+                  <span className="flex flex-col gap-1">
+                    <span className="block h-[2px] w-5 rounded-full bg-current" />
+                    <span className="block h-[2px] w-5 rounded-full bg-current" />
+                    <span className="block h-[2px] w-5 rounded-full bg-current" />
+                  </span>
+                </button>
+                {showHeaderMenu && (
+                  <div className="absolute right-0 top-11 z-50 w-[168px] rounded-2xl border border-black/10 bg-white p-2 shadow-[0_16px_40px_rgba(10,10,10,0.14)]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowHeaderMenu(false);
+                        setLoginLoading(true);
+                        login();
+                      }}
+                      disabled={loginLoading}
+                      className="flex h-11 w-full items-center justify-center rounded-xl bg-[#FEE500] text-[13px] font-black text-[#3C1E1E] disabled:opacity-70"
+                    >
+                      {loginLoading ? "연결 중..." : "로그인하기"}
+                    </button>
+                  </div>
+                )}
+              </div>
             )
           )}
         </header>
@@ -1582,13 +1600,6 @@ export default function Studio() {
                             <span className="rounded-full bg-white px-3 py-1.5 text-[12px] font-black text-[#C9571A] shadow-lg">
                               TOP {index + 1}
                             </span>
-                            <span className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 text-[12px] font-bold text-white backdrop-blur-md">
-                              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                                <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.85"/>
-                                <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round"/>
-                              </svg>
-                              {usageCounts === null ? "..." : formatCount(usageCounts[style.id] ?? 0)}
-                            </span>
                           </div>
 
                           <div className="absolute bottom-0 left-0 right-0 p-5">
@@ -1710,13 +1721,6 @@ export default function Studio() {
                                 </div>
                                 <p className="text-[14px] text-[#ccc] mt-0.5 break-keep">{style.desc}</p>
                                 <div className="flex items-center gap-2 mt-2">
-                                  <span className="flex items-center gap-1.5 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
-                                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                                      <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.85"/>
-                                      <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round"/>
-                                    </svg>
-                                    {usageCounts === null ? "..." : formatCount(usageCounts[style.id] ?? 0)}
-                                  </span>
                                   <CreditBadge style={style} />
                                 </div>
                               </div>
@@ -1788,13 +1792,6 @@ export default function Studio() {
                             <p className="text-[14px] text-[#ccc] mt-0.5 break-keep">{style.desc}</p>
                             {style.active && (
                               <div className="flex items-center gap-2 mt-2">
-                                <span className="flex items-center gap-1.5 text-[13px] text-white/80 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
-                                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                                    <circle cx="8" cy="5" r="3.2" fill="currentColor" fillOpacity="0.85"/>
-                                    <path d="M1 15c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round"/>
-                                  </svg>
-                                  {usageCounts === null ? "..." : formatCount(usageCounts[style.id] ?? 0)}
-                                </span>
                                 <span className="px-2.5 py-1 bg-[#C9571A] rounded-lg text-[11px] font-extrabold text-white whitespace-nowrap shadow-lg">
                                   {MULTI_SOURCE_STYLE_ID_SET.has(style.id) ? "2크레딧" : "2크레딧"}
                                 </span>
@@ -2396,31 +2393,6 @@ export default function Studio() {
         </main>
 
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-
-        {/* 비로그인 배너 */}
-        {!loading && !user && (
-          <div className="max-w-2xl mx-auto w-full px-4 pb-4">
-            <div className="bg-[#EBEBEB] border border-black/10 rounded-2xl px-5 py-4 flex flex-col gap-3">
-              <p className="text-[#0A0A0A]/80 text-[14px] font-medium">✦ 카카오 로그인하면 1크레딧 무료 지급!</p>
-              <p className="text-[12px] text-[#666]">1크레딧 = AI 변환 1회 · 워터마크 없이 고화질 저장</p>
-              <button
-                onClick={() => { setLoginLoading(true); login(); }}
-                disabled={loginLoading}
-                className="bg-[#FEE500] text-[#3C1E1E] rounded-xl font-bold py-3 w-full text-[15px] flex items-center justify-center gap-2 disabled:opacity-70"
-              >
-                {loginLoading ? (
-                  <span className="w-5 h-5 rounded-full border-2 border-[#3C1E1E]/30 border-t-[#3C1E1E]" style={{ animation: "spin 0.7s linear infinite" }} />
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.462 0.5 7.1c0 2.302 1.528 4.325 3.84 5.497l-.98 3.657a.25.25 0 00.383.273L7.89 14.01A10.6 10.6 0 009 14.1c4.694 0 8.5-2.962 8.5-6.6S13.694.5 9 .5z" fill="#3C1E1E"/>
-                  </svg>
-                )}
-                {loginLoading ? "연결 중..." : "카카오로 로그인하기"}
-              </button>
-            </div>
-          </div>
-        )}
-
 
         {/* Footer */}
         <footer className="py-6 text-center px-4">

@@ -10,6 +10,7 @@ export function StyleDropHeader() {
   const { user, loading, login } = useAuth();
   const [credits, setCredits] = useState<number | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -34,7 +35,7 @@ export function StyleDropHeader() {
       </button>
 
       <Link
-        href="/"
+        href="/studio"
         className="absolute left-1/2 -translate-x-1/2 font-[family-name:var(--font-boldonse)] text-base tracking-[0.04em] text-[#C9571A]"
       >
         StyleDrop
@@ -71,20 +72,37 @@ export function StyleDropHeader() {
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setLoginLoading(true);
-              login();
-            }}
-            disabled={loginLoading}
-            className="relative z-10 ml-auto flex items-center gap-1.5 rounded-lg bg-[#FEE500] px-3 py-1.5 text-[13px] font-bold text-[#3C1E1E] disabled:opacity-70"
-          >
-            {loginLoading && (
-              <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-[#3C1E1E]/30 border-t-[#3C1E1E]" style={{ animation: "spin 0.7s linear infinite" }} />
+          <div className="relative z-10 ml-auto">
+            <button
+              type="button"
+              aria-label="메뉴 열기"
+              onClick={() => setShowHeaderMenu((prev) => !prev)}
+              className="flex h-9 w-8 items-center justify-center text-[#C9571A] transition-opacity hover:opacity-75"
+            >
+              <span className="flex flex-col gap-1">
+                <span className="block h-[2px] w-5 rounded-full bg-current" />
+                <span className="block h-[2px] w-5 rounded-full bg-current" />
+                <span className="block h-[2px] w-5 rounded-full bg-current" />
+              </span>
+            </button>
+
+            {showHeaderMenu && (
+              <div className="absolute right-0 top-11 z-50 w-[168px] rounded-2xl border border-black/10 bg-white p-2 shadow-[0_16px_40px_rgba(10,10,10,0.14)]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowHeaderMenu(false);
+                    setLoginLoading(true);
+                    login();
+                  }}
+                  disabled={loginLoading}
+                  className="flex h-11 w-full items-center justify-center rounded-xl bg-[#FEE500] text-[13px] font-black text-[#3C1E1E] disabled:opacity-70"
+                >
+                  {loginLoading ? "연결 중..." : "로그인하기"}
+                </button>
+              </div>
             )}
-            {loginLoading ? "연결 중..." : "카카오 로그인"}
-          </button>
+          </div>
         )
       )}
     </header>
