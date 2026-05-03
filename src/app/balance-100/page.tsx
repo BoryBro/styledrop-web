@@ -267,6 +267,9 @@ async function downloadBalanceStoryImage({
     .sort((a, b) => scoreStoryQuestion(b) - scoreStoryQuestion(a))
     .slice(0, 1)[0];
   const storyQuestionNumber = 1;
+  const selectedAnswer = sampleQuestion
+    ? answers[sampleQuestion.id] === "A" ? sampleQuestion.left : sampleQuestion.right
+    : "연인이 내 친구 질투";
 
   ctx.fillStyle = "#F8FAFF";
   ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
@@ -374,9 +377,21 @@ async function downloadBalanceStoryImage({
   ctx.fillStyle = "#EFF6FF";
   roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
   ctx.fill();
+  ctx.save();
+  ctx.filter = "blur(12px)";
   ctx.fillStyle = "#2563EB";
-  ctx.font = '900 39px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  drawWrappedText(ctx, `${displayName}님의 선택은 무엇일까요?!`, answerX + 42, answerY + 76, answerW - 84, 50, 1);
+  ctx.font = `900 39px ${storyFontFamily}`;
+  drawWrappedText(
+    ctx,
+    selectedAnswer,
+    answerX + 42,
+    answerY + 76,
+    answerW - 84,
+    50,
+    1
+  );
+  ctx.restore();
+  ctx.filter = "none";
 
   ctx.strokeStyle = "#CBD5E1";
   ctx.lineWidth = 2;
