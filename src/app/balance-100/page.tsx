@@ -404,21 +404,24 @@ async function downloadBalanceStoryImage({
   ctx.fillStyle = "#EFF6FF";
   roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
   ctx.fill();
-  ctx.save();
-  ctx.filter = "blur(12px)";
-  ctx.fillStyle = "#2563EB";
-  ctx.font = `700 36px ${storyFontFamily}`;
-  drawWrappedText(
-    ctx,
-    selectedAnswer,
-    answerX + 42,
-    answerY + 76,
-    answerW - 84,
-    50,
-    1
-  );
-  ctx.restore();
-  ctx.filter = "none";
+
+  const offscreen = document.createElement("canvas");
+  offscreen.width = answerW;
+  offscreen.height = answerH;
+  const offCtx = offscreen.getContext("2d");
+  if (offCtx) {
+    offCtx.fillStyle = "#EFF6FF";
+    offCtx.fillRect(0, 0, answerW, answerH);
+    offCtx.fillStyle = "#2563EB";
+    offCtx.font = `700 36px ${storyFontFamily}`;
+    offCtx.fillText(selectedAnswer, 42, 76);
+
+    ctx.save();
+    ctx.filter = "blur(10px)";
+    ctx.drawImage(offscreen, answerX, answerY);
+    ctx.restore();
+    ctx.filter = "none";
+  }
 
   ctx.strokeStyle = "#CBD5E1";
   ctx.lineWidth = 2;
