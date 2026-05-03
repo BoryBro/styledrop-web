@@ -416,18 +416,6 @@ async function downloadBalanceStoryImage({
   ctx.font = `700 48px ${storyFontFamily}`;
   ctx.fillText(linkGuideText, answerX + (answerW - ctx.measureText(linkGuideText).width) / 2, answerY + 76);
 
-  ctx.strokeStyle = "#D6DEE9";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(270, 1720);
-  ctx.lineTo(316, 1720);
-  ctx.moveTo(764, 1720);
-  ctx.lineTo(810, 1720);
-  ctx.stroke();
-  ctx.fillStyle = "#B0BEC5";
-  ctx.font = `400 28px ${storyFontFamily}`;
-  ctx.fillText("친구에게 공유해서 선택을 비교해보세요", 330, 1731);
-
   const blob = await canvasToBlob(canvas);
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
