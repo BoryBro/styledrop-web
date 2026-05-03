@@ -237,6 +237,15 @@ async function downloadBalanceStoryImage({
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas unavailable");
 
+  const storyFontFamily = '"Pretendard", "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  if (document.fonts?.load) {
+    await Promise.all([
+      document.fonts.load(`800 58px ${storyFontFamily}`),
+      document.fonts.load(`900 106px ${storyFontFamily}`),
+      document.fonts.load(`900 43px ${storyFontFamily}`),
+    ]);
+  }
+
   const displayName = userName.trim() || "사용자";
   const answeredQuestions = questions.filter((question) => answers[question.id]);
   const preferredQuestion = answeredQuestions.find((question) => (
@@ -281,10 +290,10 @@ async function downloadBalanceStoryImage({
   ctx.fillText("밸런스 게임", 132, 179);
 
   ctx.fillStyle = "#64748B";
-  ctx.font = '900 58px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.font = `800 58px ${storyFontFamily}`;
   ctx.fillText(`${displayName}님의 선택은`, 80, 318);
   ctx.fillStyle = "#2563EB";
-  ctx.font = '900 106px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.font = `900 106px ${storyFontFamily}`;
   ctx.fillText("어떤걸까요?", 80, 432);
 
   ctx.strokeStyle = "#BFDBFE";
@@ -295,7 +304,7 @@ async function downloadBalanceStoryImage({
   ctx.stroke();
 
   ctx.fillStyle = "#111827";
-  ctx.font = '900 43px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.font = `900 43px ${storyFontFamily}`;
   drawWrappedText(ctx, `나의 선택과 ${displayName}님의 답변을`, 80, 594, 760, 58, 2);
   ctx.fillText("비교해보세요!", 80, 652);
 
