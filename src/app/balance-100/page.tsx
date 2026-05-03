@@ -269,11 +269,12 @@ async function downloadBalanceStoryImage({
   if (document.fonts?.load) {
     await Promise.all([
       document.fonts.load(`500 54px ${storyFontFamily}`),
+      document.fonts.load(`900 102px ${storyFontFamily}`),
       document.fonts.load(`700 43px ${storyFontFamily}`),
       document.fonts.load(`400 32px ${storyFontFamily}`),
       document.fonts.load(`800 68px ${storyFontFamily}`),
       document.fonts.load(`900 60px ${storyFontFamily}`),
-      document.fonts.load(`700 36px ${storyFontFamily}`),
+      document.fonts.load(`900 86px ${storyFontFamily}`),
     ]);
   }
 
@@ -298,9 +299,6 @@ async function downloadBalanceStoryImage({
     .sort((a, b) => scoreStoryQuestion(b) - scoreStoryQuestion(a))
     .slice(0, 1)[0];
   const storyQuestionNumber = 1;
-  const selectedAnswer = sampleQuestion
-    ? answers[sampleQuestion.id] === "A" ? sampleQuestion.left : sampleQuestion.right
-    : "연인이 내 친구 질투";
 
   ctx.fillStyle = "#F8FAFF";
   ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
@@ -328,8 +326,9 @@ async function downloadBalanceStoryImage({
   ctx.font = `500 54px ${storyFontFamily}`;
   textCtx.letterSpacing = "-0.5px";
   ctx.fillText(`${displayName}님의 선택은`, 80, 318);
-  ctx.fillStyle = "#64748B";
-  ctx.font = `500 54px ${storyFontFamily}`;
+  ctx.fillStyle = "#2563EB";
+  ctx.font = `900 102px ${storyFontFamily}`;
+  textCtx.letterSpacing = "-3px";
   ctx.fillText("어떤걸까요?", 80, 432);
   textCtx.letterSpacing = "0px";
 
@@ -353,7 +352,7 @@ async function downloadBalanceStoryImage({
   const cardX = 80;
   const cardY = 880;
   const cardW = 920;
-  const cardH = 805;
+  const cardH = 817;
   ctx.save();
   ctx.shadowColor = "rgba(37, 99, 235, 0.09)";
   ctx.shadowBlur = 34;
@@ -412,32 +411,11 @@ async function downloadBalanceStoryImage({
   roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
   ctx.fill();
 
-  const offscreen = document.createElement("canvas");
-  offscreen.width = answerW;
-  offscreen.height = answerH;
-  const offCtx = offscreen.getContext("2d");
-  if (offCtx) {
-    offCtx.fillStyle = "#EFF6FF";
-    offCtx.fillRect(0, 0, answerW, answerH);
-    offCtx.fillStyle = "#2563EB";
-    offCtx.font = `700 36px ${storyFontFamily}`;
-    offCtx.fillText(selectedAnswer, 42, 76);
-
-    ctx.save();
-    ctx.filter = "blur(10px)";
-    ctx.drawImage(offscreen, answerX, answerY);
-    ctx.restore();
-    ctx.filter = "none";
-  }
-
-  ctx.strokeStyle = "#CBD5E1";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(answerX + 10, answerY + answerH + 45, 10, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.fillStyle = "#94A3B8";
-  ctx.font = `400 27px ${storyFontFamily}`;
-  ctx.fillText("친구 링크에서 선택을 비교해보세요", answerX + 34, answerY + answerH + 42);
+  ctx.fillStyle = "#2563EB";
+  ctx.font = `900 86px ${storyFontFamily}`;
+  textCtx.letterSpacing = "-2px";
+  ctx.fillText("뭐라고 했을까요?", answerX + 40, answerY + 85);
+  textCtx.letterSpacing = "0px";
 
   ctx.strokeStyle = "#D6DEE9";
   ctx.lineWidth = 2;
