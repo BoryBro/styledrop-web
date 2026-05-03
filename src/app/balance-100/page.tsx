@@ -258,18 +258,9 @@ async function downloadBalanceStoryImage({
     .sort((a, b) => scoreStoryQuestion(b) - scoreStoryQuestion(a))
     .slice(0, 1)[0];
   const storyQuestionNumber = 1;
-  const picked = sampleQuestion ? answers[sampleQuestion.id] : undefined;
-  const selectedText = sampleQuestion && picked
-    ? picked === "A" ? sampleQuestion.left : sampleQuestion.right
-    : "";
 
   ctx.fillStyle = "#F8FAFF";
   ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
-
-  ctx.fillStyle = "#DBEAFE";
-  ctx.beginPath();
-  ctx.arc(940, 132, 328, 0, Math.PI * 2);
-  ctx.fill();
 
   ctx.save();
   ctx.globalAlpha = 0.62;
@@ -374,25 +365,9 @@ async function downloadBalanceStoryImage({
   ctx.fillStyle = "#EFF6FF";
   roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
   ctx.fill();
-  ctx.save();
-  roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
-  ctx.clip();
-  ctx.filter = "blur(10px)";
-  ctx.globalAlpha = 0.62;
   ctx.fillStyle = "#2563EB";
-  const hiddenAnswerText = selectedText || "연인이 내 친구 질투";
-  ctx.font = '900 42px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  drawWrappedText(ctx, hiddenAnswerText, answerX + 46, answerY + 76, answerW - 92, 52, 1);
-  ctx.filter = "none";
-  ctx.globalAlpha = 0.48;
-  ctx.fillStyle = "#EFF6FF";
-  roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
-  ctx.fill();
-  ctx.globalAlpha = 0.18;
-  ctx.fillStyle = "#FFFFFF";
-  roundedRect(ctx, answerX + 24, answerY + 18, answerW - 48, answerH - 36, 14);
-  ctx.fill();
-  ctx.restore();
+  ctx.font = '900 39px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  drawWrappedText(ctx, `${displayName}님의 선택은 무엇일까요?!`, answerX + 42, answerY + 76, answerW - 84, 50, 1);
 
   ctx.strokeStyle = "#CBD5E1";
   ctx.lineWidth = 2;
@@ -401,7 +376,7 @@ async function downloadBalanceStoryImage({
   ctx.stroke();
   ctx.fillStyle = "#94A3B8";
   ctx.font = '800 29px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("답변은 비교하기 전까지 흐리게 보여요", answerX + 34, answerY + answerH + 42);
+  ctx.fillText("친구 링크에서 선택을 비교해보세요", answerX + 34, answerY + answerH + 42);
 
   ctx.strokeStyle = "#D6DEE9";
   ctx.lineWidth = 2;
