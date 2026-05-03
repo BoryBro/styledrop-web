@@ -370,7 +370,36 @@ async function downloadBalanceStoryImage({
   const cardX = 80;
   const cardY = 880;
   const cardW = 920;
-  const cardH = 880;
+  const cardPadding = 72;
+  const contentGap = 44;
+  const questionStackGap = 24;
+  const qBaselineY = cardY + cardPadding + 16;
+  const questionStartY = qBaselineY + 86;
+  const answerH = 122;
+
+  const questionText = sampleQuestion
+    ? { left: sampleQuestion.left, right: sampleQuestion.right }
+    : { left: "연인이 내 커리어 질투", right: "연인이 내 친구 질투" };
+  const questionMaxLength = Math.max(questionText.left.length, questionText.right.length);
+  const questionFontSize = questionMaxLength > 14 ? 60 : 68;
+  const questionLineHeight = questionMaxLength > 14 ? 86 : 96;
+  const questionX = cardX + cardPadding;
+  const questionW = cardW - cardPadding * 2;
+  const vsLineHeight = 60;
+  ctx.font = `800 ${questionFontSize}px ${storyFontFamily}`;
+  const leftLines = getWrappedTextLines(ctx, questionText.left, questionW, 2);
+  const leftBottom = questionStartY + leftLines.length * questionLineHeight;
+  const vsY = leftBottom + questionStackGap;
+  const rightStartY = vsY + vsLineHeight + questionStackGap;
+  const rightLines = getWrappedTextLines(ctx, questionText.right, questionW, 2);
+  const rightBottom = rightStartY + rightLines.length * questionLineHeight;
+  const answerX = questionX;
+  const answerW = questionW;
+  const dividerY = rightBottom + contentGap;
+  const answerLabelY = dividerY + contentGap;
+  const answerY = answerLabelY + contentGap;
+  const cardH = answerY + answerH + cardPadding - cardY;
+
   ctx.save();
   ctx.shadowColor = "rgba(37, 99, 235, 0.09)";
   ctx.shadowBlur = 34;
@@ -387,37 +416,22 @@ async function downloadBalanceStoryImage({
 
   ctx.fillStyle = "#2563EB";
   ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(`Q.${String(storyQuestionNumber).padStart(2, "0")}`, cardX + 72, cardY + 88);
+  const qNumberText = `Q.${String(storyQuestionNumber).padStart(2, "0")}`;
+  ctx.fillText(qNumberText, questionX, qBaselineY);
   ctx.fillStyle = "#CBD5E1";
   ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(`/ ${questionCount}`, cardX + 148, cardY + 88);
+  ctx.fillText(`/ ${questionCount}`, questionX + ctx.measureText(qNumberText).width + 12, qBaselineY);
 
-  const questionText = sampleQuestion
-    ? { left: sampleQuestion.left, right: sampleQuestion.right }
-    : { left: "연인이 내 커리어 질투", right: "연인이 내 친구 질투" };
-  const questionMaxLength = Math.max(questionText.left.length, questionText.right.length);
-  const questionFontSize = questionMaxLength > 14 ? 60 : 68;
-  const questionLineHeight = questionMaxLength > 14 ? 86 : 96;
-  const questionX = cardX + 72;
-  const questionW = cardW - 144;
-  const questionStackGap = 24;
-  const vsLineHeight = 64;
   ctx.fillStyle = "#111827";
   ctx.font = `800 ${questionFontSize}px ${storyFontFamily}`;
-  const leftLines = getWrappedTextLines(ctx, questionText.left, questionW, 2);
-  let questionCursorY = drawTextLines(ctx, leftLines, questionX, cardY + 205, questionLineHeight) + questionStackGap;
+  drawTextLines(ctx, leftLines, questionX, questionStartY, questionLineHeight);
   ctx.fillStyle = "#2563EB";
   ctx.font = `900 60px ${storyFontFamily}`;
-  ctx.fillText("VS", questionX, questionCursorY);
-  questionCursorY += vsLineHeight + questionStackGap;
+  ctx.fillText("VS", questionX, vsY);
   ctx.fillStyle = "#111827";
   ctx.font = `800 ${questionFontSize}px ${storyFontFamily}`;
-  const rightLines = getWrappedTextLines(ctx, questionText.right, questionW, 2);
-  const rightBottom = drawTextLines(ctx, rightLines, questionX, questionCursorY, questionLineHeight);
+  drawTextLines(ctx, rightLines, questionX, rightStartY, questionLineHeight);
 
-  const answerX = cardX + 72;
-  const answerW = cardW - 144;
-  const dividerY = Math.max(cardY + 455, rightBottom + 34);
   ctx.strokeStyle = "#E2E8F0";
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -427,10 +441,8 @@ async function downloadBalanceStoryImage({
 
   ctx.fillStyle = "#94A3B8";
   ctx.font = `400 28px ${storyFontFamily}`;
-  ctx.fillText(`${displayName}님의 선택`, answerX, dividerY + 72);
+  ctx.fillText(`${displayName}님의 선택`, answerX, answerLabelY);
 
-  const answerY = dividerY + 100;
-  const answerH = 122;
   ctx.fillStyle = "#EFF6FF";
   roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
   ctx.fill();
