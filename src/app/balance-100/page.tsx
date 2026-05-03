@@ -280,25 +280,24 @@ async function downloadBalanceStoryImage({
 
   const displayName = userName.trim() || "사용자";
   const answeredQuestions = questions.filter((question) => answers[question.id]);
-  const preferredQuestion = answeredQuestions.find((question) => (
-    question.left === "연인이 내 커리어 질투" &&
-    question.right === "연인이 내 친구 질투"
-  ));
-  const provocativeKeywords = ["속옷", "질투", "플러팅", "전 애인", "단둘이", "비밀", "뒷담", "친구", "연인", "애인"];
+  const provocativeKeywords = ["속옷", "질투", "플러팅", "전 애인", "단둘이", "비밀", "뒷담", "스킨십", "고백", "폭로", "몰래", "애인"];
   const scoreStoryQuestion = (question: BalanceQuestion) => (
     question.heat +
     provocativeKeywords.reduce((score, keyword) => (
-      question.left.includes(keyword) || question.right.includes(keyword) ? score + 18 : score
+      question.left.includes(keyword) || question.right.includes(keyword) ? score + 24 : score
     ), 0)
   );
-  const compactAnsweredQuestions = answeredQuestions.filter((question) => (
-    Math.max(question.left.length, question.right.length) <= 14
+  const nonFirstAnsweredQuestions = answeredQuestions.filter((question) => questions.findIndex((item) => item.id === question.id) > 0);
+  const provocativeAnsweredQuestions = nonFirstAnsweredQuestions.filter((question) => (
+    provocativeKeywords.some((keyword) => question.left.includes(keyword) || question.right.includes(keyword))
   ));
-  const storyQuestionPool = compactAnsweredQuestions.length > 0 ? compactAnsweredQuestions : answeredQuestions;
-  const sampleQuestion = preferredQuestion ?? storyQuestionPool
+  const storyQuestionPool = provocativeAnsweredQuestions.length > 0 ? provocativeAnsweredQuestions : nonFirstAnsweredQuestions;
+  const sampleQuestion = [...(storyQuestionPool.length > 0 ? storyQuestionPool : answeredQuestions)]
     .sort((a, b) => scoreStoryQuestion(b) - scoreStoryQuestion(a))
     .slice(0, 1)[0];
-  const storyQuestionNumber = 1;
+  const storyQuestionNumber = sampleQuestion
+    ? Math.max(1, questions.findIndex((question) => question.id === sampleQuestion.id) + 1)
+    : 1;
 
   ctx.fillStyle = "#F8FAFF";
   ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
