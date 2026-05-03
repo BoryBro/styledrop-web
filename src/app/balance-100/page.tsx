@@ -238,75 +238,101 @@ async function downloadBalanceStoryImage({
   if (!ctx) throw new Error("canvas unavailable");
 
   const displayName = userName.trim() || "사용자";
-  const sampleQuestions = questions
+  const sampleQuestion = questions
     .filter((question) => answers[question.id])
     .sort((a, b) => b.heat - a.heat)
-    .slice(0, 3);
+    .slice(0, 1)[0];
+  const picked = sampleQuestion ? answers[sampleQuestion.id] : undefined;
+  const selectedText = sampleQuestion && picked
+    ? picked === "A" ? sampleQuestion.left : sampleQuestion.right
+    : "";
 
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
 
-  const pageGlow = ctx.createRadialGradient(780, 120, 20, 780, 120, 720);
-  pageGlow.addColorStop(0, "rgba(251,113,133,0.13)");
-  pageGlow.addColorStop(0.55, "rgba(255,237,213,0.16)");
-  pageGlow.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = pageGlow;
-  ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
+  ctx.fillStyle = "#111827";
+  ctx.font = '900 67px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText(`${displayName}님의 선택은`, 72, 238);
+  ctx.strokeStyle = "#EDF0F3";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(72, 284);
+  ctx.lineTo(1008, 284);
+  ctx.stroke();
+
+  ctx.fillStyle = "#2F6FD6";
+  ctx.font = '900 72px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("어떤걸까요?", 72, 374);
+  ctx.strokeStyle = "#EDF0F3";
+  ctx.beginPath();
+  ctx.moveTo(72, 424);
+  ctx.lineTo(1008, 424);
+  ctx.stroke();
+
+  ctx.fillStyle = "#596579";
+  ctx.font = '800 36px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  drawWrappedText(ctx, `나의 선택과 ${displayName}님의 답변을 비교해보세요!`, 72, 510, 880, 50, 2);
+
+  ctx.fillStyle = "#8B98AA";
+  ctx.font = '800 29px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText(`${questionCount}개의 선택으로 서로 얼마나 비슷한지 비교하기 게임`, 72, 646);
+
+  const sectionGradient = ctx.createLinearGradient(0, 708, 0, STORY_IMAGE_HEIGHT);
+  sectionGradient.addColorStop(0, "rgba(240,248,255,0)");
+  sectionGradient.addColorStop(0.18, "#EAF7FF");
+  sectionGradient.addColorStop(0.54, "#DDF3FB");
+  sectionGradient.addColorStop(1, "#FFFFFF");
+  ctx.fillStyle = sectionGradient;
+  ctx.fillRect(0, 708, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT - 708);
+
+  ctx.save();
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = "#FFFFFF";
+  roundedRect(ctx, -90, 850, 360, 380, 58);
+  ctx.fill();
+  roundedRect(ctx, 790, 850, 390, 420, 58);
+  ctx.fill();
+  roundedRect(ctx, 520, 1430, 420, 360, 58);
+  ctx.fill();
+  ctx.restore();
+
+  const cardX = 128;
+  const cardY = 820;
+  const cardW = 824;
+  const cardH = 660;
+  ctx.save();
+  ctx.shadowColor = "rgba(73, 96, 125, 0.14)";
+  ctx.shadowBlur = 34;
+  ctx.shadowOffsetY = 24;
+  ctx.fillStyle = "#FFFFFF";
+  roundedRect(ctx, cardX, cardY, cardW, cardH, 64);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.fillStyle = "#BBDCF1";
+  ctx.font = '900 70px Georgia, serif';
+  ctx.fillText("“", cardX + 72, cardY + 120);
 
   ctx.fillStyle = "#111827";
-  ctx.font = '900 74px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  drawWrappedText(
-    ctx,
-    `${displayName}님의 선택은 어떤걸까요?`,
-    84,
-    170,
-    900,
-    88,
-    3,
-  );
+  ctx.font = '900 50px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  const questionText = sampleQuestion
+    ? `${sampleQuestion.left}  vs  ${sampleQuestion.right}`
+    : "질문을 불러오는 중";
+  drawWrappedText(ctx, questionText, cardX + 72, cardY + 212, cardW - 144, 66, 4);
 
-  ctx.fillStyle = "#6B7280";
-  ctx.font = '800 36px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  drawWrappedText(ctx, `나의 선택과 ${displayName}님의 답변을 비교해보세요!`, 84, 450, 850, 52, 2);
+  ctx.fillStyle = "#EFF7FC";
+  roundedRect(ctx, cardX + 72, cardY + 488, cardW - 144, 92, 34);
+  ctx.fill();
+  ctx.save();
+  ctx.filter = "blur(7px)";
+  ctx.fillStyle = "#6984A8";
+  ctx.font = '900 36px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  drawWrappedText(ctx, selectedText ? `답변: ${selectedText}` : "답변이 숨겨져 있어요", cardX + 116, cardY + 546, cardW - 232, 44, 1);
+  ctx.restore();
 
-  ctx.fillStyle = "#E11D48";
-  ctx.font = '900 30px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(`${questionCount}개의 선택으로 서로 얼마나 비슷한지 비교하기 게임`, 84, 596);
-
-  sampleQuestions.forEach((question, index) => {
-    const picked = answers[question.id];
-    const selectedText = picked === "A" ? question.left : question.right;
-    const y = 720 + index * 334;
-
-    ctx.fillStyle = "#FFFFFF";
-    roundedRect(ctx, 70, y, 940, 250, 42);
-    ctx.fill();
-    ctx.strokeStyle = "#F1F2F4";
-    ctx.lineWidth = 4;
-    ctx.stroke();
-
-    ctx.fillStyle = "#A1A8B3";
-    ctx.font = '900 24px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-    ctx.fillText(`QUESTION ${String(index + 1).padStart(2, "0")}`, 120, y + 64);
-
-    ctx.fillStyle = "#111827";
-    ctx.font = '900 37px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-    drawWrappedText(ctx, `${question.left}  vs  ${question.right}`, 120, y + 126, 800, 49, 2);
-
-    ctx.save();
-    ctx.fillStyle = "#FFF1F2";
-    roundedRect(ctx, 120, y + 188, 590, 54, 24);
-    ctx.fill();
-    ctx.filter = "blur(5px)";
-    ctx.fillStyle = "#E11D48";
-    ctx.font = '900 25px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-    ctx.fillText(`선택: ${selectedText}`, 154, y + 224);
-    ctx.restore();
-  });
-
-  ctx.fillStyle = "#6B7280";
-  ctx.font = '800 28px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("Balance 100", 84, 1792);
+  ctx.fillStyle = "#AAB5C4";
+  ctx.font = '800 25px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("답변은 비교하기 전까지 흐리게 보여요", cardX + 72, cardY + 620);
 
   const blob = await canvasToBlob(canvas);
   const url = URL.createObjectURL(blob);
