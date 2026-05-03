@@ -107,6 +107,21 @@ function writeStoredBalanceOwnerName(name: string, level: BalanceLevel, question
   }
 }
 
+function getReusableBalanceAnswers(
+  session: BalanceServerSession | null | undefined,
+  level: BalanceLevel,
+  questionCount: BalanceQuestionCount,
+) {
+  if (!session?.answers || session.level !== level || session.questionCount >= questionCount) return null;
+
+  const targetQuestionIds = new Set(getBalanceQuestions(level, questionCount).map((question) => question.id));
+  const reusableAnswers = Object.fromEntries(
+    Object.entries(session.answers).filter(([questionId]) => targetQuestionIds.has(questionId)),
+  ) as BalanceAnswers;
+
+  return Object.keys(reusableAnswers).length > 0 ? reusableAnswers : null;
+}
+
 async function copyTextToClipboard(text: string) {
   if (typeof window === "undefined") throw new Error("browser only");
 
@@ -500,6 +515,16 @@ export default function Balance100Page() {
     serverSession.status === "in_progress" &&
     progress.answered === 0,
   );
+  const reusableCompletedSession = useMemo(() => {
+    return completedSessions
+      .filter((session) => (
+        session.result &&
+        session.level === selectedLevel &&
+        normalizeBalanceQuestionCount(session.questionCount) < selectedQuestionCount &&
+        getReusableBalanceAnswers(session, selectedLevel, selectedQuestionCount)
+      ))
+      .sort((a, b) => normalizeBalanceQuestionCount(b.questionCount) - normalizeBalanceQuestionCount(a.questionCount))[0] ?? null;
+  }, [completedSessions, selectedLevel, selectedQuestionCount]);
   const result = useMemo(
     () => {
       if (serverSession?.result) {
@@ -609,6 +634,14 @@ export default function Balance100Page() {
     setIsSaving(true);
     try {
       writeStoredBalanceOwnerName(trimmedOwnerName, selectedLevel, selectedQuestionCount);
+      let initialAnswers: BalanceAnswers | undefined;
+      const reusableAnswers = getReusableBalanceAnswers(reusableCompletedSession, selectedLevel, selectedQuestionCount);
+      if (reusableCompletedSession && reusableAnswers) {
+        const ok = window.confirm(
+          `이전에 완료한 ${reusableCompletedSession.questionCount}개 답변을 그대로 사용하고 이어서 진행하시겠습니까?`,
+        );
+        if (ok) initialAnswers = reusableAnswers;
+      }
       const response = await fetch("/api/balance-100/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -617,19 +650,24 @@ export default function Balance100Page() {
           questionCount: selectedQuestionCount,
           ownerName: trimmedOwnerName,
           restart: Boolean(serverSession),
+          answers: initialAnswers,
         }),
       });
       const data = await response.json();
       if (!response.ok || !data?.session) throw new Error(data?.error ?? "failed");
       applySession(data.session, data.matches ?? []);
       setMode("quiz");
-      void trackClientEvent("lab_balance_started", { level: selectedLevel, questionCount: selectedQuestionCount });
+      void trackClientEvent("lab_balance_started", {
+        level: selectedLevel,
+        questionCount: selectedQuestionCount,
+        reusedAnswerCount: initialAnswers ? Object.keys(initialAnswers).length : 0,
+      });
     } catch {
       setShareStatus("시작에 실패했어요. 잠시 후 다시 시도해주세요.");
     } finally {
       setIsSaving(false);
     }
-  }, [answers, applySession, isCompleted, isEmptyInProgressSession, questions, selectedLevel, selectedQuestionCount, serverSession, trimmedOwnerName]);
+  }, [answers, applySession, isCompleted, isEmptyInProgressSession, questions, reusableCompletedSession, selectedLevel, selectedQuestionCount, serverSession, trimmedOwnerName]);
 
   const resetQuiz = useCallback(async () => {
     const ok = window.confirm("기존 진행 상태를 닫고 처음부터 다시 시작할까요?");

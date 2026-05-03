@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
       questionCount,
       restart,
       ownerName,
+      answers: body?.answers,
     });
 
     if (created.error || !created.session) {
