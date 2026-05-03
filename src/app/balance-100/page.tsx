@@ -257,9 +257,7 @@ async function downloadBalanceStoryImage({
   const sampleQuestion = preferredQuestion ?? storyQuestionPool
     .sort((a, b) => scoreStoryQuestion(b) - scoreStoryQuestion(a))
     .slice(0, 1)[0];
-  const sampleQuestionNumber = sampleQuestion
-    ? Math.max(1, questions.findIndex((question) => question.id === sampleQuestion.id) + 1)
-    : 1;
+  const storyQuestionNumber = 1;
   const picked = sampleQuestion ? answers[sampleQuestion.id] : undefined;
   const selectedText = sampleQuestion && picked
     ? picked === "A" ? sampleQuestion.left : sampleQuestion.right
@@ -316,9 +314,9 @@ async function downloadBalanceStoryImage({
   ctx.fillText("비교하기 게임", 80, 800);
 
   const cardX = 80;
-  const cardY = 815;
+  const cardY = 850;
   const cardW = 920;
-  const cardH = 860;
+  const cardH = 805;
   ctx.save();
   ctx.shadowColor = "rgba(37, 99, 235, 0.09)";
   ctx.shadowBlur = 34;
@@ -335,7 +333,7 @@ async function downloadBalanceStoryImage({
 
   ctx.fillStyle = "#2563EB";
   ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(`Q.${String(sampleQuestionNumber).padStart(2, "0")}`, cardX + 72, cardY + 96);
+  ctx.fillText(`Q.${String(storyQuestionNumber).padStart(2, "0")}`, cardX + 72, cardY + 96);
   ctx.fillStyle = "#CBD5E1";
   ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
   ctx.fillText(`/ ${questionCount}`, cardX + 148, cardY + 96);
@@ -348,18 +346,18 @@ async function downloadBalanceStoryImage({
   const questionLineHeight = questionMaxLength > 14 ? 80 : 90;
   ctx.fillStyle = "#111827";
   ctx.font = `900 ${questionFontSize}px "SUIT Variable", "Apple SD Gothic Neo", sans-serif`;
-  const leftBottom = drawWrappedText(ctx, questionText.left, cardX + 72, cardY + 220, cardW - 144, questionLineHeight, 2);
+  const leftBottom = drawWrappedText(ctx, questionText.left, cardX + 72, cardY + 205, cardW - 144, questionLineHeight, 2);
   ctx.fillStyle = "#2563EB";
   ctx.font = `900 ${questionFontSize}px "SUIT Variable", "Apple SD Gothic Neo", sans-serif`;
-  const vsY = leftBottom + 42;
+  const vsY = leftBottom + 24;
   ctx.fillText("VS", cardX + 72, vsY);
   ctx.fillStyle = "#111827";
   ctx.font = `900 ${questionFontSize}px "SUIT Variable", "Apple SD Gothic Neo", sans-serif`;
-  const rightBottom = drawWrappedText(ctx, questionText.right, cardX + 72, vsY + 98, cardW - 144, questionLineHeight, 2);
+  const rightBottom = drawWrappedText(ctx, questionText.right, cardX + 72, vsY + 78, cardW - 144, questionLineHeight, 2);
 
   const answerX = cardX + 72;
   const answerW = cardW - 144;
-  const dividerY = Math.max(cardY + 460, rightBottom + 34);
+  const dividerY = Math.max(cardY + 455, rightBottom + 28);
   ctx.strokeStyle = "#E2E8F0";
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -369,18 +367,24 @@ async function downloadBalanceStoryImage({
 
   ctx.fillStyle = "#94A3B8";
   ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(`${displayName}님의 선택`, answerX, dividerY + 78);
+  ctx.fillText(`${displayName}님의 선택`, answerX, dividerY + 72);
 
-  const answerY = dividerY + 104;
+  const answerY = dividerY + 100;
   const answerH = 122;
   ctx.fillStyle = "#EFF6FF";
   roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
   ctx.fill();
   ctx.save();
-  ctx.filter = "blur(11px)";
+  ctx.filter = "blur(13px)";
+  ctx.globalAlpha = 0.32;
   ctx.fillStyle = "#2563EB";
-  ctx.font = '900 39px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  drawWrappedText(ctx, selectedText || "연인이 내 친구 질투", answerX + 42, answerY + 76, answerW - 84, 48, 1);
+  const hiddenAnswerText = selectedText || "연인이 내 친구 질투";
+  const answerSmudgeWidth = Math.min(answerW - 96, Math.max(360, hiddenAnswerText.length * 31));
+  roundedRect(ctx, answerX + 50, answerY + 38, answerSmudgeWidth, 42, 21);
+  ctx.fill();
+  ctx.globalAlpha = 0.16;
+  roundedRect(ctx, answerX + 74, answerY + 56, Math.max(220, answerSmudgeWidth - 180), 32, 16);
+  ctx.fill();
   ctx.restore();
 
   ctx.strokeStyle = "#CBD5E1";
@@ -390,7 +394,7 @@ async function downloadBalanceStoryImage({
   ctx.stroke();
   ctx.fillStyle = "#94A3B8";
   ctx.font = '800 29px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("답변은 비교하기 전까지 흐리게 보여요", answerX + 34, answerY + answerH + 55);
+  ctx.fillText("답변은 비교하기 전까지 흐리게 보여요", answerX + 34, answerY + answerH + 42);
 
   ctx.strokeStyle = "#D6DEE9";
   ctx.lineWidth = 2;
