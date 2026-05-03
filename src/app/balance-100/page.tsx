@@ -18,7 +18,6 @@ import {
   normalizeBalanceLevel,
   type BalanceAnswerValue,
   type BalanceAnswers,
-  type BalanceDimension,
   type BalanceLevel,
   type BalanceQuestionCount,
   type BalanceQuestion,
@@ -73,14 +72,6 @@ const GREEN = "#20D879";
 const BALANCE_OWNER_NAME_STORAGE_KEY = "styledrop_balance_100_owner_name";
 const STORY_IMAGE_WIDTH = 1080;
 const STORY_IMAGE_HEIGHT = 1920;
-const DIMENSION_STORY_LABELS: Record<BalanceDimension, string> = {
-  money: "현실",
-  love: "감정",
-  social: "관계",
-  pride: "자존심",
-  risk: "위험감수",
-  comfort: "안정",
-};
 
 function getBalanceOwnerNameStorageKey(level: BalanceLevel, questionCount: BalanceQuestionCount) {
   return `${BALANCE_OWNER_NAME_STORAGE_KEY}:${level}:${questionCount}`;
@@ -230,17 +221,15 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
 }
 
 async function downloadBalanceStoryImage({
-  result,
   userName,
-  level,
   questionCount,
-  matchCount,
+  answers,
+  questions,
 }: {
-  result: BalanceResultSummary;
   userName: string;
-  level: BalanceLevel;
   questionCount: BalanceQuestionCount;
-  matchCount: number;
+  answers: BalanceAnswers;
+  questions: BalanceQuestion[];
 }) {
   const canvas = document.createElement("canvas");
   canvas.width = STORY_IMAGE_WIDTH;
@@ -249,126 +238,75 @@ async function downloadBalanceStoryImage({
   if (!ctx) throw new Error("canvas unavailable");
 
   const displayName = userName.trim() || "사용자";
-  const scoreEntries = (Object.entries(result.scores) as Array<[BalanceDimension, number]>)
-    .sort((a, b) => b[1] - a[1])
+  const sampleQuestions = questions
+    .filter((question) => answers[question.id])
+    .sort((a, b) => b.heat - a.heat)
     .slice(0, 3);
 
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
 
-  const pageGlow = ctx.createRadialGradient(840, 220, 20, 840, 220, 720);
-  pageGlow.addColorStop(0, "rgba(251,113,133,0.18)");
-  pageGlow.addColorStop(0.55, "rgba(255,237,213,0.18)");
+  const pageGlow = ctx.createRadialGradient(780, 120, 20, 780, 120, 720);
+  pageGlow.addColorStop(0, "rgba(251,113,133,0.13)");
+  pageGlow.addColorStop(0.55, "rgba(255,237,213,0.16)");
   pageGlow.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = pageGlow;
   ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
 
-  ctx.fillStyle = "#C9571A";
-  ctx.font = '900 48px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("StyleDrop", 88, 132);
-
-  ctx.fillStyle = "#FDF2F5";
-  roundedRect(ctx, 86, 254, 908, 1180, 58);
-  ctx.fill();
-  ctx.strokeStyle = "#FFE1E8";
-  ctx.lineWidth = 4;
-  ctx.stroke();
-
-  const cardGlow = ctx.createRadialGradient(214, 1228, 10, 214, 1228, 740);
-  cardGlow.addColorStop(0, "rgba(251,113,133,0.22)");
-  cardGlow.addColorStop(0.58, "rgba(251,113,133,0.05)");
-  cardGlow.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = cardGlow;
-  roundedRect(ctx, 86, 254, 908, 1180, 58);
-  ctx.fill();
-
-  ctx.save();
-  ctx.beginPath();
-  roundedRect(ctx, 86, 254, 908, 1180, 58);
-  ctx.clip();
-  ctx.fillStyle = "rgba(225,29,72,0.06)";
-  ctx.font = '900 460px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("100", 322, 1326);
-  ctx.restore();
-
-  ctx.fillStyle = "#FB7185";
-  ctx.font = '900 34px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("BALANCE LAB", 146, 372);
-
   ctx.fillStyle = "#111827";
-  ctx.font = '900 88px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.font = '900 74px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
   drawWrappedText(
     ctx,
-    `${displayName}님과 밸런스 게임의 일치율을 확인해봐요!`,
-    146,
-    514,
-    770,
-    104,
-    4,
+    `${displayName}님의 선택은 어떤걸까요?`,
+    84,
+    170,
+    900,
+    88,
+    3,
   );
 
-  ctx.fillStyle = "#FB7185";
-  roundedRect(ctx, 146, 962, 80, 8, 4);
-  ctx.fill();
+  ctx.fillStyle = "#6B7280";
+  ctx.font = '800 36px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  drawWrappedText(ctx, `나의 선택과 ${displayName}님의 답변을 비교해보세요!`, 84, 450, 850, 52, 2);
 
-  ctx.fillStyle = "#4B5563";
-  ctx.font = '800 38px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  drawWrappedText(ctx, "100개의 선택으로 서로 얼마나 비슷한지 비교하는 실험실 카드", 146, 1068, 746, 58, 2);
+  ctx.fillStyle = "#E11D48";
+  ctx.font = '900 30px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText(`${questionCount}개의 선택으로 서로 얼마나 비슷한지 비교하기 게임`, 84, 596);
 
-  const badgeItems = [
-    `Lv.${level}`,
-    `${questionCount}문항`,
-    matchCount > 0 ? `${matchCount}명 비교중` : "친구 비교",
-  ];
-  badgeItems.forEach((label, index) => {
-    const x = 146 + index * 222;
-    const y = 1230;
+  sampleQuestions.forEach((question, index) => {
+    const picked = answers[question.id];
+    const selectedText = picked === "A" ? question.left : question.right;
+    const y = 720 + index * 334;
+
     ctx.fillStyle = "#FFFFFF";
-    roundedRect(ctx, x, y, 188, 72, 26);
+    roundedRect(ctx, 70, y, 940, 250, 42);
     ctx.fill();
-    ctx.strokeStyle = "#FFE1E8";
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#F1F2F4";
+    ctx.lineWidth = 4;
     ctx.stroke();
-    ctx.fillStyle = "#E11D48";
-    ctx.font = '900 27px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-    ctx.fillText(label, x + 30, y + 47);
-  });
 
-  ctx.fillStyle = "#FFFFFF";
-  roundedRect(ctx, 116, 1502, 848, 250, 44);
-  ctx.fill();
-  ctx.strokeStyle = "#F3F4F6";
-  ctx.lineWidth = 3;
-  ctx.stroke();
+    ctx.fillStyle = "#A1A8B3";
+    ctx.font = '900 24px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+    ctx.fillText(`QUESTION ${String(index + 1).padStart(2, "0")}`, 120, y + 64);
 
-  ctx.fillStyle = "#9CA3AF";
-  ctx.font = '900 28px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("내 결과 힌트", 168, 1572);
-  ctx.fillStyle = "#111827";
-  ctx.font = '900 46px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  drawWrappedText(ctx, result.typeTitle, 168, 1646, 720, 58, 2);
+    ctx.fillStyle = "#111827";
+    ctx.font = '900 37px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+    drawWrappedText(ctx, `${question.left}  vs  ${question.right}`, 120, y + 126, 800, 49, 2);
 
-  scoreEntries.forEach(([dimension], index) => {
-    const x = 168 + index * 204;
-    const y = 1730;
+    ctx.save();
     ctx.fillStyle = "#FFF1F2";
-    roundedRect(ctx, x, y, 164, 52, 22);
+    roundedRect(ctx, 120, y + 188, 590, 54, 24);
     ctx.fill();
+    ctx.filter = "blur(5px)";
     ctx.fillStyle = "#E11D48";
-    ctx.font = '900 23px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-    ctx.fillText(DIMENSION_STORY_LABELS[dimension], x + 26, y + 35);
+    ctx.font = '900 25px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+    ctx.fillText(`선택: ${selectedText}`, 154, y + 224);
+    ctx.restore();
   });
-
-  ctx.fillStyle = "#111827";
-  roundedRect(ctx, 146, 1360, 788, 112, 42);
-  ctx.fill();
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = '900 42px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("나도 비교하러 가기  →", 292, 1432);
 
   ctx.fillStyle = "#6B7280";
-  ctx.font = '800 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("styledrop.cloud/balance-100", 292, 1842);
+  ctx.font = '800 28px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("Balance 100", 84, 1792);
 
   const blob = await canvasToBlob(canvas);
   const url = URL.createObjectURL(blob);
@@ -1118,11 +1056,10 @@ export default function Balance100Page() {
     setShareStatus("");
     try {
       await downloadBalanceStoryImage({
-        result,
         userName: displayOwnerName || ownerName || serverSession?.ownerName || user?.nickname || "사용자",
-        level: selectedLevel,
         questionCount: selectedQuestionCount,
-        matchCount: matches.length,
+        answers,
+        questions,
       });
       setShareStatus("스토리용 이미지가 저장됐어요.");
       void trackClientEvent("lab_balance_story_image_save", {
@@ -1134,7 +1071,7 @@ export default function Balance100Page() {
     } finally {
       setIsSaving(false);
     }
-  }, [displayOwnerName, matches.length, ownerName, result, selectedLevel, selectedQuestionCount, serverSession?.ownerName, user?.nickname]);
+  }, [answers, displayOwnerName, ownerName, questions, result, selectedLevel, selectedQuestionCount, serverSession?.ownerName, user?.nickname]);
 
   if (loading || isAvailabilityLoading) {
     return (
