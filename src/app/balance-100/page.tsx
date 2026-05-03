@@ -269,7 +269,6 @@ async function downloadBalanceStoryImage({
   if (document.fonts?.load) {
     await Promise.all([
       document.fonts.load(`500 54px ${storyFontFamily}`),
-      document.fonts.load(`900 102px ${storyFontFamily}`),
       document.fonts.load(`700 43px ${storyFontFamily}`),
       document.fonts.load(`400 32px ${storyFontFamily}`),
       document.fonts.load(`800 68px ${storyFontFamily}`),
@@ -329,9 +328,8 @@ async function downloadBalanceStoryImage({
   ctx.font = `500 54px ${storyFontFamily}`;
   textCtx.letterSpacing = "-0.5px";
   ctx.fillText(`${displayName}님의 선택은`, 80, 318);
-  ctx.fillStyle = "#2563EB";
-  ctx.font = `900 102px ${storyFontFamily}`;
-  textCtx.letterSpacing = "-3px";
+  ctx.fillStyle = "#64748B";
+  ctx.font = `500 54px ${storyFontFamily}`;
   ctx.fillText("어떤걸까요?", 80, 432);
   textCtx.letterSpacing = "0px";
 
