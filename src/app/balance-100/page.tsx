@@ -238,6 +238,14 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
   });
 }
 
+function applyStoryCanvasPreviewStyle(canvas: HTMLCanvasElement) {
+  canvas.style.width = "100%";
+  canvas.style.maxWidth = "540px";
+  canvas.style.height = "auto";
+  canvas.style.display = "block";
+  canvas.style.margin = "0 auto";
+}
+
 async function downloadBalanceStoryImage({
   userName,
   questionCount,
@@ -252,6 +260,7 @@ async function downloadBalanceStoryImage({
   const canvas = document.createElement("canvas");
   canvas.width = STORY_IMAGE_WIDTH;
   canvas.height = STORY_IMAGE_HEIGHT;
+  applyStoryCanvasPreviewStyle(canvas);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas unavailable");
 
