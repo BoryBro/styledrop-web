@@ -185,13 +185,10 @@ function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width:
   ctx.closePath();
 }
 
-function drawWrappedText(
+function getWrappedTextLines(
   ctx: CanvasRenderingContext2D,
   text: string,
-  x: number,
-  y: number,
   maxWidth: number,
-  lineHeight: number,
   maxLines = 3,
 ) {
   const characters = Array.from(text.replace(/\s+/g, " ").trim());
@@ -215,11 +212,33 @@ function drawWrappedText(
     visibleLines[maxLines - 1] = `${visibleLines[maxLines - 1].replace(/[.。!?…]+$/, "")}...`;
   }
 
-  visibleLines.forEach((line, index) => {
+  return visibleLines;
+}
+
+function drawTextLines(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  y: number,
+  lineHeight: number,
+) {
+  lines.forEach((line, index) => {
     ctx.fillText(line, x, y + index * lineHeight);
   });
 
-  return y + visibleLines.length * lineHeight;
+  return y + lines.length * lineHeight;
+}
+
+function drawWrappedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines = 3,
+) {
+  return drawTextLines(ctx, getWrappedTextLines(ctx, text, maxWidth, maxLines), x, y, lineHeight);
 }
 
 function safeStoryFileName(name: string) {
@@ -351,7 +370,7 @@ async function downloadBalanceStoryImage({
   const cardX = 80;
   const cardY = 880;
   const cardW = 920;
-  const cardH = 817;
+  const cardH = 880;
   ctx.save();
   ctx.shadowColor = "rgba(37, 99, 235, 0.09)";
   ctx.shadowBlur = 34;
@@ -379,20 +398,26 @@ async function downloadBalanceStoryImage({
   const questionMaxLength = Math.max(questionText.left.length, questionText.right.length);
   const questionFontSize = questionMaxLength > 14 ? 60 : 68;
   const questionLineHeight = questionMaxLength > 14 ? 86 : 96;
+  const questionX = cardX + 72;
+  const questionW = cardW - 144;
+  const questionStackGap = 24;
+  const vsLineHeight = 64;
   ctx.fillStyle = "#111827";
   ctx.font = `800 ${questionFontSize}px ${storyFontFamily}`;
-  const leftBottom = drawWrappedText(ctx, questionText.left, cardX + 72, cardY + 205, cardW - 144, questionLineHeight, 2);
+  const leftLines = getWrappedTextLines(ctx, questionText.left, questionW, 2);
+  let questionCursorY = drawTextLines(ctx, leftLines, questionX, cardY + 205, questionLineHeight) + questionStackGap;
   ctx.fillStyle = "#2563EB";
   ctx.font = `900 60px ${storyFontFamily}`;
-  const vsY = leftBottom + 20;
-  ctx.fillText("VS", cardX + 72, vsY);
+  ctx.fillText("VS", questionX, questionCursorY);
+  questionCursorY += vsLineHeight + questionStackGap;
   ctx.fillStyle = "#111827";
   ctx.font = `800 ${questionFontSize}px ${storyFontFamily}`;
-  const rightBottom = drawWrappedText(ctx, questionText.right, cardX + 72, vsY + 78, cardW - 144, questionLineHeight, 2);
+  const rightLines = getWrappedTextLines(ctx, questionText.right, questionW, 2);
+  const rightBottom = drawTextLines(ctx, rightLines, questionX, questionCursorY, questionLineHeight);
 
   const answerX = cardX + 72;
   const answerW = cardW - 144;
-  const dividerY = Math.max(cardY + 455, rightBottom + 28);
+  const dividerY = Math.max(cardY + 455, rightBottom + 34);
   ctx.strokeStyle = "#E2E8F0";
   ctx.lineWidth = 2;
   ctx.beginPath();
