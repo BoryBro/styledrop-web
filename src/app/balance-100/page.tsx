@@ -238,11 +238,16 @@ async function downloadBalanceStoryImage({
   if (!ctx) throw new Error("canvas unavailable");
 
   const storyFontFamily = '"Pretendard", "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  const textCtx = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
   if (document.fonts?.load) {
     await Promise.all([
-      document.fonts.load(`800 58px ${storyFontFamily}`),
-      document.fonts.load(`900 106px ${storyFontFamily}`),
-      document.fonts.load(`900 43px ${storyFontFamily}`),
+      document.fonts.load(`500 54px ${storyFontFamily}`),
+      document.fonts.load(`900 102px ${storyFontFamily}`),
+      document.fonts.load(`700 43px ${storyFontFamily}`),
+      document.fonts.load(`400 32px ${storyFontFamily}`),
+      document.fonts.load(`800 68px ${storyFontFamily}`),
+      document.fonts.load(`900 60px ${storyFontFamily}`),
+      document.fonts.load(`700 36px ${storyFontFamily}`),
     ]);
   }
 
@@ -289,35 +294,39 @@ async function downloadBalanceStoryImage({
   ctx.beginPath();
   ctx.arc(114, 167, 6, 0, Math.PI * 2);
   ctx.fill();
-  ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.font = `600 31px ${storyFontFamily}`;
+  textCtx.letterSpacing = "0.5px";
   ctx.fillText("밸런스 게임", 132, 179);
 
   ctx.fillStyle = "#64748B";
-  ctx.font = `800 58px ${storyFontFamily}`;
+  ctx.font = `500 54px ${storyFontFamily}`;
+  textCtx.letterSpacing = "-0.5px";
   ctx.fillText(`${displayName}님의 선택은`, 80, 318);
   ctx.fillStyle = "#2563EB";
-  ctx.font = `900 106px ${storyFontFamily}`;
+  ctx.font = `900 102px ${storyFontFamily}`;
+  textCtx.letterSpacing = "-3px";
   ctx.fillText("어떤걸까요?", 80, 432);
+  textCtx.letterSpacing = "0px";
 
   ctx.strokeStyle = "#BFDBFE";
   ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.moveTo(80, 500);
-  ctx.lineTo(130, 500);
+  ctx.moveTo(80, 516);
+  ctx.lineTo(130, 516);
   ctx.stroke();
 
   ctx.fillStyle = "#111827";
-  ctx.font = `900 43px ${storyFontFamily}`;
-  drawWrappedText(ctx, `나의 선택과 ${displayName}님의 답변을`, 80, 594, 760, 58, 2);
-  ctx.fillText("비교해보세요!", 80, 652);
+  ctx.font = `700 43px ${storyFontFamily}`;
+  drawWrappedText(ctx, `나의 선택과 ${displayName}님의 답변을`, 80, 594, 760, 68, 2);
+  ctx.fillText("비교해보세요!", 80, 662);
 
   ctx.fillStyle = "#94A3B8";
-  ctx.font = '800 34px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.font = `400 32px ${storyFontFamily}`;
   drawWrappedText(ctx, `${questionCount}개의 선택으로 서로 얼마나 비슷한지`, 80, 748, 820, 52, 2);
   ctx.fillText("비교하기 게임", 80, 800);
 
   const cardX = 80;
-  const cardY = 850;
+  const cardY = 880;
   const cardW = 920;
   const cardH = 805;
   ctx.save();
@@ -336,26 +345,26 @@ async function downloadBalanceStoryImage({
 
   ctx.fillStyle = "#2563EB";
   ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(`Q.${String(storyQuestionNumber).padStart(2, "0")}`, cardX + 72, cardY + 96);
+  ctx.fillText(`Q.${String(storyQuestionNumber).padStart(2, "0")}`, cardX + 72, cardY + 88);
   ctx.fillStyle = "#CBD5E1";
   ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(`/ ${questionCount}`, cardX + 148, cardY + 96);
+  ctx.fillText(`/ ${questionCount}`, cardX + 148, cardY + 88);
 
   const questionText = sampleQuestion
     ? { left: sampleQuestion.left, right: sampleQuestion.right }
     : { left: "연인이 내 커리어 질투", right: "연인이 내 친구 질투" };
   const questionMaxLength = Math.max(questionText.left.length, questionText.right.length);
-  const questionFontSize = questionMaxLength > 14 ? 62 : 72;
-  const questionLineHeight = questionMaxLength > 14 ? 80 : 90;
+  const questionFontSize = questionMaxLength > 14 ? 60 : 68;
+  const questionLineHeight = questionMaxLength > 14 ? 86 : 96;
   ctx.fillStyle = "#111827";
-  ctx.font = `900 ${questionFontSize}px "SUIT Variable", "Apple SD Gothic Neo", sans-serif`;
+  ctx.font = `800 ${questionFontSize}px ${storyFontFamily}`;
   const leftBottom = drawWrappedText(ctx, questionText.left, cardX + 72, cardY + 205, cardW - 144, questionLineHeight, 2);
   ctx.fillStyle = "#2563EB";
-  ctx.font = `900 ${questionFontSize}px "SUIT Variable", "Apple SD Gothic Neo", sans-serif`;
-  const vsY = leftBottom + 24;
+  ctx.font = `900 60px ${storyFontFamily}`;
+  const vsY = leftBottom + 20;
   ctx.fillText("VS", cardX + 72, vsY);
   ctx.fillStyle = "#111827";
-  ctx.font = `900 ${questionFontSize}px "SUIT Variable", "Apple SD Gothic Neo", sans-serif`;
+  ctx.font = `800 ${questionFontSize}px ${storyFontFamily}`;
   const rightBottom = drawWrappedText(ctx, questionText.right, cardX + 72, vsY + 78, cardW - 144, questionLineHeight, 2);
 
   const answerX = cardX + 72;
@@ -369,7 +378,7 @@ async function downloadBalanceStoryImage({
   ctx.stroke();
 
   ctx.fillStyle = "#94A3B8";
-  ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.font = `400 28px ${storyFontFamily}`;
   ctx.fillText(`${displayName}님의 선택`, answerX, dividerY + 72);
 
   const answerY = dividerY + 100;
@@ -380,7 +389,7 @@ async function downloadBalanceStoryImage({
   ctx.save();
   ctx.filter = "blur(12px)";
   ctx.fillStyle = "#2563EB";
-  ctx.font = `900 39px ${storyFontFamily}`;
+  ctx.font = `700 36px ${storyFontFamily}`;
   drawWrappedText(
     ctx,
     selectedAnswer,
@@ -399,20 +408,20 @@ async function downloadBalanceStoryImage({
   ctx.arc(answerX + 10, answerY + answerH + 45, 10, 0, Math.PI * 2);
   ctx.stroke();
   ctx.fillStyle = "#94A3B8";
-  ctx.font = '800 29px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.font = `400 27px ${storyFontFamily}`;
   ctx.fillText("친구 링크에서 선택을 비교해보세요", answerX + 34, answerY + answerH + 42);
 
   ctx.strokeStyle = "#D6DEE9";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(270, 1700);
-  ctx.lineTo(316, 1700);
-  ctx.moveTo(764, 1700);
-  ctx.lineTo(810, 1700);
+  ctx.moveTo(270, 1720);
+  ctx.lineTo(316, 1720);
+  ctx.moveTo(764, 1720);
+  ctx.lineTo(810, 1720);
   ctx.stroke();
-  ctx.fillStyle = "#CBD5E1";
-  ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("친구에게 공유해서 선택을 비교해보세요", 330, 1711);
+  ctx.fillStyle = "#B0BEC5";
+  ctx.font = `400 28px ${storyFontFamily}`;
+  ctx.fillText("친구에게 공유해서 선택을 비교해보세요", 330, 1731);
 
   const blob = await canvasToBlob(canvas);
   const url = URL.createObjectURL(blob);
