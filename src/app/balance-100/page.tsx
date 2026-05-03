@@ -923,6 +923,40 @@ export default function Balance100Page() {
     setCurrentIndex(0);
   }, []);
 
+  const deleteCompletedSession = useCallback(async (target: BalanceServerSession) => {
+    const ok = window.confirm("이 완료 기록을 삭제할까요? 삭제하면 다시 볼 수 없어요.");
+    if (!ok) return;
+
+    setIsSaving(true);
+    setShareStatus("");
+    try {
+      const response = await fetch(`/api/balance-100/session/${encodeURIComponent(target.sessionId)}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.ok) throw new Error(data?.error ?? "failed");
+
+      setCompletedSessions((prev) => prev.filter((session) => session.sessionId !== target.sessionId));
+      if (serverSession?.sessionId === target.sessionId) {
+        setServerSession(null);
+        setAnswers({});
+        setMatches([]);
+        setRepresentativeImageUrl(undefined);
+        setCurrentIndex(0);
+        setMode("intro");
+      }
+      setShareStatus("완료 기록을 삭제했어요.");
+      void trackClientEvent("lab_balance_deleted", {
+        level: target.level,
+        questionCount: target.questionCount,
+      });
+    } catch {
+      setShareStatus("삭제에 실패했어요.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [serverSession?.sessionId]);
+
   const pickAnswer = useCallback((value: BalanceAnswerValue) => {
     if (!question || !serverSession || isSaving) return;
     const nextAnswers = { ...answers, [question.id]: value };
@@ -1431,13 +1465,23 @@ export default function Balance100Page() {
                           </span>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => openCompletedResult(session)}
-                        className="flex-shrink-0 text-[13px] font-black text-[#111827] underline decoration-[#20D879] decoration-2 underline-offset-4"
-                      >
-                        결과 보기
-                      </button>
+                      <div className="flex flex-shrink-0 items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => openCompletedResult(session)}
+                          className="text-[13px] font-black text-[#111827] underline decoration-[#20D879] decoration-2 underline-offset-4"
+                        >
+                          결과 보기
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void deleteCompletedSession(session)}
+                          disabled={isSaving}
+                          className="text-[13px] font-black text-[#EF4444] disabled:opacity-40"
+                        >
+                          삭제
+                        </button>
+                      </div>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <button
