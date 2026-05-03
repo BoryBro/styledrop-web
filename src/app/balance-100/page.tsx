@@ -68,6 +68,10 @@ type KakaoShareSDK = {
   };
 };
 
+class PredictionShareLinkError extends Error {}
+
+class ClipboardCopyError extends Error {}
+
 const GREEN = "#20D879";
 const BALANCE_OWNER_NAME_STORAGE_KEY = "styledrop_balance_100_owner_name";
 const STORY_IMAGE_WIDTH = 1080;
@@ -140,19 +144,33 @@ async function copyTextToClipboard(text: string) {
   textarea.value = text;
   textarea.setAttribute("readonly", "");
   textarea.style.position = "fixed";
-  textarea.style.left = "-9999px";
+  textarea.style.left = "0";
   textarea.style.top = "0";
+  textarea.style.width = "1px";
+  textarea.style.height = "1px";
   textarea.style.opacity = "0";
+  textarea.style.pointerEvents = "none";
   document.body.appendChild(textarea);
+
+  const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const selection = window.getSelection();
+  const previousRanges = selection
+    ? Array.from({ length: selection.rangeCount }, (_, index) => selection.getRangeAt(index).cloneRange())
+    : [];
 
   try {
     textarea.focus({ preventScroll: true });
     textarea.select();
     textarea.setSelectionRange(0, text.length);
     const copied = document.execCommand("copy");
-    if (!copied) throw new Error("copy failed");
+    if (!copied) throw new ClipboardCopyError("copy failed");
   } finally {
     document.body.removeChild(textarea);
+    if (selection) {
+      selection.removeAllRanges();
+      previousRanges.forEach((range) => selection.addRange(range));
+    }
+    activeElement?.focus({ preventScroll: true });
   }
 }
 
@@ -784,6 +802,7 @@ export default function Balance100Page() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [representativeImageUrl, setRepresentativeImageUrl] = useState<string | undefined>();
   const [shareStatus, setShareStatus] = useState("");
+  const [manualShareUrl, setManualShareUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const questions = useMemo(() => getBalanceQuestions(selectedLevel, selectedQuestionCount), [selectedLevel, selectedQuestionCount]);
@@ -1144,15 +1163,29 @@ export default function Balance100Page() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ownerName: shareOwnerName }),
     });
-    const data = await response.json();
-    if (!response.ok || !data?.path) throw new Error(data?.error ?? "failed");
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data?.path) {
+      throw new PredictionShareLinkError(
+        typeof data?.error === "string" ? data.error : "친구 비교 링크를 만들지 못했어요.",
+      );
+    }
     if (data.session) upsertCompletedSession(data.session as BalanceServerSession);
     return `${window.location.origin}${data.path}`;
   }, [displayOwnerName, ownerName, serverSession?.ownerName, upsertCompletedSession, user?.nickname]);
 
+  const getCachedPredictionShareUrl = useCallback((sessionId: string) => {
+    const targetSession = serverSession?.sessionId === sessionId
+      ? serverSession
+      : completedSessions.find((session) => session.sessionId === sessionId);
+
+    if (!targetSession?.predictionToken) return null;
+    return `${window.location.origin}/balance-100/share?token=${encodeURIComponent(targetSession.predictionToken)}`;
+  }, [completedSessions, serverSession]);
+
   const handleKakaoPredictionShare = useCallback(async (sessionId: string, level?: BalanceLevel, questionCount?: BalanceQuestionCount) => {
     setIsSaving(true);
     setShareStatus("");
+    setManualShareUrl("");
     try {
       const shareUrl = await createPredictionShareUrl(sessionId);
       const Kakao = (window as Window & { Kakao?: KakaoShareSDK }).Kakao;
@@ -1172,8 +1205,12 @@ export default function Balance100Page() {
         },
       });
       setShareStatus(level ? `Lv.${level} · ${questionCount ?? 100}문항 카카오 공유창을 열었어요.` : "카카오 공유창을 열었어요.");
-    } catch {
-      setShareStatus("카카오 공유에 실패했어요. 링크 복사를 이용해주세요.");
+    } catch (error) {
+      setShareStatus(
+        error instanceof PredictionShareLinkError
+          ? error.message
+          : "카카오 공유에 실패했어요. 링크 복사를 이용해주세요.",
+      );
     } finally {
       window.setTimeout(() => setIsSaving(false), 1200);
     }
@@ -1182,17 +1219,36 @@ export default function Balance100Page() {
   const handleCopyPredictionLink = useCallback(async (sessionId: string, level?: BalanceLevel, questionCount?: BalanceQuestionCount) => {
     setIsSaving(true);
     setShareStatus("");
+    setManualShareUrl("");
     try {
-      const shareUrl = await createPredictionShareUrl(sessionId);
-      await copyTextToClipboard(shareUrl);
+      const shareUrl = getCachedPredictionShareUrl(sessionId) ?? (await createPredictionShareUrl(sessionId));
+      try {
+        await copyTextToClipboard(shareUrl);
+      } catch {
+        setManualShareUrl(shareUrl);
+        setShareStatus("브라우저가 자동 복사를 막았어요. 아래 링크를 길게 눌러 복사해주세요.");
+        return;
+      }
       setShareStatus(level ? `Lv.${level} · ${questionCount ?? 100}문항 친구 비교 링크가 복사됐어요.` : "친구 비교 링크가 복사됐어요.");
       void trackClientEvent("lab_balance_share_link_copy", { level, questionCount });
-    } catch {
-      setShareStatus("링크 복사에 실패했어요.");
+    } catch (error) {
+      setShareStatus(error instanceof PredictionShareLinkError ? error.message : "친구 비교 링크를 만들지 못했어요.");
     } finally {
       setIsSaving(false);
     }
-  }, [createPredictionShareUrl]);
+  }, [createPredictionShareUrl, getCachedPredictionShareUrl]);
+
+  const handleCopyManualShareUrl = useCallback(async () => {
+    if (!manualShareUrl) return;
+
+    try {
+      await copyTextToClipboard(manualShareUrl);
+      setManualShareUrl("");
+      setShareStatus("친구 비교 링크가 복사됐어요.");
+    } catch {
+      setShareStatus("복사가 계속 막혀요. 아래 링크를 길게 눌러 복사해주세요.");
+    }
+  }, [manualShareUrl]);
 
   const handlePredictionShare = useCallback(async () => {
     if (!serverSession) return;
@@ -1320,6 +1376,24 @@ export default function Balance100Page() {
             </div>
           </div>
           {shareStatus && <p className="mt-3 text-center text-[12px] font-bold text-[#20D879]">{shareStatus}</p>}
+          {manualShareUrl && (
+            <div className="mt-2 grid grid-cols-[1fr_auto] gap-2 rounded-2xl border border-[#D9F7E5] bg-[#F8FFFB] p-2">
+              <input
+                readOnly
+                value={manualShareUrl}
+                onFocus={(event) => event.currentTarget.select()}
+                aria-label="복사할 친구 비교 링크"
+                className="min-w-0 bg-transparent px-2 text-[12px] font-bold text-[#12863C] outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => void handleCopyManualShareUrl()}
+                className="rounded-xl bg-[#20D879] px-3 text-[12px] font-black text-white"
+              >
+                다시 복사
+              </button>
+            </div>
+          )}
         </div>
       </main>
     );
@@ -1531,6 +1605,24 @@ export default function Balance100Page() {
             </button>
           )}
           {shareStatus && <p className="text-center text-[12px] font-bold text-[#20D879]">{shareStatus}</p>}
+          {manualShareUrl && (
+            <div className="grid grid-cols-[1fr_auto] gap-2 rounded-2xl border border-[#D9F7E5] bg-[#F8FFFB] p-2">
+              <input
+                readOnly
+                value={manualShareUrl}
+                onFocus={(event) => event.currentTarget.select()}
+                aria-label="복사할 친구 비교 링크"
+                className="min-w-0 bg-transparent px-2 text-[12px] font-bold text-[#12863C] outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => void handleCopyManualShareUrl()}
+                className="rounded-xl bg-[#20D879] px-3 text-[12px] font-black text-white"
+              >
+                다시 복사
+              </button>
+            </div>
+          )}
         </div>
 
         {completedSessions.length > 0 && (
