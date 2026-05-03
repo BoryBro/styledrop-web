@@ -274,7 +274,7 @@ async function downloadBalanceStoryImage({
       document.fonts.load(`400 32px ${storyFontFamily}`),
       document.fonts.load(`800 68px ${storyFontFamily}`),
       document.fonts.load(`900 60px ${storyFontFamily}`),
-      document.fonts.load(`900 86px ${storyFontFamily}`),
+      document.fonts.load(`700 48px ${storyFontFamily}`),
     ]);
   }
 
@@ -411,11 +411,10 @@ async function downloadBalanceStoryImage({
   roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
   ctx.fill();
 
-  ctx.fillStyle = "#2563EB";
-  ctx.font = `900 86px ${storyFontFamily}`;
-  textCtx.letterSpacing = "-2px";
-  ctx.fillText("뭐라고 했을까요?", answerX + 40, answerY + 85);
-  textCtx.letterSpacing = "0px";
+  const linkGuideText = "링크 넣는 영역";
+  ctx.fillStyle = "rgba(100, 116, 139, 0.24)";
+  ctx.font = `700 48px ${storyFontFamily}`;
+  ctx.fillText(linkGuideText, answerX + (answerW - ctx.measureText(linkGuideText).width) / 2, answerY + 76);
 
   ctx.strokeStyle = "#D6DEE9";
   ctx.lineWidth = 2;
