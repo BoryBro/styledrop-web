@@ -375,15 +375,22 @@ async function downloadBalanceStoryImage({
   roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
   ctx.fill();
   ctx.save();
-  ctx.filter = "blur(13px)";
-  ctx.globalAlpha = 0.32;
+  roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
+  ctx.clip();
+  ctx.filter = "blur(10px)";
+  ctx.globalAlpha = 0.62;
   ctx.fillStyle = "#2563EB";
   const hiddenAnswerText = selectedText || "연인이 내 친구 질투";
-  const answerSmudgeWidth = Math.min(answerW - 96, Math.max(360, hiddenAnswerText.length * 31));
-  roundedRect(ctx, answerX + 50, answerY + 38, answerSmudgeWidth, 42, 21);
+  ctx.font = '900 42px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  drawWrappedText(ctx, hiddenAnswerText, answerX + 46, answerY + 76, answerW - 92, 52, 1);
+  ctx.filter = "none";
+  ctx.globalAlpha = 0.48;
+  ctx.fillStyle = "#EFF6FF";
+  roundedRect(ctx, answerX, answerY, answerW, answerH, 18);
   ctx.fill();
-  ctx.globalAlpha = 0.16;
-  roundedRect(ctx, answerX + 74, answerY + 56, Math.max(220, answerSmudgeWidth - 180), 32, 16);
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = "#FFFFFF";
+  roundedRect(ctx, answerX + 24, answerY + 18, answerW - 48, answerH - 36, 14);
   ctx.fill();
   ctx.restore();
 
