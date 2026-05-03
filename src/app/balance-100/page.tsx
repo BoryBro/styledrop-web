@@ -250,89 +250,81 @@ async function downloadBalanceStoryImage({
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
 
-  ctx.fillStyle = "#111827";
-  ctx.font = '900 67px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(`${displayName}님의 선택은`, 72, 238);
-  ctx.strokeStyle = "#EDF0F3";
+  const contentX = 96;
+  const contentW = STORY_IMAGE_WIDTH - contentX * 2;
+
+  ctx.fillStyle = "#111111";
+  ctx.font = '700 66px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText(`${displayName}님의 선택은`, contentX, 254);
+  ctx.strokeStyle = "#E2E8F0";
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(72, 284);
-  ctx.lineTo(1008, 284);
+  ctx.moveTo(contentX, 310);
+  ctx.lineTo(contentX + contentW, 310);
   ctx.stroke();
 
-  ctx.fillStyle = "#2F6FD6";
-  ctx.font = '900 72px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("어떤걸까요?", 72, 374);
-  ctx.strokeStyle = "#EDF0F3";
+  ctx.fillStyle = "#2563EB";
+  ctx.font = '900 108px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("어떤걸까요?", contentX, 444);
   ctx.beginPath();
-  ctx.moveTo(72, 424);
-  ctx.lineTo(1008, 424);
+  ctx.moveTo(contentX, 516);
+  ctx.lineTo(contentX + contentW, 516);
   ctx.stroke();
 
-  ctx.fillStyle = "#596579";
-  ctx.font = '800 36px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  drawWrappedText(ctx, `나의 선택과 ${displayName}님의 답변을 비교해보세요!`, 72, 510, 880, 50, 2);
+  ctx.fillStyle = "#475569";
+  ctx.font = '700 42px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  drawWrappedText(ctx, `나의 선택과 ${displayName}님의 답변을 비교해보세요!`, contentX, 646, contentW, 58, 2);
 
-  ctx.fillStyle = "#8B98AA";
-  ctx.font = '800 29px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(`${questionCount}개의 선택으로 서로 얼마나 비슷한지 비교하기 게임`, 72, 646);
+  ctx.fillStyle = "#94A3B8";
+  ctx.font = '700 36px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText(`${questionCount}개의 선택으로 서로 얼마나 비슷한지 비교하기 게임`, contentX, 790);
 
-  const sectionGradient = ctx.createLinearGradient(0, 708, 0, STORY_IMAGE_HEIGHT);
-  sectionGradient.addColorStop(0, "rgba(240,248,255,0)");
-  sectionGradient.addColorStop(0.18, "#EAF7FF");
-  sectionGradient.addColorStop(0.54, "#DDF3FB");
-  sectionGradient.addColorStop(1, "#FFFFFF");
-  ctx.fillStyle = sectionGradient;
-  ctx.fillRect(0, 708, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT - 708);
-
+  const cardX = 96;
+  const cardY = 840;
+  const cardW = 888;
+  const cardH = 960;
   ctx.save();
-  ctx.globalAlpha = 0.22;
+  ctx.shadowColor = "rgba(37, 99, 235, 0.09)";
+  ctx.shadowBlur = 42;
+  ctx.shadowOffsetY = 22;
   ctx.fillStyle = "#FFFFFF";
-  roundedRect(ctx, -90, 850, 360, 380, 58);
-  ctx.fill();
-  roundedRect(ctx, 790, 850, 390, 420, 58);
-  ctx.fill();
-  roundedRect(ctx, 520, 1430, 420, 360, 58);
+  roundedRect(ctx, cardX, cardY, cardW, cardH, 56);
   ctx.fill();
   ctx.restore();
 
-  const cardX = 128;
-  const cardY = 820;
-  const cardW = 824;
-  const cardH = 660;
-  ctx.save();
-  ctx.shadowColor = "rgba(73, 96, 125, 0.14)";
-  ctx.shadowBlur = 34;
-  ctx.shadowOffsetY = 24;
-  ctx.fillStyle = "#FFFFFF";
-  roundedRect(ctx, cardX, cardY, cardW, cardH, 64);
-  ctx.fill();
-  ctx.restore();
+  ctx.strokeStyle = "#EFF6FF";
+  ctx.lineWidth = 3;
+  roundedRect(ctx, cardX, cardY, cardW, cardH, 56);
+  ctx.stroke();
 
-  ctx.fillStyle = "#BBDCF1";
-  ctx.font = '900 70px Georgia, serif';
-  ctx.fillText("“", cardX + 72, cardY + 120);
+  ctx.fillStyle = "#BFDBFE";
+  ctx.font = '900 78px Georgia, serif';
+  ctx.fillText("“", cardX + 72, cardY + 126);
 
-  ctx.fillStyle = "#111827";
-  ctx.font = '900 50px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillStyle = "#111111";
+  ctx.font = '800 90px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
   const questionText = sampleQuestion
     ? `${sampleQuestion.left}  vs  ${sampleQuestion.right}`
     : "질문을 불러오는 중";
-  drawWrappedText(ctx, questionText, cardX + 72, cardY + 212, cardW - 144, 66, 4);
+  const questionBottom = drawWrappedText(ctx, questionText, cardX + 72, cardY + 246, cardW - 144, 117, 3);
 
-  ctx.fillStyle = "#EFF7FC";
-  roundedRect(ctx, cardX + 72, cardY + 488, cardW - 144, 92, 34);
+  const answerX = cardX + 72;
+  const answerY = Math.max(cardY + 420, questionBottom + 96);
+  const answerW = cardW - 144;
+  const answerH = 144;
+  ctx.fillStyle = "#EFF6FF";
+  roundedRect(ctx, answerX, answerY, answerW, answerH, 48);
   ctx.fill();
   ctx.save();
-  ctx.filter = "blur(7px)";
-  ctx.fillStyle = "#6984A8";
-  ctx.font = '900 36px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  drawWrappedText(ctx, selectedText ? `답변: ${selectedText}` : "답변이 숨겨져 있어요", cardX + 116, cardY + 546, cardW - 232, 44, 1);
+  ctx.filter = "blur(6px)";
+  ctx.fillStyle = "#2563EB";
+  ctx.font = '600 54px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  drawWrappedText(ctx, selectedText ? `답변: ${selectedText}` : "답변이 숨겨져 있어요", answerX + 72, answerY + 88, answerW - 144, 66, 1);
   ctx.restore();
 
-  ctx.fillStyle = "#AAB5C4";
-  ctx.font = '800 25px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("답변은 비교하기 전까지 흐리게 보여요", cardX + 72, cardY + 620);
+  ctx.fillStyle = "#94A3B8";
+  ctx.font = '700 36px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("답변은 비교하기 전까지 흐리게 보여요", answerX, answerY + answerH + 62);
 
   const blob = await canvasToBlob(canvas);
   const url = URL.createObjectURL(blob);
