@@ -1414,42 +1414,53 @@ export default function Balance100Page() {
           <section className="mt-7">
             <p className="px-1 text-[20px] font-black tracking-[-0.04em] text-[#111827]">완료한 레벨</p>
             <div className="mt-3 divide-y divide-[#E5E7EB] border-y border-[#E5E7EB]">
-              {completedSessions.map((session) => (
-                <div
-                  key={session.sessionId}
-                  className="py-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[22px] font-black tracking-[-0.05em] text-black">Lv.{session.level} · {session.questionCount}문항 완료</p>
-                    <button
-                      type="button"
-                      onClick={() => openCompletedResult(session)}
-                      className="flex-shrink-0 text-[13px] font-black text-[#111827] underline decoration-[#20D879] decoration-2 underline-offset-4"
-                    >
-                      결과 보기
-                    </button>
+              {completedSessions.map((session) => {
+                const sessionOwnerName = (session.ownerName || readStoredBalanceOwnerName(session.level, normalizeBalanceQuestionCount(session.questionCount))).trim();
+
+                return (
+                  <div
+                    key={session.sessionId}
+                    className="py-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[22px] font-black tracking-[-0.05em] text-black">Lv.{session.level} · {session.questionCount}문항 완료</p>
+                        {sessionOwnerName && (
+                          <span className="mt-2 inline-flex max-w-full items-center rounded-full bg-[#F0FFF7] px-2.5 py-1 text-[11px] font-black text-[#12863C]">
+                            <span className="truncate">{sessionOwnerName}님</span>
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openCompletedResult(session)}
+                        className="flex-shrink-0 text-[13px] font-black text-[#111827] underline decoration-[#20D879] decoration-2 underline-offset-4"
+                      >
+                        결과 보기
+                      </button>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleKakaoPredictionShare(session.sessionId, session.level, session.questionCount)}
+                        disabled={isSaving}
+                        className="flex h-[48px] items-center justify-center gap-1.5 rounded-xl bg-[#FEE500] text-[13px] font-black text-[#191919] disabled:opacity-50"
+                      >
+                        <KakaoBubbleIcon />
+                        카카오 공유
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyPredictionLink(session.sessionId, session.level, session.questionCount)}
+                        disabled={isSaving}
+                        className="flex h-[48px] items-center justify-center gap-1.5 rounded-xl border border-[#E5E7EB] bg-white text-[13px] font-black text-[#20D879] disabled:opacity-50"
+                      >
+                        링크 복사
+                      </button>
+                    </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void handleKakaoPredictionShare(session.sessionId, session.level, session.questionCount)}
-                      disabled={isSaving}
-                      className="flex h-[48px] items-center justify-center gap-1.5 rounded-xl bg-[#FEE500] text-[13px] font-black text-[#191919] disabled:opacity-50"
-                    >
-                      <KakaoBubbleIcon />
-                      카카오 공유
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleCopyPredictionLink(session.sessionId, session.level, session.questionCount)}
-                      disabled={isSaving}
-                      className="flex h-[48px] items-center justify-center gap-1.5 rounded-xl border border-[#E5E7EB] bg-white text-[13px] font-black text-[#20D879] disabled:opacity-50"
-                    >
-                      링크 복사
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
