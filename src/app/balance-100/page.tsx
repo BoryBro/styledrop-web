@@ -12,7 +12,6 @@ import {
   BALANCE_QUESTION_COUNTS,
   analyzeBalanceAnswers,
   getBalance100Progress,
-  getBalanceResultStory,
   getBalanceQuestions,
   getFirstUnansweredIndex,
   normalizeBalanceQuestionCount,
@@ -250,109 +249,126 @@ async function downloadBalanceStoryImage({
   if (!ctx) throw new Error("canvas unavailable");
 
   const displayName = userName.trim() || "사용자";
-  const story = getBalanceResultStory(result);
   const scoreEntries = (Object.entries(result.scores) as Array<[BalanceDimension, number]>)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
-  const topChoices = result.topChoices.slice(0, 3);
 
-  const bg = ctx.createLinearGradient(0, 0, 0, STORY_IMAGE_HEIGHT);
-  bg.addColorStop(0, "#07132D");
-  bg.addColorStop(0.52, "#061120");
-  bg.addColorStop(1, "#02070F");
-  ctx.fillStyle = bg;
+  ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
 
-  ctx.strokeStyle = "rgba(93, 214, 255, 0.08)";
-  ctx.lineWidth = 2;
-  for (let x = 96; x < STORY_IMAGE_WIDTH; x += 120) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, STORY_IMAGE_HEIGHT);
-    ctx.stroke();
-  }
-  for (let y = 120; y < STORY_IMAGE_HEIGHT; y += 120) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(STORY_IMAGE_WIDTH, y);
-    ctx.stroke();
-  }
+  const pageGlow = ctx.createRadialGradient(840, 220, 20, 840, 220, 720);
+  pageGlow.addColorStop(0, "rgba(251,113,133,0.18)");
+  pageGlow.addColorStop(0.55, "rgba(255,237,213,0.18)");
+  pageGlow.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = pageGlow;
+  ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
 
-  ctx.fillStyle = "rgba(42, 207, 255, 0.16)";
-  roundedRect(ctx, 76, 86, 928, 1748, 56);
+  ctx.fillStyle = "#C9571A";
+  ctx.font = '900 48px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("StyleDrop", 88, 132);
+
+  ctx.fillStyle = "#FDF2F5";
+  roundedRect(ctx, 86, 254, 908, 1180, 58);
   ctx.fill();
-  ctx.strokeStyle = "rgba(151, 240, 255, 0.24)";
+  ctx.strokeStyle = "#FFE1E8";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  const cardGlow = ctx.createRadialGradient(214, 1228, 10, 214, 1228, 740);
+  cardGlow.addColorStop(0, "rgba(251,113,133,0.22)");
+  cardGlow.addColorStop(0.58, "rgba(251,113,133,0.05)");
+  cardGlow.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = cardGlow;
+  roundedRect(ctx, 86, 254, 908, 1180, 58);
+  ctx.fill();
+
+  ctx.save();
+  ctx.beginPath();
+  roundedRect(ctx, 86, 254, 908, 1180, 58);
+  ctx.clip();
+  ctx.fillStyle = "rgba(225,29,72,0.06)";
+  ctx.font = '900 460px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("100", 322, 1326);
+  ctx.restore();
+
+  ctx.fillStyle = "#FB7185";
+  ctx.font = '900 34px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("BALANCE LAB", 146, 372);
+
+  ctx.fillStyle = "#111827";
+  ctx.font = '900 88px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  drawWrappedText(
+    ctx,
+    `${displayName}님과 밸런스 게임의 일치율을 확인해봐요!`,
+    146,
+    514,
+    770,
+    104,
+    4,
+  );
+
+  ctx.fillStyle = "#FB7185";
+  roundedRect(ctx, 146, 962, 80, 8, 4);
+  ctx.fill();
+
+  ctx.fillStyle = "#4B5563";
+  ctx.font = '800 38px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  drawWrappedText(ctx, "100개의 선택으로 서로 얼마나 비슷한지 비교하는 실험실 카드", 146, 1068, 746, 58, 2);
+
+  const badgeItems = [
+    `Lv.${level}`,
+    `${questionCount}문항`,
+    matchCount > 0 ? `${matchCount}명 비교중` : "친구 비교",
+  ];
+  badgeItems.forEach((label, index) => {
+    const x = 146 + index * 222;
+    const y = 1230;
+    ctx.fillStyle = "#FFFFFF";
+    roundedRect(ctx, x, y, 188, 72, 26);
+    ctx.fill();
+    ctx.strokeStyle = "#FFE1E8";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = "#E11D48";
+    ctx.font = '900 27px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+    ctx.fillText(label, x + 30, y + 47);
+  });
+
+  ctx.fillStyle = "#FFFFFF";
+  roundedRect(ctx, 116, 1502, 848, 250, 44);
+  ctx.fill();
+  ctx.strokeStyle = "#F3F4F6";
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.fillStyle = "#98F4FF";
-  ctx.font = '900 34px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("B A L A N C E  1 0 0", 120, 180);
+  ctx.fillStyle = "#9CA3AF";
+  ctx.font = '900 28px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("내 결과 힌트", 168, 1572);
+  ctx.fillStyle = "#111827";
+  ctx.font = '900 46px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  drawWrappedText(ctx, result.typeTitle, 168, 1646, 720, 58, 2);
 
-  ctx.fillStyle = "rgba(255,255,255,0.58)";
-  ctx.font = '800 30px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(`Lv.${level} · ${questionCount}문항 · 친구 ${matchCount}명 비교`, 120, 240);
-
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = '900 78px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(`${displayName}님의`, 120, 372);
-  ctx.fillStyle = "#98F4FF";
-  ctx.fillText("밸런스 결과", 120, 468);
-
-  ctx.fillStyle = "rgba(255,255,255,0.09)";
-  roundedRect(ctx, 120, 560, 840, 410, 46);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(152,244,255,0.22)";
-  ctx.stroke();
-
-  ctx.fillStyle = "#20D879";
-  ctx.font = '900 34px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText(result.typeTitle, 170, 650);
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = '900 58px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  const titleBottom = drawWrappedText(ctx, story.verdictTitle, 170, 742, 740, 74, 3);
-  ctx.fillStyle = "rgba(255,255,255,0.64)";
-  ctx.font = '700 30px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  drawWrappedText(ctx, story.verdictSubtitle, 170, titleBottom + 42, 740, 44, 2);
-
-  scoreEntries.forEach(([dimension, score], index) => {
-    const x = 120 + index * 286;
-    const y = 1058;
-    ctx.fillStyle = "rgba(255,255,255,0.10)";
-    roundedRect(ctx, x, y, 260, 218, 34);
+  scoreEntries.forEach(([dimension], index) => {
+    const x = 168 + index * 204;
+    const y = 1730;
+    ctx.fillStyle = "#FFF1F2";
+    roundedRect(ctx, x, y, 164, 52, 22);
     ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,0.58)";
-    ctx.font = '800 28px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-    ctx.fillText(DIMENSION_STORY_LABELS[dimension], x + 34, y + 58);
-    ctx.fillStyle = "#98F4FF";
-    ctx.font = '900 70px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-    ctx.fillText(String(score), x + 34, y + 146);
+    ctx.fillStyle = "#E11D48";
+    ctx.font = '900 23px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+    ctx.fillText(DIMENSION_STORY_LABELS[dimension], x + 26, y + 35);
   });
 
-  ctx.fillStyle = "rgba(255,255,255,0.08)";
-  roundedRect(ctx, 120, 1362, 840, 300, 42);
-  ctx.fill();
-
-  ctx.fillStyle = "#20D879";
-  ctx.font = '900 30px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("대표 선택", 170, 1430);
-  ctx.fillStyle = "rgba(255,255,255,0.78)";
-  ctx.font = '800 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  topChoices.forEach((choice, index) => {
-    const y = 1500 + index * 56;
-    ctx.fillStyle = index === 0 ? "#FFFFFF" : "rgba(255,255,255,0.72)";
-    drawWrappedText(ctx, `${choice.picked}. ${choice.text}`, 170, y, 730, 40, 1);
-  });
-
-  ctx.fillStyle = "rgba(255,255,255,0.12)";
-  roundedRect(ctx, 120, 1708, 840, 76, 38);
+  ctx.fillStyle = "#111827";
+  roundedRect(ctx, 146, 1360, 788, 112, 42);
   ctx.fill();
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("StyleDrop", 170, 1758);
-  ctx.fillStyle = "rgba(255,255,255,0.62)";
-  ctx.font = '800 27px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
-  ctx.fillText("styledrop.cloud/balance-100", 474, 1758);
+  ctx.font = '900 42px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("나도 비교하러 가기  →", 292, 1432);
+
+  ctx.fillStyle = "#6B7280";
+  ctx.font = '800 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("styledrop.cloud/balance-100", 292, 1842);
 
   const blob = await canvasToBlob(canvas);
   const url = URL.createObjectURL(blob);
