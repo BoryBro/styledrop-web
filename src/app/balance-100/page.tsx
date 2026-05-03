@@ -12,12 +12,14 @@ import {
   BALANCE_QUESTION_COUNTS,
   analyzeBalanceAnswers,
   getBalance100Progress,
+  getBalanceResultStory,
   getBalanceQuestions,
   getFirstUnansweredIndex,
   normalizeBalanceQuestionCount,
   normalizeBalanceLevel,
   type BalanceAnswerValue,
   type BalanceAnswers,
+  type BalanceDimension,
   type BalanceLevel,
   type BalanceQuestionCount,
   type BalanceQuestion,
@@ -70,6 +72,16 @@ type KakaoShareSDK = {
 
 const GREEN = "#20D879";
 const BALANCE_OWNER_NAME_STORAGE_KEY = "styledrop_balance_100_owner_name";
+const STORY_IMAGE_WIDTH = 1080;
+const STORY_IMAGE_HEIGHT = 1920;
+const DIMENSION_STORY_LABELS: Record<BalanceDimension, string> = {
+  money: "현실",
+  love: "감정",
+  social: "관계",
+  pride: "자존심",
+  risk: "위험감수",
+  comfort: "안정",
+};
 
 function getBalanceOwnerNameStorageKey(level: BalanceLevel, questionCount: BalanceQuestionCount) {
   return `${BALANCE_OWNER_NAME_STORAGE_KEY}:${level}:${questionCount}`;
@@ -152,6 +164,205 @@ async function copyTextToClipboard(text: string) {
   } finally {
     document.body.removeChild(textarea);
   }
+}
+
+function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+}
+
+function drawWrappedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines = 3,
+) {
+  const characters = Array.from(text.replace(/\s+/g, " ").trim());
+  const lines: string[] = [];
+  let current = "";
+
+  characters.forEach((character) => {
+    const next = `${current}${character}`;
+    if (ctx.measureText(next).width <= maxWidth) {
+      current = next;
+      return;
+    }
+
+    if (current) lines.push(current.trim());
+    current = character.trimStart();
+  });
+  if (current) lines.push(current.trim());
+
+  const visibleLines = lines.slice(0, maxLines);
+  if (lines.length > maxLines) {
+    visibleLines[maxLines - 1] = `${visibleLines[maxLines - 1].replace(/[.。!?…]+$/, "")}...`;
+  }
+
+  visibleLines.forEach((line, index) => {
+    ctx.fillText(line, x, y + index * lineHeight);
+  });
+
+  return y + visibleLines.length * lineHeight;
+}
+
+function safeStoryFileName(name: string) {
+  return name.trim().replace(/[^\w가-힣-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "balance-100";
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("empty canvas"));
+        return;
+      }
+      resolve(blob);
+    }, "image/png");
+  });
+}
+
+async function downloadBalanceStoryImage({
+  result,
+  userName,
+  level,
+  questionCount,
+  matchCount,
+}: {
+  result: BalanceResultSummary;
+  userName: string;
+  level: BalanceLevel;
+  questionCount: BalanceQuestionCount;
+  matchCount: number;
+}) {
+  const canvas = document.createElement("canvas");
+  canvas.width = STORY_IMAGE_WIDTH;
+  canvas.height = STORY_IMAGE_HEIGHT;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas unavailable");
+
+  const displayName = userName.trim() || "사용자";
+  const story = getBalanceResultStory(result);
+  const scoreEntries = (Object.entries(result.scores) as Array<[BalanceDimension, number]>)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+  const topChoices = result.topChoices.slice(0, 3);
+
+  const bg = ctx.createLinearGradient(0, 0, 0, STORY_IMAGE_HEIGHT);
+  bg.addColorStop(0, "#07132D");
+  bg.addColorStop(0.52, "#061120");
+  bg.addColorStop(1, "#02070F");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
+
+  ctx.strokeStyle = "rgba(93, 214, 255, 0.08)";
+  ctx.lineWidth = 2;
+  for (let x = 96; x < STORY_IMAGE_WIDTH; x += 120) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, STORY_IMAGE_HEIGHT);
+    ctx.stroke();
+  }
+  for (let y = 120; y < STORY_IMAGE_HEIGHT; y += 120) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(STORY_IMAGE_WIDTH, y);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "rgba(42, 207, 255, 0.16)";
+  roundedRect(ctx, 76, 86, 928, 1748, 56);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(151, 240, 255, 0.24)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.fillStyle = "#98F4FF";
+  ctx.font = '900 34px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("B A L A N C E  1 0 0", 120, 180);
+
+  ctx.fillStyle = "rgba(255,255,255,0.58)";
+  ctx.font = '800 30px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText(`Lv.${level} · ${questionCount}문항 · 친구 ${matchCount}명 비교`, 120, 240);
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = '900 78px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText(`${displayName}님의`, 120, 372);
+  ctx.fillStyle = "#98F4FF";
+  ctx.fillText("밸런스 결과", 120, 468);
+
+  ctx.fillStyle = "rgba(255,255,255,0.09)";
+  roundedRect(ctx, 120, 560, 840, 410, 46);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(152,244,255,0.22)";
+  ctx.stroke();
+
+  ctx.fillStyle = "#20D879";
+  ctx.font = '900 34px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText(result.typeTitle, 170, 650);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = '900 58px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  const titleBottom = drawWrappedText(ctx, story.verdictTitle, 170, 742, 740, 74, 3);
+  ctx.fillStyle = "rgba(255,255,255,0.64)";
+  ctx.font = '700 30px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  drawWrappedText(ctx, story.verdictSubtitle, 170, titleBottom + 42, 740, 44, 2);
+
+  scoreEntries.forEach(([dimension, score], index) => {
+    const x = 120 + index * 286;
+    const y = 1058;
+    ctx.fillStyle = "rgba(255,255,255,0.10)";
+    roundedRect(ctx, x, y, 260, 218, 34);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.58)";
+    ctx.font = '800 28px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+    ctx.fillText(DIMENSION_STORY_LABELS[dimension], x + 34, y + 58);
+    ctx.fillStyle = "#98F4FF";
+    ctx.font = '900 70px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+    ctx.fillText(String(score), x + 34, y + 146);
+  });
+
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  roundedRect(ctx, 120, 1362, 840, 300, 42);
+  ctx.fill();
+
+  ctx.fillStyle = "#20D879";
+  ctx.font = '900 30px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("대표 선택", 170, 1430);
+  ctx.fillStyle = "rgba(255,255,255,0.78)";
+  ctx.font = '800 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  topChoices.forEach((choice, index) => {
+    const y = 1500 + index * 56;
+    ctx.fillStyle = index === 0 ? "#FFFFFF" : "rgba(255,255,255,0.72)";
+    drawWrappedText(ctx, `${choice.picked}. ${choice.text}`, 170, y, 730, 40, 1);
+  });
+
+  ctx.fillStyle = "rgba(255,255,255,0.12)";
+  roundedRect(ctx, 120, 1708, 840, 76, 38);
+  ctx.fill();
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = '900 31px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("StyleDrop", 170, 1758);
+  ctx.fillStyle = "rgba(255,255,255,0.62)";
+  ctx.font = '800 27px "SUIT Variable", "Apple SD Gothic Neo", sans-serif';
+  ctx.fillText("styledrop.cloud/balance-100", 474, 1758);
+
+  const blob = await canvasToBlob(canvas);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `styledrop-story-${safeStoryFileName(displayName)}-${Date.now()}.png`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 function TopProgress({
@@ -885,6 +1096,30 @@ export default function Balance100Page() {
     await handleKakaoPredictionShare(serverSession.sessionId, serverSession.level, serverSession.questionCount);
   }, [handleKakaoPredictionShare, serverSession]);
 
+  const handleSaveStoryImage = useCallback(async () => {
+    if (!result) return;
+    setIsSaving(true);
+    setShareStatus("");
+    try {
+      await downloadBalanceStoryImage({
+        result,
+        userName: displayOwnerName || ownerName || serverSession?.ownerName || user?.nickname || "사용자",
+        level: selectedLevel,
+        questionCount: selectedQuestionCount,
+        matchCount: matches.length,
+      });
+      setShareStatus("스토리용 이미지가 저장됐어요.");
+      void trackClientEvent("lab_balance_story_image_save", {
+        level: selectedLevel,
+        questionCount: selectedQuestionCount,
+      });
+    } catch {
+      setShareStatus("스토리 이미지 저장에 실패했어요.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [displayOwnerName, matches.length, ownerName, result, selectedLevel, selectedQuestionCount, serverSession?.ownerName, user?.nickname]);
+
   if (loading || isAvailabilityLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white px-5">
@@ -953,24 +1188,34 @@ export default function Balance100Page() {
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-4 grid gap-2">
             <button
               type="button"
-              onClick={handlePredictionShare}
+              onClick={() => void handleSaveStoryImage()}
               disabled={isSaving}
-              className="flex h-[54px] items-center justify-center gap-1.5 rounded-[20px] bg-[#FEE500] text-[13px] font-black text-[#191919] disabled:opacity-50"
+              className="flex h-[58px] items-center justify-center rounded-[22px] bg-[#111827] text-[15px] font-black text-white disabled:opacity-50"
             >
-              <KakaoBubbleIcon />
-              카카오
+              스토리 이미지 저장
             </button>
-            <button
-              type="button"
-              onClick={() => serverSession && void handleCopyPredictionLink(serverSession.sessionId, serverSession.level, serverSession.questionCount)}
-              disabled={isSaving || !serverSession}
-              className="flex h-[54px] items-center justify-center rounded-[20px] border border-[#D9F7E5] bg-[#F0FFF7] text-[13px] font-black text-[#20D879] disabled:opacity-50"
-            >
-              🔗 Link
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handlePredictionShare}
+                disabled={isSaving}
+                className="flex h-[54px] items-center justify-center gap-1.5 rounded-[20px] bg-[#FEE500] text-[13px] font-black text-[#191919] disabled:opacity-50"
+              >
+                <KakaoBubbleIcon />
+                카카오
+              </button>
+              <button
+                type="button"
+                onClick={() => serverSession && void handleCopyPredictionLink(serverSession.sessionId, serverSession.level, serverSession.questionCount)}
+                disabled={isSaving || !serverSession}
+                className="flex h-[54px] items-center justify-center rounded-[20px] border border-[#D9F7E5] bg-[#F0FFF7] text-[13px] font-black text-[#20D879] disabled:opacity-50"
+              >
+                🔗 Link
+              </button>
+            </div>
           </div>
           {shareStatus && <p className="mt-3 text-center text-[12px] font-bold text-[#20D879]">{shareStatus}</p>}
         </div>
